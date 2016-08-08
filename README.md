@@ -1,29 +1,14 @@
-# README #
+# tpcClassify #
 
-This README would normally document whatever steps are necessary to get your application up and running.
-
-### What is this repository for? ###
-
-* Quick summary
-* Version
-* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
+Program for viewing and classification of uTPC events for ESS NMX.
 
 ### How do I get set up? ###
 
-* Summary of set up
-* Configuration
-* Dependencies
-* Database configuration
-* How to run tests
-* Deployment instructions
-
-### Contribution guidelines ###
-
-* Writing tests
-* Code review
-* Other guidelines
+* prereq: boost (1.58 and up), compile all libraries and install
+* prereq: Qt 5.5
+* to build, in source directory: qmake && make release
+* to run, in source directory: tpcc
 
 ### Who do I talk to? ###
 
-* Repo owner or admin
-* Other community or team contact
+* Martin Shetty (martin.shetty@esss.se)
