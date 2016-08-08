@@ -20,10 +20,11 @@ Analyzer::Analyzer(QWidget *parent) :
   ui->plotSubhist->set_plot_style("Step center");
   ui->plotSubhist->set_visible_options(ShowOptions::thickness | ShowOptions::scale | ShowOptions::grid | ShowOptions::save);
 
-
+  TPC::Event dummy;
+  dummy.analyze();
   ui->comboWeights->addItem("none");
-  ui->comboWeights->addItem("Integral");
-  ui->comboWeights->addItem("Integral/bins");
+  for (auto &c : dummy.analytics_)
+    ui->comboWeights->addItem(QString::fromStdString(c.first));
 
   ui->plot->set_antialiased(false);
   ui->plot->set_scale_type("Linear");
@@ -93,9 +94,7 @@ void Analyzer::saveSettings()
 
 void Analyzer::clear()
 {
-  ui->plot->reset_content();
-  ui->plot->set_boxes(std::list<MarkerBox2D>());
-  ui->plot->refresh();
+  resetPlot2D();
 
   marker_.visible = false;
   ui->plotHistogram->reset_scales();
@@ -135,12 +134,13 @@ void Analyzer::resetPlot2D()
   ui->plot->set_axes("X (mm)", xdims_.transfrom(0), xdims_.transfrom(xdims_.strips-1),
                      "Y (mm)", xdims_.transfrom(0), xdims_.transfrom(xdims_.strips-1),
                      "Count");
+  ui->plot->refresh();
 }
 
 
 void Analyzer::on_pushStart_clicked()
 {
-  resetPlot2D();
+  clear();
 
   if (!reader_|| !reader_->event_count())
     return;

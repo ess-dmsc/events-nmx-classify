@@ -73,10 +73,10 @@ void RecordViewer::display_record(const TPC::Record record, TPC::Dimensions dim,
   }
 
   ui->plotRecord->set_axes("Position (mm)", xdim.transfrom(0), xdim.transfrom(xdim.strips-1),
-                           "Time bin",                      0,    record.num_time_bins() - 1,
+                           "Time bin",                      0,    record.max_time_bins() - 1,
                            "Charge");
 
-  ui->plotRecord->update_plot(xdim.strips, record.num_time_bins(), make_list(record, trim));
+  ui->plotRecord->update_plot(xdim.strips, record.max_time_bins(), make_list(record, trim));
 
   if (secondary == "Maxima")
     ui->plotRecord->set_boxes(maxima(record, xdim, trim));
@@ -209,8 +209,8 @@ void RecordViewer::display_projection(const TPC::Record &record, TPC::Dimensions
 
       if (codomain == "Integral")
         yy = strip.integral();
-      else if (codomain == "Integral/bins")
-        yy = strip.integral_normalized();
+//      else if (codomain == "Integral/bins")
+//        yy = strip.integral_normalized();
 
       x.push_back(xx);
       y.push_back(yy);

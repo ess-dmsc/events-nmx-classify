@@ -1,25 +1,3 @@
-/*******************************************************************************
- *
- * This software was developed at the National Institute of Standards and
- * Technology (NIST) by employees of the Federal Government in the course
- * of their official duties. Pursuant to title 17 Section 105 of the
- * United States Code, this software is not subject to copyright protection
- * and is in the public domain. NIST assumes no responsibility whatsoever for
- * its use by other parties, and makes no guarantees, expressed or implied,
- * about its quality, reliability, or any other characteristic.
- *
- * This software can be redistributed and/or modified freely provided that
- * any derivative works bear some notice that they are derived from it, and
- * any modified versions bear some notice that they have been modified.
- *
- * Description:
- *      AnalysisThread - thread for issuing commands to daq outside of gui thread
- *
- * Author(s):
- *      Martin Shetty (NIST)
- *
- ******************************************************************************/
-
 #include "analysis_thread.h"
 #include "custom_logger.h"
 
@@ -52,6 +30,8 @@ void AnalysisThread::go(std::shared_ptr<TPC::Reader> r, QString weight_type, dou
     WARN << "Runner busy";
     return;
   }
+
+  data_.clear();
 
   terminating_.store(false);
   weight_type_ = weight_type;
@@ -128,22 +108,23 @@ void AnalysisThread::run()
     if (/*noempty && */evt.empty())
       continue;
 
+    if (weight_type_ != "none")
+      evt.analyze();
+
     std::list<TPC::VMMxDataPoint> vmm_x = vmm.processEvent(evt.x);
     std::list<TPC::VMMxDataPoint> vmm_y = vmm.processEvent(evt.y);
     TPC::FindEntry position_x(vmm_x);
     TPC::FindEntry position_y(vmm_y);
 
-    double add = 1;
-    if (weight_type_ == "Integral")
-      add += evt.integral();
-    else if (weight_type_ == "Integral/bins")
-      add += evt.integral_normalized();
+    double quality = 0;
+    if (weight_type_ != "none")
+      quality = evt.analytic(weight_type_.toStdString());
 
-    add /= normalize_by_;
+    quality /= normalize_by_;
 
     std::pair<int,int> pos{position_x.strip, position_y.strip};
 
-    data_[int(add)][pos]++;
+    data_[int(quality)][pos]++;
 
     good++;
 

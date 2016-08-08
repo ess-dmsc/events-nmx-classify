@@ -31,8 +31,9 @@ public:
 
   bool nonzero() const {return nonzero_;}
   short hitbins() const {return hitbins_;}
+  short binstart() const {return bin_start_;}
+  short binstop() const {return bin_stop_;}
   uint64_t integral() const {return integral_;}
-  double integral_normalized() const {return integral_normalized_;}
   std::list<size_t> maxima() const {return maxima_;}
   std::list<size_t> global_maxima() const {return global_maxima_;}
 
@@ -41,8 +42,9 @@ private:
 
   bool              nonzero_ {false};
   short             hitbins_ {0};
+  short             bin_start_{-1};
+  short             bin_stop_{-1};
   uint64_t          integral_ {0};
-  double            integral_normalized_ {0.0};
   std::list<size_t> maxima_;
   std::list<size_t> global_maxima_;
 
@@ -62,11 +64,7 @@ public:
   size_t strip_stop() const;
   std::list<size_t> valid_strips() const;
 
-  size_t num_time_bins() const;
-
-  uint16_t hitbins() const {return hitbins_;}
-  uint64_t integral() const {return integral_;}
-  double integral_normalized() const {return integral_normalized_;}
+  size_t max_time_bins() const {return max_time_bins_;}
 
   short get(size_t strip, size_t timebin) const;
   Strip get_strip(size_t strip) const;
@@ -78,22 +76,25 @@ public:
 
   void suppress_negatives();
 
+  void analyze();
+  double analytic(std::string) const;  //default 0
+//  std::list<std::string> catagories() const;
+
 private:
   std::map<size_t, Strip> strips_;
 
   int start_ {-1};
   int stop_ {-1};
-  size_t num_time_bins_ {0};
+  size_t max_time_bins_ {0};
 
-  uint16_t          hitbins_ {0};
-  uint64_t          integral_ {0};
-  double            integral_normalized_ {0.0};
 
+  std::map<std::string, double> analytics_;
 };
 
 struct Event
 {
   Record x, y;
+  std::map<std::string, double> analytics_;
 
   bool empty() const
   {
@@ -112,14 +113,13 @@ struct Event
            + "Y: " + y.debug();
   }
 
-  short hitbins() const { return x.hitbins() + y.hitbins(); }
-  uint64_t integral() const {return x.integral() + y.integral(); }
-  double integral_normalized() const
+  void analyze();
+  double analytic(std::string id) const  //default 0
   {
-    double ret = 0;
-    if (hitbins())
-      ret = integral() / double(hitbins());
-    return ret;
+    if (analytics_.count(id))
+      return analytics_.at(id);
+    else
+      return 0;
   }
 };
 

@@ -10,18 +10,24 @@ Strip::Strip(const std::vector<short> &d)
 {
   data_ = d;
 
-  for (auto &q : data_)
+  for (size_t i=0; i < data_.size(); ++i)
   {
-    integral_ += q;
-    if (q != 0)
+    auto &val = data_.at(i);
+    integral_ += val;
+    if (val != 0)
     {
       nonzero_ = true;
       hitbins_++;
+
+      if (bin_start_ == -1)
+        bin_start_ = i;
+      if (i > bin_stop_)
+        bin_stop_ = i;
     }
   }
 
-  if (hitbins_ > 0)
-    integral_normalized_ = integral_ / double(hitbins_);
+//  if (hitbins_ > 0)
+//    integral_normalized_ = integral_ / double(hitbins_);
 
   find_maxima();
   find_global_maxima();
@@ -118,14 +124,18 @@ void Record::add_strip(int istrip, const std::vector<short> &strip)
     if (stop_ < istrip)
       stop_ = istrip;
 
-    num_time_bins_ = std::max(num_time_bins_, strip.size());
-
-    hitbins_ += newstrip.hitbins();
-    integral_ += newstrip.integral();
-    if (hitbins_ > 0)
-      integral_normalized_ = integral_ / double(hitbins_);
+    max_time_bins_ = std::max(max_time_bins_, strip.size());
   }
 }
+
+double Record::analytic(std::string id) const
+{
+  if (analytics_.count(id))
+    return analytics_.at(id);
+  else
+    return 0;
+}
+
 
 bool Record::empty() const
 {
@@ -158,11 +168,6 @@ std::list<size_t> Record::valid_strips() const
   return ret;
 }
 
-
-size_t Record::num_time_bins() const
-{
-  return num_time_bins_;
-}
 
 short Record::get(size_t strip, size_t timebin) const
 {
@@ -268,6 +273,52 @@ void Record::load(std::list<short> serialized)
     add_strip(strip_id, strip);
 
   }
+}
+
+void Record::analyze()
+{
+  analytics_["hit strips"] = strips_.size();
+  analytics_["strip span"] = 0;
+
+  analytics_["timebin span"] = 0;
+  analytics_["integral"] = 0;
+  analytics_["integral/hitstrips"] = 0;
+
+  if ((start_ > -1) && (stop_ > start_))
+    analytics_["strip span"] = stop_ - start_ + 1;
+
+  int tbstart{-1}, tbstop{-1};
+
+  for (auto &s : strips_)
+  {
+    if ((s.second.binstart() > -1) && ((tbstart == -1) || (s.second.binstart() < tbstart)))
+      tbstart = s.second.binstart();
+    if (s.second.binstop() > tbstop)
+      tbstop = s.second.binstop();
+
+    analytics_["integral"] += s.second.integral();
+  }
+
+  if (tbstart > -1)
+    analytics_["timebin span"] = tbstop - tbstart + 1;
+
+  if (strips_.size() > 0)
+    analytics_["integral/hitstrips"] = analytics_["integral"] / double(strips_.size());
+}
+
+void Event::analyze()
+{
+  x.analyze();
+  y.analyze();
+
+  analytics_["hit strips"] = x.analytic("hit strips") * y.analytic("hit strips");
+  analytics_["strip span"] = x.analytic("strip span") * y.analytic("strip span");
+
+  analytics_["timebin span"] = std::max(x.analytic("timebin span") , y.analytic("timebin span")); //hack
+  analytics_["integral"] = x.analytic("integral") + y.analytic("integral");
+  analytics_["integral/hitstrips"] = 0;
+  if (analytics_["hit strips"] != 0)
+    analytics_["integral/hitstrips"] = analytics_["integral"] / analytics_["hit strips"];
 }
 
 }

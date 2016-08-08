@@ -15,7 +15,7 @@ EventViewer::EventViewer(QWidget *parent) :
 
   ui->comboProjection->addItem("none");
   ui->comboProjection->addItem("Integral");
-  ui->comboProjection->addItem("Integral/bins");
+//  ui->comboProjection->addItem("Integral/bins");
 
   loadSettings();
 }
