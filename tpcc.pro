@@ -35,6 +35,14 @@ unix {
   }
 }
 
+mac {
+     CONFIG += c++11
+     QMAKE_LFLAGS += -lc++
+     LIBPATH += /usr/local/lib
+     INCLUDEPATH += /usr/local/include
+     QMAKE_CXXFLAGS += -stdlib=libc++ -Wno-c++11-narrowing
+}
+
 TARGET   = $$PWD/tpcc
 TEMPLATE = app
 

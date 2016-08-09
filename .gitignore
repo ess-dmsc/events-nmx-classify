@@ -4,6 +4,9 @@ release/*
 ui/*
 *.user
 *.log
+*.stash
+*~
+.DS_Store
 tpcc
 tpccd
 
