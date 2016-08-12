@@ -103,7 +103,7 @@ void AnalysisThread::run()
     TPC::Event evt = reader_->get_event(eventID);
 
     //    if (noneg)
-    evt.suppress_negatives();
+    evt = evt.suppress_negatives();
 
     if (/*noempty && */evt.empty())
       continue;
@@ -111,8 +111,8 @@ void AnalysisThread::run()
     if (weight_type_ != "none")
       evt.analyze();
 
-    std::list<TPC::VMMxDataPoint> vmm_x = vmm.processEvent(evt.x);
-    std::list<TPC::VMMxDataPoint> vmm_y = vmm.processEvent(evt.y);
+    std::list<TPC::VMMxDataPoint> vmm_x = vmm.processEvent(evt.x());
+    std::list<TPC::VMMxDataPoint> vmm_y = vmm.processEvent(evt.y());
     TPC::FindEntry position_x(vmm_x);
     TPC::FindEntry position_y(vmm_y);
 

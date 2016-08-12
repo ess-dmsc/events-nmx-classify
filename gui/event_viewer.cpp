@@ -116,6 +116,11 @@ void EventViewer::on_comboProjection_activated(const QString &arg1)
   plot_current_event();
 }
 
+void EventViewer::on_checkRaw_clicked()
+{
+  plot_current_event();
+}
+
 void EventViewer::plot_current_event()
 {
   int idx = ui->spinEventIdx->value();
@@ -132,11 +137,14 @@ void EventViewer::plot_current_event()
   TPC::Event evt = reader_->get_event(idx-1);
 
   if (noneg)
-    evt.suppress_negatives();
+    evt = evt.suppress_negatives();
 
-  ui->eventX->display_record(evt.x, xdims_, trim, ui->comboOverlay->currentText());
-  ui->eventY->display_record(evt.y, ydims_, trim, ui->comboOverlay->currentText());
+  ui->eventX->display_record(evt.x(), xdims_, trim, ui->checkRaw->isChecked(), ui->comboOverlay->currentText());
+  ui->eventY->display_record(evt.y(), ydims_, trim, ui->checkRaw->isChecked(), ui->comboOverlay->currentText());
 
-  ui->eventX->display_projection(evt.x, xdims_, ui->comboProjection->currentText());
-  ui->eventY->display_projection(evt.y, ydims_, ui->comboProjection->currentText());
+
+  ui->eventX->display_projection(evt.x(), xdims_, ui->comboProjection->currentText());
+  ui->eventY->display_projection(evt.y(), ydims_, ui->comboProjection->currentText());
 }
+
+

@@ -12,7 +12,7 @@ ReaderIndexedBin::ReaderIndexedBin(std::string filename)
     begin_ = file_.tellg(); //should be 0
     size_t max_events = 0;
     file_.read((char*)&max_events, sizeof(max_events));
-    DBG << "<ReaderIndexedBin> file has " << max_events << " events";
+    DBG << "<ReaderIndexedBin> " << filename << " has " << max_events << " events";
 
     std::streampos pos;
     for (size_t i=0; i < max_events * 2; ++i)
@@ -37,14 +37,10 @@ size_t ReaderIndexedBin::event_count()
 
 Event ReaderIndexedBin::get_event(size_t ievent)
 {
-  Event ret;
-  ret.x = read_dataset(ievent*2);
-  ret.y = read_dataset(ievent*2 + 1);
-  return ret;
+  return Event(read_record(ievent*2), read_record(ievent*2 + 1));
 }
 
-
-Record ReaderIndexedBin::read_dataset(size_t index)
+Record ReaderIndexedBin::read_record(size_t index)
 {
   Record ret;
 
@@ -62,7 +58,29 @@ Record ReaderIndexedBin::read_dataset(size_t index)
       serialized.push_back(val);
     }
 
-    ret.load(serialized);
+    int16_t  num_strips = serialized.front(); serialized.pop_front();
+    for (int16_t  i=0; i < num_strips; ++i)
+    {
+      int16_t strip_id = serialized.front(); serialized.pop_front();
+      int16_t  strip_length = serialized.front(); serialized.pop_front();
+
+      std::vector<int16_t> strip;
+      strip.resize(strip_length, 0);
+
+      uint16_t j = 0;
+      int16_t numero, numero_z;
+      while (!serialized.empty() && (j<strip_length) ) {
+        numero = serialized.front(); serialized.pop_front();
+        if (numero == 0) {
+          numero_z = serialized.front(); serialized.pop_front();
+          j += numero_z;
+        } else {
+          strip[j] = numero;
+          j++;
+        }
+      }
+      ret.add_strip(strip_id, Strip(strip));
+    }
   }
 
   return ret;

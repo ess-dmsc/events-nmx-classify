@@ -5,126 +5,29 @@
 
 namespace TPC {
 
-Strip::Strip(const std::vector<int16_t> &d)
-  : Strip()
+void Record::add_strip(int16_t idx, const Strip &strip)
 {
-  data_ = d;
-
-  for (size_t i=0; i < data_.size(); ++i)
+  if (idx < 0)
   {
-    auto &val = data_.at(i);
-    integral_ += val;
-    if (val != 0)
-    {
-      nonzero_ = true;
-      hitbins_++;
-
-      if (bin_start_ == -1)
-        bin_start_ = i;
-      if (i > bin_stop_)
-        bin_stop_ = i;
-    }
-  }
-
-//  if (hitbins_ > 0)
-//    integral_normalized_ = integral_ / double(hitbins_);
-
-  find_maxima();
-  find_global_maxima();
-}
-
-void Strip::find_maxima()
-{
-  maxima_.clear();
-  if (data_.size() < 1)
-    return;
-
-  if ((data_.size() > 1) && (data_[0] > data_[1]))
-    maxima_.push_back(0);
-
-
-  bool ascended = false;      //ascending move
-  for (size_t i = 0; i < (data_.size() - 1); i++)
-  {
-    long firstDiff = data_[i+ 1] - data_[i];
-    if ( firstDiff > 0 ) { ascended  = true;  }
-    if ( firstDiff < 0 )
-    {
-      if (ascended)
-        maxima_.push_back(i);
-      ascended  = false;
-    }
-  }
-
-  if ((data_.size() > 1) && (data_[data_.size()-1] > data_[data_.size()-2]))
-    maxima_.push_back(data_.size()-1);
-}
-
-void Strip::find_global_maxima()
-{
-  global_maxima_.clear();
-  if (maxima_.empty())
-    return;
-
-  int16_t maxval = data_.at(maxima_.front());
-  for (auto &m : maxima_)
-  {
-    if (data_.at(m) > maxval)
-      global_maxima_.clear();
-    if (data_.at(m) >= maxval)
-    {
-      global_maxima_.push_back(m);
-      maxval = data_.at(m);
-    }
-  }
-}
-
-
-std::vector<int16_t>  Strip::data() const
-{
-  return data_;
-}
-
-std::vector<int16_t> Strip::suppress_negatives()
-{
-  std::vector<int16_t> ret = data_;
-  for (auto &q : ret)
-    if (q < 0)
-      q = 0;
-  return ret;
-}
-
-std::string Strip::debug() const
-{
-  std::stringstream ss;
-  for (auto &q : data_)
-    ss << std::setw(5) << q;
-  return ss.str();
-}
-
-
-
-
-void Record::add_strip(int istrip, const std::vector<int16_t> &strip)
-{
-  if (istrip < 0)
-  {
-    DBG << "<Record::add_strip> bad strip index " << istrip;
+    DBG << "<Record::add_strip> bad strip index " << idx;
     return;
   }
 
-  Strip newstrip(strip);
-//  DBG << "newstrip = " << newstrip.debug();
-
-  if (newstrip.nonzero())
+  if (strip.nonzero())
   {
-    strips_[istrip] = newstrip;
-    if (start_ < 0)
-      start_ = istrip;
-    if (stop_ < istrip)
-      stop_ = istrip;
+    strips_[idx] = strip;
 
-    max_time_bins_ = std::max(max_time_bins_, strip.size());
+    if (strip_start_ < 0)
+      strip_start_ = idx;
+    else
+      strip_start_ = std::min(strip_start_, idx);
+    strip_end_ = std::max(strip_end_, idx);
+
+    if (time_start_ < 0)
+      time_start_ = strip.bin_start();
+    else
+      time_start_ = std::min(time_start_, strip.bin_start());
+    time_end_ = std::max(time_end_, strip.bin_end());
   }
 }
 
@@ -139,47 +42,50 @@ double Record::analytic(std::string id) const
 
 bool Record::empty() const
 {
-  return ((start_ < 0) || (stop_ < start_) || strips_.empty());
+  return ((strip_start_ < 0) || (strip_end_ < strip_start_) || strips_.empty());
 }
 
-void Record::suppress_negatives()
+Record Record::suppress_negatives() const
 {
   Record newrecord;
   for (auto &s : strips_)
     newrecord.add_strip(s.first, s.second.suppress_negatives());
-  *this = newrecord;
+  return newrecord;
 }
 
-size_t Record::strip_start() const
+std::list<int16_t > Record::valid_strips() const
 {
-  return start_;
-}
-
-size_t Record::strip_stop() const
-{
-  return stop_;
-}
-
-std::list<size_t> Record::valid_strips() const
-{
-  std::list<size_t> ret;
+  std::list<int16_t > ret;
   for (auto &s : strips_)
     ret.push_back(s.first);
   return ret;
 }
 
+int16_t Record::strip_span() const
+{
+  if ((strip_start_ < 0) || (strip_end_ < strip_start_))
+    return 0;
+  else
+    return strip_end_ - strip_start_ + 1;
+}
 
-int16_t Record::get(size_t strip, size_t timebin) const
+int16_t Record::time_span() const
+{
+  if ((time_start_ < 0) || (time_end_ < time_start_))
+    return 0;
+  else
+    return time_end_ - time_start_ + 1;
+}
+
+
+int16_t Record::get(int16_t  strip, int16_t  timebin) const
 {
   if (!strips_.count(strip))
     return 0;
-  const auto &stripn = strips_.at(strip);
-  if (timebin >= stripn.data().size())
-    return 0;
-  return stripn.data().at(timebin);
+  return strips_.at(strip).value(timebin);
 }
 
-Strip Record::get_strip(size_t strip) const
+Strip Record::get_strip(int16_t  strip) const
 {
   if (strips_.count(strip))
     return strips_.at(strip);
@@ -191,7 +97,7 @@ std::string Record::debug() const
 {
   std::stringstream ss;
   if (!empty())
-    ss << "[" << start_ << "-" << stop_ << "]\n";
+    ss << "[" << strip_start_ << "-" << strip_end_ << "]\n";
   else
     ss << "No valid strip range\n";
 
@@ -204,16 +110,16 @@ std::string Record::debug() const
 std::list<int16_t> Record::save() const
 {
   std::list<int16_t> ret;
-  ret.push_back(strips_.size());           //num strips;
+  ret.push_back(strips_.size());
 
   for (const auto &strip : strips_)
   {
-    ret.push_back(strip.first);              //strip id;
-    ret.push_back(strip.second.data().size()); //strip length
+    ret.push_back(strip.first);                    //strip id;
+    ret.push_back(strip.second.raw_data().size()); //strip length
 
-    //write strip using counted zero compression
+    //counted zero compression
     int16_t z_count = 0;
-    for (auto &val : strip.second.data())
+    for (auto &val : strip.second.raw_data())
       if (val != 0)
         if (z_count == 0)
           ret.push_back(val);
@@ -236,43 +142,12 @@ std::list<int16_t> Record::save() const
   return ret;
 }
 
-void Record::load(std::list<int16_t> serialized)
+std::list<std::string> Record::categories() const
 {
-  if (serialized.empty())
-    return;
-
-//  DBG << "Serialized length " << serialized.size();
-
-  size_t num_strips = serialized.front(); serialized.pop_front();
-//  DBG << "Num strips: " << num_strips;
-
-  for (size_t i=0; i < num_strips; ++i)
-  {
-    int strip_id = serialized.front(); serialized.pop_front();
-    size_t strip_length = serialized.front(); serialized.pop_front();
-
-    std::vector<int16_t> strip;
-    strip.resize(strip_length, 0);
-
-    uint16_t j = 0;
-    int16_t numero, numero_z;
-    while (!serialized.empty() && (j<strip_length) ) {
-      numero = serialized.front(); serialized.pop_front();
-      if (numero == 0) {
-        numero_z = serialized.front(); serialized.pop_front();
-        j += numero_z;
-      } else {
-        strip[j] = numero;
-        j++;
-      }
-    }
-
-//    DBG << "Strip " << strip_id << " length " << strip_length << " leftovers " << serialized.size();
-
-
-    add_strip(strip_id, strip);
-
-  }
+  std::list<std::string> ret;
+  for (auto &i : analytics_)
+    ret.push_back(i.first);
+  return ret;
 }
 
 void Record::analyze()
@@ -284,17 +159,17 @@ void Record::analyze()
   analytics_["integral"] = 0;
   analytics_["integral/hitstrips"] = 0;
 
-  if ((start_ > -1) && (stop_ > start_))
-    analytics_["strip span"] = stop_ - start_ + 1;
+  if ((strip_start_ > -1) && (strip_end_ > strip_start_))
+    analytics_["strip span"] = strip_end_ - strip_start_ + 1;
 
-  int tbstart{-1}, tbstop{-1};
+  int16_t tbstart{-1}, tbstop{-1};
 
   for (auto &s : strips_)
   {
-    if ((s.second.binstart() > -1) && ((tbstart == -1) || (s.second.binstart() < tbstart)))
-      tbstart = s.second.binstart();
-    if (s.second.binstop() > tbstop)
-      tbstop = s.second.binstop();
+    if ((s.second.bin_start() > -1) && ((tbstart == -1) || (s.second.bin_start() < tbstart)))
+      tbstart = s.second.bin_start();
+    if (s.second.bin_end() > tbstop)
+      tbstop = s.second.bin_end();
 
     analytics_["integral"] += s.second.integral();
   }
@@ -306,19 +181,5 @@ void Record::analyze()
     analytics_["integral/hitstrips"] = analytics_["integral"] / double(strips_.size());
 }
 
-void Event::analyze()
-{
-  x.analyze();
-  y.analyze();
-
-  analytics_["hit strips"] = x.analytic("hit strips") * y.analytic("hit strips");
-  analytics_["strip span"] = x.analytic("strip span") * y.analytic("strip span");
-
-  analytics_["timebin span"] = std::max(x.analytic("timebin span") , y.analytic("timebin span")); //hack
-  analytics_["integral"] = x.analytic("integral") + y.analytic("integral");
-  analytics_["integral/hitstrips"] = 0;
-  if (analytics_["hit strips"] != 0)
-    analytics_["integral/hitstrips"] = analytics_["integral"] / analytics_["hit strips"];
-}
 
 }

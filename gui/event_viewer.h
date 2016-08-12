@@ -36,6 +36,8 @@ private slots:
 
   void on_comboProjection_activated(const QString &arg1);
 
+  void on_checkRaw_clicked();
+
 private:
   Ui::EventViewer *ui;
 

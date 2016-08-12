@@ -13,12 +13,12 @@ ReaderHDF5::ReaderHDF5(std::string filename)
 
     total_ = file_.getNumObjs();//ObjCount(/*H5F_OBJ_GROUP*/);
 
-    DBG << "Found " << total_ << " items in " << filename;
+    DBG << "<ReaderHDF5> Found " << total_ << " items in " << filename;
 
   }
   catch (...)
   {
-    std::cout << "Could not open " << filename << "\n";
+    std::cout << "<ReaderHDF5> Could not open " << filename << "\n";
   }
 
 }
@@ -35,33 +35,27 @@ size_t ReaderHDF5::event_count()
 
 Event ReaderHDF5::get_event(size_t ievent)
 {
-  Event ret;
-
   if (ievent >= total_)
-    return ret;
+    return Event();
 
   Group group;
-
   try
   {
     std::string name = "Event" + std::to_string(ievent);//file_.getObjnameByIdx(ievent);
-    DBG << "Opening event number " << ievent << " name " << name;
+//    DBG << "<ReaderHDF5> Opening event number " << ievent << " name " << name;
     group = file_.openGroup(name);
   }
   catch (...)
   {
-    DBG << "Failed to read hdf5 event " << ievent << "\n";
-    return ret;
+    DBG << "<ReaderHDF5> Failed to read event " << ievent;
+    return Event();
   }
 
-  ret.x = read_dataset(group, "X");
-  ret.y = read_dataset(group, "Y");
-
-  return ret;
+  return Event(read_record(group, "X"), read_record(group, "Y"));
 }
 
 
-Record ReaderHDF5::read_dataset(Group group, std::string id)
+Record ReaderHDF5::read_record(Group group, std::string id)
 {
   Record ret;
 
@@ -80,7 +74,7 @@ Record ReaderHDF5::read_dataset(Group group, std::string id)
 
     size_t data_size = dimsr[0] * dimsr[1];
 
-    DBG << "dims " << dimsr[0] << " x " << dimsr[1] << " data size " << data_size;
+//    DBG << "<ReaderHDF5> dims " << dimsr[0] << " x " << dimsr[1] << " data size " << data_size;
 
     std::vector<short> data;
     data.resize(data_size);
@@ -95,12 +89,12 @@ Record ReaderHDF5::read_dataset(Group group, std::string id)
       {
         strip.push_back(data[j*dimsr[1] + i]);
       }
-      ret.add_strip(j, strip);
+      ret.add_strip(j, Strip(strip));
     }
   }
   catch (...)
   {
-    DBG << "Failed to read hdf5 record " << id << "\n";
+    DBG << "<ReaderHDF5> Failed to read record " << id;
   }
 
   return ret;

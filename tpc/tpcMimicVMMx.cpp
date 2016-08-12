@@ -11,13 +11,12 @@ std::list<VMMxDataPoint> MimicVMMx::processEvent(const Record &record)
   /** Finds the local maximas in event */
 
   for (auto i : record.valid_strips())
-    ret.splice(ret.end(), examine_strip(record.get_strip(i).data(), i));
+    ret.splice(ret.end(), examine_strip(record.get_strip(i).raw_data(), i));
 
   return ret;
 }
 
-std::list<VMMxDataPoint> MimicVMMx::examine_strip(const std::vector<int16_t>& strip,
-                                                     const int &stripID)
+std::list<VMMxDataPoint> MimicVMMx::examine_strip(const std::vector<int16_t>& strip, int stripID)
 {
   std::list<VMMxDataPoint> ret;
 
@@ -62,13 +61,13 @@ std::list<VMMxDataPoint> MimicVMMx::examine_strip(const std::vector<int16_t>& st
   return ret;
 }
 
-void MimicVMMx::setADCThreshold(const int16_t &ADCthreshold)
+void MimicVMMx::setADCThreshold(int16_t ADCthreshold)
 {
   adcthreshold = ADCthreshold;
 //  DBG << "<MimicVMMx> ADC peak threshold set to: " << adcthreshold;
 }
 
-void MimicVMMx::setNTimebinsOverThreshold(const int &NtbOverThreshold)
+void MimicVMMx::setNTimebinsOverThreshold(int NtbOverThreshold)
 {
   tboverthreshold = NtbOverThreshold;
 //  DBG << "<MimicVMMx> Required number of timebins over threshold: " << tboverthreshold;

@@ -23,8 +23,8 @@ Analyzer::Analyzer(QWidget *parent) :
   TPC::Event dummy;
   dummy.analyze();
   ui->comboWeights->addItem("none");
-  for (auto &c : dummy.analytics_)
-    ui->comboWeights->addItem(QString::fromStdString(c.first));
+  for (auto &c : dummy.categories())
+    ui->comboWeights->addItem(QString::fromStdString(c));
 
   ui->plot->set_antialiased(false);
   ui->plot->set_scale_type("Linear");

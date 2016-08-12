@@ -57,10 +57,10 @@ public:
   std::list<VMMxDataPoint> processEvent(const Record &event);
 
   /** Set the ADC threshold */
-  void setADCThreshold(const int16_t &ADCthreshold);
+  void setADCThreshold(int16_t ADCthreshold);
   /** Set the minimum number of timebins over the ADC threshold required
      *  for a local max */
-  void setNTimebinsOverThreshold(const int &NtbOverThreshold);
+  void setNTimebinsOverThreshold(int NtbOverThreshold);
 
 private:
   /** Threshold for an ADC-value to be considered beloning to a maxima */
@@ -68,8 +68,7 @@ private:
   /** Minimum length of the maxima to be stored */
   int   tboverthreshold {0};
 
-  std::list<VMMxDataPoint> examine_strip(const std::vector<int16_t>&,
-                                         const int &stripID);
+  std::list<VMMxDataPoint> examine_strip(const std::vector<int16_t>&, int stripID);
 };
 
 }

@@ -21,7 +21,7 @@ public:
   explicit RecordViewer(QWidget *parent = 0);
   ~RecordViewer();
 
-  void display_record(const TPC::Record record, TPC::Dimensions dim, bool trim, QString secondary);
+  void display_record(const TPC::Record record, TPC::Dimensions dim, bool trim, bool raw, QString secondary);
   void display_projection(const TPC::Record &record, TPC::Dimensions dim, QString codomain);
 
   bool save_close();

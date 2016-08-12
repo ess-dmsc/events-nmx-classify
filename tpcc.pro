@@ -33,7 +33,7 @@ unix {
     CONFIG -= c++11
     QMAKE_CXXFLAGS += -std=c++11
     INCLUDEPATH += /usr/include/hdf5/serial
-    LIBPATH += /usr/lib/hdf5/serial
+    #LIBPATH += /usr/lib/hdf5/serial
   }
 }
 

@@ -67,6 +67,16 @@
       </widget>
      </item>
      <item>
+      <widget class="QCheckBox" name="checkRaw">
+       <property name="text">
+        <string>show raw data</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QLabel" name="label_2">
        <property name="minimumSize">
         <size>
