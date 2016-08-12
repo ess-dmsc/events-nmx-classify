@@ -5,7 +5,7 @@
 
 namespace TPC {
 
-Strip::Strip(const std::vector<short> &d)
+Strip::Strip(const std::vector<int16_t> &d)
   : Strip()
 {
   data_ = d;
@@ -66,7 +66,7 @@ void Strip::find_global_maxima()
   if (maxima_.empty())
     return;
 
-  short maxval = data_.at(maxima_.front());
+  int16_t maxval = data_.at(maxima_.front());
   for (auto &m : maxima_)
   {
     if (data_.at(m) > maxval)
@@ -80,14 +80,14 @@ void Strip::find_global_maxima()
 }
 
 
-std::vector<short>  Strip::data() const
+std::vector<int16_t>  Strip::data() const
 {
   return data_;
 }
 
-std::vector<short> Strip::suppress_negatives()
+std::vector<int16_t> Strip::suppress_negatives()
 {
-  std::vector<short> ret = data_;
+  std::vector<int16_t> ret = data_;
   for (auto &q : ret)
     if (q < 0)
       q = 0;
@@ -105,7 +105,7 @@ std::string Strip::debug() const
 
 
 
-void Record::add_strip(int istrip, const std::vector<short> &strip)
+void Record::add_strip(int istrip, const std::vector<int16_t> &strip)
 {
   if (istrip < 0)
   {
@@ -169,7 +169,7 @@ std::list<size_t> Record::valid_strips() const
 }
 
 
-short Record::get(size_t strip, size_t timebin) const
+int16_t Record::get(size_t strip, size_t timebin) const
 {
   if (!strips_.count(strip))
     return 0;
@@ -201,9 +201,9 @@ std::string Record::debug() const
   return ss.str();
 }
 
-std::list<short> Record::save() const
+std::list<int16_t> Record::save() const
 {
-  std::list<short> ret;
+  std::list<int16_t> ret;
   ret.push_back(strips_.size());           //num strips;
 
   for (const auto &strip : strips_)
@@ -212,7 +212,7 @@ std::list<short> Record::save() const
     ret.push_back(strip.second.data().size()); //strip length
 
     //write strip using counted zero compression
-    short z_count = 0;
+    int16_t z_count = 0;
     for (auto &val : strip.second.data())
       if (val != 0)
         if (z_count == 0)
@@ -236,7 +236,7 @@ std::list<short> Record::save() const
   return ret;
 }
 
-void Record::load(std::list<short> serialized)
+void Record::load(std::list<int16_t> serialized)
 {
   if (serialized.empty())
     return;
@@ -251,11 +251,11 @@ void Record::load(std::list<short> serialized)
     int strip_id = serialized.front(); serialized.pop_front();
     size_t strip_length = serialized.front(); serialized.pop_front();
 
-    std::vector<short> strip;
+    std::vector<int16_t> strip;
     strip.resize(strip_length, 0);
 
     uint16_t j = 0;
-    short numero, numero_z;
+    int16_t numero, numero_z;
     while (!serialized.empty() && (j<strip_length) ) {
       numero = serialized.front(); serialized.pop_front();
       if (numero == 0) {

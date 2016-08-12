@@ -3,6 +3,7 @@
 #include <numeric>
 #include <cstdint>
 #include "tpcReaderIndexedBin.h"
+#include "tpcReaderHDF5.h"
 #include "tpcMimicVMMx.h"
 #include "tpcFindEntry.h"
 
@@ -71,7 +72,8 @@ void tpcc::saveSettings()
 
 void tpcc::on_toolOpen_clicked()
 {
-  QString fileName = QFileDialog::getOpenFileName(this, "Load TPC data", data_directory_, "indexed binary (*.bin)");
+  QString fileName = QFileDialog::getOpenFileName(this, "Load TPC data", data_directory_, "indexed binary (*.bin);;"
+                                                                                          "HDF5 (*.h5)");
   if (!validateFile(this, fileName, false))
     return;
 
@@ -82,7 +84,17 @@ bool tpcc::open_file(QString fileName)
 {
   data_directory_ = path_of_file(fileName);
 
-  reader_ = std::make_shared<TPC::ReaderIndexedBin>(fileName.toStdString());
+  QFileInfo info(fileName);
+
+  if (info.suffix() == "h5")
+    reader_ = std::make_shared<TPC::ReaderHDF5>(fileName.toStdString());
+  else if (info.suffix() == "bin")
+    reader_ = std::make_shared<TPC::ReaderIndexedBin>(fileName.toStdString());
+  else
+  {
+    ERR << "invalid file type";
+    return false;
+  }
 
   event_viewer_->set_new_source(reader_, xdims_, ydims_);
   analyzer_->set_new_source(reader_, xdims_, ydims_);

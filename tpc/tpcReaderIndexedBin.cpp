@@ -54,8 +54,8 @@ Record ReaderIndexedBin::read_dataset(size_t index)
     size_t serialized_length = 0;
     file_.read((char*)&serialized_length, sizeof(serialized_length));
 
-    std::list<short> serialized;
-    short val;
+    std::list<int16_t> serialized;
+    int16_t val;
     for (size_t i=0; i < serialized_length; ++i)
     {
       file_.read((char*)&val, sizeof(val));

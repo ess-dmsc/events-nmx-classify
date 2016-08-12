@@ -23,28 +23,28 @@ class Strip
 {
 public:
   Strip() {}
-  Strip(const std::vector<short> &d);
-  std::vector<short>  data() const;
+  Strip(const std::vector<int16_t> &d);
+  std::vector<int16_t>  data() const;
 
   std::string debug() const;
 
-  std::vector<short> suppress_negatives();
+  std::vector<int16_t> suppress_negatives();
 
   bool nonzero() const {return nonzero_;}
-  short hitbins() const {return hitbins_;}
-  short binstart() const {return bin_start_;}
-  short binstop() const {return bin_stop_;}
+  int16_t hitbins() const {return hitbins_;}
+  int16_t binstart() const {return bin_start_;}
+  int16_t binstop() const {return bin_stop_;}
   uint64_t integral() const {return integral_;}
   std::list<size_t> maxima() const {return maxima_;}
   std::list<size_t> global_maxima() const {return global_maxima_;}
 
 private:
-  std::vector<short> data_;
+  std::vector<int16_t> data_;
 
   bool              nonzero_ {false};
-  short             hitbins_ {0};
-  short             bin_start_{-1};
-  short             bin_stop_{-1};
+  int16_t             hitbins_ {0};
+  int16_t             bin_start_{-1};
+  int16_t             bin_stop_{-1};
   uint64_t          integral_ {0};
   std::list<size_t> maxima_;
   std::list<size_t> global_maxima_;
@@ -56,7 +56,7 @@ private:
 class Record
 {
 public:
-  void add_strip(int istrip, const std::vector<short> &raw);
+  void add_strip(int istrip, const std::vector<int16_t> &raw);
 
   bool empty() const;
   std::string debug() const;
@@ -67,13 +67,13 @@ public:
 
   size_t max_time_bins() const {return max_time_bins_;}
 
-  short get(size_t strip, size_t timebin) const;
+  int16_t get(size_t strip, size_t timebin) const;
   Strip get_strip(size_t strip) const;
 
 
   // save/load with zero suppression
-  std::list<short> save() const;
-  void load(std::list<short>);
+  std::list<int16_t> save() const;
+  void load(std::list<int16_t>);
 
   void suppress_negatives();
 

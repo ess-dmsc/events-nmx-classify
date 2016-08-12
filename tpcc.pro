@@ -23,7 +23,7 @@ unix {
 
    LIBS += -lm -ldl -lz \
            -lboost_system -lboost_date_time -lboost_thread -lboost_log \
-           -lboost_filesystem -lboost_log_setup -lboost_timer -lboost_regex
+           -lboost_filesystem -lboost_log_setup -lboost_timer -lboost_regex -lhdf5_hl_cpp -lhdf5_cpp -lhdf5_serial
 
   target.path = /usr/local/bin/
       
@@ -32,6 +32,8 @@ unix {
   !mac {
     CONFIG -= c++11
     QMAKE_CXXFLAGS += -std=c++11
+    INCLUDEPATH += /usr/include/hdf5/serial
+    LIBPATH += /usr/lib/hdf5/serial
   }
 }
 

@@ -16,7 +16,7 @@ std::list<VMMxDataPoint> MimicVMMx::processEvent(const Record &record)
   return ret;
 }
 
-std::list<VMMxDataPoint> MimicVMMx::examine_strip(const std::vector<short>& strip,
+std::list<VMMxDataPoint> MimicVMMx::examine_strip(const std::vector<int16_t>& strip,
                                                      const int &stripID)
 {
   std::list<VMMxDataPoint> ret;
@@ -25,7 +25,7 @@ std::list<VMMxDataPoint> MimicVMMx::examine_strip(const std::vector<short>& stri
   int tb0 {0};
   int tb1 {0};
   int maxBin {0};
-  short maxADC {0};
+  int16_t maxADC {0};
 
   for (size_t timebin=0; timebin < strip.size(); ++timebin)
   {
@@ -62,7 +62,7 @@ std::list<VMMxDataPoint> MimicVMMx::examine_strip(const std::vector<short>& stri
   return ret;
 }
 
-void MimicVMMx::setADCThreshold(const short &ADCthreshold)
+void MimicVMMx::setADCThreshold(const int16_t &ADCthreshold)
 {
   adcthreshold = ADCthreshold;
 //  DBG << "<MimicVMMx> ADC peak threshold set to: " << adcthreshold;
