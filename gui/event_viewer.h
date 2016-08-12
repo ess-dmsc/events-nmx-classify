@@ -3,8 +3,10 @@
 
 #include <QWidget>
 #include <QItemSelection>
-#include "tpcReader.h"
 #include <memory>
+
+#include "tpcReader.h"
+#include "tpcDimensions.h"
 
 #include "widget_plot2d.h"
 
