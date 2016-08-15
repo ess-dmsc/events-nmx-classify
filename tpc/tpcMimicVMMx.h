@@ -1,8 +1,6 @@
 #ifndef MimicVMMx_HH
 #define MimicVMMx_HH
 
-#include <list>
-
 #include "tpcRecord.h"
 
 namespace TPC {
@@ -69,6 +67,11 @@ private:
   int   tboverthreshold {0};
 
   std::list<VMMxDataPoint> examine_strip(const std::vector<int16_t>&, int stripID);
+};
+
+struct VMMxEvent
+{
+  std::list<VMMxDataPoint> x, y;
 };
 
 }

@@ -12,7 +12,7 @@ struct Dimensions
   double min {-50};
   double max { 50};
 
-  double transfrom(double strip)
+  double transform(double strip)
     { return (strip + 0.5) * (max - min) / double(strips) + min; }
 };
 

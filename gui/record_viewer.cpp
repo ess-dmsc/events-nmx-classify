@@ -67,12 +67,12 @@ void RecordViewer::display_record(const TPC::Record record, TPC::Dimensions dim,
   TPC::Dimensions xdim = dim;
   if (trim)
   {
-    xdim.min = dim.transfrom(record.strip_start()-0.5);
-    xdim.max = dim.transfrom(record.strip_end()+0.5);
+    xdim.min = dim.transform(record.strip_start()-0.5);
+    xdim.max = dim.transform(record.strip_end()+0.5);
     xdim.strips = record.strip_end() - record.strip_start() + 1;
   }
 
-  ui->plotRecord->set_axes("Position (mm)", xdim.transfrom(0), xdim.transfrom(xdim.strips-1),
+  ui->plotRecord->set_axes("Position (mm)", xdim.transform(0), xdim.transform(xdim.strips-1),
                            "Time bin",                      0,    record.time_end(),
                            "Charge");
 
@@ -119,9 +119,9 @@ std::list<MarkerBox2D> RecordViewer::maxima(const TPC::Record &record, TPC::Dime
     for (auto m : strip.maxima())
     {
       MarkerBox2D box;
-      box.x_c = dim.transfrom(stripi);
-      box.x1 = dim.transfrom(stripi - 0.45);
-      box.x2 = dim.transfrom(stripi + 0.45);
+      box.x_c = dim.transform(stripi);
+      box.x1 = dim.transform(stripi - 0.45);
+      box.x2 = dim.transform(stripi + 0.45);
       box.y_c = m;
       box.y1 = m - 0.45;
       box.y2 = m + 0.45;
@@ -130,9 +130,9 @@ std::list<MarkerBox2D> RecordViewer::maxima(const TPC::Record &record, TPC::Dime
     for (auto m : strip.global_maxima())
     {
       MarkerBox2D box;
-      box.x_c = dim.transfrom(stripi);
-      box.x1 = dim.transfrom(stripi - 0.2);
-      box.x2 = dim.transfrom(stripi + 0.2);
+      box.x_c = dim.transform(stripi);
+      box.x1 = dim.transform(stripi - 0.2);
+      box.x2 = dim.transform(stripi + 0.2);
       box.y_c = m;
       box.y1 = m - 0.2;
       box.y2 = m + 0.2;
@@ -161,16 +161,16 @@ std::list<MarkerBox2D> RecordViewer::VMMx(const TPC::Record &record, TPC::Dimens
       stripi -= record.strip_start();
 
     MarkerBox2D box;
-    box.x_c = dim.transfrom(stripi);
-    box.x1 = dim.transfrom(stripi - 0.45);
-    box.x2 = dim.transfrom(stripi + 0.45);
+    box.x_c = dim.transform(stripi);
+    box.x1 = dim.transform(stripi - 0.45);
+    box.x2 = dim.transform(stripi + 0.45);
     box.y_c = m.maxBin;
     box.y1  = m.locMaxStart - 0.45;
     box.y2  = m.locMaxStart + m.locMaxLength + 0.45;
     ret.push_back(box);
 
-    box.x1 = dim.transfrom(stripi - 0.2);
-    box.x2 = dim.transfrom(stripi + 0.2);
+    box.x1 = dim.transform(stripi - 0.2);
+    box.x2 = dim.transform(stripi + 0.2);
     box.y1  = m.maxBin - 0.2;
     box.y2  = m.maxBin + 0.2;
     ret.push_back(box);
@@ -182,9 +182,9 @@ std::list<MarkerBox2D> RecordViewer::VMMx(const TPC::Record &record, TPC::Dimens
 
   MarkerBox2D box;
   box.mark_center = true;
-  box.x_c = dim.transfrom(stripi);
-  box.x1 = dim.transfrom(stripi - 0.2);
-  box.x2 = dim.transfrom(stripi + 0.2);
+  box.x_c = dim.transform(stripi);
+  box.x1 = dim.transform(stripi - 0.2);
+  box.x2 = dim.transform(stripi + 0.2);
   box.y_c = position.tb;
   box.y1  = position.tb - 0.2;
   box.y2  = position.tb + 0.2;
@@ -207,7 +207,7 @@ void RecordViewer::display_projection(const TPC::Record &record, TPC::Dimensions
     for (size_t i = record.strip_start(); i <= record.strip_end(); ++i)
     {
       auto strip = record.get_strip(i);
-      double xx = dim.transfrom(i);
+      double xx = dim.transform(i);
       double yy = 0;
 
       if (codomain == "Integral")

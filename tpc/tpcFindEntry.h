@@ -1,7 +1,6 @@
 #ifndef FindEntry_H
 #define FindEntry_H
 
-#include <list>
 #include "tpcMimicVMMx.h"
 
 namespace TPC
@@ -33,6 +32,11 @@ public:
 
   int strip {-1};
   int tb {-1};
+};
+
+struct EntryPosition
+{
+  FindEntry x,y;
 };
 
 }

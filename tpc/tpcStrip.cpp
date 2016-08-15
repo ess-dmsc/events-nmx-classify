@@ -1,4 +1,5 @@
 #include "tpcStrip.h"
+
 #include <iomanip>
 #include <sstream>
 
@@ -9,7 +10,7 @@ Strip::Strip(const std::vector<int16_t> &d)
 {
   data_ = d;
 
-  for (int16_t i=0; i < data_.size(); ++i)
+  for (size_t i=0; i < data_.size(); ++i)
   {
     auto &val = data_.at(i);
     integral_ += val;
@@ -30,7 +31,7 @@ Strip::Strip(const std::vector<int16_t> &d)
 
 int16_t Strip::value(int16_t timebin) const
 {
-  if ((timebin < 0) || (timebin >= data_.size()))
+  if ((timebin < 0) || (timebin >= static_cast<int16_t>(data_.size())))
     return 0;
   else
     return data_.at(timebin);

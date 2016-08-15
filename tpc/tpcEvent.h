@@ -2,9 +2,6 @@
 #define TPC_EVENT_H
 
 #include "tpcRecord.h"
-#include <string>
-#include <map>
-
 
 namespace TPC
 {

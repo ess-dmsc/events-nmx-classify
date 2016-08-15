@@ -2,7 +2,6 @@
 #define TPC_READER_H
 
 #include "tpcEvent.h"
-#include <string>
 
 namespace TPC {
 

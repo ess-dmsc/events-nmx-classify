@@ -2,9 +2,7 @@
 #define TPC_RECORD_H
 
 #include "tpcStrip.h"
-#include <vector>
-#include <list>
-#include <string>
+
 #include <map>
 
 namespace TPC
@@ -20,11 +18,11 @@ public:
 
   int16_t strip_start() const {return strip_start_;}
   int16_t   strip_end() const {return strip_end_;}
-  int16_t  strip_span() const;
+  size_t  strip_span() const;
 
   int16_t time_start() const {return time_start_;}
   int16_t   time_end() const {return time_end_;}
-  int16_t  time_span() const;
+  size_t  time_span() const;
 
   std::list<int16_t > valid_strips() const;
 

@@ -1,6 +1,7 @@
+#include "tpcMimicVMMx.h"
 #include "custom_logger.h"
 
-#include "tpcMimicVMMx.h"
+#include <limits>
 
 namespace TPC {
 
@@ -24,7 +25,7 @@ std::list<VMMxDataPoint> MimicVMMx::examine_strip(const std::vector<int16_t>& st
   int tb0 {0};
   int tb1 {0};
   int maxBin {0};
-  int16_t maxADC {0};
+  int16_t maxADC {std::numeric_limits<int16_t>::min()};
 
   for (size_t timebin=0; timebin < strip.size(); ++timebin)
   {

@@ -131,8 +131,8 @@ void Analyzer::resetPlot2D()
 {
   ui->plot->reset_content();
   ui->plot->set_boxes(std::list<MarkerBox2D>());
-  ui->plot->set_axes("X (mm)", xdims_.transfrom(0), xdims_.transfrom(xdims_.strips-1),
-                     "Y (mm)", xdims_.transfrom(0), xdims_.transfrom(xdims_.strips-1),
+  ui->plot->set_axes("X (mm)", xdims_.transform(0), xdims_.transform(xdims_.strips-1),
+                     "Y (mm)", xdims_.transform(0), xdims_.transform(xdims_.strips-1),
                      "Count");
   ui->plot->refresh();
 }
@@ -269,12 +269,12 @@ void Analyzer::update_gates(double x, double y)
   int y2 = y + ui->spinBoxHeight->value();
 
   MarkerBox2D box;
-  box.x_c = xdims_.transfrom(x);
-  box.x1 = xdims_.transfrom(x1);
-  box.x2 = xdims_.transfrom(x2);
-  box.y_c = ydims_.transfrom(y);
-  box.y1 = ydims_.transfrom(y1);
-  box.y2 = ydims_.transfrom(y2);
+  box.x_c = xdims_.transform(x);
+  box.x1 = xdims_.transform(x1);
+  box.x2 = xdims_.transform(x2);
+  box.y_c = ydims_.transform(y);
+  box.y1 = ydims_.transform(y1);
+  box.y2 = ydims_.transform(y2);
   box.selectable = false;
   box.selected = true;
 

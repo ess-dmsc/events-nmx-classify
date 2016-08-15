@@ -18,7 +18,7 @@ ReaderHDF5::ReaderHDF5(std::string filename)
   }
   catch (...)
   {
-    std::cout << "<ReaderHDF5> Could not open " << filename << "\n";
+    ERR << "<ReaderHDF5> Could not open " << filename << "\n";
   }
 
 }
@@ -82,10 +82,10 @@ Record ReaderHDF5::read_record(Group group, std::string id)
     DataSpace memspace(rank, dimsr, dimsr);
     dataset.read(data.data(), PredType::STD_I16LE, memspace, filespace);
 
-    for (int j = 0; j < dimsr[0]; j++)
+    for (size_t j = 0; j < dimsr[0]; j++)
     {
       std::vector<short> strip;
-      for (int i = 0; i < dimsr[1]; i++)
+      for (size_t i = 0; i < dimsr[1]; i++)
       {
         strip.push_back(data[j*dimsr[1] + i]);
       }

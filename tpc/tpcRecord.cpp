@@ -1,5 +1,6 @@
 #include "tpcRecord.h"
 #include "custom_logger.h"
+
 #include <iomanip>
 #include <sstream>
 
@@ -61,7 +62,7 @@ std::list<int16_t > Record::valid_strips() const
   return ret;
 }
 
-int16_t Record::strip_span() const
+size_t Record::strip_span() const
 {
   if ((strip_start_ < 0) || (strip_end_ < strip_start_))
     return 0;
@@ -69,7 +70,7 @@ int16_t Record::strip_span() const
     return strip_end_ - strip_start_ + 1;
 }
 
-int16_t Record::time_span() const
+size_t Record::time_span() const
 {
   if ((time_start_ < 0) || (time_end_ < time_start_))
     return 0;
