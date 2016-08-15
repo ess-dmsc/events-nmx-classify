@@ -116,15 +116,18 @@ void AnalysisThread::run()
     TPC::FindEntry position_x(vmm_x);
     TPC::FindEntry position_y(vmm_y);
 
-    double quality = 0;
+    double quality_x {0};
+    double quality_y {0};
     if (weight_type_ != "none")
-      quality = evt.analytic(weight_type_.toStdString());
-
-    quality /= normalize_by_;
+    {
+      quality_x = evt.x().analytic(weight_type_.toStdString()) / normalize_by_;
+      quality_y = evt.y().analytic(weight_type_.toStdString()) / normalize_by_;
+    }
 
     std::pair<int,int> pos{position_x.strip, position_y.strip};
 
-    data_[int(quality)][pos]++;
+    data_[int(quality_x)][pos]++;
+    data_[int(quality_y)][pos]++;
 
     good++;
 

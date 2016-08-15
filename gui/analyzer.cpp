@@ -20,7 +20,7 @@ Analyzer::Analyzer(QWidget *parent) :
   ui->plotSubhist->set_plot_style("Step center");
   ui->plotSubhist->set_visible_options(ShowOptions::thickness | ShowOptions::scale | ShowOptions::grid | ShowOptions::save);
 
-  TPC::Event dummy;
+  TPC::Record dummy;
   dummy.analyze();
   ui->comboWeights->addItem("none");
   for (auto &c : dummy.categories())

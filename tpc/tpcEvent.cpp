@@ -44,14 +44,14 @@ void Event::analyze()
   x_.analyze();
   y_.analyze();
 
-  analytics_["hit strips"] = x_.analytic("hit strips") * y_.analytic("hit strips");
-  analytics_["strip span"] = x_.analytic("strip span") * y_.analytic("strip span");
+//  analytics_["hit strips"] = x_.analytic("hit strips") * y_.analytic("hit strips");
+//  analytics_["strip span"] = x_.analytic("strip span") * y_.analytic("strip span");
 
-  analytics_["timebin span"] = std::max(x_.analytic("timebin span") , y_.analytic("timebin span")); //hack
-  analytics_["integral"] = x_.analytic("integral") + y_.analytic("integral");
-  analytics_["integral/hitstrips"] = 0;
-  if (analytics_["hit strips"] != 0)
-    analytics_["integral/hitstrips"] = analytics_["integral"] / analytics_["hit strips"];
+//  analytics_["timebin span"] = std::max(x_.analytic("timebin span") , y_.analytic("timebin span")); //hack
+//  analytics_["integral"] = x_.analytic("integral") + y_.analytic("integral");
+//  analytics_["integral/hitstrips"] = 0;
+//  if (analytics_["hit strips"] != 0)
+//    analytics_["integral/hitstrips"] = analytics_["integral"] / analytics_["hit strips"];
 }
 
 }

@@ -3,6 +3,7 @@
 
 #include <iomanip>
 #include <sstream>
+#include <set>
 
 namespace TPC {
 
@@ -154,32 +155,56 @@ std::list<std::string> Record::categories() const
 void Record::analyze()
 {
   analytics_["hit strips"] = strips_.size();
-  analytics_["strip span"] = 0;
-
-  analytics_["timebin span"] = 0;
-  analytics_["integral"] = 0;
-  analytics_["integral/hitstrips"] = 0;
 
   if ((strip_start_ > -1) && (strip_end_ > strip_start_))
     analytics_["strip span"] = strip_end_ - strip_start_ + 1;
+  else
+    analytics_["strip span"] = 0;
 
-  int16_t tbstart{-1}, tbstop{-1};
 
+  analytics_["integral"] = 0;
+  analytics_["non-empty words"] = 0;
+
+   int16_t tbstart{-1}, tbstop{-1};
+
+  std::set<int> tbins;
   for (auto &s : strips_)
   {
-    if ((s.second.bin_start() > -1) && ((tbstart == -1) || (s.second.bin_start() < tbstart)))
+    if (s.second.nonzero() && ((tbstart == -1) || (s.second.bin_start() < tbstart)))
       tbstart = s.second.bin_start();
     if (s.second.bin_end() > tbstop)
       tbstop = s.second.bin_end();
 
     analytics_["integral"] += s.second.integral();
+    analytics_["non-empty words"] += s.second.num_valid_bins();
+
+    if (s.second.nonzero())
+      for (int i=s.second.bin_start(); i <= s.second.bin_end(); ++i)
+        if (s.second.value(i) != 0)
+          tbins.insert(i);
   }
+  analytics_["hit timebins"] = tbins.size();
 
   if (tbstart > -1)
     analytics_["timebin span"] = tbstop - tbstart + 1;
+  else
+    analytics_["timebin span"] = 0;
 
   if (strips_.size() > 0)
     analytics_["integral/hitstrips"] = analytics_["integral"] / double(strips_.size());
+  else
+    analytics_["integral/hitstrips"] = 0;
+
+  if (analytics_["strip span"] > 0)
+    analytics_["strip density"] = analytics_["hit strips"] / analytics_["strip span"];
+  else
+    analytics_["strip density"] = 0;
+
+  if (analytics_["timebin span"])
+    analytics_["time density"] = analytics_["hit timebins"] / analytics_["timebin span"];
+  else
+    analytics_["time density"] = 0;
+
 }
 
 
