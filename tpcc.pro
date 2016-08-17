@@ -21,17 +21,26 @@ unix {
      QMAKE_CC = g++
   }
 
-   LIBS += -lm -ldl -lz \
-           -lboost_system -lboost_date_time -lboost_thread -lboost_log \
-           -lboost_filesystem -lboost_log_setup -lboost_timer -lboost_regex -lhdf5_hl_cpp -lhdf5_cpp
+  H5SERIAL = $$system(ldconfig -p | grep hdf5_serial)
+
+  LIBS += -lm -ldl -lz \
+          -lboost_system -lboost_date_time -lboost_thread -lboost_log \
+          -lboost_filesystem -lboost_log_setup -lboost_timer -lboost_regex -lhdf5_cpp
 
   target.path = /usr/local/bin/
       
   LIBPATH += /usr/local/lib
 
+  contains (H5SERIAL, libhdf5_serial) {
+    LIBS += -lhdf5_serial -lhdf5_serial_hl
+  }
+
+  !contains (H5SERIAL, libhdf5_serial) {
+    LIBS += -lhdf5 -lhdf5_hl_cpp
+  }
+
   !mac {
     CONFIG -= c++11
-    LIBS += -lhdf5_serial
     QMAKE_CXXFLAGS += -std=c++11
     INCLUDEPATH += /usr/include/hdf5/serial
     #LIBPATH += /usr/lib/hdf5/serial
@@ -40,7 +49,6 @@ unix {
 
 mac {
      CONFIG += c++11
-     LIBS += -lhdf5
      QMAKE_LFLAGS += -lc++
      LIBPATH += /usr/local/lib
      INCLUDEPATH += /usr/local/include
