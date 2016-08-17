@@ -39,8 +39,7 @@ private slots:
   void on_pushStop_clicked();
 
   void update_data(std::shared_ptr<EntryList> data, double percent_done);
-  void update_histogram(std::shared_ptr<EntryList> histo, QString codomain);
-  void update_subhist(std::shared_ptr<EntryList> histo, QString codomain);
+  void update_histograms(std::shared_ptr<MultiHists>);
 
   void run_complete();
 
@@ -48,7 +47,8 @@ private slots:
 
   void on_spinMax_editingFinished();
 
-  void update_gates(double x, double y);
+  void update_box(double x, double y);
+  void update_gates();
 
 private:
   Ui::Analyzer *ui;
@@ -57,6 +57,8 @@ private:
 
   TPC::Dimensions xdims_;
   TPC::Dimensions ydims_;
+
+  int box_x_{0}, box_y_{0};
 
   Marker1D marker_;
 

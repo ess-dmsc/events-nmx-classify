@@ -77,7 +77,7 @@ void CustomLogger::initLogger(std::string log_file_N, std::ostream *gui_stream)
 
 void CustomLogger::closeLogger()
 {
-  DBG << "<CustomLogger> Closing logger sinks";
+//  DBG << "<CustomLogger> Closing logger sinks";
   logging::core::get()->remove_all_sinks();
 }
 

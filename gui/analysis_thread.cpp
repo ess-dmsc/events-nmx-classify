@@ -48,18 +48,15 @@ void AnalysisThread::set_bounds(int min, int max)
   max_.store(max);
 
   if (!isRunning())
-    make_projection();
+    make_projections();
 }
 
-void AnalysisThread::set_box_bounds(int x1, int x2, int y1, int y2)
+void AnalysisThread::request_hists(QVector<HistParams> par)
 {
-  x1_.store(x1);
-  x2_.store(x2);
-  y1_.store(y1);
-  y2_.store(y2);
+  subset_params_ = par;
 
   if (!isRunning())
-    make_projection();
+    make_projections();
 }
 
 void AnalysisThread::set_refresh_frequency(int secs)
@@ -138,43 +135,50 @@ void AnalysisThread::run()
     {
       DBG << "Processed " << int(percent) << "% (" << eventID + 1 << " of " << evt_count
           << ")  good events: " << int(percent_good) << "%";
-      make_projection();
+      make_projections();
       timer.start(refresh_frequency_.load() * 1000.0);
     }
   }
 
-  make_projection();
+  make_projections();
   emit run_complete();
 }
 
-void AnalysisThread::make_projection()
+void AnalysisThread::make_projections()
 {
   int min = min_.load();
   int max = max_.load();
-  int x1 = x1_.load();
-  int x2 = x2_.load();
-  int y1 = y1_.load();
-  int y2 = y2_.load();
 
   std::map<std::pair<int,int>, double> projection;
-  std::map<int, double> histogram;
-  std::map<int, double> subhist;
+  QVector<std::map<int, double>> histograms;
+  histograms.resize(subset_params_.size());
+
+  std::shared_ptr<QVector<HistSubset>> ret = std::make_shared<QVector<HistSubset>>();
+  ret->resize(subset_params_.size());
+
   for (auto &ms : data_)
   {
+    bool add_toi_projection = ((min <= ms.first) && (ms.first <= max));
     for (auto &mi : ms.second)
     {
       int x = mi.first.first;
       int y = mi.first.second;
 
-      if ((min <= ms.first) && (ms.first <= max))
+      if (add_toi_projection)
         projection[mi.first] += mi.second;
 
       if (weight_type_ != "none")
-      {
-        histogram[ms.first] += mi.second;
-        if ((x1 <= x) && (x <= x2) && (y1 <= y) && (y <= y2))
-          subhist[ms.first] += mi.second;
-      }
+        for (int i=0; i < subset_params_.size(); ++i)
+          if ((subset_params_[i].x1 <= x) && (x <= subset_params_[i].x2)
+              && (subset_params_[i].y1 <= y) && (y <= subset_params_[i].y2)
+              && (ms.first >= subset_params_[i].cutoff))
+          {
+            histograms[i][ms.first] += mi.second;
+            (*ret)[i].avg += ms.first * mi.second;
+            (*ret)[i].total_count += mi.second;
+            (*ret)[i].min += std::min((*ret)[i].min, static_cast<double>(ms.first));
+            (*ret)[i].max += std::min((*ret)[i].max, static_cast<double>(ms.first));
+          }
     }
   }
 
@@ -185,15 +189,17 @@ void AnalysisThread::make_projection()
 
   if (weight_type_ != "none")
   {
-    std::shared_ptr<EntryList> histo_list = std::make_shared<EntryList>();
-    for (auto &mi : histogram)
-      histo_list->push_back(Entry{{mi.first}, mi.second});
-    emit histogram_ready(histo_list, weight_type_);
+    for (int i=0; i < subset_params_.size(); ++i)
+    {
+      if ((*ret)[i].total_count != 0)
+        (*ret)[i].avg /= (*ret)[i].total_count;
+      else
+        (*ret)[i].avg = 0;
 
-    std::shared_ptr<EntryList> subhist_list = std::make_shared<EntryList>();
-    for (auto &mi : subhist)
-      subhist_list->push_back(Entry{{mi.first}, mi.second});
-    emit subhist_ready(subhist_list, weight_type_);
+      for (auto &mi : histograms[i])
+        (*ret)[i].data.push_back(Entry{{mi.first}, mi.second});
+      emit hists_ready(ret);
+    }
   }
 }
 

@@ -13,6 +13,8 @@
 
 #include "qt_util.h"
 
+#include "analysis_thread.h"
+
 #include <QCloseEvent>
 
 tpcc::tpcc(QWidget *parent) :
@@ -20,6 +22,7 @@ tpcc::tpcc(QWidget *parent) :
   ui(new Ui::tpcc)
 {
   qRegisterMetaType<std::shared_ptr<EntryList>>("std::shared_ptr<EntryList>");
+  qRegisterMetaType<std::shared_ptr<MultiHists>>("std::shared_ptr<MultiHists>");
 
   CustomLogger::initLogger();
   ui->setupUi(this);
