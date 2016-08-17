@@ -31,11 +31,11 @@ unix {
       
   LIBPATH += /usr/local/lib
 
-  contains (H5SERIAL, libhdf5_serial) {
+  contains (H5SERIAL, libhdf5_serial.so) {
     LIBS += -lhdf5_serial -lhdf5_serial_hl
   }
 
-  !contains (H5SERIAL, libhdf5_serial) {
+  !contains (H5SERIAL, libhdf5_serial.so) {
     LIBS += -lhdf5 -lhdf5_hl_cpp
   }
 
