@@ -29,7 +29,7 @@ public:
 
   void setAlwaysSquare(bool sq);
 
-  QSize sizeHint() const;
+  QSize sizeHint() const Q_DECL_OVERRIDE;
 
   void prepPlotExport(int plotThicken, int fontUpscale, int marginUpscale);
   void postPlotExport(int plotThicken, int fontUpscale, int marginUpscale);
@@ -44,7 +44,7 @@ protected:
   void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
   void mouseMoveEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
   void mouseReleaseEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
-  void resizeEvent(QResizeEvent * event);
+  void resizeEvent(QResizeEvent * event) Q_DECL_OVERRIDE;
 
   void keyPressEvent(QKeyEvent*) Q_DECL_OVERRIDE;
   void keyReleaseEvent(QKeyEvent*) Q_DECL_OVERRIDE;

@@ -18,6 +18,8 @@ ReaderIndexedBin::ReaderIndexedBin(std::string filename)
     for (size_t i=0; i < max_events * 2; ++i)
     {
       file_.read((char*)&pos, sizeof(pos));
+      if (i < 100)
+        DBG << i << " = " << pos;
       indices_.push_back(pos);
     }
   }
@@ -37,6 +39,7 @@ size_t ReaderIndexedBin::event_count()
 
 Event ReaderIndexedBin::get_event(size_t ievent)
 {
+  DBG << "Will read evt " << ievent;
   return Event(read_record(ievent*2), read_record(ievent*2 + 1));
 }
 
@@ -44,11 +47,16 @@ Record ReaderIndexedBin::read_record(size_t index)
 {
   Record ret;
 
+  if (index < indices_.size())
+    DBG << "Record " << index << " at " << indices_.at(index);
+
   if ((index < indices_.size()) && indices_.at(index))
   {
     file_.seekg(indices_.at(index));
     size_t serialized_length = 0;
     file_.read((char*)&serialized_length, sizeof(serialized_length));
+
+    DBG << "Serialized length " << serialized_length;
 
     std::list<int16_t> serialized;
     int16_t val;

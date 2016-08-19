@@ -1,6 +1,7 @@
 #include <QSettings>
 #include "event_viewer.h"
 #include "ui_event_viewer.h"
+#include "custom_logger.h"
 
 
 EventViewer::EventViewer(QWidget *parent) :
@@ -90,7 +91,7 @@ void EventViewer::clear()
   ui->eventY->clear();
 }
 
-void EventViewer::on_spinEventIdx_valueChanged(int arg1)
+void EventViewer::on_spinEventIdx_valueChanged(int /*arg1*/)
 {
   plot_current_event();
 }
@@ -105,13 +106,13 @@ void EventViewer::on_checkNoneg_clicked()
   plot_current_event();
 }
 
-void EventViewer::on_comboOverlay_currentIndexChanged(const QString &arg1)
+void EventViewer::on_comboOverlay_currentIndexChanged(const QString &/*arg1*/)
 {
   plot_current_event();
 }
 
 
-void EventViewer::on_comboProjection_activated(const QString &arg1)
+void EventViewer::on_comboProjection_activated(const QString &/*arg1*/)
 {
   plot_current_event();
 }
