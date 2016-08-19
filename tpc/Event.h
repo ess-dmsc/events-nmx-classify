@@ -1,9 +1,9 @@
-#ifndef TPC_EVENT_H
-#define TPC_EVENT_H
+#ifndef NMX_EVENT_H
+#define NMX_EVENT_H
 
-#include "tpcRecord.h"
+#include "Record.h"
 
-namespace TPC
+namespace NMX
 {
 
 struct Event

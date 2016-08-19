@@ -8,7 +8,7 @@ int main(int argc, char *argv[])
 //    a.setWindowIcon(QIcon(":/icons/tpcc.xpm"));
 
     QCoreApplication::setOrganizationName("ESS");
-    QCoreApplication::setApplicationName("tpcc");
+    QCoreApplication::setApplicationName("c");
 
     tpcc w;
     w.show();

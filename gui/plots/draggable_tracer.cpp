@@ -17,7 +17,7 @@
  ******************************************************************************/
 
 #include "draggable_tracer.h"
-#include "custom_logger.h"
+#include "CustomLogger.h"
 
 DraggableTracer::DraggableTracer(QCustomPlot *parentPlot, QCPItemTracer *trc, int size)
   : QCPItemLine(parentPlot)

@@ -1,8 +1,8 @@
 #include <QSettings>
 #include "record_viewer.h"
 #include "ui_record_viewer.h"
-#include "tpcMimicVMMx.h"
-#include "tpcFindEntry.h"
+#include "MimicVMMx.h"
+#include "FindEntry.h"
 
 
 RecordViewer::RecordViewer(QWidget *parent) :
@@ -60,11 +60,11 @@ void RecordViewer::clear()
 }
 
 
-void RecordViewer::display_record(const TPC::Record record, TPC::Dimensions dim, bool trim, bool raw, QString secondary)
+void RecordViewer::display_record(const NMX::Record record, NMX::Dimensions dim, bool trim, bool raw, QString secondary)
 {
   clear();
 
-  TPC::Dimensions xdim = dim;
+  NMX::Dimensions xdim = dim;
   if (trim)
   {
     xdim.min = dim.transform(record.strip_start()-0.5);
@@ -89,7 +89,7 @@ void RecordViewer::display_record(const TPC::Record record, TPC::Dimensions dim,
   ui->plotRecord->replot_markers();
 }
 
-std::shared_ptr<EntryList> RecordViewer::make_list(const TPC::Record &record, bool trim)
+std::shared_ptr<EntryList> RecordViewer::make_list(const NMX::Record &record, bool trim)
 {
   std::shared_ptr<EntryList> data = std::make_shared<EntryList>();
 
@@ -106,7 +106,7 @@ std::shared_ptr<EntryList> RecordViewer::make_list(const TPC::Record &record, bo
   return data;
 }
 
-std::list<MarkerBox2D> RecordViewer::maxima(const TPC::Record &record, TPC::Dimensions dim, bool trim)
+std::list<MarkerBox2D> RecordViewer::maxima(const NMX::Record &record, NMX::Dimensions dim, bool trim)
 {
   std::list<MarkerBox2D> ret;
 
@@ -143,16 +143,16 @@ std::list<MarkerBox2D> RecordViewer::maxima(const TPC::Record &record, TPC::Dime
   return ret;
 }
 
-std::list<MarkerBox2D> RecordViewer::VMMx(const TPC::Record &record, TPC::Dimensions dim, bool trim)
+std::list<MarkerBox2D> RecordViewer::VMMx(const NMX::Record &record, NMX::Dimensions dim, bool trim)
 {
   std::list<MarkerBox2D> ret;
   int    adcthreshold =   150; // default ADC threshold
   int    tboverthrsh  =     3; // min number of tb's over threshold
-  TPC::MimicVMMx vmm;
+  NMX::MimicVMMx vmm;
   vmm.setADCThreshold(adcthreshold);
   vmm.setNTimebinsOverThreshold(tboverthrsh);
-  std::list<TPC::VMMxDataPoint> vmm_p = vmm.processEvent(record);
-  TPC::FindEntry position(vmm_p);
+  std::list<NMX::VMMxDataPoint> vmm_p = vmm.processEvent(record);
+  NMX::FindEntry position(vmm_p);
 
   for (auto m : vmm_p)
   {
@@ -193,7 +193,7 @@ std::list<MarkerBox2D> RecordViewer::VMMx(const TPC::Record &record, TPC::Dimens
   return ret;
 }
 
-void RecordViewer::display_projection(const TPC::Record &record, TPC::Dimensions dim, QString codomain)
+void RecordViewer::display_projection(const NMX::Record &record, NMX::Dimensions dim, QString codomain)
 {
   std::map<double, double> minima, maxima;
   Calibration calib_ = Calibration();

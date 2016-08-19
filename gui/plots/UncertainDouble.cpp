@@ -8,7 +8,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/regex.hpp>
 #include "util.h"
-#include "custom_logger.h"
+#include "CustomLogger.h"
 
 UncertainDouble::UncertainDouble()
   : value_(std::numeric_limits<double>::quiet_NaN())

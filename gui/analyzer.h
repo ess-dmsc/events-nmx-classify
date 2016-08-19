@@ -5,8 +5,8 @@
 #include <QItemSelection>
 #include <memory>
 
-#include "tpcReader.h"
-#include "tpcDimensions.h"
+#include "Reader.h"
+#include "Dimensions.h"
 
 #include "widget_plot2d.h"
 #include "widget_plot_multi1d.h"
@@ -25,7 +25,7 @@ public:
   explicit Analyzer(QWidget *parent = 0);
   ~Analyzer();
 
-  void set_new_source(std::shared_ptr<TPC::Reader> r, TPC::Dimensions x, TPC::Dimensions y);
+  void set_new_source(std::shared_ptr<NMX::Reader> r, NMX::Dimensions x, NMX::Dimensions y);
   void clear();
 
 public slots:
@@ -53,10 +53,10 @@ private slots:
 private:
   Ui::Analyzer *ui;
 
-  std::shared_ptr<TPC::Reader> reader_;
+  std::shared_ptr<NMX::Reader> reader_;
 
-  TPC::Dimensions xdims_;
-  TPC::Dimensions ydims_;
+  NMX::Dimensions xdims_;
+  NMX::Dimensions ydims_;
 
   int box_x_{0}, box_y_{0};
 

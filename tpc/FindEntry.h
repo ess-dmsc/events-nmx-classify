@@ -1,9 +1,9 @@
 #ifndef FindEntry_H
 #define FindEntry_H
 
-#include "tpcMimicVMMx.h"
+#include "MimicVMMx.h"
 
-namespace TPC
+namespace NMX
 {
 
 /** \class FindEntry

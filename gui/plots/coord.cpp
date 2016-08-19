@@ -17,7 +17,7 @@
  ******************************************************************************/
 
 #include "coord.h"
-//#include "custom_logger.h"
+//#include "CustomLogger.h"
 
 void Coord::set_energy(double nrg, Calibration cali) {
   bin_ = nan("");

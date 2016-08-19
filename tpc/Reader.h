@@ -1,9 +1,9 @@
-#ifndef TPC_READER_H
-#define TPC_READER_H
+#ifndef NMX_READER_H
+#define NMX_READER_H
 
-#include "tpcEvent.h"
+#include "Event.h"
 
-namespace TPC {
+namespace NMX {
 
 class Reader
 {
@@ -13,6 +13,8 @@ public:
         
     virtual size_t event_count() = 0;
     virtual Event get_event(size_t) = 0;
+
+    virtual size_t bad_records() {return 0;}
 };
 
 }

@@ -1,5 +1,5 @@
 #include "qsquarecustomplot.h"
-#include "custom_logger.h"
+#include "CustomLogger.h"
 #include "qcp_overlay_button.h"
 
 void QSquareCustomPlot::setAlwaysSquare(bool sq) {

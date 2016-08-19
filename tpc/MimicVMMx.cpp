@@ -1,9 +1,9 @@
-#include "tpcMimicVMMx.h"
-#include "custom_logger.h"
+#include "MimicVMMx.h"
+#include "CustomLogger.h"
 
 #include <limits>
 
-namespace TPC {
+namespace NMX {
 
 std::list<VMMxDataPoint> MimicVMMx::processEvent(const Record &record)
 {

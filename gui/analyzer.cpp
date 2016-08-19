@@ -1,9 +1,9 @@
 #include <QSettings>
 #include "analyzer.h"
 #include "ui_analyzer.h"
-#include "tpcMimicVMMx.h"
-#include "tpcFindEntry.h"
-#include "custom_logger.h"
+#include "MimicVMMx.h"
+#include "FindEntry.h"
+#include "CustomLogger.h"
 
 
 Analyzer::Analyzer(QWidget *parent) :
@@ -20,7 +20,7 @@ Analyzer::Analyzer(QWidget *parent) :
   ui->plotSubhist->set_plot_style("Step center");
   ui->plotSubhist->set_visible_options(ShowOptions::thickness | ShowOptions::scale | ShowOptions::grid | ShowOptions::save);
 
-  TPC::Record dummy;
+  NMX::Record dummy;
   dummy.analyze();
   ui->comboWeights->addItem("none");
   for (auto &c : dummy.categories())
@@ -61,7 +61,7 @@ void Analyzer::enableIO(bool enable)
   ui->doubleNormalize->setEnabled(en);
 }
 
-void Analyzer::set_new_source(std::shared_ptr<TPC::Reader> r, TPC::Dimensions x, TPC::Dimensions y)
+void Analyzer::set_new_source(std::shared_ptr<NMX::Reader> r, NMX::Dimensions x, NMX::Dimensions y)
 {
   reader_ = r;
   xdims_ = x;

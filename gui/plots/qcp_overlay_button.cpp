@@ -1,5 +1,5 @@
 #include "qcp_overlay_button.h"
-#include "custom_logger.h"
+#include "CustomLogger.h"
 #include <QToolTip>
 
 QCPOverlayButton::QCPOverlayButton(QCustomPlot *parentPlot,

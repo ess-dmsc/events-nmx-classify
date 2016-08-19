@@ -5,7 +5,7 @@
 #include <QMessageBox>
 #include <QLayout>
 #include <QLayoutItem>
-#include "custom_logger.h"
+#include "CustomLogger.h"
 
 QString CustomSaveFileDialog(QWidget *parent,
                              const QString &title,

@@ -1,11 +1,11 @@
-#ifndef TPC_READER_IBIN_H
-#define TPC_READER_IBIN_H
+#ifndef NMX_READER_IBIN_H
+#define NMX_READER_IBIN_H
 
-#include "tpcReader.h"
+#include "Reader.h"
 
 #include <fstream>
 
-namespace TPC {
+namespace NMX {
 
 class ReaderIndexedBin : public Reader
 {
