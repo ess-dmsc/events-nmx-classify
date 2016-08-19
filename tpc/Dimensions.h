@@ -1,9 +1,9 @@
-#ifndef TPC_DIMENSIONS_H
-#define TPC_DIMENSIONS_H
+#ifndef NMX_DIMENSIONS_H
+#define NMX_DIMENSIONS_H
 
 #include <vector>
 
-namespace TPC
+namespace NMX
 {
 
 struct Dimensions

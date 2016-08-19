@@ -5,7 +5,7 @@
 #include <numeric>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
-//#include "custom_logger.h"
+//#include "CustomLogger.h"
 #include "util.h"
 
 std::string PolyBounded::to_string() const {

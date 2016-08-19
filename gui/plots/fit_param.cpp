@@ -1,6 +1,6 @@
 #include "fit_param.h"
 #include <boost/lexical_cast.hpp>
-#include "custom_logger.h"
+#include "CustomLogger.h"
 #include <iomanip>
 #include <numeric>
 #include "util.h"

@@ -1,6 +1,6 @@
 #include "widget_plot_multi1d.h"
 #include "ui_widget_plot_multi1d.h"
-#include "custom_logger.h"
+#include "CustomLogger.h"
 #include "qt_util.h"
 #include "qcp_overlay_button.h"
 

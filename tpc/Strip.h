@@ -1,11 +1,11 @@
-#ifndef TPC_STRIP_H
-#define TPC_STRIP_H
+#ifndef NMX_STRIP_H
+#define NMX_STRIP_H
 
 #include <vector>
 #include <list>
 #include <string>
 
-namespace TPC
+namespace NMX
 {
 
 class Strip

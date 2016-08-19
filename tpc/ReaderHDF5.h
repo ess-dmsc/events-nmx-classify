@@ -1,15 +1,16 @@
-#ifndef TPC_READER_HDF5_H
-#define TPC_READER_HDF5_H
+#ifndef NMX_READER_HDF5_H
+#define NMX_READER_HDF5_H
 
-#include "tpcReader.h"
+#include "Reader.h"
 
 #include <H5Cpp.h>
+#include <memory>
 
 #ifndef H5_NO_NAMESPACE
     using namespace H5;
 #endif
 
-namespace TPC {
+namespace NMX {
 
 class ReaderHDF5 : public Reader
 {
@@ -22,9 +23,15 @@ public:
 
 private:
   H5File file_;
+
+  DataSet   raw_;
+  DataSpace filespace_;
+
+  std::vector<hsize_t> dimensions_;
+
   size_t total_;
 
-  Record read_record(Group group, std::string id);
+  Record read_record(size_t number, size_t plane);
 };
 
 }

@@ -2,10 +2,10 @@
 #include <utility>
 #include <numeric>
 #include <cstdint>
-#include "tpcReaderIndexedBin.h"
-#include "tpcReaderHDF5.h"
-#include "tpcMimicVMMx.h"
-#include "tpcFindEntry.h"
+#include "ReaderIndexedBin.h"
+#include "ReaderHDF5.h"
+#include "MimicVMMx.h"
+#include "FindEntry.h"
 
 #include "tpcc.h"
 #include "ui_tpcc.h"
@@ -90,9 +90,9 @@ bool tpcc::open_file(QString fileName)
   QFileInfo info(fileName);
 
   if (info.suffix() == "h5")
-    reader_ = std::make_shared<TPC::ReaderHDF5>(fileName.toStdString());
+    reader_ = std::make_shared<NMX::ReaderHDF5>(fileName.toStdString());
   else if (info.suffix() == "bin")
-    reader_ = std::make_shared<TPC::ReaderIndexedBin>(fileName.toStdString());
+    reader_ = std::make_shared<NMX::ReaderIndexedBin>(fileName.toStdString());
   else
   {
     ERR << "invalid file type";

@@ -36,7 +36,7 @@ void EventViewer::enableIO(bool enable)
   ui->comboProjection->setEnabled(en);
 }
 
-void EventViewer::set_new_source(std::shared_ptr<TPC::Reader> r, TPC::Dimensions x, TPC::Dimensions y)
+void EventViewer::set_new_source(std::shared_ptr<NMX::Reader> r, NMX::Dimensions x, NMX::Dimensions y)
 {
   reader_ = r;
   xdims_ = x;
@@ -134,7 +134,7 @@ void EventViewer::plot_current_event()
   bool trim = ui->checkTrim->isChecked();
   bool noneg = ui->checkNoneg->isChecked();
 
-  TPC::Event evt = reader_->get_event(idx-1);
+  NMX::Event evt = reader_->get_event(idx-1);
 
   if (noneg)
     evt = evt.suppress_negatives();

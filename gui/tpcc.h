@@ -3,8 +3,8 @@
 
 #include <QMainWindow>
 
-#include "custom_logger.h"
-#include "tpcReader.h"
+#include "CustomLogger.h"
+#include "Reader.h"
 #include "widget_plot2d.h"
 
 #include "event_viewer.h"
@@ -27,10 +27,10 @@ private:
   Ui::tpcc *ui;
 
   QString data_directory_;
-  std::shared_ptr<TPC::Reader> reader_;
+  std::shared_ptr<NMX::Reader> reader_;
 
-  TPC::Dimensions xdims_;
-  TPC::Dimensions ydims_;
+  NMX::Dimensions xdims_;
+  NMX::Dimensions ydims_;
 
   EventViewer *event_viewer_;
   Analyzer    *analyzer_;

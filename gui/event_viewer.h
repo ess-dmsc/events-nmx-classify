@@ -5,8 +5,8 @@
 #include <QItemSelection>
 #include <memory>
 
-#include "tpcReader.h"
-#include "tpcDimensions.h"
+#include "Reader.h"
+#include "Dimensions.h"
 
 #include "widget_plot2d.h"
 
@@ -22,7 +22,7 @@ public:
   explicit EventViewer(QWidget *parent = 0);
   ~EventViewer();
 
-  void set_new_source(std::shared_ptr<TPC::Reader> r, TPC::Dimensions x, TPC::Dimensions y);
+  void set_new_source(std::shared_ptr<NMX::Reader> r, NMX::Dimensions x, NMX::Dimensions y);
 
   void clear();
 
@@ -43,10 +43,10 @@ private slots:
 private:
   Ui::EventViewer *ui;
 
-  std::shared_ptr<TPC::Reader> reader_;
+  std::shared_ptr<NMX::Reader> reader_;
 
-  TPC::Dimensions xdims_;
-  TPC::Dimensions ydims_;
+  NMX::Dimensions xdims_;
+  NMX::Dimensions ydims_;
 
   void loadSettings();
   void saveSettings();

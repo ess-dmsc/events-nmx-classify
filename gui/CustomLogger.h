@@ -2,6 +2,18 @@
 #define CUSTOM_LOGGER_H_
 
 #include <iostream>
+
+#include "boost/version.hpp"
+
+#ifndef BOOST_VERSION
+#define TRC std::cout  "\n[TRC] "
+#define DBG std::cout << "\n[DBG] "
+#define INFO std::cout << "\n"
+#define WARN std::cout << "\n[WARN] "
+#define ERR std::cout << "\n[ERR] "
+#define CRIT std::cout << "\n[CRIT] "
+#else
+
 #include <string>
 #include <boost/log/core.hpp>
 #include <boost/log/expressions/keyword.hpp>
@@ -50,9 +62,11 @@ BOOST_LOG_INLINE_GLOBAL_LOGGER_DEFAULT(g_custom_logger,
 
 #define TRC BOOST_LOG_SEV(g_custom_logger::get(), CustomLogger::kTrace)
 #define DBG BOOST_LOG_SEV(g_custom_logger::get(), CustomLogger::kDebug)
-#define LINFO BOOST_LOG_SEV(g_custom_logger::get(), CustomLogger::kInfo)
+#define INFO BOOST_LOG_SEV(g_custom_logger::get(), CustomLogger::kInfo)
 #define WARN BOOST_LOG_SEV(g_custom_logger::get(), CustomLogger::kWarning)
 #define ERR BOOST_LOG_SEV(g_custom_logger::get(), CustomLogger::kError)
 #define CRIT BOOST_LOG_SEV(g_custom_logger::get(), CustomLogger::kCritical)
+
+#endif
 
 #endif // CUSTOM_LOGGER_H

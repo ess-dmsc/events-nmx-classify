@@ -1,11 +1,11 @@
-#include "tpcRecord.h"
-#include "custom_logger.h"
+#include "Record.h"
+#include "CustomLogger.h"
 
 #include <iomanip>
 #include <sstream>
 #include <set>
 
-namespace TPC {
+namespace NMX {
 
 void Record::add_strip(int16_t idx, const Strip &strip)
 {

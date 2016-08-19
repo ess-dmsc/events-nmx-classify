@@ -1,8 +1,8 @@
 #include "analysis_thread.h"
-#include "custom_logger.h"
+#include "CustomLogger.h"
 
-#include "tpcMimicVMMx.h"
-#include "tpcFindEntry.h"
+#include "MimicVMMx.h"
+#include "FindEntry.h"
 #include <QTimer>
 
 AnalysisThread::AnalysisThread(QObject *parent) :
@@ -23,7 +23,7 @@ void AnalysisThread::terminate()
   wait();
 }
 
-void AnalysisThread::go(std::shared_ptr<TPC::Reader> r, QString weight_type, double normalize_by)
+void AnalysisThread::go(std::shared_ptr<NMX::Reader> r, QString weight_type, double normalize_by)
 {
   if (isRunning())
   {
@@ -78,7 +78,7 @@ void AnalysisThread::run()
 
   int    adcthreshold =   150; // default ADC threshold
   int    tboverthrsh  =     3; // min number of tb's over threshold
-  TPC::MimicVMMx vmm;
+  NMX::MimicVMMx vmm;
   vmm.setADCThreshold(adcthreshold);
   vmm.setNTimebinsOverThreshold(tboverthrsh);
 
@@ -97,7 +97,7 @@ void AnalysisThread::run()
 
     // Construct event and perform analysis
 
-    TPC::Event evt = reader_->get_event(eventID);
+    NMX::Event evt = reader_->get_event(eventID);
 
     //    if (noneg)
     evt = evt.suppress_negatives();
@@ -108,10 +108,10 @@ void AnalysisThread::run()
     if (weight_type_ != "none")
       evt.analyze();
 
-    std::list<TPC::VMMxDataPoint> vmm_x = vmm.processEvent(evt.x());
-    std::list<TPC::VMMxDataPoint> vmm_y = vmm.processEvent(evt.y());
-    TPC::FindEntry position_x(vmm_x);
-    TPC::FindEntry position_y(vmm_y);
+    std::list<NMX::VMMxDataPoint> vmm_x = vmm.processEvent(evt.x());
+    std::list<NMX::VMMxDataPoint> vmm_y = vmm.processEvent(evt.y());
+    NMX::FindEntry position_x(vmm_x);
+    NMX::FindEntry position_y(vmm_y);
 
     double quality_x {0};
     double quality_y {0};

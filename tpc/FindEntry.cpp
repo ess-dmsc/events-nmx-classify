@@ -1,7 +1,7 @@
-#include "tpcFindEntry.h"
-#include "custom_logger.h"
+#include "FindEntry.h"
+#include "CustomLogger.h"
 
-namespace TPC {
+namespace NMX {
 
 FindEntry::FindEntry(const std::list<VMMxDataPoint> &data)
 {

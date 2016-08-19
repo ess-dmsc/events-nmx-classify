@@ -1,9 +1,9 @@
 #ifndef MimicVMMx_HH
 #define MimicVMMx_HH
 
-#include "tpcRecord.h"
+#include "Record.h"
 
-namespace TPC {
+namespace NMX {
 
 /** \struct VMMxDataPoint
  *  \brief Struct to hold VMMx values

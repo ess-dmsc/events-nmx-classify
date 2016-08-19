@@ -1,9 +1,9 @@
-#include "tpcStrip.h"
+#include "Strip.h"
 
 #include <iomanip>
 #include <sstream>
 
-namespace TPC {
+namespace NMX {
 
 Strip::Strip(const std::vector<int16_t> &d)
   : Strip()

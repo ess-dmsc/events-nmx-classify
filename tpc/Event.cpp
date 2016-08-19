@@ -1,6 +1,6 @@
-#include "tpcEvent.h"
+#include "Event.h"
 
-namespace TPC {
+namespace NMX {
 
 Event::Event(Record xx, Record yy)
   : x_(xx)

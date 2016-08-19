@@ -1,7 +1,7 @@
-#include "tpcReaderIndexedBin.h"
-#include "custom_logger.h"
+#include "ReaderIndexedBin.h"
+#include "CustomLogger.h"
 
-namespace TPC {
+namespace NMX {
 
 ReaderIndexedBin::ReaderIndexedBin(std::string filename)
   : Reader(filename)

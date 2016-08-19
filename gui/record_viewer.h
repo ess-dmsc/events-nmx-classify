@@ -5,8 +5,8 @@
 #include <QItemSelection>
 #include <memory>
 
-#include "tpcRecord.h"
-#include "tpcDimensions.h"
+#include "Record.h"
+#include "Dimensions.h"
 
 #include "widget_plot2d.h"
 #include "widget_plot_multi1d.h"
@@ -23,8 +23,8 @@ public:
   explicit RecordViewer(QWidget *parent = 0);
   ~RecordViewer();
 
-  void display_record(const TPC::Record record, TPC::Dimensions dim, bool trim, bool raw, QString secondary);
-  void display_projection(const TPC::Record &record, TPC::Dimensions dim, QString codomain);
+  void display_record(const NMX::Record record, NMX::Dimensions dim, bool trim, bool raw, QString secondary);
+  void display_projection(const NMX::Record &record, NMX::Dimensions dim, QString codomain);
 
   bool save_close();
   void clear();
@@ -37,10 +37,10 @@ private:
   void loadSettings();
   void saveSettings();
 
-  std::shared_ptr<EntryList> make_list(const TPC::Record &record, bool trim);
+  std::shared_ptr<EntryList> make_list(const NMX::Record &record, bool trim);
 
-  std::list<MarkerBox2D> maxima(const TPC::Record &record, TPC::Dimensions dim, bool trim);
-  std::list<MarkerBox2D> VMMx(const TPC::Record &record, TPC::Dimensions dim, bool trim);
+  std::list<MarkerBox2D> maxima(const NMX::Record &record, NMX::Dimensions dim, bool trim);
+  std::list<MarkerBox2D> VMMx(const NMX::Record &record, NMX::Dimensions dim, bool trim);
 
 };
 

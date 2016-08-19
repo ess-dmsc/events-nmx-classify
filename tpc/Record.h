@@ -1,11 +1,11 @@
-#ifndef TPC_RECORD_H
-#define TPC_RECORD_H
+#ifndef NMX_RECORD_H
+#define NMX_RECORD_H
 
-#include "tpcStrip.h"
+#include "Strip.h"
 
 #include <map>
 
-namespace TPC
+namespace NMX
 {
 
 class Record
