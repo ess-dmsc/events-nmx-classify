@@ -16,7 +16,6 @@ class ReaderHDF5 : public Reader
 {
 public:
   ReaderHDF5(std::string filename);
-  ~ReaderHDF5();
 
   size_t event_count() override;
   Event get_event(size_t) override;
@@ -26,12 +25,13 @@ private:
 
   DataSet   raw_;
   DataSpace filespace_;
+  DataSpace slabspace_;
 
-  std::vector<hsize_t> dimensions_;
+  std::vector<hsize_t> dimensions_, slab_dim_;
 
   size_t total_;
 
-  Record read_record(size_t number, size_t plane);
+  Record read_record(size_t index, size_t plane);
 };
 
 }
