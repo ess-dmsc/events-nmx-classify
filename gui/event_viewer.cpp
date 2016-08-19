@@ -1,7 +1,7 @@
 #include <QSettings>
 #include "event_viewer.h"
 #include "ui_event_viewer.h"
-#include "custom_logger.h"
+#include "CustomLogger.h"
 
 
 EventViewer::EventViewer(QWidget *parent) :
