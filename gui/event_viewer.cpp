@@ -12,7 +12,7 @@ EventViewer::EventViewer(QWidget *parent) :
 
   ui->comboOverlay->addItem("none");
   ui->comboOverlay->addItem("Maxima");
-  ui->comboOverlay->addItem("VMMx");
+  ui->comboOverlay->addItem("VMM");
 
   ui->comboProjection->addItem("none");
   ui->comboProjection->addItem("Integral");
@@ -139,6 +139,8 @@ void EventViewer::plot_current_event()
 
   if (noneg)
     evt = evt.suppress_negatives();
+
+  evt.analyze();
 
   ui->eventX->display_record(evt.x(), xdims_, trim, ui->checkRaw->isChecked(), ui->comboOverlay->currentText());
   ui->eventY->display_record(evt.y(), ydims_, trim, ui->checkRaw->isChecked(), ui->comboOverlay->currentText());

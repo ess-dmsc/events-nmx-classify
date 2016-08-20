@@ -1,8 +1,7 @@
 #include <QSettings>
 #include "record_viewer.h"
 #include "ui_record_viewer.h"
-#include "MimicVMMx.h"
-#include "FindEntry.h"
+#include "qt_util.h"
 
 
 RecordViewer::RecordViewer(QWidget *parent) :
@@ -19,6 +18,16 @@ RecordViewer::RecordViewer(QWidget *parent) :
   ui->plotProjection->set_plot_style("Step center");
   ui->plotProjection->set_visible_options(ShowOptions::thickness | ShowOptions::grid | ShowOptions::save);
 
+
+  ui->tableValues->verticalHeader()->hide();
+  ui->tableValues->setColumnCount(2);
+  ui->tableValues->setHorizontalHeaderLabels({"name", "value"});
+  ui->tableValues->setSelectionBehavior(QAbstractItemView::SelectRows);
+  ui->tableValues->setSelectionMode(QAbstractItemView::NoSelection);
+//  ui->tableValues->setSelectionMode(QAbstractItemView::ExtendedSelection);
+  ui->tableValues->setEditTriggers(QTableView::NoEditTriggers);
+  ui->tableValues->horizontalHeader()->setStretchLastSection(true);
+  ui->tableValues->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
 
   loadSettings();
 
@@ -83,10 +92,21 @@ void RecordViewer::display_record(const NMX::Record record, NMX::Dimensions dim,
 
   if (secondary == "Maxima")
     ui->plotRecord->set_boxes(maxima(record, xdim, trim));
-  else if (secondary == "VMMx")
-    ui->plotRecord->set_boxes(VMMx(record, xdim, trim));
+  else if (secondary == "VMM")
+    ui->plotRecord->set_boxes(VMM(record, xdim, trim));
 
   ui->plotRecord->replot_markers();
+
+  ui->tableValues->clearContents();
+  auto valnames = record.categories();
+  ui->tableValues->setRowCount(valnames.size());
+  int i = 0;
+  for (auto &name : valnames)
+  {
+    add_to_table(ui->tableValues, i, 0, name);
+    add_to_table(ui->tableValues, i, 1, std::to_string(record.get_value(name)));
+    i++;
+  }
 }
 
 std::shared_ptr<EntryList> RecordViewer::make_list(const NMX::Record &record, bool trim)
@@ -143,20 +163,14 @@ std::list<MarkerBox2D> RecordViewer::maxima(const NMX::Record &record, NMX::Dime
   return ret;
 }
 
-std::list<MarkerBox2D> RecordViewer::VMMx(const NMX::Record &record, NMX::Dimensions dim, bool trim)
+
+std::list<MarkerBox2D> RecordViewer::VMM(const NMX::Record &record, NMX::Dimensions dim, bool trim)
 {
   std::list<MarkerBox2D> ret;
-  int    adcthreshold =   150; // default ADC threshold
-  int    tboverthrsh  =     3; // min number of tb's over threshold
-  NMX::MimicVMMx vmm;
-  vmm.setADCThreshold(adcthreshold);
-  vmm.setNTimebinsOverThreshold(tboverthrsh);
-  std::list<NMX::VMMxDataPoint> vmm_p = vmm.processEvent(record);
-  NMX::FindEntry position(vmm_p);
 
-  for (auto m : vmm_p)
+  for (auto idx : record.valid_strips())
   {
-    int stripi = m.strip;
+    int stripi = idx;
     if (trim)
       stripi -= record.strip_start();
 
@@ -164,32 +178,34 @@ std::list<MarkerBox2D> RecordViewer::VMMx(const NMX::Record &record, NMX::Dimens
     box.x_c = dim.transform(stripi);
     box.x1 = dim.transform(stripi - 0.45);
     box.x2 = dim.transform(stripi + 0.45);
-    box.y_c = m.maxBin;
-    box.y1  = m.locMaxStart - 0.45;
-    box.y2  = m.locMaxStart + m.locMaxLength + 0.45;
-    ret.push_back(box);
 
-    box.x1 = dim.transform(stripi - 0.2);
-    box.x2 = dim.transform(stripi + 0.2);
-    box.y1  = m.maxBin - 0.2;
-    box.y2  = m.maxBin + 0.2;
-    ret.push_back(box);
+    for (auto tb : record.get_strip(idx).VMM_maxima())
+    {
+      box.y_c = tb;
+      box.y1  = tb - 0.45;
+      box.y2  = tb + 0.45;
+      ret.push_back(box);
+    }
   }
 
-  int stripi = position.strip;
-  if (trim)
-    stripi -= record.strip_start();
+  int stripi = record.get_value("entry_strip");
+  if (stripi >= 0)
+  {
+    if (trim)
+      stripi -= record.strip_start();
 
-  MarkerBox2D box;
-  box.mark_center = true;
-  box.x_c = dim.transform(stripi);
-  box.x1 = dim.transform(stripi - 0.2);
-  box.x2 = dim.transform(stripi + 0.2);
-  box.y_c = position.tb;
-  box.y1  = position.tb - 0.2;
-  box.y2  = position.tb + 0.2;
-  ret.push_back(box);
+    int timei = record.get_value("entry_time");
 
+    MarkerBox2D box;
+    //  box.mark_center = true;
+    box.x_c = dim.transform(stripi);
+    box.x1 = dim.transform(stripi - 0.2);
+    box.x2 = dim.transform(stripi + 0.2);
+    box.y_c = timei;
+    box.y1  = timei - 0.2;
+    box.y2  = timei + 0.2;
+    ret.push_back(box);
+  }
   return ret;
 }
 

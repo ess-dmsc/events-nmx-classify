@@ -1,8 +1,6 @@
 #include <QSettings>
 #include "analyzer.h"
 #include "ui_analyzer.h"
-#include "MimicVMMx.h"
-#include "FindEntry.h"
 #include "CustomLogger.h"
 
 

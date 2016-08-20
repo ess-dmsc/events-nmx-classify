@@ -2,10 +2,7 @@
 #include <utility>
 #include <numeric>
 #include <cstdint>
-#include "ReaderIndexedBin.h"
 #include "ReaderHDF5.h"
-#include "MimicVMMx.h"
-#include "FindEntry.h"
 
 #include "tpcc.h"
 #include "ui_tpcc.h"
@@ -35,6 +32,27 @@ tpcc::tpcc(QWidget *parent) :
   ui->tabWidget->addTab(analyzer_, "Analyzer");
   connect(analyzer_, SIGNAL(toggleIO(bool)), this, SLOT(toggleIO(bool)));
   connect(this, SIGNAL(enableIO(bool)), analyzer_, SLOT(enableIO(bool)));
+
+  ui->tableParams->verticalHeader()->hide();
+  ui->tableParams->setColumnCount(2);
+  ui->tableParams->setHorizontalHeaderLabels({"name", "value"});
+  ui->tableParams->setSelectionBehavior(QAbstractItemView::SelectRows);
+  ui->tableParams->setSelectionMode(QAbstractItemView::NoSelection);
+//  ui->tableParams->setSelectionMode(QAbstractItemView::ExtendedSelection);
+//  ui->tableParams->setEditTriggers(QTableView::NoEditTriggers);
+  ui->tableParams->horizontalHeader()->setStretchLastSection(true);
+  ui->tableParams->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+
+  NMX::Record rec;
+  auto valnames = rec.categories();
+  ui->tableParams->setRowCount(valnames.size());
+  int i = 0;
+  for (auto name : valnames)
+  {
+    add_to_table(ui->tableParams, i, 0, name);
+    add_to_table(ui->tableParams, i, 1, std::to_string(rec.get_value(name)));
+    i++;
+  }
 
   loadSettings();
 }
@@ -75,8 +93,7 @@ void tpcc::saveSettings()
 
 void tpcc::on_toolOpen_clicked()
 {
-  QString fileName = QFileDialog::getOpenFileName(this, "Load TPC data", data_directory_, "indexed binary (*.bin);;"
-                                                                                          "HDF5 (*.h5)");
+  QString fileName = QFileDialog::getOpenFileName(this, "Load TPC data", data_directory_, "HDF5 (*.h5)");
   if (!validateFile(this, fileName, false))
     return;
 
@@ -87,17 +104,7 @@ bool tpcc::open_file(QString fileName)
 {
   data_directory_ = path_of_file(fileName);
 
-  QFileInfo info(fileName);
-
-  if (info.suffix() == "h5")
-    reader_ = std::make_shared<NMX::ReaderHDF5>(fileName.toStdString());
-  else if (info.suffix() == "bin")
-    reader_ = std::make_shared<NMX::ReaderIndexedBin>(fileName.toStdString());
-  else
-  {
-    ERR << "invalid file type";
-    return false;
-  }
+  reader_ = std::make_shared<NMX::ReaderHDF5>(fileName.toStdString());
 
   event_viewer_->set_new_source(reader_, xdims_, ydims_);
   analyzer_->set_new_source(reader_, xdims_, ydims_);

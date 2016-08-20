@@ -7,6 +7,12 @@
 
 namespace NMX {
 
+Record::Record()
+{
+  values_["ADC_threshold"] = 150;
+  values_["TB_over_threshold"] = 3;
+}
+
 void Record::add_strip(int16_t idx, const Strip &strip)
 {
   if (idx < 0)
@@ -33,14 +39,18 @@ void Record::add_strip(int16_t idx, const Strip &strip)
   }
 }
 
-double Record::analytic(std::string id) const
+double Record::get_value(std::string id) const
 {
-  if (analytics_.count(id))
-    return analytics_.at(id);
+  if (values_.count(id))
+    return values_.at(id);
   else
     return 0;
 }
 
+void Record::set_value(std::string id, double val)
+{
+  values_[id] = val;
+}
 
 bool Record::empty() const
 {
@@ -147,63 +157,76 @@ std::list<int16_t> Record::save() const
 std::list<std::string> Record::categories() const
 {
   std::list<std::string> ret;
-  for (auto &i : analytics_)
+  for (auto &i : values_)
     ret.push_back(i.first);
   return ret;
 }
 
 void Record::analyze()
 {
-  analytics_["hit strips"] = strips_.size();
+  values_["hit strips"] = strips_.size();
 
   if ((strip_start_ > -1) && (strip_end_ > strip_start_))
-    analytics_["strip span"] = strip_end_ - strip_start_ + 1;
+    values_["strip span"] = strip_end_ - strip_start_ + 1;
   else
-    analytics_["strip span"] = 0;
+    values_["strip span"] = 0;
 
 
-  analytics_["integral"] = 0;
-  analytics_["non-empty words"] = 0;
+  values_["integral"] = 0;
+  values_["non-empty words"] = 0;
 
-   int16_t tbstart{-1}, tbstop{-1};
+  int16_t tbstart{-1}, tbstop{-1};
+
+  int entry_strip {-1};
+  int entry_tb {-1};
 
   std::set<int> tbins;
   for (auto &s : strips_)
   {
+    s.second.analyze(values_["ADC_threshold"], values_["TB_over_threshold"]);
     if (s.second.nonzero() && ((tbstart == -1) || (s.second.bin_start() < tbstart)))
       tbstart = s.second.bin_start();
     if (s.second.bin_end() > tbstop)
       tbstop = s.second.bin_end();
 
-    analytics_["integral"] += s.second.integral();
-    analytics_["non-empty words"] += s.second.num_valid_bins();
+    values_["integral"] += s.second.integral();
+    values_["non-empty words"] += s.second.num_valid_bins();
 
     if (s.second.nonzero())
       for (int i=s.second.bin_start(); i <= s.second.bin_end(); ++i)
         if (s.second.value(i) != 0)
           tbins.insert(i);
+
+    for (auto m : s.second.VMM_maxima())
+      if (int(m) > entry_tb)
+      {
+        entry_tb  = m;
+        entry_strip = s.first;
+      }
   }
-  analytics_["hit timebins"] = tbins.size();
+  values_["hit timebins"] = tbins.size();
+  values_["entry_strip"] = entry_strip;
+  values_["entry_time"] = entry_tb;
 
   if (tbstart > -1)
-    analytics_["timebin span"] = tbstop - tbstart + 1;
+    values_["timebin span"] = tbstop - tbstart + 1;
   else
-    analytics_["timebin span"] = 0;
+    values_["timebin span"] = 0;
 
   if (strips_.size() > 0)
-    analytics_["integral/hitstrips"] = analytics_["integral"] / double(strips_.size());
+    values_["integral/hitstrips"] = values_["integral"] / double(strips_.size());
   else
-    analytics_["integral/hitstrips"] = 0;
+    values_["integral/hitstrips"] = 0;
 
-  if (analytics_["strip span"] > 0)
-    analytics_["strip density"] = analytics_["hit strips"] / analytics_["strip span"];
+  if (values_["strip span"] > 0)
+    values_["strip density"] = values_["hit strips"] / values_["strip span"];
   else
-    analytics_["strip density"] = 0;
+    values_["strip density"] = 0;
 
-  if (analytics_["timebin span"])
-    analytics_["time density"] = analytics_["hit timebins"] / analytics_["timebin span"];
+  if (values_["timebin span"])
+    values_["time density"] = values_["hit timebins"] / values_["timebin span"];
   else
-    analytics_["time density"] = 0;
+    values_["time density"] = 0;
 
 }
 

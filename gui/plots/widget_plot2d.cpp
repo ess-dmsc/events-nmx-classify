@@ -16,7 +16,7 @@ WidgetPlot2D::WidgetPlot2D(QWidget *parent) :
 {
   ui->setupUi(this);
 
-  current_gradient_ = "Jet";
+  current_gradient_ = "Night";
   current_scale_type_ = "Linear";
   show_gradient_scale_ = false;
   antialiased_ = false;

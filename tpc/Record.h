@@ -11,6 +11,8 @@ namespace NMX
 class Record
 {
 public:
+  Record();
+
   void add_strip(int16_t idx, const Strip &raw);
 
   bool empty() const;
@@ -33,7 +35,8 @@ public:
   Record suppress_negatives() const;
 
   void analyze();
-  double analytic(std::string) const;  //default 0
+  double get_value(std::string) const;  //default 0
+  void set_value(std::string, double);
   std::list<std::string> categories() const;
 
   // save/load with zero suppression
@@ -47,7 +50,7 @@ private:
   int16_t time_start_ {-1};
   int16_t time_end_   {-1};
 
-  std::map<std::string, double> analytics_;
+  std::map<std::string, double> values_;
 };
 
 

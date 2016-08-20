@@ -1,8 +1,6 @@
 #include "analysis_thread.h"
 #include "CustomLogger.h"
 
-#include "MimicVMMx.h"
-#include "FindEntry.h"
 #include <QTimer>
 
 AnalysisThread::AnalysisThread(QObject *parent) :
@@ -76,12 +74,6 @@ void AnalysisThread::run()
 
   int evt_count = reader_->event_count();
 
-  int    adcthreshold =   150; // default ADC threshold
-  int    tboverthrsh  =     3; // min number of tb's over threshold
-  NMX::MimicVMMx vmm;
-  vmm.setADCThreshold(adcthreshold);
-  vmm.setNTimebinsOverThreshold(tboverthrsh);
-
   int good = 0;
 
   QTimer timer;
@@ -95,33 +87,26 @@ void AnalysisThread::run()
     if (terminating_.load())
       break;
 
-    // Construct event and perform analysis
+    NMX::Event evt = reader_->get_event(eventID).suppress_negatives();
 
-    NMX::Event evt = reader_->get_event(eventID);
-
-    //    if (noneg)
-    evt = evt.suppress_negatives();
-
-    if (/*noempty && */evt.empty())
+    if (evt.empty())
       continue;
 
-    if (weight_type_ != "none")
-      evt.analyze();
-
-    std::list<NMX::VMMxDataPoint> vmm_x = vmm.processEvent(evt.x());
-    std::list<NMX::VMMxDataPoint> vmm_y = vmm.processEvent(evt.y());
-    NMX::FindEntry position_x(vmm_x);
-    NMX::FindEntry position_y(vmm_y);
+    evt.analyze();
 
     double quality_x {0};
     double quality_y {0};
     if (weight_type_ != "none")
     {
-      quality_x = evt.x().analytic(weight_type_.toStdString()) / normalize_by_;
-      quality_y = evt.y().analytic(weight_type_.toStdString()) / normalize_by_;
+      quality_x = evt.x().get_value(weight_type_.toStdString()) / normalize_by_;
+      quality_y = evt.y().get_value(weight_type_.toStdString()) / normalize_by_;
     }
 
-    std::pair<int,int> pos{position_x.strip, position_y.strip};
+    if ((evt.x().get_value("entry_strip") < 0) ||
+        (evt.y().get_value("entry_strip") < 0))
+      continue;
+
+    std::pair<int,int> pos{evt.x().get_value("entry_strip"), evt.y().get_value("entry_strip")};
 
     data_[int(quality_x)][pos]++;
     data_[int(quality_y)][pos]++;

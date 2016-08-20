@@ -40,7 +40,7 @@ private:
   std::shared_ptr<EntryList> make_list(const NMX::Record &record, bool trim);
 
   std::list<MarkerBox2D> maxima(const NMX::Record &record, NMX::Dimensions dim, bool trim);
-  std::list<MarkerBox2D> VMMx(const NMX::Record &record, NMX::Dimensions dim, bool trim);
+  std::list<MarkerBox2D> VMM(const NMX::Record &record, NMX::Dimensions dim, bool trim);
 
 };
 
