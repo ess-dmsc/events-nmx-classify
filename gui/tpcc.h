@@ -4,11 +4,13 @@
 #include <QMainWindow>
 
 #include "CustomLogger.h"
-#include "Reader.h"
+#include "FileHDF5.h"
 #include "widget_plot2d.h"
 
-#include "event_viewer.h"
+#include "ViewEvent.h"
 #include "analyzer.h"
+
+#include "ThreadClassify.h"
 
 
 namespace Ui {
@@ -27,13 +29,15 @@ private:
   Ui::tpcc *ui;
 
   QString data_directory_;
-  std::shared_ptr<NMX::Reader> reader_;
+  std::shared_ptr<NMX::FileHDF5> reader_;
 
   NMX::Dimensions xdims_;
   NMX::Dimensions ydims_;
 
-  EventViewer *event_viewer_;
+  ViewEvent   *event_viewer_;
   Analyzer    *analyzer_;
+
+  ThreadClassify thread_classify_;
 
   //helper functions
   void saveSettings();
@@ -51,6 +55,15 @@ private slots:
   void on_toolOpen_clicked();
   void toggleIO(bool);
 
+  void run_complete();
+
+  void update_progress(double percent_done);
+
+  void table_changed(double);
+  std::map<std::string, double> collect_params();
+
+  void on_pushStop_clicked();
+  void on_pushStart_clicked();
 };
 
 #endif // tpcc_H

@@ -34,6 +34,7 @@ Analyzer::Analyzer(QWidget *parent) :
   connect(&thread_, SIGNAL(hists_ready(std::shared_ptr<MultiHists>)),
           this, SLOT(update_histograms(std::shared_ptr<MultiHists>)));
 
+
   connect(&thread_, SIGNAL(run_complete()), this, SLOT(run_complete()));
 
   QColor cc (Qt::red);
@@ -41,6 +42,7 @@ Analyzer::Analyzer(QWidget *parent) :
   marker_.appearance.default_pen = QPen(cc, 2);
 
   thread_.set_refresh_frequency(2);
+
 
   loadSettings();
 }
@@ -59,7 +61,12 @@ void Analyzer::enableIO(bool enable)
   ui->doubleNormalize->setEnabled(en);
 }
 
-void Analyzer::set_new_source(std::shared_ptr<NMX::Reader> r, NMX::Dimensions x, NMX::Dimensions y)
+void Analyzer::set_params(std::map<std::string, double> params)
+{
+  params_ = params;
+}
+
+void Analyzer::set_new_source(std::shared_ptr<NMX::FileHDF5> r, NMX::Dimensions x, NMX::Dimensions y)
 {
   reader_ = r;
   xdims_ = x;

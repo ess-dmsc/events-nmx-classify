@@ -8,6 +8,9 @@
 namespace NMX
 {
 
+using Point = std::pair<int, int>;
+using PointList = std::list<Point>;
+
 class Record
 {
 public:
@@ -35,9 +38,12 @@ public:
   Record suppress_negatives() const;
 
   void analyze();
-  double get_value(std::string) const;  //default 0
+  double get_value(std::string) const;      //default 0
   void set_value(std::string, double);
   std::list<std::string> categories() const;
+
+  PointList get_points(std::string) const;
+  std::list<std::string> point_categories() const;
 
   // save/load with zero suppression
   std::list<int16_t> save() const;
@@ -51,6 +57,8 @@ private:
   int16_t time_end_   {-1};
 
   std::map<std::string, double> values_;
+  std::map<std::string, PointList> point_lists_;
+
 };
 
 

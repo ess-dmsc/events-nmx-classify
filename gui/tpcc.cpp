@@ -2,7 +2,6 @@
 #include <utility>
 #include <numeric>
 #include <cstdint>
-#include "ReaderHDF5.h"
 
 #include "tpcc.h"
 #include "ui_tpcc.h"
@@ -10,7 +9,7 @@
 
 #include "qt_util.h"
 
-#include "analysis_thread.h"
+#include "ThreadAnalysis.h"
 
 #include <QCloseEvent>
 
@@ -24,7 +23,7 @@ tpcc::tpcc(QWidget *parent) :
   CustomLogger::initLogger();
   ui->setupUi(this);
 
-  event_viewer_ = new EventViewer();
+  event_viewer_ = new ViewEvent();
   ui->tabWidget->addTab(event_viewer_, "Event viewer");
   connect(this, SIGNAL(enableIO(bool)), event_viewer_, SLOT(enableIO(bool)));
 
@@ -33,26 +32,38 @@ tpcc::tpcc(QWidget *parent) :
   connect(analyzer_, SIGNAL(toggleIO(bool)), this, SLOT(toggleIO(bool)));
   connect(this, SIGNAL(enableIO(bool)), analyzer_, SLOT(enableIO(bool)));
 
+  connect(&thread_classify_, SIGNAL(data_ready(double)),
+          this, SLOT(update_progress(double)));
+  connect(&thread_classify_, SIGNAL(run_complete()), this, SLOT(run_complete()));
+
   ui->tableParams->verticalHeader()->hide();
   ui->tableParams->setColumnCount(2);
   ui->tableParams->setHorizontalHeaderLabels({"name", "value"});
   ui->tableParams->setSelectionBehavior(QAbstractItemView::SelectRows);
   ui->tableParams->setSelectionMode(QAbstractItemView::NoSelection);
-//  ui->tableParams->setSelectionMode(QAbstractItemView::ExtendedSelection);
-//  ui->tableParams->setEditTriggers(QTableView::NoEditTriggers);
   ui->tableParams->horizontalHeader()->setStretchLastSection(true);
   ui->tableParams->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
 
-  NMX::Record rec;
-  auto valnames = rec.categories();
+  NMX::Event evt;
+  auto valnames = evt.categories();
   ui->tableParams->setRowCount(valnames.size());
   int i = 0;
-  for (auto name : valnames)
+  for (auto &name : valnames)
   {
-    add_to_table(ui->tableParams, i, 0, name);
-    add_to_table(ui->tableParams, i, 1, std::to_string(rec.get_value(name)));
+    QTableWidgetItem * item = new QTableWidgetItem(QString::fromStdString(name));
+    ui->tableParams->setItem(i, 0, item);
+
+    QDoubleSpinBox *spinBox = new QDoubleSpinBox(this);
+    spinBox->setMinimum(0);
+    spinBox->setMaximum(std::numeric_limits<short>::max());
+    spinBox->setValue( evt.get_value(name) );
+    connect(spinBox, SIGNAL(valueChanged(double)), this, SLOT(table_changed(double)));
+    ui->tableParams->setCellWidget( i, 1, spinBox );
+
     i++;
   }
+
+  thread_classify_.set_refresh_frequency(2);
 
   loadSettings();
 }
@@ -61,6 +72,25 @@ tpcc::~tpcc()
 {
   CustomLogger::closeLogger();
   delete ui;
+}
+
+void tpcc::table_changed(double y)
+{
+  auto params = collect_params();
+  event_viewer_->set_params(params);
+  analyzer_->set_params(params);
+}
+
+std::map<std::string, double> tpcc::collect_params()
+{
+  std::map<std::string, double> ret;
+  for (int i=0; i < ui->tableParams->rowCount(); ++i)
+  {
+    std::string name = ui->tableParams->model()->data(ui->tableParams->model()->index(i,0)).toString().toStdString();
+    double val = static_cast<QDoubleSpinBox*>(ui->tableParams->cellWidget(i, 1))->value();
+    ret[name] = val;
+  }
+  return ret;
 }
 
 void tpcc::closeEvent(QCloseEvent *event)
@@ -79,8 +109,10 @@ void tpcc::loadSettings()
 
   QString fileName = settings.value("recent_file").toString();
 
-  if (!fileName.isEmpty())
-    open_file(fileName);
+  if (fileName.isEmpty())
+    return;
+  if (open_file(fileName));
+    event_viewer_->set_params(collect_params());
 }
 
 void tpcc::saveSettings()
@@ -104,7 +136,7 @@ bool tpcc::open_file(QString fileName)
 {
   data_directory_ = path_of_file(fileName);
 
-  reader_ = std::make_shared<NMX::ReaderHDF5>(fileName.toStdString());
+  reader_ = std::make_shared<NMX::FileHDF5>(fileName.toStdString());
 
   event_viewer_->set_new_source(reader_, xdims_, ydims_);
   analyzer_->set_new_source(reader_, xdims_, ydims_);
@@ -126,5 +158,41 @@ bool tpcc::open_file(QString fileName)
 void tpcc::toggleIO(bool enable)
 {
   ui->toolOpen->setEnabled(enable);
+  ui->tableParams->setEnabled(enable);
+
+  bool en = reader_ && reader_->event_count() && enable;
+  ui->pushStart->setEnabled(en);
+
   emit enableIO(enable);
+}
+
+void tpcc::on_pushStop_clicked()
+{
+  thread_classify_.terminate();
+}
+
+void tpcc::on_pushStart_clicked()
+{
+//  clear();
+
+  if (!reader_|| !reader_->event_count())
+    return;
+
+  ui->pushStop->setEnabled(true);
+  ui->progressBar->setValue(0);
+
+  toggleIO(false);
+  thread_classify_.go(reader_, collect_params());
+}
+
+void tpcc::update_progress(double percent_done)
+{
+  ui->progressBar->setValue(percent_done);
+}
+
+
+void tpcc::run_complete()
+{
+  toggleIO(true);
+  ui->pushStop->setEnabled(false);
 }

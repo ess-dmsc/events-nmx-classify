@@ -5,13 +5,14 @@
 #include <QItemSelection>
 #include <memory>
 
-#include "Reader.h"
+#include "FileHDF5.h"
 #include "Dimensions.h"
 
 #include "widget_plot2d.h"
 #include "widget_plot_multi1d.h"
 
-#include "analysis_thread.h"
+#include "ThreadAnalysis.h"
+
 
 namespace Ui {
 class Analyzer;
@@ -25,8 +26,10 @@ public:
   explicit Analyzer(QWidget *parent = 0);
   ~Analyzer();
 
-  void set_new_source(std::shared_ptr<NMX::Reader> r, NMX::Dimensions x, NMX::Dimensions y);
+  void set_new_source(std::shared_ptr<NMX::FileHDF5> r, NMX::Dimensions x, NMX::Dimensions y);
   void clear();
+
+  void set_params(std::map<std::string, double>);
 
 public slots:
   void enableIO(bool);
@@ -37,6 +40,7 @@ signals:
 private slots:
   void on_pushStart_clicked();
   void on_pushStop_clicked();
+
 
   void update_data(std::shared_ptr<EntryList> data, double percent_done);
   void update_histograms(std::shared_ptr<MultiHists>);
@@ -53,7 +57,7 @@ private slots:
 private:
   Ui::Analyzer *ui;
 
-  std::shared_ptr<NMX::Reader> reader_;
+  std::shared_ptr<NMX::FileHDF5> reader_;
 
   NMX::Dimensions xdims_;
   NMX::Dimensions ydims_;
@@ -62,7 +66,9 @@ private:
 
   Marker1D marker_;
 
-  AnalysisThread thread_;
+  ThreadAnalysis thread_;
+
+  std::map<std::string, double> params_;
 
   void loadSettings();
   void saveSettings();

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>EventViewer</class>
- <widget class="QWidget" name="EventViewer">
+ <class>ViewEvent</class>
+ <widget class="QWidget" name="ViewEvent">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -132,7 +132,7 @@
    <item row="1" column="0">
     <layout class="QHBoxLayout" name="horizontalLayout_2">
      <item>
-      <widget class="RecordViewer" name="eventX" native="true">
+      <widget class="ViewRecord" name="eventX" native="true">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
          <horstretch>0</horstretch>
@@ -142,7 +142,7 @@
       </widget>
      </item>
      <item>
-      <widget class="RecordViewer" name="eventY" native="true">
+      <widget class="ViewRecord" name="eventY" native="true">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
          <horstretch>0</horstretch>
@@ -157,9 +157,9 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>RecordViewer</class>
+   <class>ViewRecord</class>
    <extends>QWidget</extends>
-   <header>record_viewer.h</header>
+   <header>ViewRecord.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

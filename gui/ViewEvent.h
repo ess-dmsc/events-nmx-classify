@@ -5,24 +5,26 @@
 #include <QItemSelection>
 #include <memory>
 
-#include "Reader.h"
+#include "FileHDF5.h"
 #include "Dimensions.h"
 
 #include "widget_plot2d.h"
 
 namespace Ui {
-class EventViewer;
+class ViewEvent;
 }
 
-class EventViewer : public QWidget
+class ViewEvent : public QWidget
 {
   Q_OBJECT
 
 public:
-  explicit EventViewer(QWidget *parent = 0);
-  ~EventViewer();
+  explicit ViewEvent(QWidget *parent = 0);
+  ~ViewEvent();
 
-  void set_new_source(std::shared_ptr<NMX::Reader> r, NMX::Dimensions x, NMX::Dimensions y);
+  void set_new_source(std::shared_ptr<NMX::FileHDF5> r, NMX::Dimensions x, NMX::Dimensions y);
+
+  void set_params(std::map<std::string, double>);
 
   void clear();
 
@@ -41,9 +43,10 @@ private slots:
   void on_checkRaw_clicked();
 
 private:
-  Ui::EventViewer *ui;
+  Ui::ViewEvent *ui;
 
-  std::shared_ptr<NMX::Reader> reader_;
+  std::shared_ptr<NMX::FileHDF5> reader_;
+  std::map<std::string, double> params_;
 
   NMX::Dimensions xdims_;
   NMX::Dimensions ydims_;

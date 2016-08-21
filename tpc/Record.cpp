@@ -11,6 +11,18 @@ Record::Record()
 {
   values_["ADC_threshold"] = 150;
   values_["TB_over_threshold"] = 3;
+
+  values_["ADC_threshold_time"] = 50;
+  values_["TB_over_threshold_time"] = 2;
+
+  values_["U-ness_threshold"] = 7;
+
+
+  point_lists_["VMM"] = PointList();
+  point_lists_["maxima"] = PointList();
+  point_lists_["global_maxima"] = PointList();
+  point_lists_["tb_maxima"] = PointList();
+  point_lists_["tb_maxima2"] = PointList();
 }
 
 void Record::add_strip(int16_t idx, const Strip &strip)
@@ -47,9 +59,19 @@ double Record::get_value(std::string id) const
     return 0;
 }
 
+
+PointList Record::get_points(std::string id) const
+{
+  if (point_lists_.count(id))
+    return point_lists_.at(id);
+  else
+    return PointList();
+}
+
 void Record::set_value(std::string id, double val)
 {
-  values_[id] = val;
+  if (values_.count(id))
+    values_[id] = val;
 }
 
 bool Record::empty() const
@@ -162,23 +184,34 @@ std::list<std::string> Record::categories() const
   return ret;
 }
 
+std::list<std::string> Record::point_categories() const
+{
+  std::list<std::string> ret;
+  for (auto &i : point_lists_)
+    ret.push_back(i.first);
+  return ret;
+}
+
 void Record::analyze()
 {
-  values_["hit strips"] = strips_.size();
+  values_["hit_strips"] = strips_.size();
 
   if ((strip_start_ > -1) && (strip_end_ > strip_start_))
-    values_["strip span"] = strip_end_ - strip_start_ + 1;
+    values_["strip_span"] = strip_end_ - strip_start_ + 1;
   else
-    values_["strip span"] = 0;
-
+    values_["strip_span"] = 0;
 
   values_["integral"] = 0;
-  values_["non-empty words"] = 0;
+  values_["nonempty_words"] = 0;
 
   int16_t tbstart{-1}, tbstop{-1};
 
   int entry_strip {-1};
   int entry_tb {-1};
+  int c_ness {0};
+
+  std::vector<std::vector<int16_t>> sideways(time_end() + 1,
+                                           std::vector<int16_t>(strip_end_ + 1, 0));
 
   std::set<int> tbins;
   for (auto &s : strips_)
@@ -190,43 +223,81 @@ void Record::analyze()
       tbstop = s.second.bin_end();
 
     values_["integral"] += s.second.integral();
-    values_["non-empty words"] += s.second.num_valid_bins();
+    values_["nonempty_words"] += s.second.num_valid_bins();
 
     if (s.second.nonzero())
       for (int i=s.second.bin_start(); i <= s.second.bin_end(); ++i)
         if (s.second.value(i) != 0)
+        {
           tbins.insert(i);
+          sideways[i][s.first] = s.second.value(i);
+        }
 
     for (auto m : s.second.VMM_maxima())
+    {
+      point_lists_["VMM"].push_back(Point(s.first, m));
       if (int(m) > entry_tb)
       {
         entry_tb  = m;
         entry_strip = s.first;
       }
+    }
+
+    if (s.second.maxima().size() >= 2)
+      c_ness++;
+
+    for (auto m : s.second.maxima())
+      point_lists_["maxima"].push_back(Point(s.first, m));
+
+    for (auto m : s.second.global_maxima())
+      point_lists_["global_maxima"].push_back(Point(s.first, m));
   }
-  values_["hit timebins"] = tbins.size();
+  values_["hit_timebins"] = tbins.size();
   values_["entry_strip"] = entry_strip;
   values_["entry_time"] = entry_tb;
+  values_["c-ness"] = c_ness;
+
+  int u_ness {0}, u_ness2{0};
+  for (int i=0; i < sideways.size(); ++i)
+  {
+    Strip newstrip(sideways.at(i));
+    newstrip.analyze(values_["ADC_threshold_time"], values_["TB_over_threshold_time"]);
+
+    auto maxima = newstrip.maxima();
+    for (int m : maxima)
+      point_lists_["tb_maxima"].push_back(Point(m, i));
+
+    if ((maxima.size() >= 2) && (maxima.back() - maxima.front() > values_["U-ness_threshold"]))
+      u_ness++;
+
+//    for (int m : newstrip.VMM_maxima())
+//      point_lists_["tb_maxima2"].push_back(Point(m, i));
+
+//    if (newstrip.VMM_maxima().size() >= 2)
+//      u_ness2++;
+  }
+  values_["u-ness"] = u_ness;
+//  values_["u-ness2"] = u_ness2;
 
   if (tbstart > -1)
-    values_["timebin span"] = tbstop - tbstart + 1;
+    values_["timebin_span"] = tbstop - tbstart + 1;
   else
-    values_["timebin span"] = 0;
+    values_["timebin_span"] = 0;
 
   if (strips_.size() > 0)
-    values_["integral/hitstrips"] = values_["integral"] / double(strips_.size());
+    values_["integral_per_hitstrips"] = values_["integral"] / double(strips_.size());
   else
-    values_["integral/hitstrips"] = 0;
+    values_["integral_per_hitstrips"] = 0;
 
-  if (values_["strip span"] > 0)
-    values_["strip density"] = values_["hit strips"] / values_["strip span"];
+  if (values_["strip_span"] > 0)
+    values_["strip_density"] = values_["hit_strips"] / values_["strip_span"];
   else
-    values_["strip density"] = 0;
+    values_["strip_density"] = 0;
 
-  if (values_["timebin span"])
-    values_["time density"] = values_["hit timebins"] / values_["timebin span"];
+  if (values_["timebin_span"])
+    values_["time_density"] = values_["hit_timebins"] / values_["timebin_span"];
   else
-    values_["time density"] = 0;
+    values_["time_density"] = 0;
 
 }
 

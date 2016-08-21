@@ -1,33 +1,34 @@
 #include <QSettings>
-#include "event_viewer.h"
-#include "ui_event_viewer.h"
+#include "ViewEvent.h"
+#include "ui_ViewEvent.h"
 #include "CustomLogger.h"
 
 
-EventViewer::EventViewer(QWidget *parent) :
+ViewEvent::ViewEvent(QWidget *parent) :
   QWidget(parent),
-  ui(new Ui::EventViewer)
+  ui(new Ui::ViewEvent)
 {
   ui->setupUi(this);
 
+  NMX::Record rec;
+  rec.analyze();
+  for (auto &name : rec.point_categories())
+    ui->comboOverlay->addItem(QString::fromStdString(name));
   ui->comboOverlay->addItem("none");
-  ui->comboOverlay->addItem("Maxima");
-  ui->comboOverlay->addItem("VMM");
 
   ui->comboProjection->addItem("none");
   ui->comboProjection->addItem("Integral");
-//  ui->comboProjection->addItem("Integral/bins");
 
   loadSettings();
 }
 
-EventViewer::~EventViewer()
+ViewEvent::~ViewEvent()
 {
   saveSettings();
   delete ui;
 }
 
-void EventViewer::enableIO(bool enable)
+void ViewEvent::enableIO(bool enable)
 {
   bool en = reader_ && reader_->event_count() && enable;
   ui->spinEventIdx->setEnabled(en);
@@ -37,7 +38,7 @@ void EventViewer::enableIO(bool enable)
   ui->comboProjection->setEnabled(en);
 }
 
-void EventViewer::set_new_source(std::shared_ptr<NMX::Reader> r, NMX::Dimensions x, NMX::Dimensions y)
+void ViewEvent::set_new_source(std::shared_ptr<NMX::FileHDF5> r, NMX::Dimensions x, NMX::Dimensions y)
 {
   reader_ = r;
   xdims_ = x;
@@ -63,7 +64,7 @@ void EventViewer::set_new_source(std::shared_ptr<NMX::Reader> r, NMX::Dimensions
     clear();
 }
 
-void EventViewer::loadSettings()
+void ViewEvent::loadSettings()
 {
   QSettings settings;
   settings.beginGroup("Program");
@@ -73,7 +74,7 @@ void EventViewer::loadSettings()
   ui->comboProjection->setCurrentText(settings.value("projection").toString());
 }
 
-void EventViewer::saveSettings()
+void ViewEvent::saveSettings()
 {
   QSettings settings;
   settings.beginGroup("Program");
@@ -85,44 +86,51 @@ void EventViewer::saveSettings()
 }
 
 
-void EventViewer::clear()
+void ViewEvent::clear()
 {
   ui->eventX->clear();
   ui->eventY->clear();
 }
 
-void EventViewer::on_spinEventIdx_valueChanged(int /*arg1*/)
+void ViewEvent::on_spinEventIdx_valueChanged(int /*arg1*/)
 {
   plot_current_event();
 }
 
-void EventViewer::on_checkTrim_clicked()
+void ViewEvent::on_checkTrim_clicked()
 {
   plot_current_event();
 }
 
-void EventViewer::on_checkNoneg_clicked()
+void ViewEvent::on_checkNoneg_clicked()
 {
   plot_current_event();
 }
 
-void EventViewer::on_comboOverlay_currentIndexChanged(const QString &/*arg1*/)
+void ViewEvent::on_comboOverlay_currentIndexChanged(const QString &/*arg1*/)
 {
   plot_current_event();
 }
 
 
-void EventViewer::on_comboProjection_activated(const QString &/*arg1*/)
+void ViewEvent::on_comboProjection_activated(const QString &/*arg1*/)
 {
   plot_current_event();
 }
 
-void EventViewer::on_checkRaw_clicked()
+void ViewEvent::on_checkRaw_clicked()
 {
   plot_current_event();
 }
 
-void EventViewer::plot_current_event()
+void ViewEvent::set_params(std::map<std::string, double> params)
+{
+  params_ = params;
+  plot_current_event();
+}
+
+
+void ViewEvent::plot_current_event()
 {
   int idx = ui->spinEventIdx->value();
 
@@ -139,6 +147,8 @@ void EventViewer::plot_current_event()
 
   if (noneg)
     evt = evt.suppress_negatives();
+
+  evt.set_values(params_);
 
   evt.analyze();
 

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>RecordViewer</class>
- <widget class="QWidget" name="RecordViewer">
+ <class>ViewRecord</class>
+ <widget class="QWidget" name="ViewRecord">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -44,7 +44,7 @@
        <property name="maximumSize">
         <size>
          <width>16777215</width>
-         <height>350</height>
+         <height>450</height>
         </size>
        </property>
       </widget>
@@ -60,7 +60,7 @@
        <property name="maximumSize">
         <size>
          <width>300</width>
-         <height>350</height>
+         <height>450</height>
         </size>
        </property>
       </widget>

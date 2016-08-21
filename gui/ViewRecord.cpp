@@ -1,12 +1,12 @@
 #include <QSettings>
-#include "record_viewer.h"
-#include "ui_record_viewer.h"
+#include "ViewRecord.h"
+#include "ui_ViewRecord.h"
 #include "qt_util.h"
 
 
-RecordViewer::RecordViewer(QWidget *parent) :
+ViewRecord::ViewRecord(QWidget *parent) :
   QWidget(parent),
-  ui(new Ui::RecordViewer)
+  ui(new Ui::ViewRecord)
 {
   ui->setupUi(this);
 
@@ -33,27 +33,27 @@ RecordViewer::RecordViewer(QWidget *parent) :
 
 }
 
-RecordViewer::~RecordViewer()
+ViewRecord::~ViewRecord()
 {
   delete ui;
 }
 
-bool RecordViewer::save_close()
+bool ViewRecord::save_close()
 {
   saveSettings();
   return true;
 }
 
-void RecordViewer::loadSettings()
+void ViewRecord::loadSettings()
 {
 }
 
-void RecordViewer::saveSettings()
+void ViewRecord::saveSettings()
 {
 }
 
 
-void RecordViewer::clear()
+void ViewRecord::clear()
 {
   ui->plotRecord->reset_content();
   ui->plotRecord->set_boxes(std::list<MarkerBox2D>());
@@ -69,7 +69,7 @@ void RecordViewer::clear()
 }
 
 
-void RecordViewer::display_record(const NMX::Record record, NMX::Dimensions dim, bool trim, bool raw, QString secondary)
+void ViewRecord::display_record(const NMX::Record record, NMX::Dimensions dim, bool trim, bool raw, QString secondary)
 {
   clear();
 
@@ -90,10 +90,27 @@ void RecordViewer::display_record(const NMX::Record record, NMX::Dimensions dim,
   else
     ui->plotRecord->update_plot(xdim.strips, record.time_end() + 1, std::make_shared<EntryList>());
 
-  if (secondary == "Maxima")
-    ui->plotRecord->set_boxes(maxima(record, xdim, trim));
-  else if (secondary == "VMM")
-    ui->plotRecord->set_boxes(VMM(record, xdim, trim));
+
+  auto overlay = make_overlay(secondary.toStdString(), record, xdim, trim);
+  int stripi = record.get_value("entry_strip");
+  if (stripi >= 0)
+  {
+    if (trim)
+      stripi -= record.strip_start();
+
+    int timei = record.get_value("entry_time");
+
+    MarkerBox2D box;
+    //  box.mark_center = true;
+    box.x_c = xdim.transform(stripi);
+    box.x1 = xdim.transform(stripi - 0.2);
+    box.x2 = xdim.transform(stripi + 0.2);
+    box.y_c = timei;
+    box.y1  = timei - 0.2;
+    box.y2  = timei + 0.2;
+    overlay.push_back(box);
+  }
+  ui->plotRecord->set_boxes(overlay);
 
   ui->plotRecord->replot_markers();
 
@@ -109,7 +126,7 @@ void RecordViewer::display_record(const NMX::Record record, NMX::Dimensions dim,
   }
 }
 
-std::shared_ptr<EntryList> RecordViewer::make_list(const NMX::Record &record, bool trim)
+std::shared_ptr<EntryList> ViewRecord::make_list(const NMX::Record &record, bool trim)
 {
   std::shared_ptr<EntryList> data = std::make_shared<EntryList>();
 
@@ -126,51 +143,13 @@ std::shared_ptr<EntryList> RecordViewer::make_list(const NMX::Record &record, bo
   return data;
 }
 
-std::list<MarkerBox2D> RecordViewer::maxima(const NMX::Record &record, NMX::Dimensions dim, bool trim)
+std::list<MarkerBox2D> ViewRecord::make_overlay(std::string type, const NMX::Record &record, NMX::Dimensions dim, bool trim)
 {
   std::list<MarkerBox2D> ret;
 
-  for (auto &i : record.valid_strips())
+  for (auto &i : record.get_points(type))
   {
-    auto strip = record.get_strip(i);
-    int stripi = i;
-    if (trim)
-      stripi -= record.strip_start();
-    for (auto m : strip.maxima())
-    {
-      MarkerBox2D box;
-      box.x_c = dim.transform(stripi);
-      box.x1 = dim.transform(stripi - 0.45);
-      box.x2 = dim.transform(stripi + 0.45);
-      box.y_c = m;
-      box.y1 = m - 0.45;
-      box.y2 = m + 0.45;
-      ret.push_back(box);
-    }
-    for (auto m : strip.global_maxima())
-    {
-      MarkerBox2D box;
-      box.x_c = dim.transform(stripi);
-      box.x1 = dim.transform(stripi - 0.2);
-      box.x2 = dim.transform(stripi + 0.2);
-      box.y_c = m;
-      box.y1 = m - 0.2;
-      box.y2 = m + 0.2;
-      ret.push_back(box);
-    }
-  }
-
-  return ret;
-}
-
-
-std::list<MarkerBox2D> RecordViewer::VMM(const NMX::Record &record, NMX::Dimensions dim, bool trim)
-{
-  std::list<MarkerBox2D> ret;
-
-  for (auto idx : record.valid_strips())
-  {
-    int stripi = idx;
+    int stripi = i.first;
     if (trim)
       stripi -= record.strip_start();
 
@@ -178,38 +157,17 @@ std::list<MarkerBox2D> RecordViewer::VMM(const NMX::Record &record, NMX::Dimensi
     box.x_c = dim.transform(stripi);
     box.x1 = dim.transform(stripi - 0.45);
     box.x2 = dim.transform(stripi + 0.45);
-
-    for (auto tb : record.get_strip(idx).VMM_maxima())
-    {
-      box.y_c = tb;
-      box.y1  = tb - 0.45;
-      box.y2  = tb + 0.45;
-      ret.push_back(box);
-    }
-  }
-
-  int stripi = record.get_value("entry_strip");
-  if (stripi >= 0)
-  {
-    if (trim)
-      stripi -= record.strip_start();
-
-    int timei = record.get_value("entry_time");
-
-    MarkerBox2D box;
-    //  box.mark_center = true;
-    box.x_c = dim.transform(stripi);
-    box.x1 = dim.transform(stripi - 0.2);
-    box.x2 = dim.transform(stripi + 0.2);
-    box.y_c = timei;
-    box.y1  = timei - 0.2;
-    box.y2  = timei + 0.2;
+    box.y_c = i.second;
+    box.y1 = i.second - 0.45;
+    box.y2 = i.second + 0.45;
     ret.push_back(box);
   }
+
   return ret;
 }
 
-void RecordViewer::display_projection(const NMX::Record &record, NMX::Dimensions dim, QString codomain)
+
+void ViewRecord::display_projection(const NMX::Record &record, NMX::Dimensions dim, QString codomain)
 {
   std::map<double, double> minima, maxima;
   Calibration calib_ = Calibration();

@@ -1,27 +1,27 @@
-#include "analysis_thread.h"
+#include "ThreadAnalysis.h"
 #include "CustomLogger.h"
 
 #include <QTimer>
 
-AnalysisThread::AnalysisThread(QObject *parent) :
+ThreadAnalysis::ThreadAnalysis(QObject *parent) :
   QThread(parent),
   terminating_(false)
 {
   refresh_frequency_.store(1);
 }
 
-AnalysisThread::~AnalysisThread()
+ThreadAnalysis::~ThreadAnalysis()
 {
   terminate();
 }
 
-void AnalysisThread::terminate()
+void ThreadAnalysis::terminate()
 {
   terminating_.store(true);
   wait();
 }
 
-void AnalysisThread::go(std::shared_ptr<NMX::Reader> r, QString weight_type, double normalize_by)
+void ThreadAnalysis::go(std::shared_ptr<NMX::FileHDF5> r, QString weight_type, double normalize_by)
 {
   if (isRunning())
   {
@@ -40,7 +40,7 @@ void AnalysisThread::go(std::shared_ptr<NMX::Reader> r, QString weight_type, dou
     start(HighPriority);
 }
 
-void AnalysisThread::set_bounds(int min, int max)
+void ThreadAnalysis::set_bounds(int min, int max)
 {
   min_.store(min);
   max_.store(max);
@@ -49,7 +49,7 @@ void AnalysisThread::set_bounds(int min, int max)
     make_projections();
 }
 
-void AnalysisThread::request_hists(QVector<HistParams> par)
+void ThreadAnalysis::request_hists(QVector<HistParams> par)
 {
   subset_params_ = par;
 
@@ -57,14 +57,14 @@ void AnalysisThread::request_hists(QVector<HistParams> par)
     make_projections();
 }
 
-void AnalysisThread::set_refresh_frequency(int secs)
+void ThreadAnalysis::set_refresh_frequency(int secs)
 {
   if (secs < 1)
     secs = 1;
   refresh_frequency_.store(secs);
 }
 
-void AnalysisThread::run()
+void ThreadAnalysis::run()
 {
   if (!reader_|| !reader_->event_count())
     return;
@@ -129,7 +129,7 @@ void AnalysisThread::run()
   emit run_complete();
 }
 
-void AnalysisThread::make_projections()
+void ThreadAnalysis::make_projections()
 {
   int min = min_.load();
   int max = max_.load();

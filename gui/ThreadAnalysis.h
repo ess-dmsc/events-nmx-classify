@@ -7,7 +7,7 @@
 #include <cstdint>
 #include <boost/atomic.hpp>
 
-#include "Reader.h"
+#include "FileHDF5.h"
 #include <memory>
 
 #include "entry2d.h"
@@ -32,18 +32,18 @@ struct HistSubset
 
 using MultiHists = QVector<HistSubset>;
 
-class AnalysisThread : public QThread
+class ThreadAnalysis : public QThread
 {
     Q_OBJECT
 public:
-    explicit AnalysisThread(QObject *parent = 0);
-    ~AnalysisThread();
+    explicit ThreadAnalysis(QObject *parent = 0);
+    ~ThreadAnalysis();
 
     void set_refresh_frequency(int);
     void set_bounds(int min, int max);
 
     void request_hists(QVector<HistParams>);
-    void go(std::shared_ptr<NMX::Reader> r, QString weight_type, double normalize_by);
+    void go(std::shared_ptr<NMX::FileHDF5> r, QString weight_type, double normalize_by);
     void terminate();
 
 signals:
@@ -56,7 +56,7 @@ protected:
     void run();
 
 private:
-    std::shared_ptr<NMX::Reader> reader_;
+    std::shared_ptr<NMX::FileHDF5> reader_;
 
     boost::atomic<bool> terminating_;
     boost::atomic<int>  refresh_frequency_;

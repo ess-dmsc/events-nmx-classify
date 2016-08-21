@@ -38,7 +38,7 @@
         </size>
        </property>
        <property name="toolTip">
-        <string>Stop acquisition</string>
+        <string>Start</string>
        </property>
        <property name="text">
         <string/>
@@ -76,7 +76,7 @@
         </size>
        </property>
        <property name="toolTip">
-        <string>Stop acquisition</string>
+        <string>Stop</string>
        </property>
        <property name="text">
         <string/>
