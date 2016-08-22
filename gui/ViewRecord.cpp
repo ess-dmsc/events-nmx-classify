@@ -29,8 +29,6 @@ ViewRecord::ViewRecord(QWidget *parent) :
   ui->tableValues->horizontalHeader()->setStretchLastSection(true);
   ui->tableValues->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
 
-  loadSettings();
-
 }
 
 ViewRecord::~ViewRecord()
@@ -38,20 +36,36 @@ ViewRecord::~ViewRecord()
   delete ui;
 }
 
-bool ViewRecord::save_close()
+
+void ViewRecord::set_trim(bool trim)
 {
-  saveSettings();
-  return true;
+  trim_ = trim;
+  display_current_record();
 }
 
-void ViewRecord::loadSettings()
+void ViewRecord::set_show_raw(bool show_raw)
 {
+  show_raw_ = show_raw;
+  display_current_record();
 }
 
-void ViewRecord::saveSettings()
+void ViewRecord::set_overlay_type(QString overlay_type)
 {
+  overlay_type_ = overlay_type;
+  display_current_record();
 }
 
+void ViewRecord::set_projection_type(QString projection_type)
+{
+  projection_type_ = projection_type;
+  display_current_record();
+}
+
+void ViewRecord::set_dimenstions(NMX::Dimensions dim)
+{
+  dim_ = dim;
+  display_current_record();
+}
 
 void ViewRecord::clear()
 {
@@ -69,42 +83,48 @@ void ViewRecord::clear()
 }
 
 
-void ViewRecord::display_record(const NMX::Record record, NMX::Dimensions dim, bool trim, bool raw, QString secondary)
+void ViewRecord::display_record(const NMX::Record &record)
+{
+  record_ = record;
+  display_current_record();
+}
+
+void ViewRecord::display_current_record()
 {
   clear();
 
-  NMX::Dimensions xdim = dim;
-  if (trim)
+  dim_shifted_ = dim_;
+  if (trim_)
   {
-    xdim.min = dim.transform(record.strip_start()-0.5);
-    xdim.max = dim.transform(record.strip_end()+0.5);
-    xdim.strips = record.strip_end() - record.strip_start() + 1;
+    dim_shifted_.min = dim_.transform(record_.strip_start()-0.5);
+    dim_shifted_.max = dim_.transform(record_.strip_end()+0.5);
+    dim_shifted_.strips = record_.strip_end() - record_.strip_start() + 1;
   }
 
-  ui->plotRecord->set_axes("Position (mm)", xdim.transform(0), xdim.transform(xdim.strips-1),
-                           "Time bin",                      0,    record.time_end(),
+  ui->plotRecord->set_axes("Position (mm)", dim_shifted_.transform(0), dim_shifted_.transform(dim_shifted_.strips-1),
+                           "Time bin",                             0, record_.time_end(),
                            "Charge");
 
-  if (raw)
-    ui->plotRecord->update_plot(xdim.strips, record.time_end() + 1, make_list(record, trim));
+  if (show_raw_)
+    ui->plotRecord->update_plot(dim_shifted_.strips, record_.time_end() + 1, make_list());
   else
-    ui->plotRecord->update_plot(xdim.strips, record.time_end() + 1, std::make_shared<EntryList>());
+    ui->plotRecord->update_plot(dim_shifted_.strips, record_.time_end() + 1, std::make_shared<EntryList>());
 
 
-  auto overlay = make_overlay(secondary.toStdString(), record, xdim, trim);
-  int stripi = record.get_value("entry_strip");
+  auto overlay = make_overlay();
+  int stripi = record_.get_value("entry_strip");
   if (stripi >= 0)
   {
-    if (trim)
-      stripi -= record.strip_start();
+    if (trim_)
+      stripi -= record_.strip_start();
 
-    int timei = record.get_value("entry_time");
+    int timei = record_.get_value("entry_time");
 
     MarkerBox2D box;
-    //  box.mark_center = true;
-    box.x_c = xdim.transform(stripi);
-    box.x1 = xdim.transform(stripi - 0.2);
-    box.x2 = xdim.transform(stripi + 0.2);
+    box.mark_center = true;
+    box.x_c = dim_shifted_.transform(stripi);
+    box.x1 = dim_shifted_.transform(stripi - 0.2);
+    box.x2 = dim_shifted_.transform(stripi + 0.2);
     box.y_c = timei;
     box.y1  = timei - 0.2;
     box.y2  = timei + 0.2;
@@ -115,27 +135,29 @@ void ViewRecord::display_record(const NMX::Record record, NMX::Dimensions dim, b
   ui->plotRecord->replot_markers();
 
   ui->tableValues->clearContents();
-  auto valnames = record.categories();
+  auto valnames = record_.categories();
   ui->tableValues->setRowCount(valnames.size());
   int i = 0;
   for (auto &name : valnames)
   {
     add_to_table(ui->tableValues, i, 0, name);
-    add_to_table(ui->tableValues, i, 1, std::to_string(record.get_value(name)));
+    add_to_table(ui->tableValues, i, 1, std::to_string(record_.get_value(name)));
     i++;
   }
+
+  display_projection();
 }
 
-std::shared_ptr<EntryList> ViewRecord::make_list(const NMX::Record &record, bool trim)
+std::shared_ptr<EntryList> ViewRecord::make_list()
 {
   std::shared_ptr<EntryList> data = std::make_shared<EntryList>();
 
-  for (auto &i : record.valid_strips())
+  for (auto &i : record_.valid_strips())
   {
-    auto strip = record.get_strip(i);
+    auto strip = record_.get_strip(i);
     int stripi = i;
-    if (trim)
-      stripi -= record.strip_start();
+    if (trim_)
+      stripi -= record_.strip_start();
     for (int tb=strip.bin_start(); tb <= strip.bin_end(); ++tb)
       if (strip.value(tb))
         data->push_back(Entry{{stripi,tb}, strip.value(tb)});
@@ -143,20 +165,20 @@ std::shared_ptr<EntryList> ViewRecord::make_list(const NMX::Record &record, bool
   return data;
 }
 
-std::list<MarkerBox2D> ViewRecord::make_overlay(std::string type, const NMX::Record &record, NMX::Dimensions dim, bool trim)
+std::list<MarkerBox2D> ViewRecord::make_overlay()
 {
   std::list<MarkerBox2D> ret;
 
-  for (auto &i : record.get_points(type))
+  for (auto &i : record_.get_points(overlay_type_.toStdString()))
   {
     int stripi = i.first;
-    if (trim)
-      stripi -= record.strip_start();
+    if (trim_)
+      stripi -= record_.strip_start();
 
     MarkerBox2D box;
-    box.x_c = dim.transform(stripi);
-    box.x1 = dim.transform(stripi - 0.45);
-    box.x2 = dim.transform(stripi + 0.45);
+    box.x_c = dim_shifted_.transform(stripi);
+    box.x1 = dim_shifted_.transform(stripi - 0.45);
+    box.x2 = dim_shifted_.transform(stripi + 0.45);
     box.y_c = i.second;
     box.y1 = i.second - 0.45;
     box.y2 = i.second + 0.45;
@@ -167,7 +189,7 @@ std::list<MarkerBox2D> ViewRecord::make_overlay(std::string type, const NMX::Rec
 }
 
 
-void ViewRecord::display_projection(const NMX::Record &record, NMX::Dimensions dim, QString codomain)
+void ViewRecord::display_projection()
 {
   std::map<double, double> minima, maxima;
   Calibration calib_ = Calibration();
@@ -176,15 +198,15 @@ void ViewRecord::display_projection(const NMX::Record &record, NMX::Dimensions d
 
   QVector<double> x, y;
 
-  if (record.valid_strips().size() && (codomain != "none"))
+  if (record_.valid_strips().size() && (projection_type_ != "none"))
   {
-    for (size_t i = record.strip_start(); i <= record.strip_end(); ++i)
+    for (size_t i = record_.strip_start(); i <= record_.strip_end(); ++i)
     {
-      auto strip = record.get_strip(i);
-      double xx = dim.transform(i);
+      auto strip = record_.get_strip(i);
+      double xx = dim_.transform(i);
       double yy = 0;
 
-      if (codomain == "Integral")
+      if (projection_type_ == "Integral")
         yy = strip.integral();
 //      else if (codomain == "Integral/bins")
 //        yy = strip.integral_normalized();
@@ -207,7 +229,7 @@ void ViewRecord::display_projection(const NMX::Record &record, NMX::Dimensions d
   ui->plotProjection->setLabels("position", "value");
   ui->plotProjection->setYBounds(minima, maxima);
 
-  ui->plotProjection->setTitle(codomain);
+  ui->plotProjection->setTitle(projection_type_);
   ui->plotProjection->replot_markers();
   ui->plotProjection->redraw();
 }

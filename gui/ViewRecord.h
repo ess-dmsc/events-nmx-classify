@@ -23,23 +23,36 @@ public:
   explicit ViewRecord(QWidget *parent = 0);
   ~ViewRecord();
 
-  void display_record(const NMX::Record record, NMX::Dimensions dim, bool trim, bool raw, QString secondary);
-  void display_projection(const NMX::Record &record, NMX::Dimensions dim, QString codomain);
+  void display_record(const NMX::Record &record);
 
-  bool save_close();
   void clear();
+
+  void set_trim(bool);
+  void set_show_raw(bool);
+  void set_overlay_type(QString);
+  void set_projection_type(QString);
+  void set_dimenstions(NMX::Dimensions);
 
 private:
   Ui::ViewRecord *ui;
 
+  NMX::Record record_;
+
   Marker1D moving_;
 
-  void loadSettings();
-  void saveSettings();
+  bool trim_ {true};
+  bool show_raw_{true};
+  QString overlay_type_;
+  QString projection_type_;
+  NMX::Dimensions dim_;
+  NMX::Dimensions dim_shifted_;
 
-  std::shared_ptr<EntryList> make_list(const NMX::Record &record, bool trim);
 
-  std::list<MarkerBox2D> make_overlay(std::string type, const NMX::Record &record, NMX::Dimensions dim, bool trim);
+  void display_current_record();
+
+  void display_projection();
+  std::shared_ptr<EntryList> make_list();
+  std::list<MarkerBox2D> make_overlay();
 };
 
 #endif // FORM_CALIBRATION_H

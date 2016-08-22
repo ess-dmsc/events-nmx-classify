@@ -19,7 +19,23 @@ ViewEvent::ViewEvent(QWidget *parent) :
   ui->comboProjection->addItem("none");
   ui->comboProjection->addItem("Integral");
 
+  ui->eventX->set_dimenstions(xdims_);
+  ui->eventY->set_dimenstions(ydims_);
+
   loadSettings();
+
+
+  ui->eventX->set_trim(ui->checkTrim->isChecked());
+  ui->eventY->set_trim(ui->checkTrim->isChecked());
+
+  ui->eventX->set_overlay_type(ui->comboOverlay->currentText());
+  ui->eventY->set_overlay_type(ui->comboOverlay->currentText());
+
+  ui->eventX->set_projection_type(ui->comboProjection->currentText());
+  ui->eventY->set_projection_type(ui->comboProjection->currentText());
+
+  ui->eventX->set_show_raw(ui->checkRaw->isChecked());
+  ui->eventY->set_show_raw(ui->checkRaw->isChecked());
 }
 
 ViewEvent::~ViewEvent()
@@ -97,30 +113,34 @@ void ViewEvent::on_spinEventIdx_valueChanged(int /*arg1*/)
   plot_current_event();
 }
 
-void ViewEvent::on_checkTrim_clicked()
-{
-  plot_current_event();
-}
-
 void ViewEvent::on_checkNoneg_clicked()
 {
   plot_current_event();
 }
 
+void ViewEvent::on_checkTrim_clicked()
+{
+  ui->eventX->set_trim(ui->checkTrim->isChecked());
+  ui->eventY->set_trim(ui->checkTrim->isChecked());
+}
+
 void ViewEvent::on_comboOverlay_currentIndexChanged(const QString &/*arg1*/)
 {
-  plot_current_event();
+  ui->eventX->set_overlay_type(ui->comboOverlay->currentText());
+  ui->eventY->set_overlay_type(ui->comboOverlay->currentText());
 }
 
 
 void ViewEvent::on_comboProjection_activated(const QString &/*arg1*/)
 {
-  plot_current_event();
+  ui->eventX->set_projection_type(ui->comboProjection->currentText());
+  ui->eventY->set_projection_type(ui->comboProjection->currentText());
 }
 
 void ViewEvent::on_checkRaw_clicked()
 {
-  plot_current_event();
+  ui->eventX->set_show_raw(ui->checkRaw->isChecked());
+  ui->eventY->set_show_raw(ui->checkRaw->isChecked());
 }
 
 void ViewEvent::set_params(std::map<std::string, double> params)
@@ -140,24 +160,18 @@ void ViewEvent::plot_current_event()
     return;
   }
 
-  bool trim = ui->checkTrim->isChecked();
-  bool noneg = ui->checkNoneg->isChecked();
 
   NMX::Event evt = reader_->get_event(idx-1);
 
-  if (noneg)
+  if (ui->checkNoneg->isChecked())
     evt = evt.suppress_negatives();
 
   evt.set_values(params_);
 
   evt.analyze();
 
-  ui->eventX->display_record(evt.x(), xdims_, trim, ui->checkRaw->isChecked(), ui->comboOverlay->currentText());
-  ui->eventY->display_record(evt.y(), ydims_, trim, ui->checkRaw->isChecked(), ui->comboOverlay->currentText());
-
-
-  ui->eventX->display_projection(evt.x(), xdims_, ui->comboProjection->currentText());
-  ui->eventY->display_projection(evt.y(), ydims_, ui->comboProjection->currentText());
+  ui->eventX->display_record(evt.x());
+  ui->eventY->display_record(evt.y());
 }
 
 

@@ -270,14 +270,15 @@ void Record::analyze()
     if ((maxima.size() >= 2) && (maxima.back() - maxima.front() > values_["U-ness_threshold"]))
       u_ness++;
 
-//    for (int m : newstrip.VMM_maxima())
-//      point_lists_["tb_maxima2"].push_back(Point(m, i));
+    auto maxima2 = newstrip.VMM_maxima();
+    for (int m : maxima2)
+      point_lists_["tb_maxima2"].push_back(Point(m, i));
 
-//    if (newstrip.VMM_maxima().size() >= 2)
-//      u_ness2++;
+    if ((maxima2.size() >= 2) && (maxima2.back() - maxima2.front() > values_["U-ness_threshold"]))
+      u_ness2++;
   }
   values_["u-ness"] = u_ness;
-//  values_["u-ness2"] = u_ness2;
+  values_["u-ness2"] = u_ness2;
 
   if (tbstart > -1)
     values_["timebin_span"] = tbstop - tbstart + 1;
