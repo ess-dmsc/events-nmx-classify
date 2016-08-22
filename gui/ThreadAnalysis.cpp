@@ -94,13 +94,9 @@ void ThreadAnalysis::run()
 
     evt.analyze();
 
-    double quality_x {0};
-    double quality_y {0};
+    double quality {0};
     if (weight_type_ != "none")
-    {
-      quality_x = evt.x().get_value(weight_type_.toStdString()) / normalize_by_;
-      quality_y = evt.y().get_value(weight_type_.toStdString()) / normalize_by_;
-    }
+      quality = evt.get_value(weight_type_.toStdString()) / normalize_by_;
 
     if ((evt.x().get_value("entry_strip") < 0) ||
         (evt.y().get_value("entry_strip") < 0))
@@ -108,8 +104,7 @@ void ThreadAnalysis::run()
 
     std::pair<int,int> pos{evt.x().get_value("entry_strip"), evt.y().get_value("entry_strip")};
 
-    data_[int(quality_x)][pos]++;
-    data_[int(quality_y)][pos]++;
+    data_[int(quality)][pos]++;
 
     good++;
 
