@@ -86,6 +86,9 @@ void ThreadClassify::run()
 
   reader_->save_analysis("1");
 
+  reader_->load_analysis("1");
+
+
   emit data_ready(percent);
   emit run_complete();
 }
