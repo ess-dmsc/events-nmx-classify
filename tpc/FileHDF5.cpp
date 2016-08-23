@@ -94,6 +94,20 @@ Record FileHDF5::read_record(size_t index, size_t plane)
   return ret;
 }
 
+std::list<std::string> FileHDF5::analysis_groups() const
+{
+  std::list<std::string> ret;
+  int numsets = file_.getNumObjs();
+
+  for (int i=0; i < numsets; ++i)
+  {
+    std::string objname(file_.getObjnameByIdx(i));
+    if (file_.childObjType(objname) == H5O_TYPE_GROUP)
+      ret.push_back(objname);
+  }
+  return ret;
+}
+
 size_t FileHDF5::num_analyzed() const
 {
   return num_analyzed_;
@@ -141,38 +155,47 @@ std::vector<double> FileHDF5::get_category(std::string cat) const
 
 bool FileHDF5::save_analysis(std::string label)
 {
+  bool success {false};
   Group group_analysis;
 
   std::string name = "/Analysis" + label;
   try
   {
     group_analysis = file_.openGroup(name);
-    DBG << "<FileHDF5> Analysis group '" << name << "' already exists.";
-    return false;
+    //    DBG << "<FileHDF5> Analysis group '" << name << "' already exists.";
+    success = true;
   }
   catch (...)
   {
   }
 
-  try
+  if (!success)
   {
-    group_analysis = file_.createGroup(name);
-  }
-  catch (...)
-  {
-    DBG << "<FileHDF5> Could not create " << name;
-    return false;
+    try
+    {
+      group_analysis = file_.createGroup(name);
+      success = true;
+    }
+    catch (...)
+    {
+      DBG << "<FileHDF5> Could not create " << name;
+      return false;
+    }
   }
 
-  for (auto &ax : analytics_)
-    category_to_dataset(group_analysis, ax.first, ax.second);
-  analysis_name_ = name;
-  write_attribute(group_analysis, "num_analyzed", num_analyzed_);
-  DBG << "<FileHDF5> Saved analysis to group '" << name << "' with data for " << num_analyzed_ << " events.";
+  if (success)
+  {
+    for (auto &ax : analytics_)
+      category_to_dataset(group_analysis, ax.first, ax.second);
+    analysis_name_ = name;
+    write_attribute(group_analysis, "num_analyzed", num_analyzed_);
+    DBG << "<FileHDF5> Saved analysis to group '" << name << "' with data for " << num_analyzed_ << " events.";
+    //    file_.close();
+    //    file_.reOpen();
+    return true;
+  }
 
-  //    file_.close();
-  //    file_.reOpen();
-  return true;
+  return false;
 }
 
 bool FileHDF5::load_analysis(std::string label)
@@ -216,6 +239,16 @@ void FileHDF5::category_to_dataset(Group &group, std::string name, std::vector<d
 {
   try
   {
+    DataSet dataset = group.openDataSet(name);
+    dataset.close();
+    group.unlink(name);
+  }
+  catch (...)
+  {
+  }
+
+  try
+  {
     std::vector<hsize_t> dim { data.size() };
     DataSpace memspace_(1, dim.data());
     DataSet dataset = group.createDataSet(name, PredType::NATIVE_DOUBLE, memspace_);
@@ -223,7 +256,7 @@ void FileHDF5::category_to_dataset(Group &group, std::string name, std::vector<d
   }
   catch (...)
   {
-    DBG << "Failed to write " << name;
+    DBG << "<FileHDF5> Failed to write " << name;
   }
 }
 
@@ -255,12 +288,22 @@ void FileHDF5::dataset_to_category(Group &group, std::string name)
   }
   catch (...)
   {
-    DBG << "Failed to read " << name;
+    DBG << "<FileHDF5> Failed to read " << name;
   }
 }
 
 void FileHDF5::write_attribute(Group &group, std::string name, int val)
 {
+  try
+  {
+    Attribute attribute = group.openAttribute(name);
+    attribute.close();
+    group.removeAttr(name);
+  }
+  catch (...)
+  {
+  }
+
   const int	DIM1 = 1;
   int attr_data[1] = { val };
   hsize_t dims[1] = { DIM1 };
@@ -274,7 +317,7 @@ void FileHDF5::write_attribute(Group &group, std::string name, int val)
   }
   catch (...)
   {
-    DBG << "Failed to write attr " << name;
+    DBG << "<FileHDF5> Failed to write attr " << name;
   }
 }
 
@@ -289,7 +332,7 @@ int FileHDF5::read_attribute(Group &group, std::string name)
   }
   catch (...)
   {
-    DBG << "Failed to read attr " << name;
+    DBG << "<FileHDF5> Failed to read attr " << name;
   }
   return 0;
 }

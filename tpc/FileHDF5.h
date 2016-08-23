@@ -26,6 +26,8 @@ public:
   size_t event_count();
   Event get_event(size_t index);
 
+  std::list<std::string> analysis_groups() const;
+
   void clear_analysis();
   void write_analytics(size_t index, const Event& event);
   size_t num_analyzed() const;

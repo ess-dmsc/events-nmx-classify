@@ -56,9 +56,12 @@ void ThreadClassify::run()
   timer.setSingleShot(true);
   timer.start(refresh_frequency_.load() * 1000);
 
-  percent = 0;
+  reader_->load_analysis("1");
+  size_t eventID = reader_->num_analyzed();
 
-  for (size_t eventID = 0; eventID < evt_count; ++eventID)
+  percent = double(eventID+1) / double(evt_count) * 100;
+
+  for (; eventID < evt_count; ++eventID)
   {
     if (terminating_.load())
       break;
@@ -86,7 +89,7 @@ void ThreadClassify::run()
 
   reader_->save_analysis("1");
 
-  reader_->load_analysis("1");
+//  std::list<std::string> groups = reader_->analysis_groups();
 
 
   emit data_ready(percent);
