@@ -108,7 +108,7 @@ void ViewRecord::display_current_record()
   if (show_raw_)
     ui->plotRecord->update_plot(dim_shifted_.strips, record_.time_end() + 1, make_list());
   else
-    ui->plotRecord->update_plot(dim_shifted_.strips, record_.time_end() + 1, std::make_shared<EntryList>());
+    ui->plotRecord->update_plot(dim_shifted_.strips, record_.time_end() + 1, EntryList());
 
 
   auto overlay = make_overlay();
@@ -148,9 +148,9 @@ void ViewRecord::display_current_record()
   display_projection();
 }
 
-std::shared_ptr<EntryList> ViewRecord::make_list()
+EntryList ViewRecord::make_list()
 {
-  std::shared_ptr<EntryList> data = std::make_shared<EntryList>();
+  EntryList data;
 
   for (auto &i : record_.valid_strips())
   {
@@ -160,7 +160,7 @@ std::shared_ptr<EntryList> ViewRecord::make_list()
       stripi -= record_.strip_start();
     for (int tb=strip.bin_start(); tb <= strip.bin_end(); ++tb)
       if (strip.value(tb))
-        data->push_back(Entry{{stripi,tb}, strip.value(tb)});
+        data.push_back(Entry{{stripi,tb}, strip.value(tb)});
   }
   return data;
 }

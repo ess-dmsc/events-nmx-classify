@@ -49,9 +49,6 @@ void ViewEvent::enableIO(bool enable)
   bool en = reader_ && reader_->event_count() && enable;
   ui->spinEventIdx->setEnabled(en);
   ui->checkNoneg->setEnabled(en);
-  ui->checkTrim->setEnabled(en);
-  ui->comboOverlay->setEnabled(en);
-  ui->comboProjection->setEnabled(en);
 }
 
 void ViewEvent::set_new_source(std::shared_ptr<NMX::FileHDF5> r, NMX::Dimensions x, NMX::Dimensions y)
@@ -84,8 +81,9 @@ void ViewEvent::loadSettings()
 {
   QSettings settings;
   settings.beginGroup("Program");
-  ui->checkTrim->setChecked(settings.value("trim").toBool());
-  ui->checkNoneg->setChecked(settings.value("noneg").toBool());
+  ui->checkTrim->setChecked(settings.value("trim", false).toBool());
+  ui->checkNoneg->setChecked(settings.value("noneg", false).toBool());
+  ui->checkRaw->setChecked(settings.value("show_raw", true).toBool());
   ui->comboOverlay->setCurrentText(settings.value("overlay").toString());
   ui->comboProjection->setCurrentText(settings.value("projection").toString());
 }
@@ -96,6 +94,7 @@ void ViewEvent::saveSettings()
   settings.beginGroup("Program");
   settings.setValue("trim", ui->checkTrim->isChecked());
   settings.setValue("noneg", ui->checkNoneg->isChecked());
+  settings.setValue("show_raw", ui->checkRaw->isChecked());
   settings.setValue("current_idx", ui->spinEventIdx->value());
   settings.setValue("overlay", ui->comboOverlay->currentText());
   settings.setValue("projection", ui->comboProjection->currentText());

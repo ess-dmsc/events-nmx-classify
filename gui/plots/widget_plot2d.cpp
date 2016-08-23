@@ -1,7 +1,7 @@
 #include "widget_plot2d.h"
 #include "ui_widget_plot2d.h"
 #include "qt_util.h"
-
+#include "CustomLogger.h"
 
 WidgetPlot2D::WidgetPlot2D(QWidget *parent) :
   QWidget(parent),
@@ -444,11 +444,9 @@ void WidgetPlot2D::replot_markers() {
   ui->coincPlot->replot();
 }
 
-void WidgetPlot2D::update_plot(uint64_t sizex, uint64_t sizey, std::shared_ptr<EntryList> spectrum_data) {
-  //  DBG << "updating 2d";
-
-//  ui->coincPlot->clearGraphs();
-//  colorMap->clearData();
+void WidgetPlot2D::update_plot(uint64_t sizex, uint64_t sizey, const EntryList &spectrum_data) {
+  ui->coincPlot->clearGraphs();
+  colorMap->clearData();
   ui->coincPlot->setAlwaysSquare(sizex == sizey);
   if (sizex == sizey)
   {
@@ -461,9 +459,9 @@ void WidgetPlot2D::update_plot(uint64_t sizex, uint64_t sizey, std::shared_ptr<E
     ui->verticalLayout->setSizeConstraint(QLayout::SetNoConstraint);
   }
 
-  if ((sizex > 0) && (sizey > 0) && (spectrum_data->size())) {
+  if ((sizex > 0) && (sizey > 0) && (spectrum_data.size())) {
     colorMap->data()->setSize(sizex, sizey);
-    for (auto it : *spectrum_data)
+    for (auto it : spectrum_data)
       colorMap->data()->setCell(it.first[0], it.first[1], it.second);
     colorMap->rescaleDataRange(true);
     ui->coincPlot->updateGeometry();

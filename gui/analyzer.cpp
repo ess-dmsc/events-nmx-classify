@@ -29,20 +29,9 @@ Analyzer::Analyzer(QWidget *parent) :
   ui->plot->set_show_legend(true);
   connect(ui->plot, SIGNAL(markers_set(double, double)), this, SLOT(update_box(double, double)));
 
-  connect(&thread_, SIGNAL(data_ready(std::shared_ptr<EntryList>, double)),
-          this, SLOT(update_data(std::shared_ptr<EntryList>, double)));
-  connect(&thread_, SIGNAL(hists_ready(std::shared_ptr<MultiHists>)),
-          this, SLOT(update_histograms(std::shared_ptr<MultiHists>)));
-
-
-  connect(&thread_, SIGNAL(run_complete()), this, SLOT(run_complete()));
-
   QColor cc (Qt::red);
   cc.setAlpha(64);
   marker_.appearance.default_pen = QPen(cc, 2);
-
-  thread_.set_refresh_frequency(2);
-
 
   loadSettings();
 }
@@ -56,14 +45,8 @@ Analyzer::~Analyzer()
 void Analyzer::enableIO(bool enable)
 {
   bool en = reader_ && reader_->event_count() && enable;
-  ui->pushStart->setEnabled(en);
   ui->comboWeights->setEnabled(en);
   ui->doubleNormalize->setEnabled(en);
-}
-
-void Analyzer::set_params(std::map<std::string, double> params)
-{
-  params_ = params;
 }
 
 void Analyzer::set_new_source(std::shared_ptr<NMX::FileHDF5> r, NMX::Dimensions x, NMX::Dimensions y)
@@ -72,12 +55,7 @@ void Analyzer::set_new_source(std::shared_ptr<NMX::FileHDF5> r, NMX::Dimensions 
   xdims_ = x;
   ydims_ = y;
 
-  int evt_count {0};
-
-  if (reader_)
-    evt_count = reader_->event_count();
-
-  clear();
+  rebuild_data();
 }
 
 void Analyzer::loadSettings()
@@ -86,10 +64,16 @@ void Analyzer::loadSettings()
   settings.beginGroup("Program");
   ui->comboWeights->setCurrentText(settings.value("weight_type").toString());
   ui->doubleNormalize->setValue(settings.value("normalize_by", 1).toDouble());
+
+  ui->spinMin->setValue(settings.value("projection_min", 0).toInt());
+  ui->spinMax->setValue(settings.value("projection_max", 1000000).toInt());
+
   ui->spinBoxWidth->setValue(settings.value("box_width").toInt());
   ui->spinBoxHeight->setValue(settings.value("box_height").toInt());
-  box_x_ = settings.value("box_x", xdims_.strips / 2).toInt();
-  box_y_ = settings.value("box_y", ydims_.strips / 2).toInt();
+  ui->spinBoxX->setValue(settings.value("box_x", xdims_.strips / 2).toInt());
+  ui->spinBoxY->setValue(settings.value("box_y", ydims_.strips / 2).toInt());
+
+  update_gates();
 }
 
 void Analyzer::saveSettings()
@@ -98,16 +82,22 @@ void Analyzer::saveSettings()
   settings.beginGroup("Program");
   settings.setValue("weight_type", ui->comboWeights->currentText());
   settings.setValue("normalize_by", ui->doubleNormalize->value());
+
+  settings.setValue("projection_min", ui->spinMin->value());
+  settings.setValue("projection_max", ui->spinMax->value());
+
   settings.setValue("box_width", ui->spinBoxWidth->value());
   settings.setValue("box_height", ui->spinBoxHeight->value());
-  settings.setValue("box_x", box_x_);
-  settings.setValue("box_y", box_y_);
+  settings.setValue("box_x", ui->spinBoxX->value());
+  settings.setValue("box_y", ui->spinBoxY->value());
 }
 
 
 void Analyzer::clear()
 {
-  resetPlot2D();
+  ui->plot->reset_content();
+  ui->plot->set_boxes(std::list<MarkerBox2D>());
+  ui->plot->refresh();
 
   marker_.visible = false;
   ui->plotHistogram->reset_scales();
@@ -123,68 +113,110 @@ void Analyzer::clear()
   ui->plotSubhist->replot_markers();
   ui->plotSubhist->rescale();
   ui->plotSubhist->redraw();
-
-  ui->progressBar->setValue(0);
 }
 
-void Analyzer::on_spinMin_editingFinished()
+void Analyzer::rebuild_data()
 {
-  resetPlot2D();
-  thread_.set_bounds(ui->spinMin->value(), ui->spinMax->value());
-}
-
-void Analyzer::on_spinMax_editingFinished()
-{
-  resetPlot2D();
-  thread_.set_bounds(ui->spinMin->value(), ui->spinMax->value());
-}
-
-
-void Analyzer::resetPlot2D()
-{
-  ui->plot->reset_content();
-  ui->plot->set_boxes(std::list<MarkerBox2D>());
-  ui->plot->set_axes("X (mm)", xdims_.transform(0), xdims_.transform(xdims_.strips-1),
-                     "Y (mm)", xdims_.transform(0), xdims_.transform(xdims_.strips-1),
-                     "Count");
-  ui->plot->refresh();
-}
-
-
-void Analyzer::on_pushStart_clicked()
-{
-  clear();
-
   if (!reader_|| !reader_->event_count())
     return;
 
-  ui->pushStop->setEnabled(true);
-  ui->progressBar->setValue(0);
+  data_.clear();
 
-  emit toggleIO(false);
-  thread_.set_bounds(ui->spinMin->value(), ui->spinMax->value());
-  update_gates();
-  thread_.go(reader_, ui->comboWeights->currentText(), ui->doubleNormalize->value());
+  int evt_count = reader_->num_analyzed();
+  double normalize_by = ui->doubleNormalize->value();
+
+  int good = 0;
+
+  auto weights = reader_->get_category(ui->comboWeights->currentText().toStdString());
+  auto xx      = reader_->get_category("X_entry_strip");
+  auto yy      = reader_->get_category("Y_entry_strip");
+
+  for (size_t eventID = 0; eventID < evt_count; ++eventID)
+  {
+    double quality {0};
+    if (eventID < weights.size())
+      quality = weights.at(eventID);
+    if (normalize_by != 0)
+      quality /= normalize_by;
+
+    if ((eventID >= xx.size()) || (eventID >= yy.size()))
+      continue;
+
+    if ((xx.at(eventID) < 0) ||
+        (yy.at(eventID) < 0))
+      continue;
+
+    std::pair<int,int> pos{xx.at(eventID), yy.at(eventID)};
+
+    data_[int(quality)][pos]++;
+
+    good++;
+  }
+
+  make_projections();
 }
 
-void Analyzer::on_pushStop_clicked()
+void Analyzer::make_projections()
 {
-  thread_.terminate();
+  int min = ui->spinMin->value();
+  int max = ui->spinMax->value();
+
+  std::map<std::pair<int,int>, double> projection;
+  QVector<std::map<int, double>> histograms;
+  histograms.resize(subset_params_.size());
+
+  QVector<HistSubset> ret;
+  ret.resize(subset_params_.size());
+
+  for (auto &ms : data_)
+  {
+    bool add_toi_projection = ((min <= ms.first) && (ms.first <= max));
+    for (auto &mi : ms.second)
+    {
+      if (add_toi_projection)
+        projection[mi.first] += mi.second;
+
+      int x = mi.first.first;
+      int y = mi.first.second;
+
+      for (int i=0; i < subset_params_.size(); ++i)
+        if ((subset_params_[i].x1 <= x) && (x <= subset_params_[i].x2)
+            && (subset_params_[i].y1 <= y) && (y <= subset_params_[i].y2)
+            && (ms.first >= subset_params_[i].cutoff))
+        {
+          histograms[i][ms.first] += mi.second;
+          ret[i].avg += ms.first * mi.second;
+          ret[i].total_count += mi.second;
+          ret[i].min += std::min(ret[i].min, static_cast<double>(ms.first));
+          ret[i].max += std::min(ret[i].max, static_cast<double>(ms.first));
+        }
+    }
+  }
+
+  EntryList data_list;
+  for (auto &point : projection)
+    data_list.push_back(Entry{{point.first.first,point.first.second}, point.second});
+  ui->plot->update_plot(xdims_.strips, ydims_.strips, data_list);
+  ui->plot->set_axes("X (mm)", xdims_.transform(0), xdims_.transform(xdims_.strips-1),
+                     "Y (mm)", xdims_.transform(0), xdims_.transform(xdims_.strips-1),
+                     "Count");
+
+  ui->plot->refresh();
+
+  for (int i=0; i < subset_params_.size(); ++i)
+  {
+    if (ret[i].total_count != 0)
+      ret[i].avg /= ret[i].total_count;
+    else
+      ret[i].avg = 0;
+
+    for (auto &mi : histograms[i])
+      ret[i].data.push_back(Entry{{mi.first}, mi.second});
+  }
+  update_histograms(ret);
 }
 
-void Analyzer::update_data(std::shared_ptr<EntryList> data, double percent_done)
-{
-  ui->plot->update_plot(xdims_.strips, xdims_.strips, data);
-  ui->progressBar->setValue(percent_done);
-}
-
-void Analyzer::run_complete()
-{
-  emit toggleIO(true);
-  ui->pushStop->setEnabled(false);
-}
-
-void Analyzer::update_histograms(std::shared_ptr<MultiHists> all_hists)
+void Analyzer::update_histograms(const MultiHists &all_hists)
 {
   std::map<double, double> minima, maxima;
 
@@ -195,43 +227,40 @@ void Analyzer::update_histograms(std::shared_ptr<MultiHists> all_hists)
   ui->plotHistogram->clearGraphs();
   ui->plotSubhist->clearGraphs();
 
-  if (all_hists)
+  for (int i=0; i < all_hists.size(); ++i)
   {
-    for (int i=0; i < all_hists->size(); ++i)
+    QVector<double> x, y;
+
+    for (auto &b : all_hists[i].data)
     {
-      QVector<double> x, y;
+      double xx = b.first[0];
+      double yy = b.second;
 
-      for (auto &b : (*all_hists)[i].data)
-      {
-        double xx = b.first[0];
-        double yy = b.second;
-
-        x.push_back(xx);
-        y.push_back(yy);
-
-        if (i == 0)
-        {
-          if (!minima.count(xx) || (minima[xx] > yy))
-            minima[xx] = yy;
-          if (!maxima.count(xx) || (maxima[xx] < yy))
-            maxima[xx] = yy;
-        }
-        else
-        {
-          if (!minima_sub.count(xx) || (minima_sub[xx] > yy))
-            minima_sub[xx] = yy;
-          if (!maxima_sub.count(xx) || (maxima_sub[xx] < yy))
-            maxima_sub[xx] = yy;
-        }
-      }
-      AppearanceProfile profile;
-      profile.default_pen = QPen(Qt::darkRed, 2);
+      x.push_back(xx);
+      y.push_back(yy);
 
       if (i == 0)
-        ui->plotHistogram->addGraph(x, y, profile, 8);
+      {
+        if (!minima.count(xx) || (minima[xx] > yy))
+          minima[xx] = yy;
+        if (!maxima.count(xx) || (maxima[xx] < yy))
+          maxima[xx] = yy;
+      }
       else
-        ui->plotSubhist->addGraph(x, y, profile, 8);
+      {
+        if (!minima_sub.count(xx) || (minima_sub[xx] > yy))
+          minima_sub[xx] = yy;
+        if (!maxima_sub.count(xx) || (maxima_sub[xx] < yy))
+          maxima_sub[xx] = yy;
+      }
     }
+    AppearanceProfile profile;
+    profile.default_pen = QPen(Qt::darkRed, 2);
+
+    if (i == 0)
+      ui->plotHistogram->addGraph(x, y, profile, 8);
+    else
+      ui->plotSubhist->addGraph(x, y, profile, 8);
   }
 
   ui->plotHistogram->use_calibrated(/*calib_.valid()*/false);
@@ -242,7 +271,7 @@ void Analyzer::update_histograms(std::shared_ptr<MultiHists> all_hists)
   ui->plotSubhist->setLabels(ui->comboWeights->currentText(), "count");
   ui->plotSubhist->setYBounds(minima_sub, maxima_sub);
 
-//  ui->plotHistogram->setTitle(codomain);
+  //  ui->plotHistogram->setTitle(codomain);
 
   marker_.visible = true;
 
@@ -263,35 +292,73 @@ void Analyzer::update_histograms(std::shared_ptr<MultiHists> all_hists)
 
 void Analyzer::update_box(double x, double y)
 {
-  box_x_ = x;
-  box_y_ = y;
-
+  ui->spinBoxX->setValue(x);
+  ui->spinBoxY->setValue(x);
   update_gates();
 }
 
 void Analyzer::update_gates()
 {
-  QVector<HistParams> params;
-  params.resize(2);
+  subset_params_.clear();
+  subset_params_.resize(2);
 
-  params[1].x1 = box_x_ - ui->spinBoxWidth->value() / 2;
-  params[1].x2 = box_x_ + ui->spinBoxWidth->value() / 2;
-  params[1].y1 = box_y_ - ui->spinBoxHeight->value() / 2;
-  params[1].y2 = box_y_ + ui->spinBoxHeight->value() / 2;
+  subset_params_[1].x1 = ui->spinBoxX->value() - ui->spinBoxWidth->value() / 2;
+  subset_params_[1].x2 = ui->spinBoxX->value() + ui->spinBoxWidth->value() / 2;
+  subset_params_[1].y1 = ui->spinBoxY->value() - ui->spinBoxHeight->value() / 2;
+  subset_params_[1].y2 = ui->spinBoxY->value() + ui->spinBoxHeight->value() / 2;
 
   MarkerBox2D box;
-  box.x_c = xdims_.transform(box_x_);
-  box.x1 = xdims_.transform(params[1].x1);
-  box.x2 = xdims_.transform(params[1].x2);
-  box.y_c = ydims_.transform(box_y_);
-  box.y1 = ydims_.transform(params[1].y1);
-  box.y2 = ydims_.transform(params[1].y2);
+  box.x_c = xdims_.transform(ui->spinBoxX->value());
+  box.x1 = xdims_.transform(subset_params_[1].x1);
+  box.x2 = xdims_.transform(subset_params_[1].x2);
+  box.y_c = ydims_.transform(ui->spinBoxY->value());
+  box.y1 = ydims_.transform(subset_params_[1].y1);
+  box.y2 = ydims_.transform(subset_params_[1].y2);
   box.selectable = false;
   box.selected = true;
 
   ui->plot->set_range(box);
   ui->plot->replot_markers();
-
-  thread_.request_hists(params);
+  make_projections();
 }
 
+
+void Analyzer::on_comboWeights_currentIndexChanged(const QString &arg1)
+{
+  rebuild_data();
+}
+
+void Analyzer::on_doubleNormalize_editingFinished()
+{
+  rebuild_data();
+}
+
+void Analyzer::on_spinBoxX_valueChanged(int arg1)
+{
+  update_gates();
+}
+
+void Analyzer::on_spinBoxY_valueChanged(int arg1)
+{
+  update_gates();
+}
+
+void Analyzer::on_spinBoxWidth_valueChanged(int arg1)
+{
+  update_gates();
+}
+
+void Analyzer::on_spinBoxHeight_valueChanged(int arg1)
+{
+  update_gates();
+}
+
+void Analyzer::on_spinMin_valueChanged(int arg1)
+{
+  make_projections();
+}
+
+void Analyzer::on_spinMax_valueChanged(int arg1)
+{
+  make_projections();
+}

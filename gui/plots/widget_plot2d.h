@@ -48,7 +48,7 @@ public:
   explicit WidgetPlot2D(QWidget *parent = 0);
   ~WidgetPlot2D();
 
-  void update_plot(uint64_t sizex, uint64_t sizey, std::shared_ptr<EntryList> spectrum_data);
+  void update_plot(uint64_t sizex, uint64_t sizey, const EntryList &spectrum_data);
   void set_axes(QString xlabel, double x1, double x2,
                 QString ylabel, double y1, double y2,
                 QString zlabel);

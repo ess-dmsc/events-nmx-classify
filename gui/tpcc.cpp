@@ -9,8 +9,6 @@
 
 #include "qt_util.h"
 
-#include "ThreadAnalysis.h"
-
 #include <QCloseEvent>
 
 tpcc::tpcc(QWidget *parent) :
@@ -78,7 +76,6 @@ void tpcc::table_changed(double y)
 {
   auto params = collect_params();
   event_viewer_->set_params(params);
-  analyzer_->set_params(params);
 }
 
 std::map<std::string, double> tpcc::collect_params()
@@ -140,7 +137,6 @@ bool tpcc::open_file(QString fileName)
   reader_ = std::make_shared<NMX::FileHDF5>(fileName.toStdString());
 
   event_viewer_->set_new_source(reader_, xdims_, ydims_);
-  analyzer_->set_new_source(reader_, xdims_, ydims_);
 
   int evt_count = reader_->event_count();
 
@@ -206,6 +202,7 @@ void tpcc::run_complete()
   ui->pushStop->setEnabled(false);
 
   reader_->save_analysis(ui->comboGroup->currentText().toStdString());
+  analyzer_->set_new_source(reader_, xdims_, ydims_);
 }
 
 void tpcc::on_comboGroup_activated(const QString &arg1)
@@ -216,6 +213,9 @@ void tpcc::on_comboGroup_activated(const QString &arg1)
   double percent = double(reader_->num_analyzed()+1) / double(reader_->event_count()) * 100;
 
   ui->progressBar->setValue(percent);
+
+  analyzer_->set_new_source(reader_, xdims_, ydims_);
+
   toggleIO(true);
 }
 

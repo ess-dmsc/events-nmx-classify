@@ -11,12 +11,29 @@
 #include "widget_plot2d.h"
 #include "widget_plot_multi1d.h"
 
-#include "ThreadAnalysis.h"
-
-
 namespace Ui {
 class Analyzer;
 }
+
+struct HistParams
+{
+  int x1 {std::numeric_limits<int>::min()},
+      x2{std::numeric_limits<int>::max()};
+  int y1 {std::numeric_limits<int>::min()},
+      y2{std::numeric_limits<int>::max()};
+  double cutoff {0};
+};
+
+struct HistSubset
+{
+  double min{std::numeric_limits<int>::max()};
+  double max{std::numeric_limits<int>::min()};
+  double avg{0};
+  double total_count{0};
+  EntryList data;
+};
+
+using MultiHists = QVector<HistSubset>;
 
 class Analyzer : public QWidget
 {
@@ -29,8 +46,6 @@ public:
   void set_new_source(std::shared_ptr<NMX::FileHDF5> r, NMX::Dimensions x, NMX::Dimensions y);
   void clear();
 
-  void set_params(std::map<std::string, double>);
-
 public slots:
   void enableIO(bool);
 
@@ -38,42 +53,45 @@ signals:
   void toggleIO(bool);
 
 private slots:
-  void on_pushStart_clicked();
-  void on_pushStop_clicked();
-
-
-  void update_data(std::shared_ptr<EntryList> data, double percent_done);
-  void update_histograms(std::shared_ptr<MultiHists>);
-
-  void run_complete();
-
-  void on_spinMin_editingFinished();
-
-  void on_spinMax_editingFinished();
 
   void update_box(double x, double y);
-  void update_gates();
+
+  void on_comboWeights_currentIndexChanged(const QString &arg1);
+
+  void on_doubleNormalize_editingFinished();
+
+
+  void on_spinBoxX_valueChanged(int arg1);
+  void on_spinBoxY_valueChanged(int arg1);
+  void on_spinBoxWidth_valueChanged(int arg1);
+  void on_spinBoxHeight_valueChanged(int arg1);
+
+  void on_spinMin_valueChanged(int arg1);
+  void on_spinMax_valueChanged(int arg1);
 
 private:
   Ui::Analyzer *ui;
 
   std::shared_ptr<NMX::FileHDF5> reader_;
-
   NMX::Dimensions xdims_;
   NMX::Dimensions ydims_;
 
-  int box_x_{0}, box_y_{0};
-
   Marker1D marker_;
 
-  ThreadAnalysis thread_;
 
-  std::map<std::string, double> params_;
+  QVector<HistParams> subset_params_;
+
+  std::map<int,std::map<std::pair<int,int>, double>> data_;
 
   void loadSettings();
   void saveSettings();
 
-  void resetPlot2D();
+  void rebuild_data();
+
+  void make_projections();
+  void update_histograms(const MultiHists&);
+
+  void update_gates();
 
 };
 

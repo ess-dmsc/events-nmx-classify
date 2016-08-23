@@ -51,7 +51,7 @@ private:
   void display_current_record();
 
   void display_projection();
-  std::shared_ptr<EntryList> make_list();
+  EntryList make_list();
   std::list<MarkerBox2D> make_overlay();
 };
 

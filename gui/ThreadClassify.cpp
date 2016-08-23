@@ -65,12 +65,7 @@ void ThreadClassify::run()
       break;
 
     NMX::Event evt = reader_->get_event(eventID).suppress_negatives();
-
-    if (evt.empty())
-      continue;
-
     evt.set_values(parameters_);
-
     evt.analyze();
 
     reader_->write_analytics(eventID, evt);
