@@ -111,7 +111,8 @@ void tpcc::loadSettings()
 
   if (fileName.isEmpty())
     return;
-  if (open_file(fileName));
+
+  if (open_file(fileName))
     event_viewer_->set_params(collect_params());
 }
 
@@ -152,15 +153,26 @@ bool tpcc::open_file(QString fileName)
   else
     settings.setValue("recent_file", QVariant());
 
+  populate_combo();
+
+  if (!reader_->analysis_groups().empty())
+    ui->comboGroup->setCurrentText(QString::fromStdString(reader_->analysis_groups().front()));
+  on_comboGroup_activated("");
+
   return (evt_count > 0);
 }
 
 void tpcc::toggleIO(bool enable)
 {
   ui->toolOpen->setEnabled(enable);
-  ui->tableParams->setEnabled(enable);
+  ui->tableParams->setEnabled(enable && reader_ && !reader_->num_analyzed());
 
-  bool en = reader_ && reader_->event_count() && enable;
+  ui->comboGroup->setEnabled(enable);
+
+  ui->pushNewGroup->setEnabled(enable && reader_ && reader_->event_count());
+
+  bool en = reader_ && reader_->event_count()
+      &&  (reader_->num_analyzed() < reader_->event_count()) && enable;
   ui->pushStart->setEnabled(en);
 
   emit enableIO(enable);
@@ -173,13 +185,10 @@ void tpcc::on_pushStop_clicked()
 
 void tpcc::on_pushStart_clicked()
 {
-//  clear();
-
   if (!reader_|| !reader_->event_count())
     return;
 
   ui->pushStop->setEnabled(true);
-  ui->progressBar->setValue(0);
 
   toggleIO(false);
   thread_classify_.go(reader_, collect_params());
@@ -195,4 +204,50 @@ void tpcc::run_complete()
 {
   toggleIO(true);
   ui->pushStop->setEnabled(false);
+
+  reader_->save_analysis(ui->comboGroup->currentText().toStdString());
+}
+
+void tpcc::on_comboGroup_activated(const QString &arg1)
+{
+  std::string name = ui->comboGroup->currentText().toStdString();
+  reader_->load_analysis(name);
+
+  double percent = double(reader_->num_analyzed()+1) / double(reader_->event_count()) * 100;
+
+  ui->progressBar->setValue(percent);
+  toggleIO(true);
+}
+
+void tpcc::on_pushNewGroup_clicked()
+{
+  bool ok = false;
+  QString text = QInputDialog::getText(this, "New analysis group",
+                                           "Group name:", QLineEdit::Normal,
+                                           "", &ok);
+  if (!ok)
+    return;
+
+  if (text.isEmpty())
+    return;
+
+  //must not have slashes!
+
+  for (auto &name : reader_->analysis_groups())
+    if (name == text.toStdString())
+      return;
+
+  reader_->clear_analysis();
+  reader_->save_analysis(text.toStdString());
+  populate_combo();
+
+  ui->comboGroup->setCurrentText(text);
+  on_comboGroup_activated("");
+}
+
+void tpcc::populate_combo()
+{
+  ui->comboGroup->clear();
+  for (auto &name : reader_->analysis_groups())
+    ui->comboGroup->addItem(QString::fromStdString(name));
 }

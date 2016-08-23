@@ -158,7 +158,7 @@ bool FileHDF5::save_analysis(std::string label)
   bool success {false};
   Group group_analysis;
 
-  std::string name = "/Analysis" + label;
+  std::string name = "/" + label;
   try
   {
     group_analysis = file_.openGroup(name);
@@ -202,7 +202,7 @@ bool FileHDF5::load_analysis(std::string label)
 {
   Group group_analysis;
 
-  std::string name = "/Analysis" + label;
+  std::string name = "/" + label;
   try
   {
     group_analysis = file_.openGroup(name);

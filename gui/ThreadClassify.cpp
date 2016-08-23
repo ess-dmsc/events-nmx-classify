@@ -52,14 +52,12 @@ void ThreadClassify::run()
 
   int evt_count = reader_->event_count();
 
+  size_t eventID = reader_->num_analyzed();
+  percent = double(eventID+1) / double(evt_count) * 100;
+
   QTimer timer;
   timer.setSingleShot(true);
   timer.start(refresh_frequency_.load() * 1000);
-
-  reader_->load_analysis("1");
-  size_t eventID = reader_->num_analyzed();
-
-  percent = double(eventID+1) / double(evt_count) * 100;
 
   for (; eventID < evt_count; ++eventID)
   {
@@ -86,11 +84,6 @@ void ThreadClassify::run()
       emit data_ready(percent);
     }
   }
-
-  reader_->save_analysis("1");
-
-//  std::list<std::string> groups = reader_->analysis_groups();
-
 
   emit data_ready(percent);
   emit run_complete();
