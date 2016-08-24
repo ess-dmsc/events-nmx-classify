@@ -4,7 +4,7 @@
 #include <QMainWindow>
 
 #include "ViewEvent.h"
-#include "analyzer.h"
+#include "Analyzer.h"
 
 #include "ThreadClassify.h"
 

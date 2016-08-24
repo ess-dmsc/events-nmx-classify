@@ -8,21 +8,15 @@
 #include "FileHDF5.h"
 #include "Dimensions.h"
 
+#include "BoxesModel.h"
+#include "SpecialDelegate.h"
+
 #include "widget_plot2d.h"
 #include "widget_plot_multi1d.h"
 
 namespace Ui {
 class Analyzer;
 }
-
-struct HistParams
-{
-  int x1 {std::numeric_limits<int>::min()},
-      x2{std::numeric_limits<int>::max()};
-  int y1 {std::numeric_limits<int>::min()},
-      y2{std::numeric_limits<int>::max()};
-  double cutoff {0};
-};
 
 struct HistSubset
 {
@@ -54,17 +48,17 @@ signals:
 
 private slots:
 
-  void update_box(double x, double y);
+  void parameters_changed();
+  void parameters_set();
 
   void on_comboWeights_currentIndexChanged(const QString &arg1);
-
   void on_doubleNormalize_editingFinished();
 
+  void on_spinMin_editingFinished();
+  void on_spinMax_editingFinished();
 
-  void on_spinBoxX_valueChanged(int arg1);
-  void on_spinBoxY_valueChanged(int arg1);
-  void on_spinBoxWidth_valueChanged(int arg1);
-  void on_spinBoxHeight_valueChanged(int arg1);
+  void on_pushAddBox_clicked();
+  void update_box(double x, double y, bool left_mouse);
 
   void on_spinMin_valueChanged(int arg1);
   void on_spinMax_valueChanged(int arg1);
@@ -76,10 +70,10 @@ private:
   NMX::Dimensions xdims_;
   NMX::Dimensions ydims_;
 
-  Marker1D marker_;
-
 
   QVector<HistParams> subset_params_;
+  BoxesModel model_;
+  SpecialDelegate delegate_;
 
   std::map<int,std::map<std::pair<int,int>, std::list<size_t>>> data_;
 
@@ -90,9 +84,9 @@ private:
 
   void make_projections();
   void update_histograms(const MultiHists&);
+  void plot_block();
 
-  void update_gates();
-
+  QVector<QColor> palette_ {Qt::black, Qt::darkRed, Qt::darkGreen, Qt::darkCyan, Qt::darkYellow, Qt::darkMagenta, Qt::darkBlue, Qt::red, Qt::blue};
 };
 
 #endif // FORM_CALIBRATION_H

@@ -69,8 +69,6 @@ public:
   double zoom();
   bool show_legend();
 
-  void set_range(MarkerBox2D);
-
   std::list<MarkerBox2D> get_selected_boxes();
 //  std::list<MarkerLabel2D> get_selected_labels();
 
@@ -78,7 +76,7 @@ public slots:
   void zoom_out();
 
 signals:
-  void markers_set(double x, double y);
+  void markers_set(double x, double y, bool left_mouse);
   void stuff_selected();
 
 private slots:
@@ -112,7 +110,6 @@ private:
 
   std::list<MarkerBox2D> boxes_;
 //  std::list<MarkerLabel2D> labels_;
-  MarkerBox2D range_;
 
   AppearanceProfile marker_looks;
 

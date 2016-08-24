@@ -158,11 +158,6 @@ void WidgetPlot2D::selection_changed() {
   emit stuff_selected();
 }
 
-void WidgetPlot2D::set_range(MarkerBox2D range)
-{
-  range_ = range;
-}
-
 
 std::list<MarkerBox2D> WidgetPlot2D::get_selected_boxes() {
   std::list<MarkerBox2D> selection;
@@ -201,7 +196,7 @@ void WidgetPlot2D::set_boxes(std::list<MarkerBox2D> boxes) {
 
 void WidgetPlot2D::reset_content() {
   colorMap->clearData();
-//  boxes_.clear();
+  boxes_.clear();
 //  labels_.clear();
 }
 
@@ -249,7 +244,8 @@ void WidgetPlot2D::replot_markers() {
     box->setSelectable(q.selectable);
     if (q.selectable) {
       box->setPen(pen);
-//      box->setBrush(QBrush(pen2.color()));
+      box->setSelectedPen(pen);
+      box->setBrush(QBrush(pen2.color()));
       box->setSelected(q.selected);
       QColor sel = box->selectedPen().color();
       box->setSelectedBrush(QBrush(QColor::fromHsv(sel.hsvHue(), sel.saturation(), sel.value(), 48)));
@@ -376,23 +372,23 @@ void WidgetPlot2D::replot_markers() {
 //    ui->coincPlot->setInteraction(QCP::iMultiSelect, false);
 //  }
 
-  if (range_.selected)
-  {
-    QCPItemRect *box = new QCPItemRect(ui->coincPlot);
-    box->setSelectable(false);
-    box->setPen(pen_strong);
-    box->setBrush(QBrush(pen_strong2.color()));
-    double x1 = range_.x1;
-    double y1 = range_.y1;
-    double x2 = range_.x2;
-    double y2 = range_.y2;
+//  if (range_.selected)
+//  {
+//    QCPItemRect *box = new QCPItemRect(ui->coincPlot);
+//    box->setSelectable(false);
+//    box->setPen(pen_strong);
+//    box->setBrush(QBrush(pen_strong2.color()));
+//    double x1 = range_.x1;
+//    double y1 = range_.y1;
+//    double x2 = range_.x2;
+//    double y2 = range_.y2;
 
-    box->topLeft->setType(QCPItemPosition::ptPlotCoords);
-    box->topLeft->setCoords(x1, y1);
-    box->bottomRight->setType(QCPItemPosition::ptPlotCoords);
-    box->bottomRight->setCoords(x2, y2);
-    ui->coincPlot->addItem(box);
-  }
+//    box->topLeft->setType(QCPItemPosition::ptPlotCoords);
+//    box->topLeft->setCoords(x1, y1);
+//    box->bottomRight->setType(QCPItemPosition::ptPlotCoords);
+//    box->bottomRight->setCoords(x2, y2);
+//    ui->coincPlot->addItem(box);
+//  }
 
   QCPItemPixmap *overlayButton;
 
@@ -462,7 +458,8 @@ void WidgetPlot2D::update_plot(uint64_t sizex, uint64_t sizey, const EntryList &
   if ((sizex > 0) && (sizey > 0) && (spectrum_data.size())) {
     colorMap->data()->setSize(sizex, sizey);
     for (auto it : spectrum_data)
-      colorMap->data()->setCell(it.first[0], it.first[1], it.second);
+      if ((it.first.size() > 1) && (it.first[0] >= 0) && (it.first[1] >= 0))
+        colorMap->data()->setCell(it.first[0], it.first[1], it.second);
     colorMap->rescaleDataRange(true);
     ui->coincPlot->updateGeometry();
   } else {
@@ -517,13 +514,7 @@ void WidgetPlot2D::plot_2d_mouse_clicked(double x, double y, QMouseEvent *event,
 
 //  emit markers_set(xt, yt);
 
-  if (visible)
-    emit markers_set(x, y);
-  else
-  {
-    range_.selected = false;
-    replot_markers();
-  }
+  emit markers_set(x, y, visible);
 }
 
 

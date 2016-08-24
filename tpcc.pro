@@ -67,16 +67,19 @@ QT += core gui
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets printsupport
 
 INCLUDEPATH += $$PWD/gui \
+               $$PWD/gui/qtcolorpicker \
                $$PWD/gui/plots \
                $$PWD/gui/plots/qcustomplot \
                $$PWD/tpc
 
 SOURCES += $$files($$PWD/gui/*.cpp) \
+           $$files($$PWD/gui/qtcolorpicker/*.cpp) \
            $$files($$PWD/gui/plots/*.cpp) \
            $$files($$PWD/gui/plots/qcustomplot/*.cpp) \
            $$files($$PWD/tpc/*.cpp)
 
 HEADERS  += $$files($$PWD/gui/*.h) \
+            $$files($$PWD/gui/qtcolorpicker/*.h) \
             $$files($$PWD/gui/plots/*.h) \
             $$files($$PWD/gui/plots/qcustomplot/*.h) \
             $$files($$PWD/tpc/*.h)
