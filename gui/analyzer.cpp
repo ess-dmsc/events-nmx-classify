@@ -14,10 +14,6 @@ Analyzer::Analyzer(QWidget *parent) :
   ui->plotHistogram->set_plot_style("Step center");
   ui->plotHistogram->set_visible_options(ShowOptions::thickness | ShowOptions::scale | ShowOptions::grid | ShowOptions::save);
 
-  ui->plotSubhist->set_scale_type("Linear");
-  ui->plotSubhist->set_plot_style("Step center");
-  ui->plotSubhist->set_visible_options(ShowOptions::thickness | ShowOptions::scale | ShowOptions::grid | ShowOptions::save);
-
   NMX::Event dummy;
   dummy.analyze();
   ui->comboWeights->addItem("none");
@@ -92,29 +88,6 @@ void Analyzer::saveSettings()
   settings.setValue("box_y", ui->spinBoxY->value());
 }
 
-
-void Analyzer::clear()
-{
-  ui->plot->reset_content();
-  ui->plot->set_boxes(std::list<MarkerBox2D>());
-  ui->plot->refresh();
-
-  marker_.visible = false;
-  ui->plotHistogram->reset_scales();
-  ui->plotHistogram->clearGraphs();
-  ui->plotHistogram->clearExtras();
-  ui->plotHistogram->replot_markers();
-  ui->plotHistogram->rescale();
-  ui->plotHistogram->redraw();
-
-  ui->plotSubhist->reset_scales();
-  ui->plotSubhist->clearGraphs();
-  ui->plotSubhist->clearExtras();
-  ui->plotSubhist->replot_markers();
-  ui->plotSubhist->rescale();
-  ui->plotSubhist->redraw();
-}
-
 void Analyzer::rebuild_data()
 {
   if (!reader_|| !reader_->event_count())
@@ -122,15 +95,13 @@ void Analyzer::rebuild_data()
 
   data_.clear();
 
-  int evt_count = reader_->num_analyzed();
   double normalize_by = ui->doubleNormalize->value();
-
-  int good = 0;
 
   auto weights = reader_->get_category(ui->comboWeights->currentText().toStdString());
   auto xx      = reader_->get_category("X_entry_strip");
   auto yy      = reader_->get_category("Y_entry_strip");
 
+  int evt_count = reader_->num_analyzed();
   for (size_t eventID = 0; eventID < evt_count; ++eventID)
   {
     double quality {0};
@@ -148,9 +119,7 @@ void Analyzer::rebuild_data()
 
     std::pair<int,int> pos{xx.at(eventID), yy.at(eventID)};
 
-    data_[int(quality)][pos]++;
-
-    good++;
+    data_[int(quality)][pos].push_back(eventID);
   }
 
   make_projections();
@@ -158,6 +127,9 @@ void Analyzer::rebuild_data()
 
 void Analyzer::make_projections()
 {
+
+  std::set<size_t> indices;
+
   int min = ui->spinMin->value();
   int max = ui->spinMax->value();
 
@@ -174,7 +146,10 @@ void Analyzer::make_projections()
     for (auto &mi : ms.second)
     {
       if (add_toi_projection)
-        projection[mi.first] += mi.second;
+      {
+        projection[mi.first] += mi.second.size();
+        std::copy( mi.second.begin(), mi.second.end(), std::inserter( indices, indices.end() ) );
+      }
 
       int x = mi.first.first;
       int y = mi.first.second;
@@ -184,9 +159,9 @@ void Analyzer::make_projections()
             && (subset_params_[i].y1 <= y) && (y <= subset_params_[i].y2)
             && (ms.first >= subset_params_[i].cutoff))
         {
-          histograms[i][ms.first] += mi.second;
-          ret[i].avg += ms.first * mi.second;
-          ret[i].total_count += mi.second;
+          histograms[i][ms.first] += mi.second.size();
+          ret[i].avg += ms.first * mi.second.size();
+          ret[i].total_count += mi.second.size();
           ret[i].min += std::min(ret[i].min, static_cast<double>(ms.first));
           ret[i].max += std::min(ret[i].max, static_cast<double>(ms.first));
         }
@@ -214,18 +189,19 @@ void Analyzer::make_projections()
       ret[i].data.push_back(Entry{{mi.first}, mi.second});
   }
   update_histograms(ret);
+
+  emit select_indices(indices);
 }
 
 void Analyzer::update_histograms(const MultiHists &all_hists)
 {
-  std::map<double, double> minima, maxima;
+  QVector<QColor> palette {Qt::black, Qt::darkRed, Qt::darkGreen, Qt::darkCyan, Qt::darkYellow, Qt::darkMagenta, Qt::darkBlue, Qt::red, Qt::blue};
 
-  std::map<double, double> minima_sub, maxima_sub;
+  std::map<double, double> minima, maxima;
 
   Calibration calib_ = Calibration();
 
   ui->plotHistogram->clearGraphs();
-  ui->plotSubhist->clearGraphs();
 
   for (int i=0; i < all_hists.size(); ++i)
   {
@@ -239,37 +215,21 @@ void Analyzer::update_histograms(const MultiHists &all_hists)
       x.push_back(xx);
       y.push_back(yy);
 
-      if (i == 0)
-      {
-        if (!minima.count(xx) || (minima[xx] > yy))
-          minima[xx] = yy;
-        if (!maxima.count(xx) || (maxima[xx] < yy))
-          maxima[xx] = yy;
-      }
-      else
-      {
-        if (!minima_sub.count(xx) || (minima_sub[xx] > yy))
-          minima_sub[xx] = yy;
-        if (!maxima_sub.count(xx) || (maxima_sub[xx] < yy))
-          maxima_sub[xx] = yy;
-      }
+
+      if (!minima.count(xx) || (minima[xx] > yy))
+        minima[xx] = yy;
+      if (!maxima.count(xx) || (maxima[xx] < yy))
+        maxima[xx] = yy;
     }
     AppearanceProfile profile;
-    profile.default_pen = QPen(Qt::darkRed, 2);
+    profile.default_pen = QPen(palette[i % palette.size()], 2);
 
-    if (i == 0)
-      ui->plotHistogram->addGraph(x, y, profile, 8);
-    else
-      ui->plotSubhist->addGraph(x, y, profile, 8);
+    ui->plotHistogram->addGraph(x, y, profile, 8);
   }
 
   ui->plotHistogram->use_calibrated(/*calib_.valid()*/false);
   ui->plotHistogram->setLabels(ui->comboWeights->currentText(), "count");
   ui->plotHistogram->setYBounds(minima, maxima);
-
-  ui->plotSubhist->use_calibrated(/*calib_.valid()*/false);
-  ui->plotSubhist->setLabels(ui->comboWeights->currentText(), "count");
-  ui->plotSubhist->setYBounds(minima_sub, maxima_sub);
 
   //  ui->plotHistogram->setTitle(codomain);
 
@@ -286,8 +246,6 @@ void Analyzer::update_histograms(const MultiHists &all_hists)
   ui->plotHistogram->replot_markers();
   ui->plotHistogram->redraw();
 
-  ui->plotSubhist->replot_markers();
-  ui->plotSubhist->redraw();
 }
 
 void Analyzer::update_box(double x, double y)
@@ -321,7 +279,6 @@ void Analyzer::update_gates()
   ui->plot->replot_markers();
   make_projections();
 }
-
 
 void Analyzer::on_comboWeights_currentIndexChanged(const QString &arg1)
 {

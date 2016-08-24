@@ -3,10 +3,6 @@
 
 #include <QMainWindow>
 
-#include "CustomLogger.h"
-#include "FileHDF5.h"
-#include "widget_plot2d.h"
-
 #include "ViewEvent.h"
 #include "analyzer.h"
 

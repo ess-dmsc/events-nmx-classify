@@ -2,13 +2,12 @@
 #define EVENT_VIEWER_H
 
 #include <QWidget>
-#include <QItemSelection>
 #include <memory>
+#include <set>
 
 #include "FileHDF5.h"
 #include "Dimensions.h"
 
-#include "widget_plot2d.h"
 
 namespace Ui {
 class ViewEvent;
@@ -31,6 +30,8 @@ public:
 public slots:
   void enableIO(bool);
 
+  void set_indices(std::set<size_t> indices);
+
 private slots:
   void on_spinEventIdx_valueChanged(int arg1);
   void on_checkTrim_clicked();
@@ -47,6 +48,8 @@ private:
 
   std::shared_ptr<NMX::FileHDF5> reader_;
   std::map<std::string, double> params_;
+
+  std::vector<size_t> indices_;
 
   NMX::Dimensions xdims_;
   NMX::Dimensions ydims_;

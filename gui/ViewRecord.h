@@ -2,8 +2,6 @@
 #define RECORD_VIEWER_H
 
 #include <QWidget>
-#include <QItemSelection>
-#include <memory>
 
 #include "Record.h"
 #include "Dimensions.h"

@@ -44,13 +44,13 @@ public:
   ~Analyzer();
 
   void set_new_source(std::shared_ptr<NMX::FileHDF5> r, NMX::Dimensions x, NMX::Dimensions y);
-  void clear();
 
 public slots:
   void enableIO(bool);
 
 signals:
   void toggleIO(bool);
+  void select_indices(std::set<size_t>);
 
 private slots:
 
@@ -81,7 +81,7 @@ private:
 
   QVector<HistParams> subset_params_;
 
-  std::map<int,std::map<std::pair<int,int>, double>> data_;
+  std::map<int,std::map<std::pair<int,int>, std::list<size_t>>> data_;
 
   void loadSettings();
   void saveSettings();

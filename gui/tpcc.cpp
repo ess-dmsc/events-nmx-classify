@@ -1,15 +1,10 @@
 #include <QSettings>
-#include <utility>
-#include <numeric>
-#include <cstdint>
 
 #include "tpcc.h"
 #include "ui_tpcc.h"
-#include "custom_timer.h"
 
 #include "qt_util.h"
-
-#include <QCloseEvent>
+#include "CustomLogger.h"
 
 tpcc::tpcc(QWidget *parent) :
   QMainWindow(parent),
@@ -33,6 +28,8 @@ tpcc::tpcc(QWidget *parent) :
   connect(&thread_classify_, SIGNAL(data_ready(double)),
           this, SLOT(update_progress(double)));
   connect(&thread_classify_, SIGNAL(run_complete()), this, SLOT(run_complete()));
+
+  connect(analyzer_, SIGNAL(select_indices(std::set<size_t>)), event_viewer_, SLOT(set_indices(std::set<size_t>)));
 
   ui->tableParams->verticalHeader()->hide();
   ui->tableParams->setColumnCount(2);

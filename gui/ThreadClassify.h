@@ -2,9 +2,7 @@
 #define THREAD_CLASSIFY_H_
 
 #include <QThread>
-#include <QString>
-#include <QVector>
-#include <cstdint>
+
 #include <boost/atomic.hpp>
 
 #include "FileHDF5.h"
