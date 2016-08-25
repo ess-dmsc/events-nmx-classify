@@ -105,8 +105,9 @@ QVariant BoxesModel::headerData(int section, Qt::Orientation orientation, int ro
 
 bool BoxesModel::setData(const QModelIndex & index, const QVariant & value, int role)
 {
-  setDataQuietly(index, value, role);
+  bool ret = setDataQuietly(index, value, role);
   emit editing_finished();
+  return ret;
 }
 
 

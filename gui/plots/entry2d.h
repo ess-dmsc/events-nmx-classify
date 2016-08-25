@@ -5,7 +5,7 @@
 #include <vector>
 #include <map>
 
-typedef std::pair<std::vector<size_t>, double> Entry;
+typedef std::pair<std::vector<int>, double> Entry;
 typedef std::list<Entry> EntryList;
 
 typedef std::map<double,double> HistoData;
