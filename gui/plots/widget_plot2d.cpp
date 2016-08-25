@@ -172,26 +172,10 @@ std::list<MarkerBox2D> WidgetPlot2D::get_selected_boxes() {
   return selection;
 }
 
-//std::list<MarkerLabel2D> WidgetPlot2D::get_selected_labels() {
-//  std::list<MarkerLabel2D> selection;
-//  for (auto &q : ui->coincPlot->selectedItems())
-//    if (QCPItemText *b = qobject_cast<QCPItemText*>(q)) {
-//      MarkerLabel2D label;
-//      label.x.set_bin(b->property("chan_x").toDouble(), bits_, calib_x_);
-//      label.y.set_bin(b->property("chan_y").toDouble(), bits_, calib_y_);
-//      selection.push_back(label);
-//      //DBG << "found selected " << txt->property("true_value").toDouble() << " chan=" << txt->property("chan_value").toDouble();
-//    }
-//  return selection;
-//}
 
 void WidgetPlot2D::set_boxes(std::list<MarkerBox2D> boxes) {
   boxes_ = boxes;
 }
-
-//void WidgetPlot2D::set_labels(std::list<MarkerLabel2D> labels) {
-//  labels_ = labels;
-//}
 
 
 void WidgetPlot2D::reset_content() {
@@ -244,7 +228,7 @@ void WidgetPlot2D::replot_markers() {
     box->setSelectable(q.selectable);
     if (q.selectable) {
       box->setPen(pen);
-      box->setSelectedPen(pen);
+//      box->setSelectedPen(pen);
       box->setBrush(QBrush(pen2.color()));
       box->setSelected(q.selected);
       QColor sel = box->selectedPen().color();
@@ -298,71 +282,36 @@ void WidgetPlot2D::replot_markers() {
       ui->coincPlot->addItem(linev);
     }
 
+    if (!q.label.isEmpty())
+    {
+      QCPItemText *labelItem = new QCPItemText(ui->coincPlot);
+      labelItem->setText(q.label);
+      labelItem->setProperty("chan_x", q.x_c);
+      labelItem->setProperty("chan_y", q.y_c);
+      labelItem->position->setType(QCPItemPosition::ptPlotCoords);
+      labelItem->position->setCoords(q.x1, q.y2);
+
+      labelItem->setPositionAlignment(Qt::AlignBottom|Qt::AlignLeft);
+      labelItem->setFont(QFont("Helvetica", 14));
+      labelItem->setSelectable(q.selectable);
+      labelItem->setSelected(q.selected);
+
+      labelItem->setColor(pen_strong.color());
+      labelItem->setPen(pen_strong);
+      labelItem->setBrush(QBrush(Qt::white));
+
+      QColor sel = labelItem->selectedColor();
+      QPen selpen(QColor::fromHsv(sel.hsvHue(), sel.saturation(), sel.value(), 255));
+      selpen.setWidth(3);
+      labelItem->setSelectedPen(selpen);
+      labelItem->setSelectedBrush(QBrush(Qt::white));
+
+      labelItem->setPadding(QMargins(1, 1, 1, 1));
+
+      ui->coincPlot->addItem(labelItem);
+    }
+
   }
-
-//  if (show_labels_) {
-//    for (auto &q : labels_) {
-//      QCPItemText *labelItem = new QCPItemText(ui->coincPlot);
-//      //    labelItem->setClipToAxisRect(false);
-//      labelItem->setText(q.text);
-
-//      labelItem->setProperty("chan_x", q.x.bin(bits_));
-//      labelItem->setProperty("chan_y", q.y.bin(bits_));
-//      labelItem->setProperty("nrg_x", q.x.energy());
-//      labelItem->setProperty("nrg_y", q.y.energy());
-
-//      labelItem->position->setType(QCPItemPosition::ptPlotCoords);
-
-//      double x = 0, y = 0;
-
-//      if (calib_x_.valid())
-//        x = q.x.energy();
-//      else
-//        x = q.x.bin(bits_);
-
-//      if (calib_y_.valid())
-//        y = q.y.energy();
-//      else
-//        y = q.y.bin(bits_);
-
-//      if (q.hfloat) {
-//        labelItem->position->setTypeX(QCPItemPosition::ptAxisRectRatio);
-//        x = 0.90;
-//      }
-//      if (q.vfloat) {
-//        labelItem->position->setTypeY(QCPItemPosition::ptAxisRectRatio);
-//        y = 0.10;
-//      }
-
-//      labelItem->position->setCoords(x, y);
-//      labelItem->position->setCoords(x, y);
-
-//      if (q.vertical) {
-//        labelItem->setRotation(90);
-//        labelItem->setPositionAlignment(Qt::AlignTop|Qt::AlignRight);
-//      } else
-//        labelItem->setPositionAlignment(Qt::AlignTop|Qt::AlignLeft);
-
-//      labelItem->setFont(QFont("Helvetica", 10));
-//      labelItem->setSelectable(q.selectable);
-//      labelItem->setSelected(q.selected);
-
-//      labelItem->setColor(pen_strong.color());
-//      labelItem->setPen(pen_strong);
-//      labelItem->setBrush(QBrush(Qt::white));
-
-//      QColor sel = labelItem->selectedColor();
-//      QPen selpen(QColor::fromHsv(sel.hsvHue(), sel.saturation(), sel.value(), 255));
-//      selpen.setWidth(3);
-//      labelItem->setSelectedPen(selpen);
-//      labelItem->setSelectedBrush(QBrush(Qt::white));
-
-//      labelItem->setPadding(QMargins(1, 1, 1, 1));
-
-//      ui->coincPlot->addItem(labelItem);
-//    }
-//  }
-
 
 //  if (boxes_.size()) {
 //    ui->coincPlot->setInteraction(QCP::iSelectItems, true);
@@ -372,23 +321,6 @@ void WidgetPlot2D::replot_markers() {
 //    ui->coincPlot->setInteraction(QCP::iMultiSelect, false);
 //  }
 
-//  if (range_.selected)
-//  {
-//    QCPItemRect *box = new QCPItemRect(ui->coincPlot);
-//    box->setSelectable(false);
-//    box->setPen(pen_strong);
-//    box->setBrush(QBrush(pen_strong2.color()));
-//    double x1 = range_.x1;
-//    double y1 = range_.y1;
-//    double x2 = range_.x2;
-//    double y2 = range_.y2;
-
-//    box->topLeft->setType(QCPItemPosition::ptPlotCoords);
-//    box->topLeft->setCoords(x1, y1);
-//    box->bottomRight->setType(QCPItemPosition::ptPlotCoords);
-//    box->bottomRight->setCoords(x2, y2);
-//    ui->coincPlot->addItem(box);
-//  }
 
   QCPItemPixmap *overlayButton;
 
@@ -495,26 +427,9 @@ void WidgetPlot2D::plot_2d_mouse_upon(double x, double y) {
 //  ui->coincPlot->replot();
 }
 
-void WidgetPlot2D::plot_2d_mouse_clicked(double x, double y, QMouseEvent *event, bool channels) {
-//  LINFO << "<WidgetPlot2D> mouse clicked at " << x << " & " << y << " chans?=" << channels;
-
-  bool visible = (event->button() == Qt::LeftButton);
-
-//  Coord xt, yt;
-
-//  if (visible) {
-//    if (channels) {
-//      xt.set_bin(x, bits_, calib_x_);
-//      yt.set_bin(y, bits_, calib_y_);
-//    } else {
-//      xt.set_energy(x, calib_x_);
-//      yt.set_energy(y, calib_y_);
-//    }
-//  }
-
-//  emit markers_set(xt, yt);
-
-  emit markers_set(x, y, visible);
+void WidgetPlot2D::plot_2d_mouse_clicked(double x, double y, QMouseEvent *event, bool channels)
+{
+  emit markers_set(x, y, event->button() == Qt::LeftButton);
 }
 
 
@@ -612,21 +527,17 @@ void WidgetPlot2D::exportRequested(QAction* choice) {
   QString fileName = CustomSaveFileDialog(this, "Export plot",
                                           QStandardPaths::locate(QStandardPaths::HomeLocation, ""),
                                           filter);
-  if (validateFile(this, fileName, true)) {
+  if (validateFile(this, fileName, true))
+  {
     QFileInfo file(fileName);
-    if (file.suffix() == "png") {
-      //LINFO << "Exporting plot to png " << fileName.toStdString();
+    if (file.suffix() == "png")
       ui->coincPlot->savePng(fileName,0,0,1,100);
-    } else if (file.suffix() == "jpg") {
-      //LINFO << "Exporting plot to jpg " << fileName.toStdString();
+    else if (file.suffix() == "jpg")
       ui->coincPlot->saveJpg(fileName,0,0,1,100);
-    } else if (file.suffix() == "bmp") {
-      //LINFO << "Exporting plot to bmp " << fileName.toStdString();
+    else if (file.suffix() == "bmp")
       ui->coincPlot->saveBmp(fileName);
-    } else if (file.suffix() == "pdf") {
-      //LINFO << "Exporting plot to pdf " << fileName.toStdString();
+    else if (file.suffix() == "pdf")
       ui->coincPlot->savePdf(fileName, true);
-    }
   }
 }
 

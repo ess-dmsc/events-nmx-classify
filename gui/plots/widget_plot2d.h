@@ -57,7 +57,6 @@ public:
   void reset_content();
 
   void set_boxes(std::list<MarkerBox2D> boxes);
-//  void set_labels(std::list<MarkerLabel2D> labels);
 
   void set_scale_type(QString);
   void set_gradient(QString);
@@ -70,7 +69,6 @@ public:
   bool show_legend();
 
   std::list<MarkerBox2D> get_selected_boxes();
-//  std::list<MarkerLabel2D> get_selected_labels();
 
 public slots:
   void zoom_out();
@@ -109,7 +107,6 @@ private:
   QString Z_label_;
 
   std::list<MarkerBox2D> boxes_;
-//  std::list<MarkerLabel2D> labels_;
 
   AppearanceProfile marker_looks;
 

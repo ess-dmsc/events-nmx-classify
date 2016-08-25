@@ -29,14 +29,11 @@ Analyzer::Analyzer(QWidget *parent)
 
   ui->tableBoxes->setModel(&model_);
   ui->tableBoxes->setItemDelegate(&delegate_);
-//  ui->tableBoxes->setSelectionModel(&selection_model_);
-  ui->tableBoxes->verticalHeader()->hide();
   ui->tableBoxes->horizontalHeader()->setStretchLastSection(true);
   ui->tableBoxes->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
   ui->tableBoxes->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
   ui->tableBoxes->setSelectionBehavior(QAbstractItemView::SelectRows);
   ui->tableBoxes->setSelectionMode(QAbstractItemView::ExtendedSelection);
-//  ui->tableBoxes->setEditTriggers(QAbstractItemView::AllEditTriggers);
   ui->tableBoxes->show();
 
   connect(&model_, SIGNAL(data_changed()), this, SLOT(parameters_changed()));
@@ -84,9 +81,6 @@ void Analyzer::loadSettings()
 
   ui->spinMin->setValue(settings.value("projection_min", 0).toInt());
   ui->spinMax->setValue(settings.value("projection_max", 1000000).toInt());
-
-//  parameters_changed();
-//  model_.update();
 }
 
 void Analyzer::saveSettings()
@@ -237,7 +231,6 @@ void Analyzer::update_histograms(const MultiHists &all_hists)
   ui->plotHistogram->setLabels(ui->comboWeights->currentText(), "count");
   ui->plotHistogram->setYBounds(minima, maxima);
 
-  //  ui->plotHistogram->setTitle(codomain);
   plot_block();
 }
 
@@ -269,6 +262,7 @@ void Analyzer::parameters_changed()
 {
   std::list<MarkerBox2D> boxes;
 
+  int i=0;
   for (auto &p : subset_params_)
   {
     MarkerBox2D box;
@@ -279,9 +273,11 @@ void Analyzer::parameters_changed()
     box.y1 = ydims_.transform(p.y1);
     box.y2 = ydims_.transform(p.y2);
     box.selectable = true;
-    box.selected = true;
+//    box.selected = true;
+    box.label = QString::number(i);
 
     boxes.push_back(box);
+    i++;
   }
 
   ui->plot->set_boxes(boxes);

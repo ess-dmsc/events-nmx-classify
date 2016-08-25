@@ -48,7 +48,7 @@ int BoxesModel::rowCount(const QModelIndex & /*parent*/) const
 
 int BoxesModel::columnCount(const QModelIndex & /*parent*/) const
 {
-  return 6;
+  return 7;
 }
 
 QVariant BoxesModel::data(const QModelIndex &index, int role) const
@@ -146,7 +146,8 @@ bool BoxesModel::setDataQuietly(const QModelIndex & index, const QVariant & valu
   return false;
 }
 
-void BoxesModel::update() {
+void BoxesModel::update()
+{
   QModelIndex start_ix = createIndex( 0, 0 );
   QModelIndex end_ix = createIndex(parameters_.size(), columnCount());
   emit dataChanged( start_ix, end_ix );
