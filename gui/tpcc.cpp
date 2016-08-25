@@ -60,7 +60,7 @@ tpcc::tpcc(QWidget *parent) :
 
   thread_classify_.set_refresh_frequency(2);
 
-  loadSettings();
+  QTimer::singleShot(1000, this, SLOT(loadSettings()));
 }
 
 tpcc::~tpcc()
@@ -103,11 +103,7 @@ void tpcc::loadSettings()
 
   QString fileName = settings.value("recent_file").toString();
 
-  if (fileName.isEmpty())
-    return;
-
-  if (open_file(fileName))
-    event_viewer_->set_params(collect_params());
+  open_file(fileName);
 }
 
 void tpcc::saveSettings()
@@ -137,14 +133,19 @@ bool tpcc::open_file(QString fileName)
 
   int evt_count = reader_->event_count();
 
-  ui->labelOfTotal->setText(fileName);
-
   QSettings settings;
   settings.beginGroup("Program");
   if (evt_count)
+  {
+    ui->labelOfTotal->setText(fileName);
     settings.setValue("recent_file", fileName);
+    event_viewer_->set_params(collect_params());
+  }
   else
+  {
+    ui->labelOfTotal->setText("");
     settings.setValue("recent_file", QVariant());
+  }
 
   populate_combo();
 
@@ -157,15 +158,17 @@ bool tpcc::open_file(QString fileName)
 
 void tpcc::toggleIO(bool enable)
 {
+  auto names = reader_->analysis_groups();
+
   ui->toolOpen->setEnabled(enable);
   ui->tableParams->setEnabled(enable && reader_ && !reader_->num_analyzed());
 
-  ui->comboGroup->setEnabled(enable);
+  ui->comboGroup->setEnabled(enable && (names.size() > 0));
 
   ui->pushNewGroup->setEnabled(enable && reader_ && reader_->event_count());
 
   bool en = reader_ && reader_->event_count()
-      &&  (reader_->num_analyzed() < reader_->event_count()) && enable;
+      &&  (reader_->num_analyzed() < reader_->event_count()) && (names.size() > 0) && enable;
   ui->pushStart->setEnabled(en);
 
   emit enableIO(enable);
@@ -247,4 +250,5 @@ void tpcc::populate_combo()
   ui->comboGroup->clear();
   for (auto &name : reader_->analysis_groups())
     ui->comboGroup->addItem(QString::fromStdString(name));
+  toggleIO(true);
 }

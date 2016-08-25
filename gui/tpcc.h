@@ -35,9 +35,6 @@ private:
 
   ThreadClassify thread_classify_;
 
-  //helper functions
-  void saveSettings();
-  void loadSettings();
 
   bool open_file(QString fileName);
 
@@ -48,6 +45,9 @@ protected:
   void closeEvent(QCloseEvent*);
 
 private slots:
+  void saveSettings();
+  void loadSettings();
+
   void on_toolOpen_clicked();
   void toggleIO(bool);
 

@@ -19,6 +19,9 @@ ViewEvent::ViewEvent(QWidget *parent) :
   ui->comboProjection->addItem("none");
   ui->comboProjection->addItem("Integral");
 
+  ui->eventX->set_title("X strips");
+  ui->eventY->set_title("Y strips");
+
   ui->eventX->set_dimenstions(xdims_);
   ui->eventY->set_dimenstions(ydims_);
 

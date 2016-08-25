@@ -21,10 +21,8 @@ ViewRecord::ViewRecord(QWidget *parent) :
 
   ui->tableValues->verticalHeader()->hide();
   ui->tableValues->setColumnCount(2);
-  ui->tableValues->setHorizontalHeaderLabels({"name", "value"});
-  ui->tableValues->setSelectionBehavior(QAbstractItemView::SelectRows);
+  ui->tableValues->setHorizontalHeaderLabels({"parameter", "value"});
   ui->tableValues->setSelectionMode(QAbstractItemView::NoSelection);
-//  ui->tableValues->setSelectionMode(QAbstractItemView::ExtendedSelection);
   ui->tableValues->setEditTriggers(QTableView::NoEditTriggers);
   ui->tableValues->horizontalHeader()->setStretchLastSection(true);
   ui->tableValues->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
@@ -36,6 +34,10 @@ ViewRecord::~ViewRecord()
   delete ui;
 }
 
+void ViewRecord::set_title(QString title)
+{
+  ui->labelTitle->setText(title);
+}
 
 void ViewRecord::set_trim(bool trim)
 {
@@ -141,7 +143,7 @@ void ViewRecord::display_current_record()
   for (auto &name : valnames)
   {
     add_to_table(ui->tableValues, i, 0, name);
-    add_to_table(ui->tableValues, i, 1, std::to_string(record_.get_value(name)));
+    add_to_table(ui->tableValues, i, 1, QString::number(record_.get_value(name)).toStdString());
     i++;
   }
 

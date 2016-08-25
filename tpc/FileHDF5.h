@@ -38,7 +38,7 @@ public:
 
 private:
   H5File file_;
-  size_t event_count_;
+  size_t event_count_ {0};
 
   DataSet   dataset_raw_;
   DataSpace filespace_raw_;

@@ -30,6 +30,7 @@ public:
   void set_overlay_type(QString);
   void set_projection_type(QString);
   void set_dimenstions(NMX::Dimensions);
+  void set_title(QString);
 
 private:
   Ui::ViewRecord *ui;

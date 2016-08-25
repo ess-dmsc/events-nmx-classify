@@ -291,12 +291,12 @@ void Record::analyze()
     values_["integral_per_hitstrips"] = 0;
 
   if (values_["strip_span"] > 0)
-    values_["strip_density"] = values_["hit_strips"] / values_["strip_span"];
+    values_["strip_density"] = values_["hit_strips"] / values_["strip_span"] * 100.0;
   else
     values_["strip_density"] = 0;
 
   if (values_["timebin_span"])
-    values_["time_density"] = values_["hit_timebins"] / values_["timebin_span"];
+    values_["time_density"] = values_["hit_timebins"] / values_["timebin_span"] * 100.0;
   else
     values_["time_density"] = 0;
 

@@ -16,22 +16,22 @@ FileHDF5::FileHDF5(std::string filename)
     int dims = filespace_raw_.getSimpleExtentNdims();
     if (dims != 4)
     {
-       WARN << "<FileHDF5> bad rank for Raw dataset 4 != " << dims;
+       ERR << "<FileHDF5> bad rank for Raw dataset 4 != " << dims;
        return;
     }
 
-    dim_raw_.resize(dims);
+    dim_raw_.resize(dims, 0);
     filespace_raw_.getSimpleExtentDims(dim_raw_.data());
 
     if (dim_raw_.at(1) != 2)
     {
-      WARN << "<FileHDF5> bad number of planes for Raw dataset 2 != " << dim_raw_.at(1);
+      ERR << "<FileHDF5> bad number of planes for Raw dataset 2 != " << dim_raw_.at(1);
       return;
     }
 
     if ((dim_raw_.at(2) < 1) || (dim_raw_.at(3) < 1))
     {
-      WARN << "<FileHDF5> bad slab dimensions " << dim_raw_.at(2) << "x" << dim_raw_.at(3);
+      ERR << "<FileHDF5> bad slab dimensions " << dim_raw_.at(2) << "x" << dim_raw_.at(3);
       return;
     }
 
@@ -88,23 +88,9 @@ Record FileHDF5::read_record(size_t index, size_t plane)
   }
   catch (...)
   {
-    WARN << "<FileHDF5> Failed to read record " << index;
+    ERR << "<FileHDF5> Failed to read record " << index;
   }
 
-  return ret;
-}
-
-std::list<std::string> FileHDF5::analysis_groups() const
-{
-  std::list<std::string> ret;
-  int numsets = file_.getNumObjs();
-
-  for (int i=0; i < numsets; ++i)
-  {
-    std::string objname(file_.getObjnameByIdx(i));
-    if (file_.childObjType(objname) == H5O_TYPE_GROUP)
-      ret.push_back(objname);
-  }
   return ret;
 }
 
@@ -153,6 +139,28 @@ std::vector<double> FileHDF5::get_category(std::string cat) const
     return std::vector<double>();
 }
 
+std::list<std::string> FileHDF5::analysis_groups() const
+{
+  std::list<std::string> ret;
+
+  try
+  {
+    int numsets = file_.getNumObjs();
+    for (int i=0; i < numsets; ++i)
+    {
+      std::string objname(file_.getObjnameByIdx(i));
+      if (file_.childObjType(objname) == H5O_TYPE_GROUP)
+        ret.push_back(objname);
+    }
+  }
+  catch (...)
+  {
+    ERR << "<FileHDF5> Could not read analysis groups";
+  }
+
+  return ret;
+}
+
 bool FileHDF5::save_analysis(std::string label)
 {
   bool success {false};
@@ -178,7 +186,7 @@ bool FileHDF5::save_analysis(std::string label)
     }
     catch (...)
     {
-      DBG << "<FileHDF5> Could not create " << name;
+      ERR << "<FileHDF5> Could not create " << name;
       return false;
     }
   }
@@ -209,23 +217,24 @@ bool FileHDF5::load_analysis(std::string label)
   }
   catch (...)
   {
-    DBG << "<FileHDF5> Analysis group '" << name << "' does not exist.";
+    ERR << "<FileHDF5> Analysis group '" << name << "' does not exist.";
     return false;
   }
 
-  clear_analysis();
-  int numsets = group_analysis.getNumObjs();
-  if (!numsets)
+  clear_analysis();  
+  try
   {
-    DBG << "<FileHDF5> Analysis group '" << name << "' is empty.";
-    return false;
+    int numsets = group_analysis.getNumObjs();
+    for (int i=0; i < numsets; ++i)
+    {
+      std::string objname(group_analysis.getObjnameByIdx(i));
+      dataset_to_category(group_analysis, objname);
+    }
   }
-
-  for (int i=0; i < numsets; ++i)
+  catch (...)
   {
-    std::string objname(group_analysis.getObjnameByIdx(i));
-//    DBG << "Obj " << i << " = " << objname;
-    dataset_to_category(group_analysis, objname);
+    WARN << "<FileHDF5> Could not read children for analysis group '" << name << "'.";
+    return false;
   }
 
   num_analyzed_ = read_attribute(group_analysis, "num_analyzed");
