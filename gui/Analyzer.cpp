@@ -161,7 +161,11 @@ void Analyzer::make_projections()
         std::copy( mi.second.begin(), mi.second.end(), std::inserter( indices, indices.end() ) );
       }
 
-      for (int i=0; i < subset_params.size(); ++i)
+      int start = 0;
+      if (!ui->checkShowUngated->isChecked())
+        start = 1;
+
+      for (int i=start; i < subset_params.size(); ++i)
         if ((subset_params[i].x1 <= x) && (x <= subset_params[i].x2)
             && (subset_params[i].y1 <= y) && (y <= subset_params[i].y2)
             && (ms.first >= subset_params[i].cutoff))
@@ -239,20 +243,33 @@ void Analyzer::update_histograms(const MultiHists &all_hists)
 void Analyzer::update_box(double x, double y, bool left_mouse)
 {
   auto rows = ui->tableBoxes->selectionModel()->selectedRows();
-  DBG << "got rows " << rows.size();
   if (rows.size())
   {
     int row = rows.front().row();
-    DBG << "row chosen " << row;
     if ((row >= 0) && (row < subset_params_.size()))
     {
-      DBG << "left mouse " << left_mouse;
       if (left_mouse)
       {
         subset_params_[row].set_center_x(x);
         subset_params_[row].set_center_y(y);
       }
       subset_params_[row].visible = left_mouse;
+      parameters_changed();
+      model_.update();
+      parameters_set();
+    }
+  }
+}
+
+void Analyzer::on_pushRemoveBox_clicked()
+{
+  auto rows = ui->tableBoxes->selectionModel()->selectedRows();
+  if (rows.size())
+  {
+    int row = rows.front().row();
+    if ((row >= 0) && (row < subset_params_.size()))
+    {
+      subset_params_.remove(row);
       parameters_changed();
       model_.update();
       parameters_set();
@@ -340,7 +357,7 @@ void Analyzer::on_spinMax_valueChanged(int arg1)
 void Analyzer::plot_block()
 {
   Marker1D marker_;
-  marker_.visible = true;
+  marker_.visible = ui->checkShowUngated->isChecked();
   QColor cc (Qt::red);
   cc.setAlpha(64);
   marker_.appearance.default_pen = QPen(cc, 2);
@@ -355,4 +372,9 @@ void Analyzer::plot_block()
 
   ui->plotHistogram->replot_markers();
   ui->plotHistogram->redraw();
+}
+
+void Analyzer::on_checkShowUngated_clicked()
+{
+  make_projections();
 }

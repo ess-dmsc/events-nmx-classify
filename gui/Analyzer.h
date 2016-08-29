@@ -62,6 +62,10 @@ private slots:
   void on_spinMin_valueChanged(int arg1);
   void on_spinMax_valueChanged(int arg1);
 
+  void on_checkShowUngated_clicked();
+
+  void on_pushRemoveBox_clicked();
+
 private:
   Ui::Analyzer *ui;
 

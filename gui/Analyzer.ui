@@ -112,6 +112,16 @@
           </widget>
          </item>
          <item>
+          <widget class="QCheckBox" name="checkShowUngated">
+           <property name="text">
+            <string>Show ungated</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
           <widget class="QLabel" name="label_10">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
@@ -150,14 +160,22 @@
          <item>
           <widget class="QPushButton" name="pushAddBox">
            <property name="text">
-            <string>Add</string>
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset resource="../resources/tpccres.qrc">
+             <normaloff>:/icons/oxy/16/edit_add.png</normaloff>:/icons/oxy/16/edit_add.png</iconset>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="pushButton_2">
+          <widget class="QPushButton" name="pushRemoveBox">
            <property name="text">
-            <string>Remove</string>
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset resource="../resources/tpccres.qrc">
+             <normaloff>:/icons/oxy/16/editdelete.png</normaloff>:/icons/oxy/16/editdelete.png</iconset>
            </property>
           </widget>
          </item>
@@ -291,6 +309,8 @@
    <container>1</container>
   </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="../resources/tpccres.qrc"/>
+ </resources>
  <connections/>
 </ui>

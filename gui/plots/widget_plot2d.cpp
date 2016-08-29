@@ -229,16 +229,12 @@ void WidgetPlot2D::replot_markers() {
 //      continue;
     box = new QCPItemRect(ui->plot);
     box->setSelectable(q.selectable);
-    if (q.selectable) {
-      box->setPen(pen);
-//      box->setSelectedPen(pen);
-      box->setBrush(QBrush(fill_color));
-      box->setSelected(q.selected);
-      QColor sel = box->selectedPen().color();
-      box->setSelectedBrush(QBrush(QColor::fromHsv(sel.hsvHue(), sel.saturation(), sel.value(), 48)));
-    } else {
-      box->setPen(pen);
-    }
+    box->setPen(pen);
+//    box->setSelectedPen(pen);
+    box->setBrush(QBrush(fill_color));
+    box->setSelected(q.selected);
+    QColor sel = box->selectedPen().color();
+    box->setSelectedBrush(QBrush(QColor::fromHsv(sel.hsvHue(), sel.saturation(), sel.value(), 48)));
 
     box->setProperty("chan_x", q.x1);
     box->setProperty("chan_y", q.y1);
@@ -258,7 +254,7 @@ void WidgetPlot2D::replot_markers() {
       labelItem->position->setType(QCPItemPosition::ptPlotCoords);
       labelItem->position->setCoords(q.x1, q.y2);
 
-      labelItem->setPositionAlignment(Qt::AlignBottom|Qt::AlignLeft);
+      labelItem->setPositionAlignment(Qt::AlignTop|Qt::AlignLeft);
       labelItem->setFont(QFont("Helvetica", 14));
       labelItem->setSelectable(q.selectable);
       labelItem->setSelected(q.selected);
