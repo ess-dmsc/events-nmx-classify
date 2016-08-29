@@ -11,7 +11,7 @@ WidgetPlotMulti1D::WidgetPlotMulti1D(QWidget *parent) :
   ui->setupUi(this);
 
   visible_options_  =
-      (ShowOptions::style | ShowOptions::scale | ShowOptions::labels | ShowOptions::themes | ShowOptions::thickness | ShowOptions::grid | ShowOptions::save);
+      (ShowOptions::style | ShowOptions::scale | ShowOptions::labels | ShowOptions::thickness | ShowOptions::grid | ShowOptions::save);
 
 
   ui->mcaPlot->setInteraction(QCP::iSelectItems, true);
@@ -38,7 +38,6 @@ WidgetPlotMulti1D::WidgetPlotMulti1D(QWidget *parent) :
 
   force_rezoom_ = false;
   mouse_pressed_ = false;
-  use_calibrated_ = false;
 
   edge_trc1 = nullptr;
   edge_trc2 = nullptr;
@@ -46,7 +45,6 @@ WidgetPlotMulti1D::WidgetPlotMulti1D(QWidget *parent) :
   plot_style_ = "Lines";
   scale_type_ = "Logarithmic";
   ui->mcaPlot->yAxis->setScaleType(QCPAxis::stLogarithmic);
-  color_theme_ = "light";
   grid_style_ = "Grid + subgrid";
   setColorScheme(Qt::black, Qt::white, QColor(112, 112, 112), QColor(170, 170, 170));
 
@@ -113,12 +111,6 @@ void WidgetPlotMulti1D::build_menu() {
     menuOptions.addAction("Energy labels");
   }
 
-  if (visible_options_ & ShowOptions::themes) {
-    menuOptions.addSeparator();
-    menuOptions.addAction("dark");
-    menuOptions.addAction("light");
-  }
-
   if (visible_options_ & ShowOptions::thickness) {
     menuOptions.addSeparator();
     menuOptions.addAction("1");
@@ -137,7 +129,6 @@ void WidgetPlotMulti1D::build_menu() {
     q->setCheckable(true);
     q->setChecked((q->text() == scale_type_) ||
                   (q->text() == plot_style_) ||
-                  (q->text() == color_theme_) ||
                   (q->text() == grid_style_) ||
                   (q->text() == QString::number(thickness_)) ||
                   ((q->text() == "Energy labels") && marker_labels_));
@@ -150,7 +141,6 @@ void WidgetPlotMulti1D::clearGraphs()
   ui->mcaPlot->clearGraphs();
   minima_.clear();
   maxima_.clear();
-  use_calibrated_ = false;
 }
 
 void WidgetPlotMulti1D::clearExtras()
@@ -188,11 +178,6 @@ void WidgetPlotMulti1D::setLabels(QString x, QString y) {
   ui->mcaPlot->yAxis->setLabel(y);
 }
 
-void WidgetPlotMulti1D::use_calibrated(bool uc) {
-  use_calibrated_ = uc;
-  //replot_markers();
-}
-
 void WidgetPlotMulti1D::set_markers(const std::list<Marker1D>& markers) {
   my_markers_ = markers;
 }
@@ -207,13 +192,13 @@ std::set<double> WidgetPlotMulti1D::get_selected_markers() {
   std::set<double> selection;
   for (auto &q : ui->mcaPlot->selectedItems())
     if (QCPItemText *txt = qobject_cast<QCPItemText*>(q)) {
-      if (txt->property("chan_value").isValid())
-        selection.insert(txt->property("chan_value").toDouble());
-      //DBG << "found selected " << txt->property("true_value").toDouble() << " chan=" << txt->property("chan_value").toDouble();
+      if (txt->property("position").isValid())
+        selection.insert(txt->property("position").toDouble());
+      //DBG << "found selected " << txt->property("true_value").toDouble() << " chan=" << txt->property("position").toDouble();
     } else if (QCPItemLine *line = qobject_cast<QCPItemLine*>(q)) {
-      if (line->property("chan_value").isValid())
-        selection.insert(line->property("chan_value").toDouble());
-      //DBG << "found selected " << line->property("true_value").toDouble() << " chan=" << line->property("chan_value").toDouble();
+      if (line->property("position").isValid())
+        selection.insert(line->property("position").toDouble());
+      //DBG << "found selected " << line->property("true_value").toDouble() << " chan=" << line->property("position").toDouble();
     }
 
   return selection;
@@ -234,7 +219,7 @@ void WidgetPlotMulti1D::addGraph(const QVector<double>& x, const QVector<double>
   ui->mcaPlot->addGraph();
   int g = ui->mcaPlot->graphCount() - 1;
   ui->mcaPlot->graph(g)->addData(x, y);
-  QPen pen = appearance.get_pen(color_theme_);
+  QPen pen = appearance.default_pen;
   if (fittable && (visible_options_ & ShowOptions::thickness))
     pen.setWidth(thickness_);
   ui->mcaPlot->graph(g)->setPen(pen);
@@ -260,9 +245,9 @@ void WidgetPlotMulti1D::addPoints(const QVector<double>& x, const QVector<double
   ui->mcaPlot->addGraph();
   int g = ui->mcaPlot->graphCount() - 1;
   ui->mcaPlot->graph(g)->addData(x, y);
-  ui->mcaPlot->graph(g)->setPen(appearance.get_pen((color_theme_)));
+  ui->mcaPlot->graph(g)->setPen(appearance.default_pen);
   ui->mcaPlot->graph(g)->setBrush(QBrush());
-  ui->mcaPlot->graph(g)->setScatterStyle(QCPScatterStyle(shape, appearance.get_pen(color_theme_).color(), appearance.get_pen(color_theme_).color(), 6 /*appearance.get_pen(color_theme_).width()*/));
+  ui->mcaPlot->graph(g)->setScatterStyle(QCPScatterStyle(shape, appearance.default_pen.color(), appearance.default_pen.color(), 6 /*appearance.default_pen.width()*/));
   ui->mcaPlot->graph(g)->setLineStyle(QCPGraph::lsNone);
 
   if (x[0] < minx) {
@@ -376,30 +361,19 @@ void WidgetPlotMulti1D::replot_markers() {
         if (!ui->mcaPlot->graph(i)->property("fittable").toBool())
           continue;
 
-        int bits = ui->mcaPlot->graph(i)->property("bits").toInt();
-
-        double pos = 0;
-        if (use_calibrated_)
-          pos = q.pos.energy();
-        else
-          pos = q.pos.bin(bits);
-
-        //DBG << "Adding crs at " << pos << " on plot " << i;
-
-        if ((ui->mcaPlot->graph(i)->data()->firstKey() >= pos)
-            || (pos >= ui->mcaPlot->graph(i)->data()->lastKey()))
+        if ((ui->mcaPlot->graph(i)->data()->firstKey() >= q.pos)
+            || (q.pos >= ui->mcaPlot->graph(i)->data()->lastKey()))
           continue;
 
         QCPItemTracer *crs = new QCPItemTracer(ui->mcaPlot);
         crs->setStyle(QCPItemTracer::tsNone); //tsCirlce?
-        crs->setProperty("chan_value", q.pos.bin(bits));
-        crs->setProperty("nrg_value", q.pos.energy());
+        crs->setProperty("position", q.pos);
 
         crs->setSize(4);
         crs->setGraph(ui->mcaPlot->graph(i));
         crs->setInterpolating(true);
-        crs->setGraphKey(pos);
-        crs->setPen(q.appearance.get_pen(color_theme_));
+        crs->setGraphKey(q.pos);
+        crs->setPen(q.appearance.default_pen);
         crs->setSelectable(false);
         ui->mcaPlot->addItem(crs);
 
@@ -412,7 +386,7 @@ void WidgetPlotMulti1D::replot_markers() {
       }
     }
     if (top_crs != nullptr) {
-      QPen pen = q.appearance.get_pen(color_theme_);
+      QPen pen = q.appearance.default_pen;
 
       QCPItemLine *line = new QCPItemLine(ui->mcaPlot);
       line->start->setParentAnchor(top_crs->position);
@@ -423,21 +397,19 @@ void WidgetPlotMulti1D::replot_markers() {
       line->setPen(pen);
       line->setSelectedPen(pen);
       line->setProperty("true_value", top_crs->graphKey());
-      line->setProperty("chan_value", top_crs->property("chan_value"));
-      line->setProperty("nrg_value", top_crs->property("nrg_value"));
+      line->setProperty("position", top_crs->property("position"));
       line->setSelectable(false);
       ui->mcaPlot->addItem(line);
 
       if (marker_labels_) {
         QCPItemText *markerText = new QCPItemText(ui->mcaPlot);
         markerText->setProperty("true_value", top_crs->graphKey());
-        markerText->setProperty("chan_value", top_crs->property("chan_value"));
-        markerText->setProperty("nrg_value", top_crs->property("nrg_value"));
+        markerText->setProperty("position", top_crs->property("position"));
 
         markerText->position->setParentAnchor(top_crs->position);
         markerText->setPositionAlignment(Qt::AlignHCenter|Qt::AlignBottom);
         markerText->position->setCoords(0, -30);
-        markerText->setText(QString::number(q.pos.energy()));
+        markerText->setText(QString::number(q.pos));
         markerText->setTextAlignment(Qt::AlignLeft);
         markerText->setFont(QFont("Helvetica", 9));
         markerText->setPen(pen);
@@ -463,14 +435,8 @@ void WidgetPlotMulti1D::replot_markers() {
 
     calc_y_bounds(lowerc, upperc);
 
-    double pos1 = 0, pos2 = 0;
-    pos1 = rect[0].pos.energy();
-    pos2 = rect[1].pos.energy();
-    if (!use_calibrated_) {
-      pos1 = rect[0].pos.bin(rect[0].pos.bits());
-      pos2 = rect[1].pos.bin(rect[1].pos.bits());
-    }
-
+    double pos1 = rect[0].pos;
+    double pos2 = rect[1].pos;
 
     QCPItemRect *cprect = new QCPItemRect(ui->mcaPlot);
     double x1 = pos1;
@@ -482,8 +448,8 @@ void WidgetPlotMulti1D::replot_markers() {
 
     cprect->topLeft->setCoords(x1, y1);
     cprect->bottomRight->setCoords(x2, y2);
-    cprect->setPen(rect[0].appearance.get_pen(color_theme_));
-    cprect->setBrush(QBrush(rect[1].appearance.get_pen(color_theme_).color()));
+    cprect->setPen(rect[0].appearance.default_pen);
+    cprect->setBrush(QBrush(rect[1].appearance.default_pen.color()));
     cprect->setSelectable(false);
     ui->mcaPlot->addItem(cprect);
   }
@@ -497,10 +463,7 @@ void WidgetPlotMulti1D::replot_markers() {
     floatingText->setText(title_text_);
     floatingText->setFont(QFont("Helvetica", 10));
     floatingText->setSelectable(false);
-    if (color_theme_ == "light")
-      floatingText->setColor(Qt::black);
-    else
-      floatingText->setColor(Qt::white);
+    floatingText->setColor(Qt::black);
   }
 
   plotButtons();
@@ -668,14 +631,6 @@ void WidgetPlotMulti1D::optionsChanged(QAction* action) {
     for (int i=0; i < total; i++)
       if ((ui->mcaPlot->graph(i)->scatterStyle().shape() == QCPScatterStyle::ssNone) || (ui->mcaPlot->graph(i)->scatterStyle().shape() == QCPScatterStyle::ssDisc))
         set_graph_style(ui->mcaPlot->graph(i), choice);
-  } else if (choice == "light") {
-    setColorScheme(Qt::black, Qt::white, QColor(112, 112, 112), QColor(170, 170, 170));
-    color_theme_ = choice;
-    replot_markers();
-  } else if (choice == "dark") {
-    setColorScheme(Qt::white, Qt::black, QColor(144, 144, 144), QColor(80, 80, 80));
-    color_theme_ = choice;
-    replot_markers();
   } else if ((choice == "No grid") || (choice == "Grid") || (choice == "Grid + subgrid")) {
     grid_style_ = choice;
     ui->mcaPlot->xAxis->grid()->setVisible(grid_style_ != "No grid");

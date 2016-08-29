@@ -14,7 +14,7 @@ Analyzer::Analyzer(QWidget *parent)
 
   ui->plotHistogram->set_scale_type("Linear");
   ui->plotHistogram->set_plot_style("Step center");
-  ui->plotHistogram->set_visible_options(ShowOptions::thickness | ShowOptions::scale | ShowOptions::grid | ShowOptions::save);
+  ui->plotHistogram->set_visible_options(ShowOptions::zoom | ShowOptions::thickness | ShowOptions::scale | ShowOptions::grid | ShowOptions::save);
 
   NMX::Event dummy;
   dummy.analyze();
@@ -63,12 +63,9 @@ void Analyzer::enableIO(bool enable)
   }
 }
 
-void Analyzer::set_new_source(std::shared_ptr<NMX::FileHDF5> r, NMX::Dimensions x, NMX::Dimensions y)
+void Analyzer::set_new_source(std::shared_ptr<NMX::FileHDF5> r)
 {
   reader_ = r;
-  xdims_ = x;
-  ydims_ = y;
-
   rebuild_data();
 }
 
@@ -145,12 +142,18 @@ void Analyzer::make_projections()
   QVector<HistSubset> ret;
   ret.resize(subset_params.size());
 
+  int xmax = 0;
+  int ymax = 0;
+
   for (auto &ms : data_)
   {
     for (auto &mi : ms.second)
     {
       int x = mi.first.first;
       int y = mi.first.second;
+
+      xmax = std::max(xmax, x);
+      ymax = std::max(ymax, y);
 
       if ((min <= ms.first) && (ms.first <= max))
       {
@@ -175,9 +178,9 @@ void Analyzer::make_projections()
   EntryList data_list;
   for (auto &point : projection2d)
     data_list.push_back(Entry{{point.first.first,point.first.second}, point.second});
-  ui->plot->update_plot(xdims_.strips, ydims_.strips, data_list);
-  ui->plot->set_axes("X (mm)", xdims_.transform(0), xdims_.transform(xdims_.strips-1),
-                     "Y (mm)", xdims_.transform(0), xdims_.transform(xdims_.strips-1),
+  ui->plot->update_plot(xmax, ymax, data_list);
+  ui->plot->set_axes("X (strip)", 0, xmax,
+                     "Y (strip))", 0, ymax,
                      "Count");
 
   ui->plot->refresh();
@@ -227,7 +230,6 @@ void Analyzer::update_histograms(const MultiHists &all_hists)
     ui->plotHistogram->addGraph(x, y, profile, 8);
   }
 
-  ui->plotHistogram->use_calibrated(/*calib_.valid()*/false);
   ui->plotHistogram->setLabels(ui->comboWeights->currentText(), "count");
   ui->plotHistogram->setYBounds(minima, maxima);
 
@@ -266,13 +268,11 @@ void Analyzer::parameters_changed()
   for (auto &p : subset_params_)
   {
     MarkerBox2D box;
-    box.x_c = xdims_.transform(p.center_x());
-    box.x1 = xdims_.transform(p.x1);
-    box.x2 = xdims_.transform(p.x2);
-    box.y_c = ydims_.transform(p.center_y());
-    box.y1 = ydims_.transform(p.y1);
-    box.y2 = ydims_.transform(p.y2);
-    box.selectable = true;
+    box.x1 = p.x1;
+    box.x2 = p.x2;
+    box.y1 = p.y1;
+    box.y2 = p.y2;
+    box.selectable = false;
 //    box.selected = true;
     box.label = QString::number(i);
 
@@ -305,10 +305,10 @@ void Analyzer::on_pushAddBox_clicked()
 
   params.visible = true;
   params.color = palette_[(subset_params_.size() + 1) % palette_.size()];
-  params.set_center_x(xdims_.strips / 2);
-  params.set_center_y(ydims_.strips / 2);
-  params.set_width(xdims_.strips / 2);
-  params.set_height(ydims_.strips / 2);
+  params.set_center_x(0);
+  params.set_center_y(0);
+  params.set_width(5000);
+  params.set_height(5000);
 
   subset_params_.push_back(params);
 
@@ -339,8 +339,6 @@ void Analyzer::on_spinMax_valueChanged(int arg1)
 
 void Analyzer::plot_block()
 {
-  Calibration calib_ = Calibration();
-
   Marker1D marker_;
   marker_.visible = true;
   QColor cc (Qt::red);
@@ -348,10 +346,10 @@ void Analyzer::plot_block()
   marker_.appearance.default_pen = QPen(cc, 2);
 
   Marker1D left = marker_;
-  left.pos.set_bin(ui->spinMin->value(), 8, calib_);
+  left.pos = ui->spinMin->value();
 
   Marker1D right = marker_;
-  right.pos.set_bin(ui->spinMax->value(), 8, calib_);
+  right.pos = ui->spinMax->value();
 
   ui->plotHistogram->set_block(left, right);
 

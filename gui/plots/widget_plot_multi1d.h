@@ -4,7 +4,6 @@
 #include <QWidget>
 #include "qsquarecustomplot.h"
 #include <set>
-#include "coord.h"
 #include "appearance.h"
 
 struct Marker1D {
@@ -14,7 +13,7 @@ struct Marker1D {
     return true;
   }
 
-  Coord pos;
+  double pos;
   AppearanceProfile appearance;
   bool visible;
 
@@ -68,8 +67,6 @@ public:
   void addGraph(const QVector<double>& x, const QVector<double>& y, AppearanceProfile appearance, bool fittable = false, int32_t bits = 0);
   void setYBounds(const std::map<double, double> &minima, const std::map<double, double> &maxima);
 
-  void use_calibrated(bool);
-
 public slots:
   void zoom_out();
 
@@ -113,7 +110,6 @@ protected:
   double minx, maxx;
   double miny, maxy;
 
-  bool use_calibrated_;
   bool marker_labels_;
   bool mouse_pressed_;
 
@@ -126,7 +122,6 @@ protected:
   QMenu       menuOptions;
   ShowOptions visible_options_;
 
-  QString color_theme_;
   QString scale_type_;
   QString plot_style_;
   QString grid_style_;

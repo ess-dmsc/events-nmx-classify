@@ -3,8 +3,6 @@
 #include <QWidget>
 #include <QFileDialog>
 #include <QTableWidget>
-#include <boost/date_time.hpp>
-
 
 //  Modified FileDialog by Dave Mateer
 //  http://stackoverflow.com/users/183339/dave-mateer
@@ -15,8 +13,6 @@ QString CustomSaveFileDialog(QWidget *parent,
 
 bool validateFile(QWidget* parent, QString, bool);
 QColor generateColor();
-QDateTime fromBoostPtime(boost::posix_time::ptime);
-boost::posix_time::ptime fromQDateTime(QDateTime);
 QString catExtensions(std::list<std::string> exts);
 QString catFileTypes(QStringList types);
 void add_to_table(QTableWidget *table,

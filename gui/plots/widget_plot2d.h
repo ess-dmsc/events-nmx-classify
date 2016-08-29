@@ -3,7 +3,6 @@
 
 #include <QWidget>
 #include "qsquarecustomplot.h"
-//#include "peak2d.h"
 #include "appearance.h"
 #include <memory>
 #include "entry2d.h"
@@ -24,8 +23,6 @@ struct MarkerBox2D {
     if (x2 != other.x2) return false;
     if (y1 != other.y1) return false;
     if (y2 != other.y2) return false;
-    if (x_c != other.x_c) return false;
-    if (y_c != other.y_c) return false;
     return true;
   }
 
@@ -35,7 +32,7 @@ struct MarkerBox2D {
   bool selected;
   bool selectable;
   bool mark_center;
-  double x1, x2, y1, y2, x_c, y_c;
+  double x1, x2, y1, y2;
   QString label;
 };
 
@@ -52,6 +49,7 @@ public:
   void set_axes(QString xlabel, double x1, double x2,
                 QString ylabel, double y1, double y2,
                 QString zlabel);
+  void set_zoom_drag(Qt::Orientation);
   void refresh();
   void replot_markers();
   void reset_content();
@@ -65,7 +63,6 @@ public:
   void set_antialiased(bool);
   QString scale_type();
   QString gradient();
-  double zoom();
   bool show_legend();
 
   std::list<MarkerBox2D> get_selected_boxes();

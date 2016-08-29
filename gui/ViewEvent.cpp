@@ -22,14 +22,7 @@ ViewEvent::ViewEvent(QWidget *parent) :
   ui->eventX->set_title("X strips");
   ui->eventY->set_title("Y strips");
 
-  ui->eventX->set_dimenstions(xdims_);
-  ui->eventY->set_dimenstions(ydims_);
-
   loadSettings();
-
-
-  ui->eventX->set_trim(ui->checkTrim->isChecked());
-  ui->eventY->set_trim(ui->checkTrim->isChecked());
 
   ui->eventX->set_overlay_type(ui->comboOverlay->currentText());
   ui->eventY->set_overlay_type(ui->comboOverlay->currentText());
@@ -54,11 +47,9 @@ void ViewEvent::enableIO(bool enable)
   ui->checkNoneg->setEnabled(en);
 }
 
-void ViewEvent::set_new_source(std::shared_ptr<NMX::FileHDF5> r, NMX::Dimensions x, NMX::Dimensions y)
+void ViewEvent::set_new_source(std::shared_ptr<NMX::FileHDF5> r)
 {
   reader_ = r;
-  xdims_ = x;
-  ydims_ = y;
 
   int evt_count {0};
 
@@ -89,7 +80,6 @@ void ViewEvent::loadSettings()
 {
   QSettings settings;
   settings.beginGroup("Program");
-  ui->checkTrim->setChecked(settings.value("trim", false).toBool());
   ui->checkNoneg->setChecked(settings.value("noneg", false).toBool());
   ui->checkRaw->setChecked(settings.value("show_raw", true).toBool());
   ui->comboOverlay->setCurrentText(settings.value("overlay").toString());
@@ -100,7 +90,6 @@ void ViewEvent::saveSettings()
 {
   QSettings settings;
   settings.beginGroup("Program");
-  settings.setValue("trim", ui->checkTrim->isChecked());
   settings.setValue("noneg", ui->checkNoneg->isChecked());
   settings.setValue("show_raw", ui->checkRaw->isChecked());
   settings.setValue("current_idx", ui->spinEventIdx->value());
@@ -134,12 +123,6 @@ void ViewEvent::on_spinEventIdx_valueChanged(int /*arg1*/)
 void ViewEvent::on_checkNoneg_clicked()
 {
   plot_current_event();
-}
-
-void ViewEvent::on_checkTrim_clicked()
-{
-  ui->eventX->set_trim(ui->checkTrim->isChecked());
-  ui->eventY->set_trim(ui->checkTrim->isChecked());
 }
 
 void ViewEvent::on_comboOverlay_currentIndexChanged(const QString &/*arg1*/)

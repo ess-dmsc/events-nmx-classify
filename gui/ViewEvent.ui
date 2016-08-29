@@ -68,13 +68,6 @@
       </widget>
      </item>
      <item>
-      <widget class="QCheckBox" name="checkTrim">
-       <property name="text">
-        <string>trim view</string>
-       </property>
-      </widget>
-     </item>
-     <item>
       <widget class="QCheckBox" name="checkNoneg">
        <property name="text">
         <string>no negatives</string>

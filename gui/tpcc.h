@@ -27,9 +27,6 @@ private:
   QString data_directory_;
   std::shared_ptr<NMX::FileHDF5> reader_;
 
-  NMX::Dimensions xdims_;
-  NMX::Dimensions ydims_;
-
   ViewEvent   *event_viewer_;
   Analyzer    *analyzer_;
 

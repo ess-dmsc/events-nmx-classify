@@ -4,7 +4,6 @@
 #include <QWidget>
 
 #include "Record.h"
-#include "Dimensions.h"
 
 #include "widget_plot2d.h"
 #include "widget_plot_multi1d.h"
@@ -25,11 +24,9 @@ public:
 
   void clear();
 
-  void set_trim(bool);
   void set_show_raw(bool);
   void set_overlay_type(QString);
   void set_projection_type(QString);
-  void set_dimenstions(NMX::Dimensions);
   void set_title(QString);
 
 private:
@@ -39,12 +36,9 @@ private:
 
   Marker1D moving_;
 
-  bool trim_ {true};
   bool show_raw_{true};
   QString overlay_type_;
   QString projection_type_;
-  NMX::Dimensions dim_;
-  NMX::Dimensions dim_shifted_;
 
 
   void display_current_record();

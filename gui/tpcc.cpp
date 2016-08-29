@@ -129,7 +129,7 @@ bool tpcc::open_file(QString fileName)
 
   reader_ = std::make_shared<NMX::FileHDF5>(fileName.toStdString());
 
-  event_viewer_->set_new_source(reader_, xdims_, ydims_);
+  event_viewer_->set_new_source(reader_);
 
   int evt_count = reader_->event_count();
 
@@ -202,7 +202,7 @@ void tpcc::run_complete()
   ui->pushStop->setEnabled(false);
 
   reader_->save_analysis(ui->comboGroup->currentText().toStdString());
-  analyzer_->set_new_source(reader_, xdims_, ydims_);
+  analyzer_->set_new_source(reader_);
 }
 
 void tpcc::on_comboGroup_activated(const QString &arg1)
@@ -214,7 +214,7 @@ void tpcc::on_comboGroup_activated(const QString &arg1)
 
   ui->progressBar->setValue(percent);
 
-  analyzer_->set_new_source(reader_, xdims_, ydims_);
+  analyzer_->set_new_source(reader_);
 
   toggleIO(true);
 }

@@ -6,7 +6,6 @@
 #include <set>
 
 #include "FileHDF5.h"
-#include "Dimensions.h"
 
 
 namespace Ui {
@@ -21,7 +20,7 @@ public:
   explicit ViewEvent(QWidget *parent = 0);
   ~ViewEvent();
 
-  void set_new_source(std::shared_ptr<NMX::FileHDF5> r, NMX::Dimensions x, NMX::Dimensions y);
+  void set_new_source(std::shared_ptr<NMX::FileHDF5> r);
 
   void set_params(std::map<std::string, double>);
 
@@ -34,7 +33,6 @@ public slots:
 
 private slots:
   void on_spinEventIdx_valueChanged(int arg1);
-  void on_checkTrim_clicked();
   void on_checkNoneg_clicked();
 
   void on_comboOverlay_currentIndexChanged(const QString &arg1);
@@ -50,9 +48,6 @@ private:
   std::map<std::string, double> params_;
 
   std::vector<size_t> indices_;
-
-  NMX::Dimensions xdims_;
-  NMX::Dimensions ydims_;
 
   void loadSettings();
   void saveSettings();

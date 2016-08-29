@@ -23,10 +23,10 @@ WidgetPlot2D::WidgetPlot2D(QWidget *parent) :
   show_labels_ = true;
 
   setColorScheme(Qt::white, Qt::black, QColor(144, 144, 144), QColor(80, 80, 80));
-  ui->coincPlot->xAxis->grid()->setVisible(true);
-  ui->coincPlot->yAxis->grid()->setVisible(true);
-  ui->coincPlot->xAxis->grid()->setSubGridVisible(true);
-  ui->coincPlot->yAxis->grid()->setSubGridVisible(true);
+  ui->plot->xAxis->grid()->setVisible(true);
+  ui->plot->yAxis->grid()->setVisible(true);
+  ui->plot->xAxis->grid()->setSubGridVisible(true);
+  ui->plot->yAxis->grid()->setSubGridVisible(true);
 
   //color theme setup
   marker_looks.themes["Grayscale"] = QPen(Qt::cyan, 1);
@@ -43,24 +43,24 @@ WidgetPlot2D::WidgetPlot2D(QWidget *parent) :
   marker_looks.themes["Hues"] = QPen(Qt::black, 1);
 
   //colormap setup
-  ui->coincPlot->setAlwaysSquare(true);
-  colorMap = new QCPColorMap(ui->coincPlot->xAxis, ui->coincPlot->yAxis);
+  ui->plot->setAlwaysSquare(true);
+  colorMap = new QCPColorMap(ui->plot->xAxis, ui->plot->yAxis);
   colorMap->clearData();
-  ui->coincPlot->addPlottable(colorMap);
+  ui->plot->addPlottable(colorMap);
   colorMap->setInterpolate(antialiased_);
   colorMap->setTightBoundary(false);
-  ui->coincPlot->axisRect()->setupFullAxesBox();
-  ui->coincPlot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
-  ui->coincPlot->setNoAntialiasingOnDrag(true);
+  ui->plot->axisRect()->setupFullAxesBox();
+  ui->plot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
+  ui->plot->setNoAntialiasingOnDrag(true);
 
   colorMap->setGradient(gradients_[current_gradient_]);
   colorMap->setDataScaleType(scale_types_[current_scale_type_]);
   colorMap->rescaleDataRange(true);
-  connect(ui->coincPlot, SIGNAL(mouse_upon(double,double)), this, SLOT(plot_2d_mouse_upon(double,double)));
-  connect(ui->coincPlot, SIGNAL(mouse_clicked(double,double,QMouseEvent*, bool)), this, SLOT(plot_2d_mouse_clicked(double,double,QMouseEvent*, bool)));
-  //connect(ui->coincPlot, SIGNAL(plottableClick(QCPAbstractPlottable*,QMouseEvent*)), this, SLOT(clicked_plottable(QCPAbstractPlottable*)));
-  connect(ui->coincPlot, SIGNAL(selectionChangedByUser()), this, SLOT(selection_changed()));
-  connect(ui->coincPlot, SIGNAL(clickedAbstractItem(QCPAbstractItem*)), this, SLOT(clicked_item(QCPAbstractItem*)));
+  connect(ui->plot, SIGNAL(mouse_upon(double,double)), this, SLOT(plot_2d_mouse_upon(double,double)));
+  connect(ui->plot, SIGNAL(mouse_clicked(double,double,QMouseEvent*, bool)), this, SLOT(plot_2d_mouse_clicked(double,double,QMouseEvent*, bool)));
+  //connect(ui->plot, SIGNAL(plottableClick(QCPAbstractPlottable*,QMouseEvent*)), this, SLOT(clicked_plottable(QCPAbstractPlottable*)));
+  connect(ui->plot, SIGNAL(selectionChangedByUser()), this, SLOT(selection_changed()));
+  connect(ui->plot, SIGNAL(clickedAbstractItem(QCPAbstractItem*)), this, SLOT(clicked_item(QCPAbstractItem*)));
 
   menuExportFormat.addAction("png");
   menuExportFormat.addAction("jpg");
@@ -72,6 +72,13 @@ WidgetPlot2D::WidgetPlot2D(QWidget *parent) :
   build_menu();
   plot_2d_mouse_upon(0, 0);
 }
+
+void WidgetPlot2D::set_zoom_drag(Qt::Orientation o)
+{
+  ui->plot->yAxis->axisRect()->setRangeDrag(o);
+  ui->plot->yAxis->axisRect()->setRangeZoom(o);
+}
+
 
 void WidgetPlot2D::clicked_item(QCPAbstractItem* itm) {
   if (QCPItemPixmap *pix = qobject_cast<QCPItemPixmap*>(itm)) {
@@ -128,7 +135,7 @@ void WidgetPlot2D::optionsChanged(QAction* action) {
     current_scale_type_ = choice;
     colorMap->setDataScaleType(scale_types_[current_scale_type_]);
     colorMap->rescaleDataRange(true);
-    ui->coincPlot->replot();
+    ui->plot->replot();
   } else if (gradients_.count(choice)) {
     current_gradient_ = choice;
     colorMap->setGradient(gradients_[current_gradient_]);
@@ -161,11 +168,11 @@ void WidgetPlot2D::selection_changed() {
 
 std::list<MarkerBox2D> WidgetPlot2D::get_selected_boxes() {
   std::list<MarkerBox2D> selection;
-  for (auto &q : ui->coincPlot->selectedItems())
+  for (auto &q : ui->plot->selectedItems())
     if (QCPItemRect *b = qobject_cast<QCPItemRect*>(q)) {
       MarkerBox2D box;
-      box.x_c = b->property("chan_x").toDouble();
-      box.y_c = b->property("chan_y").toDouble();
+      box.x1 = b->property("chan_x").toDouble();
+      box.y1 = b->property("chan_y").toDouble();
       selection.push_back(box);
       //DBG << "found selected " << txt->property("true_value").toDouble() << " chan=" << txt->property("chan_value").toDouble();
     }
@@ -186,17 +193,12 @@ void WidgetPlot2D::reset_content() {
 
 void WidgetPlot2D::refresh()
 {
-  ui->coincPlot->replot();
+  ui->plot->replot();
 }
 
 void WidgetPlot2D::replot_markers() {
-  //DBG << "replot markers";
-  double minx = std::numeric_limits<double>::max();
-  double maxx = - std::numeric_limits<double>::max();
-  double miny = std::numeric_limits<double>::max();
-  double maxy = - std::numeric_limits<double>::max();
 
-  ui->coincPlot->clearItems();
+  ui->plot->clearItems();
 
   QPen pen = marker_looks.get_pen(current_gradient_);
 
@@ -204,10 +206,6 @@ void WidgetPlot2D::replot_markers() {
   cc.setAlpha(169);
   pen.setColor(cc);
   pen.setWidth(3);
-
-  QPen pen2 = pen;
-  cc.setAlpha(48);
-  pen2.setColor(cc);
 
   QPen pen_strong = pen;
   cc.setAlpha(255);
@@ -221,15 +219,20 @@ void WidgetPlot2D::replot_markers() {
 
   QCPItemRect *box;
 
+  int selectables = 0;
   for (auto &q : boxes_) {
-//    if (!q.visible)
+    QColor fill_color = pen.color();
+    if (!q.mark_center)
+      fill_color.setAlpha(48);
+
+    //    if (!q.visible)
 //      continue;
-    box = new QCPItemRect(ui->coincPlot);
+    box = new QCPItemRect(ui->plot);
     box->setSelectable(q.selectable);
     if (q.selectable) {
       box->setPen(pen);
 //      box->setSelectedPen(pen);
-      box->setBrush(QBrush(pen2.color()));
+      box->setBrush(QBrush(fill_color));
       box->setSelected(q.selected);
       QColor sel = box->selectedPen().color();
       box->setSelectedBrush(QBrush(QColor::fromHsv(sel.hsvHue(), sel.saturation(), sel.value(), 48)));
@@ -237,57 +240,21 @@ void WidgetPlot2D::replot_markers() {
       box->setPen(pen);
     }
 
-    box->setProperty("chan_x", q.x_c);
-    box->setProperty("chan_y", q.y_c);
+    box->setProperty("chan_x", q.x1);
+    box->setProperty("chan_y", q.y1);
     box->topLeft->setCoords(q.x1, q.y1);
     box->bottomRight->setCoords(q.x2, q.y2);
-    ui->coincPlot->addItem(box);
+    ui->plot->addItem(box);
 
-//    if (q.selected) {
-////      total_markers++;
-//      if (q.vertical) {
-//        if (x2 > maxx)
-//          maxx = x2;
-//        if (x1 < minx)
-//          minx = x1;
-//      }
-
-//      if (q.horizontal) {
-//        if (y2 > maxy)
-//          maxy = y2;
-//        if (y1 < miny)
-//          miny = y1;
-//      }
-//    }
-
-    if (q.mark_center) {
-      QCPItemLine *linev = new QCPItemLine(ui->coincPlot);
-      QCPItemLine *lineh = new QCPItemLine(ui->coincPlot);
-      lineh->setPen(pen_strong);
-      linev->setPen(pen_strong);
-//      linev->setSelectedPen(QPen(QColor::fromHsv(sel.hsvHue(), sel.saturation(), sel.value(), 48)));
-//      lineh->setSelectedPen(QPen(QColor::fromHsv(sel.hsvHue(), sel.saturation(), sel.value(), 48)));
-      linev->setSelected(q.selected);
-      lineh->setSelected(q.selected);
-      lineh->setTail(QCPLineEnding::esBar);
-      lineh->setHead(QCPLineEnding::esBar);
-      linev->setTail(QCPLineEnding::esBar);
-      linev->setHead(QCPLineEnding::esBar);
-      lineh->start->setCoords(q.x1, q.y_c);
-      lineh->end->setCoords(q.x2, q.y_c);
-      linev->start->setCoords(q.x_c, q.y1);
-      linev->end->setCoords(q.x_c, q.y2);
-//      DBG << "mark center xc yc " << xc << " " << yc;
-      ui->coincPlot->addItem(lineh);
-      ui->coincPlot->addItem(linev);
-    }
+    if (q.selectable)
+      selectables++;
 
     if (!q.label.isEmpty())
     {
-      QCPItemText *labelItem = new QCPItemText(ui->coincPlot);
+      QCPItemText *labelItem = new QCPItemText(ui->plot);
       labelItem->setText(q.label);
-      labelItem->setProperty("chan_x", q.x_c);
-      labelItem->setProperty("chan_y", q.y_c);
+      labelItem->setProperty("chan_x", q.x1);
+      labelItem->setProperty("chan_y", q.y1);
       labelItem->position->setType(QCPItemPosition::ptPlotCoords);
       labelItem->position->setCoords(q.x1, q.y2);
 
@@ -308,23 +275,23 @@ void WidgetPlot2D::replot_markers() {
 
       labelItem->setPadding(QMargins(1, 1, 1, 1));
 
-      ui->coincPlot->addItem(labelItem);
+      ui->plot->addItem(labelItem);
     }
 
   }
 
-//  if (boxes_.size()) {
-//    ui->coincPlot->setInteraction(QCP::iSelectItems, true);
-//    ui->coincPlot->setInteraction(QCP::iMultiSelect, false);
-//  } else {
-//    ui->coincPlot->setInteraction(QCP::iSelectItems, false);
-//    ui->coincPlot->setInteraction(QCP::iMultiSelect, false);
-//  }
+  if (selectables) {
+    ui->plot->setInteraction(QCP::iSelectItems, true);
+    ui->plot->setInteraction(QCP::iMultiSelect, false);
+  } else {
+    ui->plot->setInteraction(QCP::iSelectItems, false);
+    ui->plot->setInteraction(QCP::iMultiSelect, false);
+  }
 
 
   QCPItemPixmap *overlayButton;
 
-  overlayButton = new QCPItemPixmap(ui->coincPlot);
+  overlayButton = new QCPItemPixmap(ui->plot);
   overlayButton->setClipToAxisRect(false);
   overlayButton->setPixmap(QPixmap(":/icons/oxy/16/view_fullscreen.png"));
   overlayButton->topLeft->setType(QCPItemPosition::ptAbsolute);
@@ -335,10 +302,10 @@ void WidgetPlot2D::replot_markers() {
   overlayButton->setSelectable(false);
   overlayButton->setProperty("button_name", QString("reset_scales"));
   overlayButton->setProperty("tooltip", QString("Reset plot scales"));
-  ui->coincPlot->addItem(overlayButton);
+  ui->plot->addItem(overlayButton);
 
   if (!menuOptions.isEmpty()) {
-    QCPItemPixmap *newButton = new QCPItemPixmap(ui->coincPlot);
+    QCPItemPixmap *newButton = new QCPItemPixmap(ui->plot);
     newButton->setClipToAxisRect(false);
     newButton->setPixmap(QPixmap(":/icons/oxy/16/view_statistics.png"));
     newButton->topLeft->setType(QCPItemPosition::ptAbsolute);
@@ -350,11 +317,11 @@ void WidgetPlot2D::replot_markers() {
     newButton->setSelectable(false);
     newButton->setProperty("button_name", QString("options"));
     newButton->setProperty("tooltip", QString("Style options"));
-    ui->coincPlot->addItem(newButton);
+    ui->plot->addItem(newButton);
     overlayButton = newButton;
   }
 
-  QCPItemPixmap *newButton = new QCPItemPixmap(ui->coincPlot);
+  QCPItemPixmap *newButton = new QCPItemPixmap(ui->plot);
   newButton->setClipToAxisRect(false);
   newButton->setPixmap(QPixmap(":/icons/oxy/16/document_save.png"));
   newButton->topLeft->setType(QCPItemPosition::ptAbsolute);
@@ -366,24 +333,24 @@ void WidgetPlot2D::replot_markers() {
   newButton->setSelectable(false);
   newButton->setProperty("button_name", QString("export"));
   newButton->setProperty("tooltip", QString("Export plot"));
-  ui->coincPlot->addItem(newButton);
+  ui->plot->addItem(newButton);
   overlayButton = newButton;
 
-  ui->coincPlot->replot();
+  ui->plot->replot();
 }
 
 void WidgetPlot2D::update_plot(uint64_t sizex, uint64_t sizey, const EntryList &spectrum_data) {
-  ui->coincPlot->clearGraphs();
+  ui->plot->clearGraphs();
   colorMap->clearData();
-  ui->coincPlot->setAlwaysSquare(sizex == sizey);
+  ui->plot->setAlwaysSquare(sizex == sizey);
   if (sizex == sizey)
   {
-    ui->coincPlot->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::MinimumExpanding);
+    ui->plot->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::MinimumExpanding);
     ui->verticalLayout->setSizeConstraint(QLayout::SetMaximumSize);
   }
   else
   {
-    ui->coincPlot->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
+    ui->plot->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
     ui->verticalLayout->setSizeConstraint(QLayout::SetNoConstraint);
   }
 
@@ -393,9 +360,9 @@ void WidgetPlot2D::update_plot(uint64_t sizex, uint64_t sizey, const EntryList &
       if ((it.first.size() > 1) && (it.first[0] >= 0) && (it.first[1] >= 0))
         colorMap->data()->setCell(it.first[0], it.first[1], it.second);
     colorMap->rescaleDataRange(true);
-    ui->coincPlot->updateGeometry();
+    ui->plot->updateGeometry();
   } else {
-    ui->coincPlot->clearGraphs();
+    ui->plot->clearGraphs();
     colorMap->clearData();
     colorMap->keyAxis()->setLabel("");
     colorMap->valueAxis()->setLabel("");
@@ -409,22 +376,22 @@ void WidgetPlot2D::set_axes(QString xlabel, double x1, double x2,
                             QString zlabel)
 {
   Z_label_ = zlabel;
-  for (int i=0; i < ui->coincPlot->plotLayout()->elementCount(); i++)
-    if (QCPColorScale *le = qobject_cast<QCPColorScale*>(ui->coincPlot->plotLayout()->elementAt(i)))
+  for (int i=0; i < ui->plot->plotLayout()->elementCount(); i++)
+    if (QCPColorScale *le = qobject_cast<QCPColorScale*>(ui->plot->plotLayout()->elementAt(i)))
       le->axis()->setLabel(zlabel);
 
   colorMap->keyAxis()->setLabel(xlabel);
   colorMap->valueAxis()->setLabel(ylabel);
   colorMap->data()->setRange(QCPRange(x1, x2),
                              QCPRange(y1, y2));
-  ui->coincPlot->rescaleAxes();
+  ui->plot->rescaleAxes();
 }
 
 
 void WidgetPlot2D::plot_2d_mouse_upon(double x, double y) {
 //  colorMap->keyAxis()->setLabel("Energy (" + QString::fromStdString(calib_x_.units_) + "): " + QString::number(calib_x_.transform(x, bits_)));
 //  colorMap->valueAxis()->setLabel("Energy (" + QString::fromStdString(calib_y_.units_) + "): " + QString::number(calib_y_.transform(y, bits_)));
-//  ui->coincPlot->replot();
+//  ui->plot->replot();
 }
 
 void WidgetPlot2D::plot_2d_mouse_clicked(double x, double y, QMouseEvent *event, bool channels)
@@ -436,8 +403,20 @@ void WidgetPlot2D::plot_2d_mouse_clicked(double x, double y, QMouseEvent *event,
 void WidgetPlot2D::zoom_out()
 {
   this->setCursor(Qt::WaitCursor);
-  ui->coincPlot->rescaleAxes();
-  ui->coincPlot->replot();
+  ui->plot->rescaleAxes();
+  ui->plot->replot();
+
+  double margin = 0.5;
+  double x_lower = ui->plot->xAxis->range().lower;
+  double x_upper = ui->plot->xAxis->range().upper;
+  double y_lower = ui->plot->yAxis->range().lower;
+  double y_upper = ui->plot->yAxis->range().upper;
+  ui->plot->xAxis->setRange(x_lower - margin, x_upper + margin);
+  ui->plot->yAxis->setRange(y_lower - margin, y_upper + margin);
+
+  ui->plot->replot();
+
+
   this->setCursor(Qt::ArrowCursor);
 }
 
@@ -446,8 +425,8 @@ void WidgetPlot2D::toggle_gradient_scale()
 {
   if (show_gradient_scale_) {
     //add color scale
-    QCPColorScale *colorScale = new QCPColorScale(ui->coincPlot);
-    ui->coincPlot->plotLayout()->addElement(0, 1, colorScale);
+    QCPColorScale *colorScale = new QCPColorScale(ui->plot);
+    ui->plot->plotLayout()->addElement(0, 1, colorScale);
     colorScale->setType(QCPAxis::atRight);
     colorMap->setColorScale(colorScale);
 
@@ -460,8 +439,8 @@ void WidgetPlot2D::toggle_gradient_scale()
     colorScale->axis()->setLabel(Z_label_);
 
     //readjust margins
-    QCPMarginGroup *marginGroup = new QCPMarginGroup(ui->coincPlot);
-    ui->coincPlot->axisRect()->setMarginGroup(QCP::msBottom|QCP::msTop, marginGroup);
+    QCPMarginGroup *marginGroup = new QCPMarginGroup(ui->plot);
+    ui->plot->axisRect()->setMarginGroup(QCP::msBottom|QCP::msTop, marginGroup);
     colorScale->setMarginGroup(QCP::msBottom|QCP::msTop, marginGroup);
 
     colorMap->setGradient(gradients_[current_gradient_]);
@@ -473,15 +452,15 @@ void WidgetPlot2D::toggle_gradient_scale()
     colorScale->axis()->setNumberPrecision(0);
     colorScale->axis()->setRangeLower(1);
 
-    ui->coincPlot->replot();
-    ui->coincPlot->updateGeometry();
+    ui->plot->replot();
+    ui->plot->updateGeometry();
   } else {
-    for (int i=0; i < ui->coincPlot->plotLayout()->elementCount(); i++) {
-      if (QCPColorScale *le = qobject_cast<QCPColorScale*>(ui->coincPlot->plotLayout()->elementAt(i)))
-        ui->coincPlot->plotLayout()->remove(le);
+    for (int i=0; i < ui->plot->plotLayout()->elementCount(); i++) {
+      if (QCPColorScale *le = qobject_cast<QCPColorScale*>(ui->plot->plotLayout()->elementAt(i)))
+        ui->plot->plotLayout()->remove(le);
     }
-    ui->coincPlot->plotLayout()->simplify();
-    ui->coincPlot->updateGeometry();
+    ui->plot->plotLayout()->simplify();
+    ui->plot->updateGeometry();
   }
 }
 
@@ -490,7 +469,7 @@ void WidgetPlot2D::set_scale_type(QString sct) {
   current_scale_type_ = sct;
   colorMap->setDataScaleType(scale_types_[current_scale_type_]);
   colorMap->rescaleDataRange(true);
-  ui->coincPlot->replot();
+  ui->plot->replot();
   build_menu();
   this->setCursor(Qt::ArrowCursor);
 }
@@ -531,33 +510,33 @@ void WidgetPlot2D::exportRequested(QAction* choice) {
   {
     QFileInfo file(fileName);
     if (file.suffix() == "png")
-      ui->coincPlot->savePng(fileName,0,0,1,100);
+      ui->plot->savePng(fileName,0,0,1,100);
     else if (file.suffix() == "jpg")
-      ui->coincPlot->saveJpg(fileName,0,0,1,100);
+      ui->plot->saveJpg(fileName,0,0,1,100);
     else if (file.suffix() == "bmp")
-      ui->coincPlot->saveBmp(fileName);
+      ui->plot->saveBmp(fileName);
     else if (file.suffix() == "pdf")
-      ui->coincPlot->savePdf(fileName, true);
+      ui->plot->savePdf(fileName, true);
   }
 }
 
 void WidgetPlot2D::setColorScheme(QColor fore, QColor back, QColor grid1, QColor grid2)
 {
-  ui->coincPlot->xAxis->setBasePen(QPen(fore, 1));
-  ui->coincPlot->yAxis->setBasePen(QPen(fore, 1));
-  ui->coincPlot->xAxis->setTickPen(QPen(fore, 1));
-  ui->coincPlot->yAxis->setTickPen(QPen(fore, 1));
-  ui->coincPlot->xAxis->setSubTickPen(QPen(fore, 1));
-  ui->coincPlot->yAxis->setSubTickPen(QPen(fore, 1));
-  ui->coincPlot->xAxis->setTickLabelColor(fore);
-  ui->coincPlot->yAxis->setTickLabelColor(fore);
-  ui->coincPlot->xAxis->setLabelColor(fore);
-  ui->coincPlot->yAxis->setLabelColor(fore);
-  ui->coincPlot->xAxis->grid()->setPen(QPen(grid1, 1, Qt::DotLine));
-  ui->coincPlot->yAxis->grid()->setPen(QPen(grid1, 1, Qt::DotLine));
-  ui->coincPlot->xAxis->grid()->setSubGridPen(QPen(grid2, 1, Qt::DotLine));
-  ui->coincPlot->yAxis->grid()->setSubGridPen(QPen(grid2, 1, Qt::DotLine));
-  ui->coincPlot->xAxis->grid()->setZeroLinePen(Qt::NoPen);
-  ui->coincPlot->yAxis->grid()->setZeroLinePen(Qt::NoPen);
-  ui->coincPlot->setBackground(QBrush(back));
+  ui->plot->xAxis->setBasePen(QPen(fore, 1));
+  ui->plot->yAxis->setBasePen(QPen(fore, 1));
+  ui->plot->xAxis->setTickPen(QPen(fore, 1));
+  ui->plot->yAxis->setTickPen(QPen(fore, 1));
+  ui->plot->xAxis->setSubTickPen(QPen(fore, 1));
+  ui->plot->yAxis->setSubTickPen(QPen(fore, 1));
+  ui->plot->xAxis->setTickLabelColor(fore);
+  ui->plot->yAxis->setTickLabelColor(fore);
+  ui->plot->xAxis->setLabelColor(fore);
+  ui->plot->yAxis->setLabelColor(fore);
+  ui->plot->xAxis->grid()->setPen(QPen(grid1, 1, Qt::DotLine));
+  ui->plot->yAxis->grid()->setPen(QPen(grid1, 1, Qt::DotLine));
+  ui->plot->xAxis->grid()->setSubGridPen(QPen(grid2, 1, Qt::DotLine));
+  ui->plot->yAxis->grid()->setSubGridPen(QPen(grid2, 1, Qt::DotLine));
+  ui->plot->xAxis->grid()->setZeroLinePen(Qt::NoPen);
+  ui->plot->yAxis->grid()->setZeroLinePen(Qt::NoPen);
+  ui->plot->setBackground(QBrush(back));
 }

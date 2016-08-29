@@ -6,7 +6,6 @@
 #include <memory>
 
 #include "FileHDF5.h"
-#include "Dimensions.h"
 
 #include "BoxesModel.h"
 #include "SpecialDelegate.h"
@@ -37,7 +36,7 @@ public:
   explicit Analyzer(QWidget *parent = 0);
   ~Analyzer();
 
-  void set_new_source(std::shared_ptr<NMX::FileHDF5> r, NMX::Dimensions x, NMX::Dimensions y);
+  void set_new_source(std::shared_ptr<NMX::FileHDF5> r);
 
 public slots:
   void enableIO(bool);
@@ -67,8 +66,6 @@ private:
   Ui::Analyzer *ui;
 
   std::shared_ptr<NMX::FileHDF5> reader_;
-  NMX::Dimensions xdims_;
-  NMX::Dimensions ydims_;
 
 
   QVector<HistParams> subset_params_;

@@ -2,8 +2,7 @@
 #define THREAD_CLASSIFY_H_
 
 #include <QThread>
-
-#include <boost/atomic.hpp>
+#include <QAtomicInt>
 
 #include "FileHDF5.h"
 #include <memory>
@@ -34,8 +33,8 @@ private:
 
     std::map<std::string, double> parameters_;
 
-    boost::atomic<bool> terminating_;
-    boost::atomic<int>  refresh_frequency_;
+    QAtomicInt terminating_;
+    QAtomicInt refresh_frequency_;
 
     double percent {0};
 };

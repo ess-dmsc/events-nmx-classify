@@ -13,10 +13,11 @@ ViewRecord::ViewRecord(QWidget *parent) :
   ui->plotRecord->set_antialiased(false);
   ui->plotRecord->set_scale_type("Linear");
   ui->plotRecord->set_show_legend(true);
+  ui->plotRecord->set_zoom_drag(Qt::Horizontal);
 
   ui->plotProjection->set_scale_type("Linear");
   ui->plotProjection->set_plot_style("Step center");
-  ui->plotProjection->set_visible_options(ShowOptions::thickness | ShowOptions::grid | ShowOptions::save);
+  ui->plotProjection->set_visible_options(ShowOptions::zoom | ShowOptions::thickness | ShowOptions::grid | ShowOptions::save);
 
 
   ui->tableValues->verticalHeader()->hide();
@@ -39,12 +40,6 @@ void ViewRecord::set_title(QString title)
   ui->labelTitle->setText(title);
 }
 
-void ViewRecord::set_trim(bool trim)
-{
-  trim_ = trim;
-  display_current_record();
-}
-
 void ViewRecord::set_show_raw(bool show_raw)
 {
   show_raw_ = show_raw;
@@ -60,12 +55,6 @@ void ViewRecord::set_overlay_type(QString overlay_type)
 void ViewRecord::set_projection_type(QString projection_type)
 {
   projection_type_ = projection_type;
-  display_current_record();
-}
-
-void ViewRecord::set_dimenstions(NMX::Dimensions dim)
-{
-  dim_ = dim;
   display_current_record();
 }
 
@@ -95,46 +84,34 @@ void ViewRecord::display_current_record()
 {
   clear();
 
-  dim_shifted_ = dim_;
-  if (trim_)
-  {
-    dim_shifted_.min = dim_.transform(record_.strip_start()-0.5);
-    dim_shifted_.max = dim_.transform(record_.strip_end()+0.5);
-    dim_shifted_.strips = record_.strip_end() - record_.strip_start() + 1;
-  }
-
-  ui->plotRecord->set_axes("Position (mm)", dim_shifted_.transform(0), dim_shifted_.transform(dim_shifted_.strips-1),
-                           "Time bin",                             0, record_.time_end(),
+  ui->plotRecord->set_axes("Position (mm)", record_.strip_start(), record_.strip_end(),
+                           "Time bin",                          0, record_.time_end(),
                            "Charge");
 
   if (show_raw_)
-    ui->plotRecord->update_plot(dim_shifted_.strips, record_.time_end() + 1, make_list());
+    ui->plotRecord->update_plot(record_.strip_span(), record_.time_end() + 1, make_list());
   else
-    ui->plotRecord->update_plot(dim_shifted_.strips, record_.time_end() + 1, EntryList());
+    ui->plotRecord->update_plot(record_.strip_span(), record_.time_end() + 1, EntryList());
 
 
   auto overlay = make_overlay();
   int stripi = record_.get_value("entry_strip");
   if (stripi >= 0)
   {
-    if (trim_)
-      stripi -= record_.strip_start();
-
     int timei = record_.get_value("entry_time");
 
     MarkerBox2D box;
+    box.selectable = false;
     box.mark_center = true;
-    box.x_c = dim_shifted_.transform(stripi);
-    box.x1 = dim_shifted_.transform(stripi - 0.2);
-    box.x2 = dim_shifted_.transform(stripi + 0.2);
-    box.y_c = timei;
+    box.x1 = stripi - 0.2;
+    box.x2 = stripi + 0.2;
     box.y1  = timei - 0.2;
     box.y2  = timei + 0.2;
     overlay.push_back(box);
   }
   ui->plotRecord->set_boxes(overlay);
-
   ui->plotRecord->replot_markers();
+  ui->plotRecord->zoom_out();
 
   ui->tableValues->clearContents();
   auto valnames = record_.categories();
@@ -157,9 +134,7 @@ EntryList ViewRecord::make_list()
   for (auto &i : record_.valid_strips())
   {
     auto strip = record_.get_strip(i);
-    int stripi = i;
-    if (trim_)
-      stripi -= record_.strip_start();
+    int stripi = i - record_.strip_start();
     for (int tb=strip.bin_start(); tb <= strip.bin_end(); ++tb)
       if (strip.value(tb))
         data.push_back(Entry{{stripi,tb}, strip.value(tb)});
@@ -174,14 +149,11 @@ std::list<MarkerBox2D> ViewRecord::make_overlay()
   for (auto &i : record_.get_points(overlay_type_.toStdString()))
   {
     int stripi = i.first;
-    if (trim_)
-      stripi -= record_.strip_start();
 
     MarkerBox2D box;
-    box.x_c = dim_shifted_.transform(stripi);
-    box.x1 = dim_shifted_.transform(stripi - 0.45);
-    box.x2 = dim_shifted_.transform(stripi + 0.45);
-    box.y_c = i.second;
+    box.selectable = false;
+    box.x1 = stripi - 0.45;
+    box.x2 = stripi + 0.45;
     box.y1 = i.second - 0.45;
     box.y2 = i.second + 0.45;
     ret.push_back(box);
@@ -194,7 +166,6 @@ std::list<MarkerBox2D> ViewRecord::make_overlay()
 void ViewRecord::display_projection()
 {
   std::map<double, double> minima, maxima;
-  Calibration calib_ = Calibration();
 
   ui->plotProjection->clearGraphs();
 
@@ -205,7 +176,7 @@ void ViewRecord::display_projection()
     for (size_t i = record_.strip_start(); i <= record_.strip_end(); ++i)
     {
       auto strip = record_.get_strip(i);
-      double xx = dim_.transform(i);
+      double xx = i;
       double yy = 0;
 
       if (projection_type_ == "Integral")
@@ -227,7 +198,6 @@ void ViewRecord::display_projection()
   profile.default_pen = QPen(Qt::darkRed, 2);
   ui->plotProjection->addGraph(x, y, profile, 8);
 
-  ui->plotProjection->use_calibrated(/*calib_.valid()*/false);
   ui->plotProjection->setLabels("position", "value");
   ui->plotProjection->setYBounds(minima, maxima);
 
