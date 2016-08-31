@@ -258,7 +258,7 @@ void Record::analyze()
   values_["c-ness"] = c_ness;
 
   int u_ness {0}, u_ness2{0};
-  for (int i=0; i < sideways.size(); ++i)
+  for (size_t i=0; i < sideways.size(); ++i)
   {
     Strip newstrip(sideways.at(i));
     newstrip.analyze(values_["ADC_threshold_time"], values_["TB_over_threshold_time"]);

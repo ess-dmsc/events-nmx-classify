@@ -207,31 +207,18 @@ void WidgetPlot2D::replot_markers() {
   pen.setColor(cc);
   pen.setWidth(3);
 
-  QPen pen_strong = pen;
-  cc.setAlpha(255);
-  cc.setHsv((cc.hsvHue() + 180) % 180, 255, 128, 255);
-  pen_strong.setColor(cc);
-  pen_strong.setWidth(3);
-
-  QPen pen_strong2 = pen_strong;
-  cc.setAlpha(64);
-  pen_strong2.setColor(cc);
-
   QCPItemRect *box;
 
   int selectables = 0;
   for (auto &q : boxes_) {
-    QColor fill_color = pen.color();
-    if (!q.mark_center)
-      fill_color.setAlpha(48);
 
     //    if (!q.visible)
 //      continue;
     box = new QCPItemRect(ui->plot);
     box->setSelectable(q.selectable);
-    box->setPen(pen);
+    box->setPen(q.border);
 //    box->setSelectedPen(pen);
-    box->setBrush(QBrush(fill_color));
+    box->setBrush(QBrush(q.fill));
     box->setSelected(q.selected);
     QColor sel = box->selectedPen().color();
     box->setSelectedBrush(QBrush(QColor::fromHsv(sel.hsvHue(), sel.saturation(), sel.value(), 48)));
@@ -259,8 +246,8 @@ void WidgetPlot2D::replot_markers() {
       labelItem->setSelectable(q.selectable);
       labelItem->setSelected(q.selected);
 
-      labelItem->setColor(pen_strong.color());
-      labelItem->setPen(pen_strong);
+      labelItem->setColor(q.border);
+      labelItem->setPen(QPen(q.border));
       labelItem->setBrush(QBrush(Qt::white));
 
       QColor sel = labelItem->selectedColor();

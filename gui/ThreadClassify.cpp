@@ -51,14 +51,11 @@ void ThreadClassify::run()
 
   int evt_count = reader_->event_count();
 
-  size_t eventID = reader_->num_analyzed();
-  percent = double(eventID+1) / double(evt_count) * 100;
-
   QTimer timer;
   timer.setSingleShot(true);
   timer.start(refresh_frequency_ * 1000);
 
-  for (; eventID < evt_count; ++eventID)
+  for (int eventID = reader_->num_analyzed(); eventID < evt_count; ++eventID)
   {
     if (terminating_ > 0)
       break;

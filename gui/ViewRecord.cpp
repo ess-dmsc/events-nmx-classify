@@ -102,11 +102,12 @@ void ViewRecord::display_current_record()
 
     MarkerBox2D box;
     box.selectable = false;
-    box.mark_center = true;
     box.x1 = stripi - 0.2;
     box.x2 = stripi + 0.2;
     box.y1  = timei - 0.2;
     box.y2  = timei + 0.2;
+    box.border = Qt::yellow;
+    box.fill = Qt::darkYellow;
     overlay.push_back(box);
   }
   ui->plotRecord->set_boxes(overlay);
@@ -156,6 +157,8 @@ std::list<MarkerBox2D> ViewRecord::make_overlay()
     box.x2 = stripi + 0.45;
     box.y1 = i.second - 0.45;
     box.y2 = i.second + 0.45;
+    box.border = Qt::red;
+    box.fill = QColor(0xFF, 0, 0, 48);
     ret.push_back(box);
   }
 
@@ -173,7 +176,7 @@ void ViewRecord::display_projection()
 
   if (record_.valid_strips().size() && (projection_type_ != "none"))
   {
-    for (size_t i = record_.strip_start(); i <= record_.strip_end(); ++i)
+    for (int i = record_.strip_start(); i <= record_.strip_end(); ++i)
     {
       auto strip = record_.get_strip(i);
       double xx = i;

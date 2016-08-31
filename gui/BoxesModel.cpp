@@ -5,50 +5,20 @@
 #include "CustomLogger.h"
 
 
-void HistParams::set_width(int w)
-{
-  auto center = center_x();
-  x1 = center - w / 2;
-  x2 = center + w / 2;
-}
-
-void HistParams::set_height(int h)
-{
-  auto center = center_y();
-  y1 = center - h / 2;
-  y2 = center + h / 2;
-}
-
-void HistParams::set_center_x(int x)
-{
-  auto w = width();
-  x1 = x - w/2;
-  x2 = x + w/2;
-}
-
-void HistParams::set_center_y(int y)
-{
-  auto h = height();
-  y1 = y - h/2;
-  y2 = y + h/2;
-}
-
-
-
-BoxesModel::BoxesModel(QVector<HistParams> &params, QObject *parent)
+BoxesModel::BoxesModel(QVector<Histogram> &params, QObject *parent)
   : QAbstractTableModel(parent)
-  , parameters_(params)
+  , slabs_(params)
 {
 }
 
 int BoxesModel::rowCount(const QModelIndex & /*parent*/) const
 {
-  return parameters_.size();
+  return slabs_.size();
 }
 
 int BoxesModel::columnCount(const QModelIndex & /*parent*/) const
 {
-  return 7;
+  return 13;
 }
 
 QVariant BoxesModel::data(const QModelIndex &index, int role) const
@@ -56,21 +26,43 @@ QVariant BoxesModel::data(const QModelIndex &index, int role) const
   int row = index.row();
   int col = index.column();
 
-  if (role == Qt::DisplayRole)
+  if (role == Qt::ForegroundRole)
+  {
+    if ((col > 0) && (col < 8))
+      return QBrush(Qt::black);
+    else
+      return QBrush(Qt::darkGray);
+  }
+  else if (role == Qt::DisplayRole)
   {
     switch (col) {
     case 0:
-      return QVariant::fromValue(parameters_.at(row).color);
+      return QVariant::fromValue(slabs_.at(row).color);
     case 1:
-      return QVariant::fromValue(parameters_[row].visible);
+      return QVariant::fromValue(slabs_[row].visible);
     case 2:
-      return QVariant::fromValue(parameters_.at(row).center_x());
+      return QVariant::fromValue(slabs_.at(row).center_x());
     case 3:
-      return QVariant::fromValue(parameters_.at(row).center_y());
+      return QVariant::fromValue(slabs_.at(row).center_y());
     case 4:
-      return QVariant::fromValue(parameters_.at(row).width());
+      return QVariant::fromValue(slabs_.at(row).width());
     case 5:
-      return QVariant::fromValue(parameters_.at(row).height());
+      return QVariant::fromValue(slabs_.at(row).height());
+
+    case 6:
+      return QVariant::fromValue(slabs_.at(row).bin_min());
+    case 7:
+      return QVariant::fromValue(slabs_.at(row).bin_max());
+
+    case 8:
+      return QVariant::fromValue(slabs_.at(row).min());
+    case 9:
+      return QVariant::fromValue(slabs_.at(row).max());
+    case 10:
+      return QVariant::fromValue(slabs_.at(row).avg());
+    case 11:
+      return QVariant::fromValue(slabs_.at(row).total_count());
+
     }
   }
   return QVariant();
@@ -95,6 +87,23 @@ QVariant BoxesModel::headerData(int section, Qt::Orientation orientation, int ro
         return QString("width");
       case 5:
         return QString("height");
+
+      case 6:
+        return QString("bin_min");
+      case 7:
+        return QString("bin_max");
+
+
+      case 8:
+        return QString("min");
+      case 9:
+        return QString("max");
+      case 10:
+        return QString("weighted avg");
+      case 11:
+        return QString("total count");
+
+
       }
     } else if (orientation == Qt::Vertical) {
       return QString::number(section);
@@ -119,26 +128,31 @@ bool BoxesModel::setDataQuietly(const QModelIndex & index, const QVariant & valu
   if ((role == Qt::EditRole) && (row >= 0) && (row < rowCount())
       && (col >= 0) && (col < columnCount()))
   {
-    if (value.canConvert(QMetaType::LongLong))
+    if ((col == 0) && value.canConvert(QVariant::String))
+    {
+      DBG << "model changing color " << value.toString().toStdString();
+      slabs_[row].color = QColor(value.toString());
+    }
+    else if ((col == 1) && value.canConvert(QVariant::Bool))
+      slabs_[row].visible = value.toBool();
+    else if (value.canConvert(QMetaType::LongLong))
     {
       if (col == 2)
-        parameters_[row].set_center_x(value.toLongLong());
+        slabs_[row].set_center_x(value.toLongLong());
       else if (col == 3)
-        parameters_[row].set_center_y(value.toLongLong());
+        slabs_[row].set_center_y(value.toLongLong());
       else if (col == 4)
-        parameters_[row].set_width(value.toLongLong());
+        slabs_[row].set_width(value.toLongLong());
       else if (col == 5)
-        parameters_[row].set_height(value.toLongLong());
+        slabs_[row].set_height(value.toLongLong());
+      else if (col == 6)
+        slabs_[row].set_bin_bounds(value.toLongLong(), slabs_[row].bin_max());
+      else if (col == 7)
+        slabs_[row].set_bin_bounds(slabs_[row].bin_min(), value.toLongLong());
       else
         return false;
     }
-    else if ((value.type() == QVariant::Bool) && (col == 1))
-      parameters_[row].visible = value.toBool();
-    else if ((value.type() == QVariant::String) && (col == 0))
-    {
-      DBG << "model changing color " << value.toString().toStdString();
-      parameters_[row].color = QColor(value.toString());
-    }
+
 
     emit data_changed();
     return true;
@@ -150,7 +164,7 @@ bool BoxesModel::setDataQuietly(const QModelIndex & index, const QVariant & valu
 void BoxesModel::update()
 {
   QModelIndex start_ix = createIndex( 0, 0 );
-  QModelIndex end_ix = createIndex(parameters_.size(), columnCount());
+  QModelIndex end_ix = createIndex(slabs_.size(), columnCount());
   emit dataChanged( start_ix, end_ix );
   emit layoutChanged();
 }
@@ -158,7 +172,7 @@ void BoxesModel::update()
 Qt::ItemFlags BoxesModel::flags(const QModelIndex &index) const
 {
   Qt::ItemFlags myflags = Qt::ItemIsEnabled | Qt::ItemIsSelectable | QAbstractTableModel::flags(index);
-  if (index.column() != 0)
+  if ((index.column() > 0) && (index.column() < 8))
     myflags |= Qt::ItemIsEditable;
   return myflags;
 }

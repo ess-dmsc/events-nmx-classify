@@ -183,7 +183,7 @@ void ViewEvent::set_indices(std::set<size_t> indices)
   indices_.clear();
   std::copy( indices.begin(), indices.end(), std::inserter( indices_, indices_.end() ) );
 
-  int evt_count {0};
+  size_t evt_count {0};
 
   if (reader_)
     evt_count = reader_->event_count();

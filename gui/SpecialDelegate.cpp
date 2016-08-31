@@ -20,7 +20,7 @@ void SpecialDelegate::paint(QPainter *painter, const QStyleOptionViewItem &optio
     painter->fillRect(option.rect, thisColor);
     return;
   }
-  else if (index.data().type() == QVariant::Int)
+  else if (index.data().type() == QVariant::LongLong)
   {
     QString text = QString::number(index.data().toInt());
     int flags = Qt::TextWordWrap | Qt::AlignVCenter;
@@ -54,7 +54,7 @@ QSize SpecialDelegate::sizeHint(const QStyleOptionViewItem &option,
     QSize size(qr.size());
     return size;
   }
-  else if (index.data().type() == QVariant::Int)
+  else if (index.data().type() == QVariant::LongLong)
   {
     QString text = QString::number(index.data().toInt());
     QRect r = option.rect;
@@ -74,7 +74,14 @@ QWidget *SpecialDelegate::createEditor(QWidget *parent,
 {
   emit begin_editing();
 
-  if (index.data().type() == QVariant::Int)
+  if (index.data().type() == QVariant::Bool)
+  {
+    QComboBox *editor = new QComboBox(parent);
+    editor->addItem("True", QVariant::fromValue(true));
+    editor->addItem("False", QVariant::fromValue(false));
+    return editor;
+  }
+  else if (index.data().canConvert(QVariant::LongLong))
   {
     QSpinBox *editor = new QSpinBox(parent);
     editor->setMinimum(std::numeric_limits<int>::min());
@@ -87,13 +94,6 @@ QWidget *SpecialDelegate::createEditor(QWidget *parent,
 
     return editor;
   }
-  else if (index.data().type() == QVariant::Bool)
-  {
-    QComboBox *editor = new QComboBox(parent);
-    editor->addItem("True", QVariant::fromValue(true));
-    editor->addItem("False", QVariant::fromValue(false));
-    return editor;
-  }
   else
     return QStyledItemDelegate::createEditor(parent, option, index);
 }
@@ -101,7 +101,7 @@ QWidget *SpecialDelegate::createEditor(QWidget *parent,
 void SpecialDelegate::setEditorData ( QWidget *editor, const QModelIndex &index ) const
 {
   if (QSpinBox *sb = qobject_cast<QSpinBox *>(editor))
-      sb->setValue(index.data().toInt());
+      sb->setValue(index.data().toLongLong());
   else if (QComboBox *cb = qobject_cast<QComboBox *>(editor))
   {
     int cbIndex = cb->findData(QVariant::fromValue(index.data()));
@@ -116,8 +116,8 @@ void SpecialDelegate::setModelData ( QWidget *editor, QAbstractItemModel *model,
 {
   if (QSpinBox *sb = qobject_cast<QSpinBox *>(editor))
     model->setData(index, QVariant::fromValue(sb->value()), Qt::EditRole);
-  else if (QCheckBox *cb = qobject_cast<QCheckBox *>(editor))
-    model->setData(index, QVariant::fromValue(cb->isChecked()), Qt::EditRole);
+  else if (QComboBox *cb = qobject_cast<QComboBox *>(editor))
+    model->setData(index, QVariant::fromValue(cb->currentText() == "True"), Qt::EditRole);
   else
     QStyledItemDelegate::setModelData(editor, model, index);
 }
@@ -129,6 +129,7 @@ void SpecialDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionVi
 
 void SpecialDelegate::intValueChanged(int val)
 {
-  emit edit_integer(edited_idx_, QVariant::fromValue(val), Qt::EditRole);
+  long long v = val;
+  emit edit_integer(edited_idx_, QVariant::fromValue(v), Qt::EditRole);
 }
 

@@ -15,7 +15,6 @@ struct MarkerBox2D {
   MarkerBox2D()
     : selected(false)
     , selectable (true)
-    , mark_center(false)
   {}
 
   bool operator== (const MarkerBox2D& other) const {
@@ -31,9 +30,10 @@ struct MarkerBox2D {
 
   bool selected;
   bool selectable;
-  bool mark_center;
   double x1, x2, y1, y2;
   QString label;
+  QColor border;
+  QColor fill;
 };
 
 

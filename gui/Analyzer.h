@@ -17,17 +17,6 @@ namespace Ui {
 class Analyzer;
 }
 
-struct HistSubset
-{
-  double min{std::numeric_limits<int>::max()};
-  double max{std::numeric_limits<int>::min()};
-  double avg{0};
-  double total_count{0};
-  EntryList data;
-};
-
-using MultiHists = QVector<HistSubset>;
-
 class Analyzer : public QWidget
 {
   Q_OBJECT
@@ -47,10 +36,12 @@ signals:
 
 private slots:
 
-  void parameters_changed();
+  void plot_boxes();
   void parameters_set();
 
-  void on_comboWeights_currentIndexChanged(const QString &arg1);
+  void on_comboWeightsX_currentIndexChanged(const QString &arg1);
+  void on_comboWeightsY_currentIndexChanged(const QString &arg1);
+  void on_comboWeightsZ_currentIndexChanged(const QString &arg1);
   void on_doubleNormalize_editingFinished();
 
   void on_spinMin_editingFinished();
@@ -62,8 +53,6 @@ private slots:
   void on_spinMin_valueChanged(int arg1);
   void on_spinMax_valueChanged(int arg1);
 
-  void on_checkShowUngated_clicked();
-
   void on_pushRemoveBox_clicked();
 
 private:
@@ -72,7 +61,7 @@ private:
   std::shared_ptr<NMX::FileHDF5> reader_;
 
 
-  QVector<HistParams> subset_params_;
+  QVector<Histogram> histograms1d_;
   BoxesModel model_;
   SpecialDelegate delegate_;
 
@@ -84,10 +73,11 @@ private:
   void rebuild_data();
 
   void make_projections();
-  void update_histograms(const MultiHists&);
+  void update_histograms();
   void plot_block();
 
-  QVector<QColor> palette_ {Qt::black, Qt::darkRed, Qt::darkGreen, Qt::darkCyan, Qt::darkYellow, Qt::darkMagenta, Qt::darkBlue, Qt::red, Qt::blue};
+  QVector<QColor> palette_ {Qt::black, Qt::darkRed, Qt::darkGreen, Qt::darkCyan,
+        Qt::darkYellow, Qt::darkMagenta, Qt::darkBlue, Qt::red, Qt::blue};
 };
 
 #endif // FORM_CALIBRATION_H
