@@ -42,7 +42,6 @@ private slots:
   void on_comboWeightsX_currentIndexChanged(const QString &arg1);
   void on_comboWeightsY_currentIndexChanged(const QString &arg1);
   void on_comboWeightsZ_currentIndexChanged(const QString &arg1);
-  void on_doubleNormalize_editingFinished();
 
   void on_spinMin_editingFinished();
   void on_spinMax_editingFinished();
@@ -75,6 +74,8 @@ private:
   void make_projections();
   void update_histograms();
   void plot_block();
+
+  double normalizer(const std::vector<double> &data);
 
   QVector<QColor> palette_ {Qt::black, Qt::darkRed, Qt::darkGreen, Qt::darkCyan,
         Qt::darkYellow, Qt::darkMagenta, Qt::darkBlue, Qt::red, Qt::blue};

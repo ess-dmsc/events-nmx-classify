@@ -54,8 +54,8 @@ private:
   int32_t bin_min_{std::numeric_limits<int32_t>::min()};
   int32_t bin_max_{std::numeric_limits<int32_t>::max()};
 
-  double min_{std::numeric_limits<double>::quiet_NaN()};
-  double max_{std::numeric_limits<double>::quiet_NaN()};
+  double min_{std::numeric_limits<double>::max()};
+  double max_{std::numeric_limits<double>::min()};
   double weighted_sum_{0};
   double total_count_{0};
   std::map<int32_t, int64_t> data_;

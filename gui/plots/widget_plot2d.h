@@ -78,7 +78,6 @@ private slots:
   //void clicked_plottable(QCPAbstractPlottable*);
   void selection_changed();
 
-  void plot_2d_mouse_upon(double x, double y);
   void plot_2d_mouse_clicked(double x, double y, QMouseEvent* event, bool channels);
 
   void optionsChanged(QAction*);

@@ -78,9 +78,9 @@ void Event::analyze()
 
   collect_values();
 
-  values_["diff_entry_time"] = abs(x_.get_value("entry_time") - y_.get_value("entry_tinme"));
-  values_["diff_strip_span"] = abs(x_.get_value("strip_span") - y_.get_value("strip_span"));
-  values_["diff_timebin_span"] = abs(x_.get_value("timebin_span") - y_.get_value("timebin_span"));
+  values_["diff_entry_time"] = x_.get_value("entry_time") - y_.get_value("entry_tinme");
+  values_["diff_strip_span"] = x_.get_value("strip_span") - y_.get_value("strip_span");
+  values_["diff_timebin_span"] = x_.get_value("timebin_span") - y_.get_value("timebin_span");
 }
 
 }

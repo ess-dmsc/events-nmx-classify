@@ -67,7 +67,6 @@ void Analyzer::enableIO(bool enable)
   ui->comboWeightsX->setEnabled(en);
   ui->comboWeightsY->setEnabled(en);
   ui->comboWeightsZ->setEnabled(en);
-  ui->doubleNormalize->setEnabled(en);
 
   if (enable) {
     ui->tableBoxes->setEditTriggers(QAbstractItemView::AllEditTriggers);
@@ -91,7 +90,6 @@ void Analyzer::loadSettings()
   ui->comboWeightsX->setCurrentText(settings.value("weight_type_x", "X_entry_strip").toString());
   ui->comboWeightsY->setCurrentText(settings.value("weight_type_y", "Y_entry_strip").toString());
   ui->comboWeightsZ->setCurrentText(settings.value("weight_type_z").toString());
-  ui->doubleNormalize->setValue(settings.value("normalize_by", 1).toDouble());
 
   ui->spinMin->setValue(settings.value("projection_min", 0).toInt());
   ui->spinMax->setValue(settings.value("projection_max", 1000000).toInt());
@@ -104,7 +102,6 @@ void Analyzer::saveSettings()
   settings.setValue("weight_type_x", ui->comboWeightsX->currentText());
   settings.setValue("weight_type_y", ui->comboWeightsY->currentText());
   settings.setValue("weight_type_z", ui->comboWeightsZ->currentText());
-  settings.setValue("normalize_by", ui->doubleNormalize->value());
 
   settings.setValue("projection_min", ui->spinMin->value());
   settings.setValue("projection_max", ui->spinMax->value());
@@ -117,24 +114,31 @@ void Analyzer::rebuild_data()
 
   data_.clear();
 
-  double normalize_by = ui->doubleNormalize->value();
+  auto xx = reader_->get_category(ui->comboWeightsX->currentText().toStdString());
+  auto yy = reader_->get_category(ui->comboWeightsY->currentText().toStdString());
+  auto zz = reader_->get_category(ui->comboWeightsZ->currentText().toStdString());
 
-  auto xx      = reader_->get_category(ui->comboWeightsX->currentText().toStdString());
-  auto yy      = reader_->get_category(ui->comboWeightsY->currentText().toStdString());
-  auto weights = reader_->get_category(ui->comboWeightsZ->currentText().toStdString());
+  if (xx.size() != yy.size())
+  {
+    make_projections();
+    return;
+  }
+
+  double xx_norm = normalizer(xx);
+  double yy_norm = normalizer(yy);
+  double zz_norm = normalizer(zz);
 
   for (size_t eventID = 0; eventID < reader_->num_analyzed(); ++eventID)
   {
-    double quality {0};
-    if (eventID < weights.size())
-      quality = weights.at(eventID);
-    if (normalize_by != 0)
-      quality /= normalize_by;
-
     if ((eventID >= xx.size()) || (eventID >= yy.size()))
       continue;
 
-    std::pair<int,int> pos{xx.at(eventID), yy.at(eventID)};
+    double quality {0};
+    if (eventID < zz.size())
+      quality = zz.at(eventID) / zz_norm;
+
+    std::pair<int,int> pos{int(xx.at(eventID) / xx_norm),
+                           int(yy.at(eventID) / yy_norm)};
 
     data_[int(quality)][pos].push_back(eventID);
   }
@@ -306,22 +310,17 @@ void Analyzer::parameters_set()
   make_projections();
 }
 
-void Analyzer::on_comboWeightsX_currentIndexChanged(const QString &arg1)
+void Analyzer::on_comboWeightsX_currentIndexChanged(const QString& /*arg1*/)
 {
   rebuild_data();
 }
 
-void Analyzer::on_comboWeightsY_currentIndexChanged(const QString &arg1)
+void Analyzer::on_comboWeightsY_currentIndexChanged(const QString& /*arg1*/)
 {
   rebuild_data();
 }
 
-void Analyzer::on_comboWeightsZ_currentIndexChanged(const QString &arg1)
-{
-  rebuild_data();
-}
-
-void Analyzer::on_doubleNormalize_editingFinished()
+void Analyzer::on_comboWeightsZ_currentIndexChanged(const QString& /*arg1*/)
 {
   rebuild_data();
 }
@@ -352,12 +351,12 @@ void Analyzer::on_spinMax_editingFinished()
   make_projections();
 }
 
-void Analyzer::on_spinMin_valueChanged(int arg1)
+void Analyzer::on_spinMin_valueChanged(int /*arg1*/)
 {
   plot_block();
 }
 
-void Analyzer::on_spinMax_valueChanged(int arg1)
+void Analyzer::on_spinMax_valueChanged(int /*arg1*/)
 {
   plot_block();
 }
@@ -382,4 +381,30 @@ void Analyzer::plot_block()
   ui->plotHistogram->redraw();
 }
 
+double Analyzer::normalizer(const std::vector<double> &data)
+{
+  double minimum{std::numeric_limits<double>::max()};
+  double maximum{std::numeric_limits<double>::min()};
+  for (auto &d : data)
+  {
+    minimum = std::min(d, minimum);
+    maximum = std::max(d, maximum);
+  }
+
+  if (minimum >= maximum)
+    return 1;
+
+  double diff = maximum - minimum;
+
+  if (diff <= 1.0)
+    return 0.01;
+
+  if (diff > 10000.0)
+  {
+    int order_of = std::floor(std::log10(std::abs(diff)));
+    return pow(10, order_of - 2);
+  }
+
+  return 1;
+}
 

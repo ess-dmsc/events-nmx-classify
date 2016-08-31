@@ -10,11 +10,6 @@ void Histogram::add_to_hist(int32_t x, int32_t y, int32_t bin, int64_t increment
       || (bin < bin_min_) || (bin > bin_max_))
     return;
 
-  if (std::isnan(min_))
-    min_ = std::numeric_limits<double>::max();
-  if (std::isnan(max_))
-    max_ = std::numeric_limits<double>::min();
-
   data_[bin] += increment;
   weighted_sum_ += bin*increment;
   total_count_ += increment;
@@ -25,8 +20,8 @@ void Histogram::add_to_hist(int32_t x, int32_t y, int32_t bin, int64_t increment
 
 void Histogram::reset_data()
 {
-  min_ = std::numeric_limits<double>::quiet_NaN();
-  max_ = std::numeric_limits<double>::quiet_NaN();
+  min_ = std::numeric_limits<double>::max();
+  max_ = std::numeric_limits<double>::min();
   weighted_sum_ = 0;
   total_count_ = 0;
   done_ = false;

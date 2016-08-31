@@ -68,7 +68,7 @@ tpcc::~tpcc()
   delete ui;
 }
 
-void tpcc::table_changed(double y)
+void tpcc::table_changed(double /*v*/)
 {
   auto params = collect_params();
   event_viewer_->set_params(params);
@@ -204,7 +204,7 @@ void tpcc::run_complete()
   analyzer_->set_new_source(reader_);
 }
 
-void tpcc::on_comboGroup_activated(const QString &arg1)
+void tpcc::on_comboGroup_activated(const QString& /*arg1*/)
 {
   std::string name = ui->comboGroup->currentText().toStdString();
   reader_->load_analysis(name);

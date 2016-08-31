@@ -75,7 +75,7 @@ void DraggableTracer::startMoving(const QPointF &mousePos)
 //  QApplication::setOverrideCursor(Qt::ClosedHandCursor);
 }
 
-void DraggableTracer::stopMov(QMouseEvent* evt)
+void DraggableTracer::stopMov(QMouseEvent* /*evt*/)
 {
 //  DBG << "stopped moving";
   disconnect(parentPlot(), SIGNAL(mouseMove(QMouseEvent*)),

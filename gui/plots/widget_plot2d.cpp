@@ -56,7 +56,6 @@ WidgetPlot2D::WidgetPlot2D(QWidget *parent) :
   colorMap->setGradient(gradients_[current_gradient_]);
   colorMap->setDataScaleType(scale_types_[current_scale_type_]);
   colorMap->rescaleDataRange(true);
-  connect(ui->plot, SIGNAL(mouse_upon(double,double)), this, SLOT(plot_2d_mouse_upon(double,double)));
   connect(ui->plot, SIGNAL(mouse_clicked(double,double,QMouseEvent*, bool)), this, SLOT(plot_2d_mouse_clicked(double,double,QMouseEvent*, bool)));
   //connect(ui->plot, SIGNAL(plottableClick(QCPAbstractPlottable*,QMouseEvent*)), this, SLOT(clicked_plottable(QCPAbstractPlottable*)));
   connect(ui->plot, SIGNAL(selectionChangedByUser()), this, SLOT(selection_changed()));
@@ -70,7 +69,6 @@ WidgetPlot2D::WidgetPlot2D(QWidget *parent) :
   connect(&menuOptions, SIGNAL(triggered(QAction*)), this, SLOT(optionsChanged(QAction*)));
 
   build_menu();
-  plot_2d_mouse_upon(0, 0);
 }
 
 void WidgetPlot2D::set_zoom_drag(Qt::Orientation o)
@@ -370,14 +368,7 @@ void WidgetPlot2D::set_axes(QString xlabel, double x1, double x2,
   ui->plot->rescaleAxes();
 }
 
-
-void WidgetPlot2D::plot_2d_mouse_upon(double x, double y) {
-//  colorMap->keyAxis()->setLabel("Energy (" + QString::fromStdString(calib_x_.units_) + "): " + QString::number(calib_x_.transform(x, bits_)));
-//  colorMap->valueAxis()->setLabel("Energy (" + QString::fromStdString(calib_y_.units_) + "): " + QString::number(calib_y_.transform(y, bits_)));
-//  ui->plot->replot();
-}
-
-void WidgetPlot2D::plot_2d_mouse_clicked(double x, double y, QMouseEvent *event, bool channels)
+void WidgetPlot2D::plot_2d_mouse_clicked(double x, double y, QMouseEvent *event, bool /*channels*/)
 {
   emit markers_set(x, y, event->button() == Qt::LeftButton);
 }
