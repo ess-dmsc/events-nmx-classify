@@ -11,46 +11,38 @@ QMAKE_CLEAN += -r $$BADDIRS \
 CONFIG -= warn_off warn_on
 CONFIG += static
 
-QMAKE_CFLAGS_RELEASE += -w
+QMAKE_CXXFLAGS += -DBOOST_LOG_DYN_LINK
 QMAKE_CXXFLAGS_DEBUG += -O0 -Wextra
 
-QMAKE_CXXFLAGS += -DBOOST_LOG_DYN_LINK
-
 unix {
-  !android {
-     QMAKE_CC = g++
-  }
-
+  LIBPATH += /usr/local/lib
   LIBS += -lm -ldl -lz \
           -lboost_system -lboost_thread -lboost_log \
           -lboost_log_setup -lhdf5_cpp
 
   target.path = /usr/local/bin/
       
-  LIBPATH += /usr/local/lib
-
   !mac {
-    H5SERIAL = $$system(ldconfig -p | grep hdf5_serial)
     CONFIG -= c++11
     QMAKE_CXXFLAGS += -std=c++11
-    INCLUDEPATH += /usr/include/hdf5/serial
+    H5SERIAL = $$system(ldconfig -p | grep hdf5_serial)
+  }
+
+  mac {
+   CONFIG += c++11
+   QMAKE_LFLAGS += -lc++
+   INCLUDEPATH += /usr/local/include
+   QMAKE_CXXFLAGS += -stdlib=libc++ -Wno-c++11-narrowing
   }
 
   contains (H5SERIAL, libhdf5_serial.so) {
     LIBS += -lhdf5_serial -lhdf5_serial_hl
+    INCLUDEPATH += /usr/include/hdf5/serial
   }
 
   !contains (H5SERIAL, libhdf5_serial.so) {
     LIBS += -lhdf5 -lhdf5_hl_cpp
   }
-}
-
-mac {
-     CONFIG += c++11
-     QMAKE_LFLAGS += -lc++
-     LIBPATH += /usr/local/lib
-     INCLUDEPATH += /usr/local/include
-     QMAKE_CXXFLAGS += -stdlib=libc++ -Wno-c++11-narrowing
 }
 
 TARGET   = $$PWD/tpcc
