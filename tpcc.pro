@@ -68,7 +68,8 @@ SOURCES += $$files($$PWD/gui/*.cpp) \
            $$files($$PWD/gui/qtcolorpicker/*.cpp) \
            $$files($$PWD/gui/plots/*.cpp) \
            $$files($$PWD/gui/plots/qcustomplot/*.cpp) \
-           $$files($$PWD/tpc/*.cpp)
+           $$files($$PWD/tpc/*.cpp) \
+           $$files($$PWD/tpc/*.tpp)
 
 HEADERS  += $$files($$PWD/gui/*.h) \
             $$files($$PWD/gui/qtcolorpicker/*.h) \

@@ -2,11 +2,24 @@
 #define NMX_RECORD_H
 
 #include "Strip.h"
+#include "Variant.h"
 
 #include <map>
 
 namespace NMX
 {
+
+struct Setting
+{
+  Setting() {}
+  Setting(Variant v, std::string descr)
+    : description(descr), value(v) {}
+
+  std::string description;
+  Variant value;
+};
+
+using Settings = std::map<std::string, Setting>;
 
 using Point = std::pair<int, int>;
 using PointList = std::list<Point>;
@@ -34,13 +47,12 @@ public:
   int16_t get(int16_t  strip, int16_t  timebin) const;
   Strip get_strip(int16_t  strip) const;
 
-
   Record suppress_negatives() const;
 
   void analyze();
-  double get_value(std::string) const;      //default 0
-  void set_value(std::string, double);
-  std::list<std::string> categories() const;
+  void set_parameter(std::string, Variant);
+  Settings analytics() const {return analytics_;}
+  Settings parameters() const {return parameters_;}
 
   PointList get_points(std::string) const;
   std::list<std::string> point_categories() const;
@@ -50,15 +62,15 @@ public:
 
 private:
   std::map<int16_t , Strip> strips_;
-
   int16_t strip_start_ {-1};
   int16_t strip_end_   {-1};
   int16_t time_start_ {-1};
   int16_t time_end_   {-1};
 
-  std::map<std::string, double> values_;
   std::map<std::string, PointList> point_lists_;
 
+  Settings parameters_;
+  Settings analytics_;
 };
 
 

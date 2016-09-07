@@ -26,11 +26,11 @@ Analyzer::Analyzer(QWidget *parent)
   NMX::Event dummy;
   dummy.analyze();
   ui->comboWeightsZ->addItem("none");
-  for (auto &c : dummy.categories())
+  for (auto &c : dummy.analytics())
   {
-    ui->comboWeightsX->addItem(QString::fromStdString(c));
-    ui->comboWeightsY->addItem(QString::fromStdString(c));
-    ui->comboWeightsZ->addItem(QString::fromStdString(c));
+    ui->comboWeightsX->addItem(QString::fromStdString(c.first));
+    ui->comboWeightsY->addItem(QString::fromStdString(c.first));
+    ui->comboWeightsZ->addItem(QString::fromStdString(c.first));
   }
 
   ui->plot->set_antialiased(false);
@@ -114,9 +114,17 @@ void Analyzer::rebuild_data()
 
   data_.clear();
 
-  auto xx = reader_->get_category(ui->comboWeightsX->currentText().toStdString());
-  auto yy = reader_->get_category(ui->comboWeightsY->currentText().toStdString());
-  auto zz = reader_->get_category(ui->comboWeightsZ->currentText().toStdString());
+  auto weight_x = ui->comboWeightsX->currentText().toStdString();
+  auto weight_y = ui->comboWeightsY->currentText().toStdString();
+  auto weight_z = ui->comboWeightsZ->currentText().toStdString();
+
+  auto xx = reader_->get_category(weight_x);
+  auto yy = reader_->get_category(weight_y);
+  auto zz = reader_->get_category(weight_z);
+
+  ui->comboWeightsX->setToolTip(QString::fromStdString(reader_->get_description(weight_x)));
+  ui->comboWeightsY->setToolTip(QString::fromStdString(reader_->get_description(weight_y)));
+  ui->comboWeightsZ->setToolTip(QString::fromStdString(reader_->get_description(weight_z)));
 
   if (xx.size() != yy.size())
   {
@@ -135,10 +143,10 @@ void Analyzer::rebuild_data()
 
     double quality {0};
     if (eventID < zz.size())
-      quality = zz.at(eventID) / zz_norm;
+      quality = zz.at(eventID).as_float() / zz_norm;
 
-    std::pair<int,int> pos{int(xx.at(eventID) / xx_norm),
-                           int(yy.at(eventID) / yy_norm)};
+    std::pair<int,int> pos{int(xx.at(eventID).as_float() / xx_norm),
+                           int(yy.at(eventID).as_float() / yy_norm)};
 
     data_[int(quality)][pos].push_back(eventID);
   }
@@ -381,14 +389,20 @@ void Analyzer::plot_block()
   ui->plotHistogram->redraw();
 }
 
-double Analyzer::normalizer(const std::vector<double> &data)
+double Analyzer::normalizer(const std::vector<Variant> &data)
 {
   double minimum{std::numeric_limits<double>::max()};
   double maximum{std::numeric_limits<double>::min()};
   for (auto &d : data)
   {
-    minimum = std::min(d, minimum);
-    maximum = std::max(d, maximum);
+    if ((d.type() == Variant::code::type_null) ||
+        (d.type() == Variant::code::type_menu))
+      continue;
+
+    double val = d.as_float();
+
+    minimum = std::min(val, minimum);
+    maximum = std::max(val, maximum);
   }
 
   if (minimum >= maximum)

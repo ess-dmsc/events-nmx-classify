@@ -20,7 +20,7 @@ void ThreadClassify::terminate()
   wait();
 }
 
-void ThreadClassify::go(std::shared_ptr<NMX::FileHDF5> r, std::map<std::string, double> params)
+void ThreadClassify::go(std::shared_ptr<NMX::FileHDF5> r, NMX::Settings params)
 {
   if (isRunning())
   {
@@ -61,7 +61,7 @@ void ThreadClassify::run()
       break;
 
     NMX::Event evt = reader_->get_event(eventID).suppress_negatives();
-    evt.set_values(parameters_);
+    evt.set_parameters(parameters_);
     evt.analyze();
 
     reader_->write_analytics(eventID, evt);

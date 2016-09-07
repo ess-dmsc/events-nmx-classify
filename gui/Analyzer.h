@@ -75,7 +75,7 @@ private:
   void update_histograms();
   void plot_block();
 
-  double normalizer(const std::vector<double> &data);
+  double normalizer(const std::vector<Variant> &data);
 
   QVector<QColor> palette_ {Qt::black, Qt::darkRed, Qt::darkGreen, Qt::darkCyan,
         Qt::darkYellow, Qt::darkMagenta, Qt::darkBlue, Qt::red, Qt::blue};

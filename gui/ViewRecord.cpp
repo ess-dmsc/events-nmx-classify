@@ -93,12 +93,13 @@ void ViewRecord::display_current_record()
   else
     ui->plotRecord->update_plot(record_.strip_span(), record_.time_end() + 1, EntryList());
 
+  auto analytics = record_.analytics();
 
   auto overlay = make_overlay();
-  int stripi = record_.get_value("entry_strip");
+  int stripi = analytics["entry_strip"].value.as_int(-1);
   if (stripi >= 0)
   {
-    int timei = record_.get_value("entry_time");
+    int timei = analytics["entry_strip"].value.as_int(-1);
 
     MarkerBox2D box;
     box.selectable = false;
@@ -115,13 +116,12 @@ void ViewRecord::display_current_record()
   ui->plotRecord->zoom_out();
 
   ui->tableValues->clearContents();
-  auto valnames = record_.categories();
-  ui->tableValues->setRowCount(valnames.size());
+  ui->tableValues->setRowCount(analytics.size());
   int i = 0;
-  for (auto &name : valnames)
+  for (auto &a : analytics)
   {
-    add_to_table(ui->tableValues, i, 0, name);
-    add_to_table(ui->tableValues, i, 1, QString::number(record_.get_value(name)).toStdString());
+    add_to_table(ui->tableValues, i, 0, a.first);
+    add_to_table(ui->tableValues, i, 1, a.second.value.to_string());
     i++;
   }
 

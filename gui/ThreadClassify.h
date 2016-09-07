@@ -17,7 +17,7 @@ public:
 
     void set_refresh_frequency(int);
 
-    void go(std::shared_ptr<NMX::FileHDF5> r, std::map<std::string, double> params);
+    void go(std::shared_ptr<NMX::FileHDF5> r, NMX::Settings params);
     void terminate();
 
 signals:
@@ -31,7 +31,7 @@ protected:
 private:
     std::shared_ptr<NMX::FileHDF5> reader_;
 
-    std::map<std::string, double> parameters_;
+    NMX::Settings parameters_;
 
     QAtomicInt terminating_;
     QAtomicInt refresh_frequency_;

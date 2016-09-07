@@ -1,5 +1,6 @@
 #include "FileHDF5.h"
 #include "CustomLogger.h"
+#include <boost/algorithm/string.hpp>
 
 namespace NMX {
 
@@ -7,7 +8,7 @@ FileHDF5::FileHDF5(std::string filename)
 {
   try
   {
-    //Exception::dontPrint();
+    Exception::dontPrint();
     file_.openFile(filename, H5F_ACC_RDWR);
 
     dataset_raw_ = file_.openDataSet("Raw");
@@ -104,12 +105,23 @@ void FileHDF5::write_analytics(size_t index, const Event &event)
   if (index >= event_count_)
     return;
 
-  auto cats_e = event.categories();
-  for (auto cat : cats_e)
+  //check if params the same
+  if (analysis_params_.empty())
   {
-    if (analytics_[cat].empty())
-      analytics_[cat].resize(event_count_);
-    analytics_[cat][index] = event.get_value(cat);
+    analysis_params_ = event.parameters();
+    for (auto &a : analysis_params_)
+      analytics_descr_[a.first] = a.second.description;
+  }
+
+  for (auto &a : event.analytics())
+  {
+    if (analytics_[a.first].empty())
+    {
+      analytics_[a.first].resize(event_count_);
+      analytics_descr_[a.first] = a.second.description;
+    }
+    analytics_descr_[a.first] = a.second.description;
+    analytics_[a.first][index] = a.second.value;
   }
 
   if (index >= num_analyzed_)
@@ -118,8 +130,10 @@ void FileHDF5::write_analytics(size_t index, const Event &event)
 
 void FileHDF5::clear_analysis()
 {
-  analytics_.clear();
   analysis_name_.clear();
+  analytics_.clear();
+  analytics_descr_.clear();
+  analysis_params_.clear();
   num_analyzed_ = 0;
 }
 
@@ -131,12 +145,20 @@ std::list<std::string> FileHDF5::analysis_categories() const
   return ret;
 }
 
-std::vector<double> FileHDF5::get_category(std::string cat) const
+std::vector<Variant> FileHDF5::get_category(std::string cat) const
 {
   if (analytics_.count(cat))
     return analytics_.at(cat);
   else
-    return std::vector<double>();
+    return std::vector<Variant>();
+}
+
+std::string FileHDF5::get_description(std::string cat) const
+{
+  if (analytics_descr_.count(cat))
+    return analytics_descr_.at(cat);
+  else
+    return "";
 }
 
 std::list<std::string> FileHDF5::analysis_groups() const
@@ -193,10 +215,12 @@ bool FileHDF5::save_analysis(std::string label)
 
   if (success)
   {
+    write_attribute(group_analysis, "num_analyzed", Variant::from_int(num_analyzed_));
+    for (auto p : analysis_params_)
+      write_attribute(group_analysis, p.first, p.second.value);
     for (auto &ax : analytics_)
       category_to_dataset(group_analysis, ax.first, ax.second);
     analysis_name_ = name;
-    write_attribute(group_analysis, "num_analyzed", num_analyzed_);
     DBG << "<FileHDF5> Saved analysis to group '" << name << "' with data for " << num_analyzed_ << " events.";
     //    file_.close();
     //    file_.reOpen();
@@ -228,40 +252,56 @@ bool FileHDF5::load_analysis(std::string label)
     for (int i=0; i < numsets; ++i)
     {
       std::string objname(group_analysis.getObjnameByIdx(i));
+      DBG << "<FileHDF5> retrieving analytics category " << objname;
       dataset_to_category(group_analysis, objname);
     }
+
+    int numattrs = group_analysis.getNumAttrs();
+    for (int i=0; i < numattrs; ++i)
+    {
+      Attribute attr = group_analysis.openAttribute(i);
+      analysis_params_[attr.getName()].value = read_attribute(group_analysis, attr.getName());
+    }
+    num_analyzed_ = 0;
+    if (analysis_params_.count("num_analyzed"))
+    {
+      num_analyzed_ = analysis_params_["num_analyzed"].value.as_uint();
+      analysis_params_.erase("num_analyzed");
+    }
+      analysis_name_ = name;
   }
   catch (...)
   {
     WARN << "<FileHDF5> Could not read children for analysis group '" << name << "'.";
+    clear_analysis();
     return false;
   }
-
-  num_analyzed_ = read_attribute(group_analysis, "num_analyzed");
-  analysis_name_ = name;
 
   DBG << "<FileHDF5> Loaded analysis '" << name << "' with data for " << num_analyzed_ << " events.";
   return true;
 }
 
-void FileHDF5::category_to_dataset(Group &group, std::string name, std::vector<double> &data)
+void FileHDF5::category_to_dataset(Group &group, std::string name, std::vector<Variant> &data)
 {
   try
   {
-    DataSet dataset = group.openDataSet(name);
-    dataset.close();
     group.unlink(name);
   }
   catch (...)
   {
   }
 
+  std::vector<double> data_out;
+  for (auto &d : data)
+    data_out.push_back(d.as_float());
+
   try
   {
     std::vector<hsize_t> dim { data.size() };
     DataSpace memspace_(1, dim.data());
     DataSet dataset = group.createDataSet(name, PredType::NATIVE_DOUBLE, memspace_);
-    dataset.write(data.data(), PredType::NATIVE_DOUBLE, memspace_);
+    dataset.write(data_out.data(), PredType::NATIVE_DOUBLE, memspace_);
+    write_attribute(dataset, "description", Variant::from_menu(analytics_descr_[name]) );
   }
   catch (...)
   {
@@ -293,7 +333,14 @@ void FileHDF5::dataset_to_category(Group &group, std::string name)
     std::vector<double> data(evtct, 0);
 
     dataset.read(data.data(), PredType::NATIVE_DOUBLE, filespace);
-    analytics_[name] = data;
+
+    std::vector<Variant> dt;
+    for (auto &d :data)
+      dt.push_back(Variant::from_float(d));
+
+    analytics_[name] = dt;
+
+    analytics_descr_[name] = read_attribute(dataset, "description").to_string();
   }
   catch (...)
   {
@@ -301,28 +348,24 @@ void FileHDF5::dataset_to_category(Group &group, std::string name)
   }
 }
 
-void FileHDF5::write_attribute(Group &group, std::string name, int val)
+void FileHDF5::write_attribute(H5Location &group, std::string name, Variant val)
 {
   try
   {
-    Attribute attribute = group.openAttribute(name);
-    attribute.close();
     group.removeAttr(name);
   }
   catch (...)
   {
   }
 
-  const int	DIM1 = 1;
-  int attr_data[1] = { val };
-  hsize_t dims[1] = { DIM1 };
+  DataSpace attr_dataspace = DataSpace (H5S_SCALAR);
+  StrType strtype(PredType::C_S1, H5T_VARIABLE);
 
   try
   {
-    DataSpace attr_dataspace = DataSpace (1, dims );
-    Attribute attribute = group.createAttribute( name, PredType::STD_I32BE,
-                                                 attr_dataspace);
-    attribute.write( PredType::NATIVE_INT, attr_data);
+    auto str = val.to_string();
+    Attribute attribute = group.createAttribute(name, strtype, attr_dataspace);
+    attribute.write(strtype, str);
   }
   catch (...)
   {
@@ -330,20 +373,21 @@ void FileHDF5::write_attribute(Group &group, std::string name, int val)
   }
 }
 
-int FileHDF5::read_attribute(Group &group, std::string name)
+Variant FileHDF5::read_attribute(H5Location &group, std::string name)
 {
   try
   {
+    std::string str;
     Attribute attribute = group.openAttribute(name);
-    int attr_data[1] = { 0 };
-    attribute.read( PredType::NATIVE_INT, attr_data);
-    return attr_data[0];
+    StrType strtype = attribute.getStrType();
+    attribute.read( strtype, str );
+    return Variant::infer(boost::trim_copy(str));
   }
   catch (...)
   {
     DBG << "<FileHDF5> Failed to read attr " << name;
   }
-  return 0;
+  return Variant();
 }
 
 

@@ -191,7 +191,14 @@
        </widget>
       </item>
       <item>
-       <widget class="QComboBox" name="comboGroup"/>
+       <widget class="QComboBox" name="comboGroup">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+       </widget>
       </item>
       <item>
        <widget class="QPushButton" name="pushStart">

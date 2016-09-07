@@ -20,14 +20,16 @@ struct Event
   Event suppress_negatives() const;
 
   void analyze();
-  double get_value(std::string id) const;  //default 0
-  void set_value(std::string, double);
-  void set_values(std::map<std::string, double>);
-  std::list<std::string> categories() const;
+  void set_parameter(std::string, Variant);
+  void set_parameters(Settings);
+  Settings analytics() const {return analytics_;}
+  Settings parameters() const {return parameters_;}
 
 private:
   Record x_, y_;
-  std::map<std::string, double> values_;
+
+  Settings parameters_;
+  Settings analytics_;
 
   void collect_values();
 };

@@ -22,7 +22,7 @@ public:
 
   void set_new_source(std::shared_ptr<NMX::FileHDF5> r);
 
-  void set_params(std::map<std::string, double>);
+  void set_params(NMX::Settings);
 
   void clear();
 
@@ -45,7 +45,7 @@ private:
   Ui::ViewEvent *ui;
 
   std::shared_ptr<NMX::FileHDF5> reader_;
-  std::map<std::string, double> params_;
+  NMX::Settings params_;
 
   std::vector<size_t> indices_;
 

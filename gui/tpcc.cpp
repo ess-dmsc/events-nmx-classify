@@ -5,6 +5,8 @@
 
 #include "qt_util.h"
 #include "CustomLogger.h"
+#include "Variant.h"
+
 
 tpcc::tpcc(QWidget *parent) :
   QMainWindow(parent),
@@ -38,26 +40,11 @@ tpcc::tpcc(QWidget *parent) :
   ui->tableParams->horizontalHeader()->setStretchLastSection(true);
   ui->tableParams->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
 
-  NMX::Event evt;
-  auto valnames = evt.categories();
-  ui->tableParams->setRowCount(valnames.size());
-  int i = 0;
-  for (auto &name : valnames)
-  {
-    QTableWidgetItem * item = new QTableWidgetItem(QString::fromStdString(name));
-    ui->tableParams->setItem(i, 0, item);
-
-    QDoubleSpinBox *spinBox = new QDoubleSpinBox(this);
-    spinBox->setMinimum(0);
-    spinBox->setMaximum(std::numeric_limits<short>::max());
-    spinBox->setValue( evt.get_value(name) );
-    connect(spinBox, SIGNAL(valueChanged(double)), this, SLOT(table_changed(double)));
-    ui->tableParams->setCellWidget( i, 1, spinBox );
-
-    i++;
-  }
+  parameters_ = NMX::Event().parameters();
+  display_params();
 
   thread_classify_.set_refresh_frequency(2);
+  ui->comboGroup->setSizeAdjustPolicy(QComboBox::AdjustToContents);
 
   QTimer::singleShot(1000, this, SLOT(loadSettings()));
 }
@@ -70,21 +57,41 @@ tpcc::~tpcc()
 
 void tpcc::table_changed(double /*v*/)
 {
-  auto params = collect_params();
-  event_viewer_->set_params(params);
+  collect_params();
+  event_viewer_->set_params(parameters_);
 }
 
-std::map<std::string, double> tpcc::collect_params()
+void tpcc::collect_params()
 {
-  std::map<std::string, double> ret;
   for (int i=0; i < ui->tableParams->rowCount(); ++i)
   {
     std::string name = ui->tableParams->model()->data(ui->tableParams->model()->index(i,0)).toString().toStdString();
     double val = static_cast<QDoubleSpinBox*>(ui->tableParams->cellWidget(i, 1))->value();
-    ret[name] = val;
+    parameters_[name].value = Variant::from_float(val);
   }
-  return ret;
 }
+
+void tpcc::display_params()
+{
+  DBG << "Param size " << parameters_.size();
+  ui->tableParams->setRowCount(parameters_.size());
+  int i = 0;
+  for (auto &param : parameters_)
+  {
+    QTableWidgetItem * item = new QTableWidgetItem(QString::fromStdString(param.first));
+    ui->tableParams->setItem(i, 0, item);
+
+    QDoubleSpinBox *spinBox = new QDoubleSpinBox(this);
+    spinBox->setMinimum(0);
+    spinBox->setMaximum(std::numeric_limits<short>::max());
+    spinBox->setValue( param.second.value.as_float() );
+    connect(spinBox, SIGNAL(valueChanged(double)), this, SLOT(table_changed(double)));
+    ui->tableParams->setCellWidget( i, 1, spinBox );
+
+    i++;
+  }
+}
+
 
 void tpcc::closeEvent(QCloseEvent *event)
 {
@@ -138,7 +145,7 @@ bool tpcc::open_file(QString fileName)
   {
     ui->labelOfTotal->setText(fileName);
     settings.setValue("recent_file", fileName);
-    event_viewer_->set_params(collect_params());
+    event_viewer_->set_params(parameters_);
   }
   else
   {
@@ -186,7 +193,14 @@ void tpcc::on_pushStart_clicked()
   ui->pushStop->setEnabled(true);
 
   toggleIO(false);
-  thread_classify_.go(reader_, collect_params());
+  collect_params();
+
+  DBG << "Analyzing using params:";
+
+  for (auto &param : parameters_)
+    DBG << param.first << " (" << param.second.value.type_name() << ") = " << param.second.value.to_string();
+
+  thread_classify_.go(reader_, parameters_);
 }
 
 void tpcc::update_progress(double percent_done)
@@ -210,6 +224,12 @@ void tpcc::on_comboGroup_activated(const QString& /*arg1*/)
   reader_->load_analysis(name);
 
   double percent = double(reader_->num_analyzed()+1) / double(reader_->event_count()) * 100;
+
+  parameters_ = reader_->get_parameters();
+  if (parameters_.empty())
+    parameters_ = NMX::Event().parameters();
+
+  display_params();
 
   ui->progressBar->setValue(percent);
 

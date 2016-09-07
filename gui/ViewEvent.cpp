@@ -144,7 +144,7 @@ void ViewEvent::on_checkRaw_clicked()
   ui->eventY->set_show_raw(ui->checkRaw->isChecked());
 }
 
-void ViewEvent::set_params(std::map<std::string, double> params)
+void ViewEvent::set_params(NMX::Settings params)
 {
   params_ = params;
   plot_current_event();
@@ -170,8 +170,7 @@ void ViewEvent::plot_current_event()
   if (ui->checkNoneg->isChecked())
     evt = evt.suppress_negatives();
 
-  evt.set_values(params_);
-
+  evt.set_parameters(params_);
   evt.analyze();
 
   ui->eventX->display_record(evt.x());

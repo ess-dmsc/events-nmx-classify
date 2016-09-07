@@ -31,44 +31,33 @@ std::string Event::debug() const
          + "Y: " + y_.debug();
 }
 
-std::list<std::string> Event::categories() const
-{
-  std::list<std::string> ret;
-  for (auto &i : values_)
-    ret.push_back(i.first);
-  return ret;
-}
-
-double Event::get_value(std::string id) const
-{
-  if (values_.count(id))
-    return values_.at(id);
-  else
-    return 0;
-}
-
 void Event::collect_values()
 {
-  for (auto &name : x_.categories())
-    values_["X_" + name] = x_.get_value(name);
-  for (auto &name : y_.categories())
-    values_["Y_" + name] = y_.get_value(name);
+  for (auto &a : x_.parameters())
+    parameters_["X_" + a.first] = a.second;
+  for (auto &a : y_.parameters())
+    parameters_["Y_" + a.first] = a.second;
+
+  for (auto &a : x_.analytics())
+    analytics_["X_" + a.first] = a.second;
+  for (auto &a : y_.analytics())
+    analytics_["Y_" + a.first] = a.second;
 }
 
-void Event::set_values(std::map<std::string, double> vals)
+void Event::set_parameters(Settings vals)
 {
   for (auto &v : vals)
-    set_value(v.first, v.second);
+    set_parameter(v.first, v.second.value);
 }
 
-void Event::set_value(std::string id, double val)
+void Event::set_parameter(std::string id, Variant val)
 {
   if ((id.size() > 1) && (id.substr(0,2) == "X_"))
-    x_.set_value(id.substr(2, id.size() - 2), val);
+    x_.set_parameter(id.substr(2, id.size() - 2), val);
   else if ((id.size() > 1) && (id.substr(0,2) == "Y_"))
-    y_.set_value(id.substr(2, id.size() - 2), val);
-  else if (values_.count(id))
-    values_[id] = val;
+    y_.set_parameter(id.substr(2, id.size() - 2), val);
+  else if (parameters_.count(id))
+    parameters_[id].value = val;
 }
 
 void Event::analyze()
@@ -76,11 +65,25 @@ void Event::analyze()
   x_.analyze();
   y_.analyze();
 
+  auto ax = x_.analytics();
+  auto ay = y_.analytics();
+
   collect_values();
 
-  values_["diff_entry_time"] = x_.get_value("entry_time") - y_.get_value("entry_tinme");
-  values_["diff_strip_span"] = x_.get_value("strip_span") - y_.get_value("strip_span");
-  values_["diff_timebin_span"] = x_.get_value("timebin_span") - y_.get_value("timebin_span");
+  auto difftime = ax["entry_time"].value.as_int() - ay["entry_time"].value.as_int();
+  analytics_["diff_entry_time"] =
+      Setting(Variant::from_int(difftime),
+              "X.entry_time - Y.entry_time");
+
+  auto diffspan = ax["strip_span"].value.as_int() - ay["strip_span"].value.as_int();
+  analytics_["diff_strip_span"] =
+      Setting(Variant::from_int(diffspan),
+              "X.strip_span - Y.strip_span");
+
+  auto difftspan = ax["timebin_span"].value.as_int() - ay["timebin_span"].value.as_int();
+  analytics_["diff_timebin_span"] =
+      Setting(Variant::from_int(difftspan),
+              "X.timebin_span - Y.timebin_span");
 }
 
 }
