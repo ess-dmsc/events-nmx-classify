@@ -320,7 +320,10 @@ void WidgetPlot2D::replot_markers() {
   ui->plot->replot();
 }
 
-void WidgetPlot2D::update_plot(uint64_t sizex, uint64_t sizey, const EntryList &spectrum_data) {
+void WidgetPlot2D::update_plot(uint64_t sizex, uint64_t sizey, const EntryList &spectrum_data)
+{
+//  DBG << "2d size " << sizex << "x" << sizey << " list " << spectrum_data.size();
+
   ui->plot->clearGraphs();
   colorMap->clearData();
   ui->plot->setAlwaysSquare(sizex == sizey);

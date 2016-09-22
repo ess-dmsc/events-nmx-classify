@@ -167,11 +167,12 @@ std::list<std::string> FileHDF5::analysis_groups() const
 
   try
   {
-    int numsets = file_.getNumObjs();
+    Group group = file_.openGroup("/Analyses");
+    int numsets = group.getNumObjs();
     for (int i=0; i < numsets; ++i)
     {
-      std::string objname(file_.getObjnameByIdx(i));
-      if (file_.childObjType(objname) == H5O_TYPE_GROUP)
+      std::string objname(group.getObjnameByIdx(i));
+      if (group.childObjType(objname) == H5O_TYPE_GROUP)
         ret.push_back(objname);
     }
   }
@@ -188,7 +189,15 @@ bool FileHDF5::save_analysis(std::string label)
   bool success {false};
   Group group_analysis;
 
-  std::string name = "/" + label;
+  try
+  {
+    file_.createGroup("/Analyses");
+  }
+  catch (...)
+  {
+  }
+
+  std::string name = "/Analyses/" + label;
   try
   {
     group_analysis = file_.openGroup(name);
@@ -234,7 +243,7 @@ bool FileHDF5::load_analysis(std::string label)
 {
   Group group_analysis;
 
-  std::string name = "/" + label;
+  std::string name = "/Analyses/" + label;
   try
   {
     group_analysis = file_.openGroup(name);
@@ -252,7 +261,7 @@ bool FileHDF5::load_analysis(std::string label)
     for (int i=0; i < numsets; ++i)
     {
       std::string objname(group_analysis.getObjnameByIdx(i));
-      DBG << "<FileHDF5> retrieving analytics category " << objname;
+      DBG << "<FileHDF5> loading metric [" << i+1 << "/" << numsets << "]  " << objname;
       dataset_to_category(group_analysis, objname);
     }
 

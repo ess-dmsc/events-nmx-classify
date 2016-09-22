@@ -33,10 +33,10 @@ Analyzer::Analyzer(QWidget *parent)
     ui->comboWeightsZ->addItem(QString::fromStdString(c.first));
   }
 
-  ui->plot->set_antialiased(false);
-  ui->plot->set_scale_type("Linear");
-  ui->plot->set_show_legend(true);
-  connect(ui->plot, SIGNAL(markers_set(double, double, bool)), this, SLOT(update_box(double, double, bool)));
+  ui->plot2D->set_antialiased(false);
+  ui->plot2D->set_scale_type("Linear");
+  ui->plot2D->set_show_legend(true);
+  connect(ui->plot2D, SIGNAL(markers_set(double, double, bool)), this, SLOT(update_box(double, double, bool)));
 
   ui->tableBoxes->setModel(&model_);
   ui->tableBoxes->setItemDelegate(&delegate_);
@@ -91,8 +91,14 @@ void Analyzer::loadSettings()
   ui->comboWeightsY->setCurrentText(settings.value("weight_type_y", "Y_entry_strip").toString());
   ui->comboWeightsZ->setCurrentText(settings.value("weight_type_z").toString());
 
-  ui->spinMin->setValue(settings.value("projection_min", 0).toInt());
-  ui->spinMax->setValue(settings.value("projection_max", 1000000).toInt());
+  ui->spinMinX->setValue(settings.value("min_x", 0).toInt());
+  ui->spinMaxX->setValue(settings.value("max_x", 1000000).toInt());
+
+  ui->spinMinY->setValue(settings.value("min_y", 0).toInt());
+  ui->spinMaxY->setValue(settings.value("max_y", 1000000).toInt());
+
+  ui->spinMinZ->setValue(settings.value("min_z", 0).toInt());
+  ui->spinMaxZ->setValue(settings.value("max_z", 1000000).toInt());
 }
 
 void Analyzer::saveSettings()
@@ -103,8 +109,14 @@ void Analyzer::saveSettings()
   settings.setValue("weight_type_y", ui->comboWeightsY->currentText());
   settings.setValue("weight_type_z", ui->comboWeightsZ->currentText());
 
-  settings.setValue("projection_min", ui->spinMin->value());
-  settings.setValue("projection_max", ui->spinMax->value());
+  settings.setValue("min_x", ui->spinMinX->value());
+  settings.setValue("max_x", ui->spinMaxX->value());
+
+  settings.setValue("min_y", ui->spinMinY->value());
+  settings.setValue("max_y", ui->spinMaxY->value());
+
+  settings.setValue("min_z", ui->spinMinZ->value());
+  settings.setValue("max_z", ui->spinMaxZ->value());
 }
 
 void Analyzer::rebuild_data()
@@ -122,9 +134,9 @@ void Analyzer::rebuild_data()
   auto yy = reader_->get_category(weight_y);
   auto zz = reader_->get_category(weight_z);
 
-  ui->comboWeightsX->setToolTip(QString::fromStdString(reader_->get_description(weight_x)));
-  ui->comboWeightsY->setToolTip(QString::fromStdString(reader_->get_description(weight_y)));
-  ui->comboWeightsZ->setToolTip(QString::fromStdString(reader_->get_description(weight_z)));
+  ui->labelX->setText("   " + QString::fromStdString(reader_->get_description(weight_x)));
+  ui->labelY->setText("   " + QString::fromStdString(reader_->get_description(weight_y)));
+  ui->labelZ->setText("   " + QString::fromStdString(reader_->get_description(weight_z)));
 
   if (xx.size() != yy.size())
   {
@@ -161,13 +173,21 @@ void Analyzer::make_projections()
 {
   std::set<size_t> indices;
 
-  int min = ui->spinMin->value();
-  int max = ui->spinMax->value();
+  int min_x = ui->spinMinX->value();
+  int max_x = ui->spinMaxX->value();
 
-  std::map<std::pair<int,int>, double> projection2d;
+  int min_y = ui->spinMinY->value();
+  int max_y = ui->spinMaxY->value();
 
-  int xmax = 0;
-  int ymax = 0;
+  int min_z = ui->spinMinZ->value();
+  int max_z = ui->spinMaxZ->value();
+
+  std::map<std::pair<int32_t,int32_t>, double> projection2d;
+
+  int32_t xmin{std::numeric_limits<int32_t>::max()};
+  int32_t xmax{std::numeric_limits<int32_t>::min()};
+  int32_t ymin{std::numeric_limits<int32_t>::max()};
+  int32_t ymax{std::numeric_limits<int32_t>::min()};
 
   for (auto &ms : data_)
   {
@@ -177,13 +197,18 @@ void Analyzer::make_projections()
       int x = mi.first.first;
       int y = mi.first.second;
 
-      xmax = std::max(xmax, x);
-      ymax = std::max(ymax, y);
-
-      if ((min <= z) && (z <= max))
+      if ((min_x <= x) && (x <= max_x) &&
+          (min_y <= y) && (y <= max_y) &&
+          (min_z <= z) && (z <= max_z))
       {
         projection2d[mi.first] += mi.second.size();
         std::copy( mi.second.begin(), mi.second.end(), std::inserter( indices, indices.end() ) );
+
+        xmin = std::min(xmin, x);
+        xmax = std::max(xmax, x);
+
+        ymin = std::min(ymin, y);
+        ymax = std::max(ymax, y);
       }
 
       for (auto &i : histograms1d_)
@@ -191,17 +216,20 @@ void Analyzer::make_projections()
     }
   }
 
+//  DBG << "x " << xmin << " - " << xmax;
+//  DBG << "y " << ymin << " - " << ymax;
+
   for (auto &i : histograms1d_)
     i.close_data();
 
   EntryList data_list;
   for (auto &point : projection2d)
-    data_list.push_back(Entry{{point.first.first,point.first.second}, point.second});
-  ui->plot->update_plot(xmax, ymax, data_list);
-  ui->plot->set_axes(ui->comboWeightsX->currentText(), 0, xmax,
-                     ui->comboWeightsY->currentText(), 0, ymax,
+    data_list.push_back(Entry{{point.first.first - xmin, point.first.second - ymin}, point.second});
+  ui->plot2D->update_plot(xmax-xmin, ymax-ymin, data_list);
+  ui->plot2D->set_axes(ui->comboWeightsX->currentText(), xmin, xmax,
+                     ui->comboWeightsY->currentText(), ymin, ymax,
                      "Count");
-  ui->plot->refresh();
+  ui->plot2D->refresh();
 
   update_histograms();
 
@@ -309,8 +337,8 @@ void Analyzer::plot_boxes()
     i++;
   }
 
-  ui->plot->set_boxes(boxes);
-  ui->plot->replot_markers();
+  ui->plot2D->set_boxes(boxes);
+  ui->plot2D->replot_markers();
 }
 
 void Analyzer::parameters_set()
@@ -349,22 +377,42 @@ void Analyzer::on_pushAddBox_clicked()
   parameters_set();
 }
 
-void Analyzer::on_spinMin_editingFinished()
+void Analyzer::on_spinMinX_editingFinished()
 {
   make_projections();
 }
 
-void Analyzer::on_spinMax_editingFinished()
+void Analyzer::on_spinMaxX_editingFinished()
 {
   make_projections();
 }
 
-void Analyzer::on_spinMin_valueChanged(int /*arg1*/)
+void Analyzer::on_spinMinY_editingFinished()
+{
+  make_projections();
+}
+
+void Analyzer::on_spinMaxY_editingFinished()
+{
+  make_projections();
+}
+
+void Analyzer::on_spinMinZ_editingFinished()
+{
+  make_projections();
+}
+
+void Analyzer::on_spinMaxZ_editingFinished()
+{
+  make_projections();
+}
+
+void Analyzer::on_spinMinZ_valueChanged(int /*arg1*/)
 {
   plot_block();
 }
 
-void Analyzer::on_spinMax_valueChanged(int /*arg1*/)
+void Analyzer::on_spinMaxZ_valueChanged(int /*arg1*/)
 {
   plot_block();
 }
@@ -378,10 +426,10 @@ void Analyzer::plot_block()
   marker_.appearance.default_pen = QPen(cc, 2);
 
   Marker1D left = marker_;
-  left.pos = ui->spinMin->value();
+  left.pos = ui->spinMinZ->value();
 
   Marker1D right = marker_;
-  right.pos = ui->spinMax->value();
+  right.pos = ui->spinMaxZ->value();
 
   ui->plotHistogram->set_block(left, right);
 

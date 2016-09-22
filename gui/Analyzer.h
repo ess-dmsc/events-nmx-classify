@@ -43,14 +43,20 @@ private slots:
   void on_comboWeightsY_currentIndexChanged(const QString &arg1);
   void on_comboWeightsZ_currentIndexChanged(const QString &arg1);
 
-  void on_spinMin_editingFinished();
-  void on_spinMax_editingFinished();
+  void on_spinMinX_editingFinished();
+  void on_spinMaxX_editingFinished();
+
+  void on_spinMinY_editingFinished();
+  void on_spinMaxY_editingFinished();
+
+  void on_spinMinZ_editingFinished();
+  void on_spinMaxZ_editingFinished();
 
   void on_pushAddBox_clicked();
   void update_box(double x, double y, bool left_mouse);
 
-  void on_spinMin_valueChanged(int arg1);
-  void on_spinMax_valueChanged(int arg1);
+  void on_spinMinZ_valueChanged(int arg1);
+  void on_spinMaxZ_valueChanged(int arg1);
 
   void on_pushRemoveBox_clicked();
 
@@ -64,7 +70,7 @@ private:
   BoxesModel model_;
   SpecialDelegate delegate_;
 
-  std::map<int,std::map<std::pair<int,int>, std::list<size_t>>> data_;
+  std::map<int,std::map<std::pair<int32_t,int32_t>, std::list<size_t>>> data_;
 
   void loadSettings();
   void saveSettings();

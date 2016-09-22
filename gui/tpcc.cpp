@@ -73,7 +73,6 @@ void tpcc::collect_params()
 
 void tpcc::display_params()
 {
-  DBG << "Param size " << parameters_.size();
   ui->tableParams->setRowCount(parameters_.size());
   int i = 0;
   for (auto &param : parameters_)
