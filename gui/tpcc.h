@@ -47,7 +47,6 @@ private slots:
   void saveSettings();
   void loadSettings();
 
-  void on_toolOpen_clicked();
   void toggleIO(bool);
 
   void run_complete();
@@ -60,10 +59,12 @@ private slots:
 
   void on_pushStop_clicked();
   void on_pushStart_clicked();
+
   void on_comboGroup_activated(const QString &arg1);
   void on_pushNewGroup_clicked();
-
+  void on_pushDeleteGroup_clicked();
   void populate_combo();
+  void on_pushOpen_clicked();
 };
 
 #endif // tpcc_H

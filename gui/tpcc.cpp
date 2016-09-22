@@ -119,15 +119,6 @@ void tpcc::saveSettings()
   settings.setValue("data_directory", data_directory_);
 }
 
-void tpcc::on_toolOpen_clicked()
-{
-  QString fileName = QFileDialog::getOpenFileName(this, "Load TPC data", data_directory_, "HDF5 (*.h5)");
-  if (!validateFile(this, fileName, false))
-    return;
-
-  open_file(fileName);
-}
-
 bool tpcc::open_file(QString fileName)
 {
   data_directory_ = path_of_file(fileName);
@@ -165,12 +156,13 @@ void tpcc::toggleIO(bool enable)
 {
   auto names = reader_->analysis_groups();
 
-  ui->toolOpen->setEnabled(enable);
+  ui->pushOpen->setEnabled(enable);
   ui->tableParams->setEnabled(enable && reader_ && !reader_->num_analyzed());
 
   ui->comboGroup->setEnabled(enable && (names.size() > 0));
 
   ui->pushNewGroup->setEnabled(enable && reader_ && reader_->event_count());
+  ui->pushDeleteGroup->setEnabled(enable && reader_ && names.size());
 
   bool en = reader_ && reader_->event_count()
       &&  (reader_->num_analyzed() < reader_->event_count()) && (names.size() > 0) && enable;
@@ -213,7 +205,7 @@ void tpcc::run_complete()
   toggleIO(true);
   ui->pushStop->setEnabled(false);
 
-  reader_->save_analysis(ui->comboGroup->currentText().toStdString());
+  reader_->save_analysis();
   analyzer_->set_new_source(reader_);
 }
 
@@ -251,16 +243,16 @@ void tpcc::on_pushNewGroup_clicked()
 
   //must not have slashes!
 
+  //must not already exist
   for (auto &name : reader_->analysis_groups())
     if (name == text.toStdString())
       return;
 
-  reader_->clear_analysis();
-  reader_->save_analysis(text.toStdString());
+  reader_->create_analysis(text.toStdString());
   populate_combo();
 
   ui->comboGroup->setCurrentText(text);
-  on_comboGroup_activated("");
+  on_comboGroup_activated(text);
 }
 
 void tpcc::populate_combo()
@@ -269,4 +261,20 @@ void tpcc::populate_combo()
   for (auto &name : reader_->analysis_groups())
     ui->comboGroup->addItem(QString::fromStdString(name));
   toggleIO(true);
+}
+
+void tpcc::on_pushDeleteGroup_clicked()
+{
+  reader_->delete_analysis(ui->comboGroup->currentText().toStdString());
+  populate_combo();
+  on_comboGroup_activated("");
+}
+
+void tpcc::on_pushOpen_clicked()
+{
+  QString fileName = QFileDialog::getOpenFileName(this, "Load TPC data", data_directory_, "HDF5 (*.h5)");
+  if (!validateFile(this, fileName, false))
+    return;
+
+  open_file(fileName);
 }

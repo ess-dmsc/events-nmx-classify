@@ -130,13 +130,13 @@ void Analyzer::rebuild_data()
   auto weight_y = ui->comboWeightsY->currentText().toStdString();
   auto weight_z = ui->comboWeightsZ->currentText().toStdString();
 
-  auto xx = reader_->get_category(weight_x);
-  auto yy = reader_->get_category(weight_y);
-  auto zz = reader_->get_category(weight_z);
+  auto xx = reader_->get_metric(weight_x);
+  auto yy = reader_->get_metric(weight_y);
+  auto zz = reader_->get_metric(weight_z);
 
-  ui->labelX->setText("   " + QString::fromStdString(reader_->get_description(weight_x)));
-  ui->labelY->setText("   " + QString::fromStdString(reader_->get_description(weight_y)));
-  ui->labelZ->setText("   " + QString::fromStdString(reader_->get_description(weight_z)));
+  ui->labelX->setText("   " + QString::fromStdString(reader_->metric_description(weight_x)));
+  ui->labelY->setText("   " + QString::fromStdString(reader_->metric_description(weight_y)));
+  ui->labelZ->setText("   " + QString::fromStdString(reader_->metric_description(weight_z)));
 
   if (xx.size() != yy.size())
   {

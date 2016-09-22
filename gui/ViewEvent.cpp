@@ -112,8 +112,8 @@ void ViewEvent::on_spinEventIdx_valueChanged(int /*arg1*/)
 
   int idx = ui->spinEventIdx->value();
   size_t evt_idx = 0;
-  if (idx < int(indices_.size()))
-    evt_idx = indices_[idx] + 1;
+  if (idx <= int(indices_.size()))
+    evt_idx = indices_[idx-1];
 
   ui->labelOfTotal->setText(" of " + QString::number(indices_.size())
                             + "   [" + QString::number(evt_idx) + "]");
@@ -155,17 +155,17 @@ void ViewEvent::plot_current_event()
 {
   int idx = ui->spinEventIdx->value();
   size_t evt_idx = 0;
-  if (idx < int(indices_.size()))
-    evt_idx = indices_[idx] + 1;
+  if (idx <= int(indices_.size()))
+    evt_idx = indices_[idx-1];
 
-  if (!reader_ || (evt_idx < 1) || (evt_idx > reader_->event_count()))
+  if (!reader_ || (evt_idx >= reader_->event_count()))
   {
     clear();
     return;
   }
 
 
-  NMX::Event evt = reader_->get_event(evt_idx - 1);
+  NMX::Event evt = reader_->get_event(evt_idx);
 
   if (ui->checkNoneg->isChecked())
     evt = evt.suppress_negatives();
@@ -187,7 +187,11 @@ void ViewEvent::set_indices(std::set<size_t> indices)
   if (reader_)
     evt_count = reader_->event_count();
 
-  if (indices.size() < evt_count)
+  if ((evt_count > 0) && (reader_->num_analyzed() == 0))
+    for (size_t i=0; i < evt_count; ++i)
+      indices_.push_back(i);
+
+  if (indices_.size() < evt_count)
     evt_count = indices_.size();
 
   ui->spinEventIdx->setEnabled(evt_count > 0);

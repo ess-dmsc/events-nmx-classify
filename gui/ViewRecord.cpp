@@ -99,7 +99,7 @@ void ViewRecord::display_current_record()
   int stripi = analytics["entry_strip"].value.as_int(-1);
   if (stripi >= 0)
   {
-    int timei = analytics["entry_strip"].value.as_int(-1);
+    int timei = analytics["entry_time"].value.as_int(-1);
 
     MarkerBox2D box;
     box.selectable = false;
