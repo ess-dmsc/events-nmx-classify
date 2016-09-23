@@ -132,7 +132,7 @@ size_t FileHDF5::num_analyzed() const
   return num_analyzed_;
 }
 
-void FileHDF5::update_event_metrics(size_t index, const Event &event)
+void FileHDF5::push_event_metrics(size_t index, const Event &event)
 {
   if (index >= event_count_)
     return;

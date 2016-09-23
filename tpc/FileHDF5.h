@@ -27,7 +27,8 @@ public:
   Event get_event(size_t index);
 
   void clear_analysis();
-  void update_event_metrics(size_t index, const Event& event);
+  void push_event_metrics(size_t index, const Event& event);
+  void pull_event_metrics(size_t index, Event& event);
   size_t num_analyzed() const;
 
   Settings get_parameters() const {return analysis_params_;}

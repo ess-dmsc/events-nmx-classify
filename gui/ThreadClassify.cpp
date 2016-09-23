@@ -64,7 +64,7 @@ void ThreadClassify::run()
     evt.set_parameters(parameters_);
     evt.analyze();
 
-    reader_->update_event_metrics(eventID, evt);
+    reader_->push_event_metrics(eventID, evt);
 
     percent = double(eventID+1) / double(evt_count) * 100;
 
