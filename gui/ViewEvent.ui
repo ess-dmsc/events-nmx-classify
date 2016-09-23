@@ -75,6 +75,32 @@
       </widget>
      </item>
      <item>
+      <widget class="Line" name="line_3">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_4">
+       <property name="minimumSize">
+        <size>
+         <width>90</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>Show planes:</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="comboPlanes"/>
+     </item>
+     <item>
       <widget class="QCheckBox" name="checkNoneg">
        <property name="text">
         <string>no negatives</string>
@@ -95,7 +121,7 @@
       <widget class="QLabel" name="label_2">
        <property name="minimumSize">
         <size>
-         <width>80</width>
+         <width>60</width>
          <height>0</height>
         </size>
        </property>
@@ -114,7 +140,7 @@
       <widget class="QLabel" name="label_3">
        <property name="minimumSize">
         <size>
-         <width>90</width>
+         <width>80</width>
          <height>0</height>
         </size>
        </property>
@@ -195,6 +221,22 @@
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QTableWidget" name="tableValues">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Maximum" vsizetype="Expanding">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>250</width>
+         <height>16777215</height>
+        </size>
        </property>
       </widget>
      </item>

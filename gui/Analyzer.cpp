@@ -26,7 +26,7 @@ Analyzer::Analyzer(QWidget *parent)
   NMX::Event dummy;
   dummy.analyze();
   ui->comboWeightsZ->addItem("none");
-  for (auto &c : dummy.analytics())
+  for (auto &c : dummy.metrics())
   {
     ui->comboWeightsX->addItem(QString::fromStdString(c.first));
     ui->comboWeightsY->addItem(QString::fromStdString(c.first));

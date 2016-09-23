@@ -95,9 +95,9 @@ QVariant BoxesModel::headerData(int section, Qt::Orientation orientation, int ro
 
 
       case 8:
-        return QString("min");
+        return QString("minimum");
       case 9:
-        return QString("max");
+        return QString("maximum");
       case 10:
         return QString("weighted avg");
       case 11:

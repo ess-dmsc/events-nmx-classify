@@ -26,7 +26,7 @@ Record::Record()
               "Minimum number of strips above threshold for location of maxima in timebins");
 
   parameters_["U-ness_threshold"] =
-      Setting(Variant::from_int(2),
+      Setting(Variant::from_int(5),
               "Minimum strip span of timebin maxima to increment U-ness factor");
 
   point_lists_["VMM"] = PointList();
@@ -207,7 +207,7 @@ std::list<std::string> Record::projection_categories() const
 
 void Record::analyze()
 {
-  analytics_["hit_strips"] =
+  metrics_["hit_strips"] =
       Setting(Variant::from_uint(strips_.size()),
               "Number of strips with valid ADC values");
 
@@ -215,7 +215,7 @@ void Record::analyze()
   if ((strip_start_ > -1) && (strip_end_ > strip_start_))
     strip_span = strip_end_ - strip_start_ + 1;
 
-  analytics_["strip_span"] =
+  metrics_["strip_span"] =
       Setting(Variant::from_uint(strip_span),
               "Span of strips with valid ADC values");
 
@@ -233,6 +233,7 @@ void Record::analyze()
   std::set<int> tbins;
   auto adc_threshold = parameters_["ADC_threshold"].value.as_int();
   auto tb_over_threshold = parameters_["TB_over_threshold"].value.as_int();
+  size_t VMM_count = 0;
   for (auto &s : strips_)
   {
     s.second.analyze(adc_threshold, tb_over_threshold);
@@ -242,7 +243,6 @@ void Record::analyze()
       tbstop = s.second.bin_end();
 
     integral += s.second.integral();
-    projections_["strip_integral"].push_back(ProjectionPoint({s.first, s.second.integral()}));
     nonempty_words += s.second.num_valid_bins();
 
     if (s.second.nonzero())
@@ -253,6 +253,7 @@ void Record::analyze()
           sideways[i][s.first] = s.second.value(i);
         }
 
+    VMM_count += s.second.VMM_maxima().size();
     for (auto m : s.second.VMM_maxima())
     {
       point_lists_["VMM"].push_back(Point(s.first, m));
@@ -273,27 +274,27 @@ void Record::analyze()
       point_lists_["global_maxima"].push_back(Point(s.first, m));
   }
 
-  analytics_["integral"] =
+  metrics_["integral"] =
       Setting(Variant::from_int(integral),
               "Sum of all ADC values");
 
-  analytics_["nonempty_words"] =
+  metrics_["nonempty_words"] =
       Setting(Variant::from_uint(nonempty_words),
               "Number of non-zero bytes in record");
 
-  analytics_["hit_timebins"] =
+  metrics_["hit_timebins"] =
       Setting(Variant::from_uint(tbins.size()),
               "Number of timebins with valid ADC values");
 
-  analytics_["entry_strip"] =
+  metrics_["entry_strip"] =
       Setting(Variant::from_int(entry_strip),
               "Strip of latest maximum (via VMM emulation)");
 
-  analytics_["entry_time"] =
+  metrics_["entry_time"] =
       Setting(Variant::from_int(entry_tb),
               "Timebin of latest maximum (via VMM emulation)");
 
-  analytics_["c-ness"] =
+  metrics_["c-ness"] =
       Setting(Variant::from_int(c_ness),
               "Number of strips with 2 or more local maxima (ADC threshold check only)");
 
@@ -311,22 +312,30 @@ void Record::analyze()
     for (int m : maxima)
       point_lists_["tb_maxima"].push_back(Point(m, i));
 
-    if ((maxima.size() >= 2) && (maxima.back() - maxima.front() > uness_threshold))
+    if ((maxima.size() >= 2) && (int(maxima.back() - maxima.front()) > uness_threshold))
       u_ness++;
 
     auto maxima2 = newstrip.VMM_maxima();
     for (int m : maxima2)
       point_lists_["tb_maxima2"].push_back(Point(m, i));
 
-    if ((maxima2.size() >= 2) && (maxima2.back() - maxima2.front() > uness_threshold))
+    if ((maxima2.size() >= 2) && (int(maxima2.back() - maxima2.front()) > uness_threshold))
       u_ness2++;
   }
 
-  analytics_["u-ness"] =
+  for (auto i = strip_start(); i <= strip_end(); ++i)
+  {
+    if (strips_.count(i))
+      projections_["strip_integral"].push_back(ProjectionPoint({i, strips_.at(i).integral()}));
+    else
+      projections_["strip_integral"].push_back(ProjectionPoint({i, 0}));
+  }
+
+  metrics_["u-ness"] =
       Setting(Variant::from_int(u_ness),
               "Number of timebins with 2 or more local maxima (ADC threshold check only)");
 
-  analytics_["u-ness2"] =
+  metrics_["u-ness2"] =
       Setting(Variant::from_int(u_ness2),
               "Number of timebins with 2 or more VMM emulation maxima");
 
@@ -334,7 +343,7 @@ void Record::analyze()
   if (tbstart > -1)
     timebin_span = tbstop - tbstart + 1;
 
-  analytics_["timebin_span"] =
+  metrics_["timebin_span"] =
       Setting(Variant::from_uint(timebin_span),
               "Span of timebins with valid ADC values");
 
@@ -342,7 +351,7 @@ void Record::analyze()
   if (strips_.size() > 0)
     integral_per_hitstrips = double(integral) / double(strips_.size());
 
-  analytics_["integral_per_hitstrips"] =
+  metrics_["integral_per_hitstrips"] =
       Setting(Variant::from_float(integral_per_hitstrips),
               "Sum of all ADC values divided by number of strips with valid ADC values");
 
@@ -350,7 +359,7 @@ void Record::analyze()
   if (strip_span > 0)
     strip_density = double(strips_.size()) / double(strip_span) * 100.0;
 
-  analytics_["strip_density"] =
+  metrics_["strip_density"] =
       Setting(Variant::from_float(strip_density),
               "% of strips in strip span with valid ADC data");
 
@@ -358,9 +367,13 @@ void Record::analyze()
   if (timebin_span > 0)
     time_density = double(tbins.size()) / double(timebin_span) * 100.0;
 
-  analytics_["time_density"] =
+  metrics_["time_density"] =
       Setting(Variant::from_float(strip_density),
               "% of timebins in timebin span with valid ADC data");
+
+  metrics_["vmm_points"] =
+      Setting(Variant::from_uint(VMM_count),
+              "# of VMM data points in event");
 }
 
 

@@ -34,19 +34,19 @@ std::string Event::debug() const
 void Event::collect_values()
 {
   for (auto &a : x_.parameters())
-    parameters_["X_" + a.first] = a.second;
+    parameters_["x." + a.first] = a.second;
   for (auto &a : y_.parameters())
-    parameters_["Y_" + a.first] = a.second;
+    parameters_["y." + a.first] = a.second;
 
-  for (auto &a : x_.analytics())
-    analytics_["X_" + a.first] = a.second;
-  for (auto &a : y_.analytics())
-    analytics_["Y_" + a.first] = a.second;
+  for (auto &a : x_.metrics())
+    metrics_["x." + a.first] = a.second;
+  for (auto &a : y_.metrics())
+    metrics_["y." + a.first] = a.second;
 
   for (auto &a : x_.projection_categories())
-    projections_["X_" + a] = x_.get_projection(a);
+    projections_["x." + a] = x_.get_projection(a);
   for (auto &a : y_.projection_categories())
-    projections_["Y_" + a] = y_.get_projection(a);
+    projections_["y." + a] = y_.get_projection(a);
 }
 
 void Event::set_parameters(Settings vals)
@@ -70,25 +70,31 @@ void Event::analyze()
   x_.analyze();
   y_.analyze();
 
-  auto ax = x_.analytics();
-  auto ay = y_.analytics();
+  auto ax = x_.metrics();
+  auto ay = y_.metrics();
 
   collect_values();
 
   auto difftime = ax["entry_time"].value.as_int() - ay["entry_time"].value.as_int();
-  analytics_["diff_entry_time"] =
+  metrics_["diff_entry_time"] =
       Setting(Variant::from_int(difftime),
               "X.entry_time - Y.entry_time");
 
   auto diffspan = ax["strip_span"].value.as_int() - ay["strip_span"].value.as_int();
-  analytics_["diff_strip_span"] =
+  metrics_["diff_strip_span"] =
       Setting(Variant::from_int(diffspan),
               "X.strip_span - Y.strip_span");
 
   auto difftspan = ax["timebin_span"].value.as_int() - ay["timebin_span"].value.as_int();
-  analytics_["diff_timebin_span"] =
+  metrics_["diff_timebin_span"] =
       Setting(Variant::from_int(difftspan),
               "X.timebin_span - Y.timebin_span");
+
+  auto VMM_count = ax["vmm_points"].value.as_int() + ay["vmm_points"].value.as_int();
+  metrics_["vmm_points"] =
+      Setting(Variant::from_int(VMM_count),
+              "X.vmm_points + Y.vmm_points");
+
 
   auto tbx = x_.get_projection("time_integral");
   auto tby = y_.get_projection("time_integral");

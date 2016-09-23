@@ -1,7 +1,6 @@
 #include <QSettings>
 #include "ViewRecord.h"
 #include "ui_ViewRecord.h"
-#include "qt_util.h"
 
 
 ViewRecord::ViewRecord(QWidget *parent) :
@@ -14,14 +13,6 @@ ViewRecord::ViewRecord(QWidget *parent) :
   ui->plotRecord->set_scale_type("Linear");
   ui->plotRecord->set_show_legend(true);
   ui->plotRecord->set_zoom_drag(Qt::Horizontal);
-
-  ui->tableValues->verticalHeader()->hide();
-  ui->tableValues->setColumnCount(2);
-  ui->tableValues->setHorizontalHeaderLabels({"parameter", "value"});
-  ui->tableValues->setSelectionMode(QAbstractItemView::NoSelection);
-  ui->tableValues->setEditTriggers(QTableView::NoEditTriggers);
-  ui->tableValues->horizontalHeader()->setStretchLastSection(true);
-  ui->tableValues->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
 }
 
 ViewRecord::~ViewRecord()
@@ -75,13 +66,13 @@ void ViewRecord::display_current_record()
   else
     ui->plotRecord->update_plot(record_.strip_span(), record_.time_end() + 1, EntryList());
 
-  auto analytics = record_.analytics();
+  auto metrics = record_.metrics();
 
   auto overlay = make_overlay();
-  int stripi = analytics["entry_strip"].value.as_int(-1);
+  int stripi = metrics["entry_strip"].value.as_int(-1);
   if (stripi >= 0)
   {
-    int timei = analytics["entry_time"].value.as_int(-1);
+    int timei = metrics["entry_time"].value.as_int(-1);
 
     MarkerBox2D box;
     box.selectable = false;
@@ -96,16 +87,6 @@ void ViewRecord::display_current_record()
   ui->plotRecord->set_boxes(overlay);
   ui->plotRecord->replot_markers();
   ui->plotRecord->zoom_out();
-
-  ui->tableValues->clearContents();
-  ui->tableValues->setRowCount(analytics.size());
-  int i = 0;
-  for (auto &a : analytics)
-  {
-    add_to_table(ui->tableValues, i, 0, a.first);
-    add_to_table(ui->tableValues, i, 1, a.second.value.to_string());
-    i++;
-  }
 }
 
 EntryList ViewRecord::make_list()

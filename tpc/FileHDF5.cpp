@@ -145,7 +145,7 @@ void FileHDF5::update_event_metrics(size_t index, const Event &event)
       metrics_descr_[a.first] = a.second.description;
   }
 
-  for (auto &a : event.analytics())
+  for (auto &a : event.metrics())
   {
     if (metrics_[a.first].empty())
     {

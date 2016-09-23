@@ -22,7 +22,7 @@ struct Event
   void analyze();
   void set_parameter(std::string, Variant);
   void set_parameters(Settings);
-  Settings analytics() const {return analytics_;}
+  Settings metrics() const {return metrics_;}
   Settings parameters() const {return parameters_;}
 
   ProjPointList get_projection(std::string) const;
@@ -32,7 +32,7 @@ private:
   Record x_, y_;
 
   Settings parameters_;
-  Settings analytics_;
+  Settings metrics_;
 
   std::map<std::string, ProjPointList> projections_;
 

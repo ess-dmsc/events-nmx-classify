@@ -133,7 +133,7 @@ bool tpcc::open_file(QString fileName)
   settings.beginGroup("Program");
   if (evt_count)
   {
-    ui->pushOpen->setText(fileName);
+    ui->pushOpen->setText("  " + fileName);
     settings.setValue("recent_file", fileName);
     event_viewer_->set_params(parameters_);
   }

@@ -54,7 +54,7 @@ public:
 
   void analyze();
   void set_parameter(std::string, Variant);
-  Settings analytics() const {return analytics_;}
+  Settings metrics() const {return metrics_;}
   Settings parameters() const {return parameters_;}
 
   PointList get_points(std::string) const;
@@ -77,7 +77,7 @@ private:
   std::map<std::string, ProjPointList> projections_;
 
   Settings parameters_;
-  Settings analytics_;
+  Settings metrics_;
 };
 
 

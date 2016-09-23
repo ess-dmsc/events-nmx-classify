@@ -41,6 +41,8 @@ private slots:
 
   void on_checkRaw_clicked();
 
+  void on_comboPlanes_currentIndexChanged(const QString &arg1);
+
 private:
   Ui::ViewEvent *ui;
 

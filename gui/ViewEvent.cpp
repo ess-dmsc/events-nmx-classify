@@ -2,13 +2,25 @@
 #include "ViewEvent.h"
 #include "ui_ViewEvent.h"
 #include "CustomLogger.h"
-
+#include "qt_util.h"
 
 ViewEvent::ViewEvent(QWidget *parent) :
   QWidget(parent),
   ui(new Ui::ViewEvent)
 {
   ui->setupUi(this);
+
+  ui->comboPlanes->addItem("X");
+  ui->comboPlanes->addItem("Y");
+  ui->comboPlanes->addItem("X & Y");
+
+  ui->tableValues->verticalHeader()->hide();
+  ui->tableValues->setColumnCount(2);
+  ui->tableValues->setHorizontalHeaderLabels({"parameter", "value"});
+  ui->tableValues->setSelectionMode(QAbstractItemView::NoSelection);
+  ui->tableValues->setEditTriggers(QTableView::NoEditTriggers);
+  ui->tableValues->horizontalHeader()->setStretchLastSection(true);
+  ui->tableValues->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
 
   NMX::Record rec;
   rec.analyze();
@@ -36,6 +48,8 @@ ViewEvent::ViewEvent(QWidget *parent) :
   ui->plotProjection->set_scale_type("Linear");
   ui->plotProjection->set_plot_style("Step center");
   ui->plotProjection->set_visible_options(ShowOptions::zoom | ShowOptions::thickness | ShowOptions::grid | ShowOptions::save);
+
+  on_comboPlanes_currentIndexChanged("");
 }
 
 ViewEvent::~ViewEvent()
@@ -49,6 +63,7 @@ void ViewEvent::enableIO(bool enable)
   bool en = reader_ && reader_->event_count() && enable;
   ui->spinEventIdx->setEnabled(en);
   ui->checkNoneg->setEnabled(en);
+  ui->comboPlanes->setEnabled(en);
 }
 
 void ViewEvent::set_new_source(std::shared_ptr<NMX::FileHDF5> r)
@@ -88,6 +103,7 @@ void ViewEvent::loadSettings()
   ui->checkRaw->setChecked(settings.value("show_raw", true).toBool());
   ui->comboOverlay->setCurrentText(settings.value("overlay").toString());
   ui->comboProjection->setCurrentText(settings.value("projection").toString());
+  ui->comboPlanes->setCurrentText(settings.value("show_planes", "X & Y").toString());
 }
 
 void ViewEvent::saveSettings()
@@ -99,6 +115,7 @@ void ViewEvent::saveSettings()
   settings.setValue("current_idx", ui->spinEventIdx->value());
   settings.setValue("overlay", ui->comboOverlay->currentText());
   settings.setValue("projection", ui->comboProjection->currentText());
+  settings.setValue("show_planes", ui->comboPlanes->currentText());
 }
 
 
@@ -165,7 +182,7 @@ void ViewEvent::plot_current_event()
 {
   int idx = ui->spinEventIdx->value();
   size_t evt_idx = 0;
-  if (idx <= int(indices_.size()))
+  if ((idx > 0) && (idx <= int(indices_.size())))
     evt_idx = indices_[idx-1];
 
   if (!reader_ || (evt_idx >= reader_->event_count()))
@@ -185,6 +202,22 @@ void ViewEvent::plot_current_event()
 
   ui->eventX->display_record(evt.x());
   ui->eventY->display_record(evt.y());
+
+  auto metrics = evt.metrics();
+  if (ui->comboPlanes->currentText() == "X")
+    metrics = evt.x().metrics();
+  else if (ui->comboPlanes->currentText() == "Y")
+    metrics = evt.y().metrics();
+
+  ui->tableValues->clearContents();
+  ui->tableValues->setRowCount(metrics.size());
+  int i = 0;
+  for (auto &a : metrics)
+  {
+    add_to_table(ui->tableValues, i, 0, a.first);
+    add_to_table(ui->tableValues, i, 1, a.second.value.to_string());
+    i++;
+  }
 
   display_projection(evt);
 }
@@ -246,3 +279,10 @@ void ViewEvent::display_projection(NMX::Event &evt)
   ui->plotProjection->redraw();
 }
 
+
+void ViewEvent::on_comboPlanes_currentIndexChanged(const QString &arg1)
+{
+  ui->eventX->setVisible(ui->comboPlanes->currentText().contains("X"));
+  ui->eventY->setVisible(ui->comboPlanes->currentText().contains("Y"));
+  plot_current_event();
+}
