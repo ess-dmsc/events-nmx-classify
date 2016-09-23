@@ -82,7 +82,17 @@ size_t FileHDF5::event_count()
 
 Event FileHDF5::get_event(size_t index)
 {
-  return Event(read_record(index, 0), read_record(index, 1));
+  return Event(read_record(index, 0),
+               read_record(index, 1));
+
+//  if (index < num_analyzed_)
+//  {
+//    DBG << "Event has analysis";
+//    for (auto &m : metrics_)
+//    {
+
+//    }
+//  }
 }
 
 

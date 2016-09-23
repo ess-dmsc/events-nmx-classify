@@ -33,6 +33,13 @@
    <property name="spacing">
     <number>6</number>
    </property>
+   <item row="1" column="0">
+    <widget class="Line" name="line_2">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
    <item row="0" column="0">
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
@@ -137,6 +144,22 @@
      </item>
     </layout>
    </item>
+   <item row="3" column="0">
+    <widget class="WidgetPlotMulti1D" name="plotProjection" native="true">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>16777215</width>
+       <height>450</height>
+      </size>
+     </property>
+    </widget>
+   </item>
    <item row="2" column="0">
     <layout class="QHBoxLayout" name="horizontalLayout_2">
      <property name="spacing">
@@ -177,16 +200,15 @@
      </item>
     </layout>
    </item>
-   <item row="1" column="0">
-    <widget class="Line" name="line_2">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-    </widget>
-   </item>
   </layout>
  </widget>
  <customwidgets>
+  <customwidget>
+   <class>WidgetPlotMulti1D</class>
+   <extends>QWidget</extends>
+   <header>widget_plot_multi1d.h</header>
+   <container>1</container>
+  </customwidget>
   <customwidget>
    <class>ViewRecord</class>
    <extends>QWidget</extends>

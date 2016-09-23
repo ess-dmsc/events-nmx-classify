@@ -34,6 +34,9 @@ Record::Record()
   point_lists_["global_maxima"] = PointList();
   point_lists_["tb_maxima"] = PointList();
   point_lists_["tb_maxima2"] = PointList();
+
+  projections_["strip_integral"] = ProjPointList();
+  projections_["time_integral"] = ProjPointList();
 }
 
 void Record::add_strip(int16_t idx, const Strip &strip)
@@ -68,6 +71,14 @@ PointList Record::get_points(std::string id) const
     return point_lists_.at(id);
   else
     return PointList();
+}
+
+ProjPointList Record::get_projection(std::string id) const
+{
+  if (projections_.count(id))
+    return projections_.at(id);
+  else
+    return ProjPointList();
 }
 
 void Record::set_parameter(std::string id, Variant val)
@@ -186,6 +197,14 @@ std::list<std::string> Record::point_categories() const
   return ret;
 }
 
+std::list<std::string> Record::projection_categories() const
+{
+  std::list<std::string> ret;
+  for (auto &i : projections_)
+    ret.push_back(i.first);
+  return ret;
+}
+
 void Record::analyze()
 {
   analytics_["hit_strips"] =
@@ -223,6 +242,7 @@ void Record::analyze()
       tbstop = s.second.bin_end();
 
     integral += s.second.integral();
+    projections_["strip_integral"].push_back(ProjectionPoint({s.first, s.second.integral()}));
     nonempty_words += s.second.num_valid_bins();
 
     if (s.second.nonzero())
@@ -285,6 +305,7 @@ void Record::analyze()
   {
     Strip newstrip(sideways.at(i));
     newstrip.analyze(t_adc_threshold, t_tb_over_threshold);
+    projections_["time_integral"].push_back(ProjectionPoint({i, newstrip.integral()}));
 
     auto maxima = newstrip.maxima();
     for (int m : maxima)

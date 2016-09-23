@@ -24,6 +24,9 @@ using Settings = std::map<std::string, Setting>;
 using Point = std::pair<int, int>;
 using PointList = std::list<Point>;
 
+using ProjectionPoint = std::pair<int, double>;
+using ProjPointList = std::list<ProjectionPoint>;
+
 class Record
 {
 public:
@@ -57,6 +60,9 @@ public:
   PointList get_points(std::string) const;
   std::list<std::string> point_categories() const;
 
+  ProjPointList get_projection(std::string) const;
+  std::list<std::string> projection_categories() const;
+
   // save/load with zero suppression
   std::list<int16_t> save() const;
 
@@ -68,6 +74,7 @@ private:
   int16_t time_end_   {-1};
 
   std::map<std::string, PointList> point_lists_;
+  std::map<std::string, ProjPointList> projections_;
 
   Settings parameters_;
   Settings analytics_;

@@ -25,11 +25,16 @@ struct Event
   Settings analytics() const {return analytics_;}
   Settings parameters() const {return parameters_;}
 
+  ProjPointList get_projection(std::string) const;
+  std::list<std::string> projection_categories() const;
+
 private:
   Record x_, y_;
 
   Settings parameters_;
   Settings analytics_;
+
+  std::map<std::string, ProjPointList> projections_;
 
   void collect_values();
 };

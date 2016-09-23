@@ -26,7 +26,6 @@ public:
 
   void set_show_raw(bool);
   void set_overlay_type(QString);
-  void set_projection_type(QString);
   void set_title(QString);
 
 private:
@@ -38,12 +37,9 @@ private:
 
   bool show_raw_{true};
   QString overlay_type_;
-  QString projection_type_;
-
 
   void display_current_record();
 
-  void display_projection();
   EntryList make_list();
   std::list<MarkerBox2D> make_overlay();
 };

@@ -15,11 +15,6 @@ ViewRecord::ViewRecord(QWidget *parent) :
   ui->plotRecord->set_show_legend(true);
   ui->plotRecord->set_zoom_drag(Qt::Horizontal);
 
-  ui->plotProjection->set_scale_type("Linear");
-  ui->plotProjection->set_plot_style("Step center");
-  ui->plotProjection->set_visible_options(ShowOptions::zoom | ShowOptions::thickness | ShowOptions::grid | ShowOptions::save);
-
-
   ui->tableValues->verticalHeader()->hide();
   ui->tableValues->setColumnCount(2);
   ui->tableValues->setHorizontalHeaderLabels({"parameter", "value"});
@@ -27,7 +22,6 @@ ViewRecord::ViewRecord(QWidget *parent) :
   ui->tableValues->setEditTriggers(QTableView::NoEditTriggers);
   ui->tableValues->horizontalHeader()->setStretchLastSection(true);
   ui->tableValues->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-
 }
 
 ViewRecord::~ViewRecord()
@@ -52,12 +46,6 @@ void ViewRecord::set_overlay_type(QString overlay_type)
   display_current_record();
 }
 
-void ViewRecord::set_projection_type(QString projection_type)
-{
-  projection_type_ = projection_type;
-  display_current_record();
-}
-
 void ViewRecord::clear()
 {
   ui->plotRecord->reset_content();
@@ -65,12 +53,6 @@ void ViewRecord::clear()
   ui->plotRecord->refresh();
 
   moving_.visible = false;
-  ui->plotProjection->reset_scales();
-  ui->plotProjection->clearGraphs();
-  ui->plotProjection->clearExtras();
-  ui->plotProjection->replot_markers();
-  ui->plotProjection->rescale();
-  ui->plotProjection->redraw();
 }
 
 
@@ -124,8 +106,6 @@ void ViewRecord::display_current_record()
     add_to_table(ui->tableValues, i, 1, a.second.value.to_string());
     i++;
   }
-
-  display_projection();
 }
 
 EntryList ViewRecord::make_list()
@@ -166,46 +146,5 @@ std::list<MarkerBox2D> ViewRecord::make_overlay()
 }
 
 
-void ViewRecord::display_projection()
-{
-  std::map<double, double> minima, maxima;
 
-  ui->plotProjection->clearGraphs();
-
-  QVector<double> x, y;
-
-  if (record_.valid_strips().size() && (projection_type_ != "none"))
-  {
-    for (int i = record_.strip_start(); i <= record_.strip_end(); ++i)
-    {
-      auto strip = record_.get_strip(i);
-      double xx = i;
-      double yy = 0;
-
-      if (projection_type_ == "Integral")
-        yy = strip.integral();
-//      else if (codomain == "Integral/bins")
-//        yy = strip.integral_normalized();
-
-      x.push_back(xx);
-      y.push_back(yy);
-
-      if (!minima.count(xx) || (minima[xx] > yy))
-        minima[xx] = yy;
-      if (!maxima.count(xx) || (maxima[xx] < yy))
-        maxima[xx] = yy;
-    }
-  }
-
-  AppearanceProfile profile;
-  profile.default_pen = QPen(Qt::darkRed, 2);
-  ui->plotProjection->addGraph(x, y, profile, 8);
-
-  ui->plotProjection->setLabels("position", "value");
-  ui->plotProjection->setYBounds(minima, maxima);
-
-  ui->plotProjection->setTitle(projection_type_);
-  ui->plotProjection->replot_markers();
-  ui->plotProjection->redraw();
-}
 

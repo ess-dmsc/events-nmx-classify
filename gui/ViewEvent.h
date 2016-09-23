@@ -53,6 +53,7 @@ private:
   void saveSettings();
   void plot_current_event();
 
+  void display_projection(NMX::Event &evt);
 };
 
 #endif // FORM_CALIBRATION_H

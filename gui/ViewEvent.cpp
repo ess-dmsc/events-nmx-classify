@@ -16,8 +16,11 @@ ViewEvent::ViewEvent(QWidget *parent) :
     ui->comboOverlay->addItem(QString::fromStdString(name));
   ui->comboOverlay->addItem("none");
 
+  NMX::Event evt;
+  evt.analyze();
+  for (auto &name : evt.projection_categories())
+    ui->comboProjection->addItem(QString::fromStdString(name));
   ui->comboProjection->addItem("none");
-  ui->comboProjection->addItem("Integral");
 
   ui->eventX->set_title("X plane");
   ui->eventY->set_title("Y plane");
@@ -27,11 +30,12 @@ ViewEvent::ViewEvent(QWidget *parent) :
   ui->eventX->set_overlay_type(ui->comboOverlay->currentText());
   ui->eventY->set_overlay_type(ui->comboOverlay->currentText());
 
-  ui->eventX->set_projection_type(ui->comboProjection->currentText());
-  ui->eventY->set_projection_type(ui->comboProjection->currentText());
-
   ui->eventX->set_show_raw(ui->checkRaw->isChecked());
   ui->eventY->set_show_raw(ui->checkRaw->isChecked());
+
+  ui->plotProjection->set_scale_type("Linear");
+  ui->plotProjection->set_plot_style("Step center");
+  ui->plotProjection->set_visible_options(ShowOptions::zoom | ShowOptions::thickness | ShowOptions::grid | ShowOptions::save);
 }
 
 ViewEvent::~ViewEvent()
@@ -102,6 +106,13 @@ void ViewEvent::clear()
 {
   ui->eventX->clear();
   ui->eventY->clear();
+
+  ui->plotProjection->reset_scales();
+  ui->plotProjection->clearGraphs();
+  ui->plotProjection->clearExtras();
+  ui->plotProjection->replot_markers();
+  ui->plotProjection->rescale();
+  ui->plotProjection->redraw();
 }
 
 void ViewEvent::on_spinEventIdx_valueChanged(int /*arg1*/)
@@ -134,8 +145,7 @@ void ViewEvent::on_comboOverlay_currentIndexChanged(const QString &/*arg1*/)
 
 void ViewEvent::on_comboProjection_activated(const QString &/*arg1*/)
 {
-  ui->eventX->set_projection_type(ui->comboProjection->currentText());
-  ui->eventY->set_projection_type(ui->comboProjection->currentText());
+  plot_current_event();
 }
 
 void ViewEvent::on_checkRaw_clicked()
@@ -175,6 +185,8 @@ void ViewEvent::plot_current_event()
 
   ui->eventX->display_record(evt.x());
   ui->eventY->display_record(evt.y());
+
+  display_projection(evt);
 }
 
 void ViewEvent::set_indices(std::set<size_t> indices)
@@ -200,5 +212,37 @@ void ViewEvent::set_indices(std::set<size_t> indices)
   on_spinEventIdx_valueChanged(0);
 }
 
+void ViewEvent::display_projection(NMX::Event &evt)
+{
+  std::map<double, double> minima, maxima;
 
+  ui->plotProjection->clearGraphs();
+
+  QVector<double> x, y;
+
+  for (auto &pts : evt.get_projection(ui->comboProjection->currentText().toStdString()))
+  {
+    double xx = pts.first;
+    double yy = pts.second;
+
+    x.push_back(xx);
+    y.push_back(yy);
+
+    if (!minima.count(xx) || (minima[xx] > yy))
+      minima[xx] = yy;
+    if (!maxima.count(xx) || (maxima[xx] < yy))
+      maxima[xx] = yy;
+  }
+
+  AppearanceProfile profile;
+  profile.default_pen = QPen(Qt::darkRed, 2);
+  ui->plotProjection->addGraph(x, y, profile, 8);
+
+  ui->plotProjection->setLabels("position", "value");
+  ui->plotProjection->setYBounds(minima, maxima);
+
+  ui->plotProjection->setTitle(ui->comboProjection->currentText());
+  ui->plotProjection->replot_markers();
+  ui->plotProjection->redraw();
+}
 
