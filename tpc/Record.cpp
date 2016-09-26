@@ -87,6 +87,16 @@ void Record::set_parameter(std::string id, Variant val)
     parameters_[id].value = val;
 }
 
+void Record::set_metric(std::string id, Variant val, std::string descr)
+{
+  metrics_[id] = Setting(val, descr);
+}
+
+void Record::clear_metrics()
+{
+  metrics_.clear();
+}
+
 bool Record::empty() const
 {
   return ((strip_start_ < 0) || (strip_end_ < strip_start_) || strips_.empty());

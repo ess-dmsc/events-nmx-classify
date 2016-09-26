@@ -192,13 +192,16 @@ void ViewEvent::plot_current_event()
   }
 
 
-  NMX::Event evt = reader_->get_event(evt_idx);
+  NMX::Event evt = reader_->get_event_with_metrics(evt_idx);
 
-  if (ui->checkNoneg->isChecked())
-    evt = evt.suppress_negatives();
+  if (evt_idx >= reader_->num_analyzed())
+  {
+    if (ui->checkNoneg->isChecked())
+      evt = evt.suppress_negatives();
 
-  evt.set_parameters(params_);
-  evt.analyze();
+    evt.set_parameters(params_);
+    evt.analyze();
+  }
 
   ui->eventX->display_record(evt.x());
   ui->eventY->display_record(evt.y());

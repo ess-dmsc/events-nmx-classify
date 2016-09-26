@@ -23,16 +23,6 @@ Analyzer::Analyzer(QWidget *parent)
   ui->plotHistogram->set_plot_style("Step center");
   ui->plotHistogram->set_visible_options(ShowOptions::zoom | ShowOptions::thickness | ShowOptions::scale | ShowOptions::grid | ShowOptions::save);
 
-  NMX::Event dummy;
-  dummy.analyze();
-  ui->comboWeightsZ->addItem("none");
-  for (auto &c : dummy.metrics())
-  {
-    ui->comboWeightsX->addItem(QString::fromStdString(c.first));
-    ui->comboWeightsY->addItem(QString::fromStdString(c.first));
-    ui->comboWeightsZ->addItem(QString::fromStdString(c.first));
-  }
-
   ui->plot2D->set_antialiased(false);
   ui->plot2D->set_scale_type("Linear");
   ui->plot2D->set_show_legend(true);
@@ -53,6 +43,25 @@ Analyzer::Analyzer(QWidget *parent)
           &model_, SLOT(setDataQuietly(QModelIndex,QVariant,int)));
 
   loadSettings();
+}
+
+void Analyzer::populate_combos()
+{
+  ui->comboWeightsX->clear();
+  ui->comboWeightsY->clear();
+  ui->comboWeightsZ->clear();
+
+  if (!reader_)
+    return;
+
+  ui->comboWeightsZ->addItem("none");
+
+  for (auto &c : reader_->metrics())
+  {
+    ui->comboWeightsX->addItem(QString::fromStdString(c));
+    ui->comboWeightsY->addItem(QString::fromStdString(c));
+    ui->comboWeightsZ->addItem(QString::fromStdString(c));
+  }
 }
 
 Analyzer::~Analyzer()
@@ -78,6 +87,7 @@ void Analyzer::enableIO(bool enable)
 void Analyzer::set_new_source(std::shared_ptr<NMX::FileHDF5> r)
 {
   reader_ = r;
+  populate_combos();
   rebuild_data();
   plot_block();
   plot_boxes();

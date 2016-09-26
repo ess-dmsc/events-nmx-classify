@@ -81,6 +81,8 @@ private:
   void update_histograms();
   void plot_block();
 
+  void populate_combos();
+
   double normalizer(const std::vector<Variant> &data);
 
   QVector<QColor> palette_ {Qt::black, Qt::darkRed, Qt::darkGreen, Qt::darkCyan,

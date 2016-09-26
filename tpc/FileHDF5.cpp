@@ -84,15 +84,6 @@ Event FileHDF5::get_event(size_t index)
 {
   return Event(read_record(index, 0),
                read_record(index, 1));
-
-//  if (index < num_analyzed_)
-//  {
-//    DBG << "Event has analysis";
-//    for (auto &m : metrics_)
-//    {
-
-//    }
-//  }
 }
 
 
@@ -149,15 +140,41 @@ void FileHDF5::push_event_metrics(size_t index, const Event &event)
   {
     if (metrics_[a.first].empty())
     {
-      metrics_[a.first].resize(event_count_);
-      metrics_descr_[a.first] = a.second.description;
+      if (num_analyzed_ > 0)
+        cache_metric(a.first);
+      else
+      {
+        metrics_[a.first].resize(event_count_);
+        metrics_descr_[a.first] = a.second.description;
+      }
     }
-    metrics_descr_[a.first] = a.second.description;
     metrics_[a.first][index] = a.second.value;
   }
 
   if (index >= num_analyzed_)
     num_analyzed_ = index + 1;
+}
+
+Event FileHDF5::get_event_with_metrics(size_t index)
+{
+  Event event = get_event(index);
+
+  event.set_parameters(analysis_params_);
+  event.analyze();
+
+  if (index >= num_analyzed_)
+    return event;
+
+  event.clear_metrics();
+  for (auto &m : metrics_descr_)
+  {
+    if (!metrics_.count(m.first))
+      cache_metric(m.first);
+    if (metrics_.count(m.first) && (index < metrics_.at(m.first).size()))
+      event.set_metric(m.first, metrics_.at(m.first).at(index), m.second);
+  }
+
+  return event;
 }
 
 void FileHDF5::clear_analysis()
@@ -228,10 +245,7 @@ std::vector<Variant> FileHDF5::get_metric(std::string cat)
   if (metrics_descr_.count(cat))
   {
     if (!metrics_.count(cat))
-    {
-      DBG << "<FileHDF5> Caching metric '" << cat << "'";
       cache_metric(cat);
-    }
     if (metrics_.count(cat))
       return metrics_.at(cat);
   }
@@ -311,6 +325,8 @@ bool FileHDF5::save_analysis()
 
 void FileHDF5::cache_metric(std::string metric_name)
 {
+  DBG << "<FileHDF5> Caching metric '" << metric_name << "'";
+
   Group group;
   std::string name = "/Analyses/" + analysis_name_;
   try

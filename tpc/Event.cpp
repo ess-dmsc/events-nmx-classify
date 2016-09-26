@@ -1,5 +1,6 @@
 #include "Event.h"
 #include "CustomLogger.h"
+#include <boost/algorithm/string.hpp>
 
 namespace NMX {
 
@@ -57,12 +58,28 @@ void Event::set_parameters(Settings vals)
 
 void Event::set_parameter(std::string id, Variant val)
 {
-  if ((id.size() > 1) && (id.substr(0,2) == "X_"))
+  if ((id.size() > 1) && (boost::algorithm::to_lower_copy(id.substr(0,1)) == "x"))
     x_.set_parameter(id.substr(2, id.size() - 2), val);
-  else if ((id.size() > 1) && (id.substr(0,2) == "Y_"))
+  else if ((id.size() > 1) && (boost::algorithm::to_lower_copy(id.substr(0,1)) == "y"))
     y_.set_parameter(id.substr(2, id.size() - 2), val);
   else if (parameters_.count(id))
     parameters_[id].value = val;
+}
+
+void Event::set_metric(std::string id, Variant val, std::string descr)
+{
+  metrics_[id] = Setting(val, descr);
+  if ((id.size() > 1) && (boost::algorithm::to_lower_copy(id.substr(0,1)) == "x"))
+    x_.set_metric(id.substr(2, id.size() - 2), val, descr);
+  else if ((id.size() > 1) && (boost::algorithm::to_lower_copy(id.substr(0,1)) == "y"))
+    y_.set_metric(id.substr(2, id.size() - 2), val, descr);
+}
+
+void Event::clear_metrics()
+{
+  metrics_.clear();
+  x_.clear_metrics();
+  y_.clear_metrics();
 }
 
 void Event::analyze()

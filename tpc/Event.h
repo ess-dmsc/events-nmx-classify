@@ -22,6 +22,8 @@ struct Event
   void analyze();
   void set_parameter(std::string, Variant);
   void set_parameters(Settings);
+  void set_metric(std::string id, Variant val, std::string descr);
+  void clear_metrics();
   Settings metrics() const {return metrics_;}
   Settings parameters() const {return parameters_;}
 
