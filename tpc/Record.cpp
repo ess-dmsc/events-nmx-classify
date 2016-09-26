@@ -244,6 +244,7 @@ void Record::analyze()
   auto adc_threshold = parameters_["ADC_threshold"].value.as_int();
   auto tb_over_threshold = parameters_["TB_over_threshold"].value.as_int();
   size_t VMM_count = 0;
+  int32_t integral_VMM = 0;
   for (auto &s : strips_)
   {
     s.second.analyze(adc_threshold, tb_over_threshold);
@@ -266,6 +267,7 @@ void Record::analyze()
     VMM_count += s.second.VMM_maxima().size();
     for (auto m : s.second.VMM_maxima())
     {
+      integral_VMM += s.second.value(m);
       point_lists_["VMM"].push_back(Point(s.first, m));
       if (int(m) > entry_tb)
       {
@@ -287,6 +289,10 @@ void Record::analyze()
   metrics_["integral"] =
       Setting(Variant::from_int(integral),
               "Sum of all ADC values");
+
+  metrics_["integral_vmm"] =
+      Setting(Variant::from_int(integral_VMM),
+              "Sum of VMM maxima ADC values");
 
   metrics_["nonempty_words"] =
       Setting(Variant::from_uint(nonempty_words),
@@ -364,6 +370,14 @@ void Record::analyze()
   metrics_["integral_per_hitstrips"] =
       Setting(Variant::from_float(integral_per_hitstrips),
               "Sum of all ADC values divided by number of strips with valid ADC values");
+
+//  double integral_vmm_per_hitstrips = 0;
+//  if (strips_.size() > 0)
+//    integral_vmm_per_hitstrips = double(integral_vmm) / double(strips_.size());
+
+//  metrics_["integral_vmm_per_hitstrips"] =
+//      Setting(Variant::from_float(integral_vmm_per_hitstrips),
+//              "integral_vmm divided by number of strips with valid ADC values");
 
   double strip_density = 0;
   if (strip_span > 0)

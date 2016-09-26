@@ -154,9 +154,13 @@ void Analyzer::rebuild_data()
     return;
   }
 
-  double xx_norm = normalizer(xx);
-  double yy_norm = normalizer(yy);
-  double zz_norm = normalizer(zz);
+  xx_norm = normalizer(xx);
+  yy_norm = normalizer(yy);
+  zz_norm = normalizer(zz);
+
+//  DBG << weight_x << " normalized by " << xx_norm;
+//  DBG << weight_y << " normalized by " << yy_norm;
+//  DBG << weight_z << " normalized by " << zz_norm;
 
   for (size_t eventID = 0; eventID < reader_->num_analyzed(); ++eventID)
   {
@@ -236,8 +240,8 @@ void Analyzer::make_projections()
   for (auto &point : projection2d)
     data_list.push_back(Entry{{point.first.first - xmin, point.first.second - ymin}, point.second});
   ui->plot2D->update_plot(xmax-xmin, ymax-ymin, data_list);
-  ui->plot2D->set_axes(ui->comboWeightsX->currentText(), xmin, xmax,
-                     ui->comboWeightsY->currentText(), ymin, ymax,
+  ui->plot2D->set_axes(ui->comboWeightsX->currentText(), xmin * xx_norm, xmax * xx_norm,
+                     ui->comboWeightsY->currentText(), ymin * yy_norm, ymax * yy_norm,
                      "Count");
   ui->plot2D->refresh();
 
@@ -280,6 +284,9 @@ void Analyzer::update_histograms()
 
   ui->plotHistogram->setLabels(ui->comboWeightsZ->currentText(), "count");
   ui->plotHistogram->setYBounds(minima, maxima);
+
+  ui->plotHistogram->setTitle(ui->comboWeightsZ->currentText()
+                              + "  (normalized by: " + QString::number(zz_norm) + ")");
 
   plot_block();
 }
