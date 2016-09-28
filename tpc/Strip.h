@@ -12,7 +12,7 @@ class Strip
 {
 public:
   Strip() {}
-  explicit Strip(const std::vector<int16_t> &d);
+  Strip(const std::vector<int16_t> &d);
   Strip suppress_negatives() const;
   int16_t value(int16_t timebin) const;
 

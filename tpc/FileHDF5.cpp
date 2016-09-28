@@ -6,73 +6,36 @@ namespace NMX {
 
 FileHDF5::FileHDF5(std::string filename)
 {
-  try
+  Exception::dontPrint();
+  file_ = H5CC::HFile(filename);
+
+  dataset_ = file_.open_dataset("Raw");
+
+  if ((dataset_.rank() != 4) ||
+      (dataset_.dim(1) != 2) ||
+      (dataset_.dim(2) < 1) ||
+      (dataset_.dim(3) < 1))
+
   {
-    Exception::dontPrint();
-    file_.openFile(filename, H5F_ACC_RDWR);
-
-    dataset_raw_ = file_.openDataSet("Raw");
-    filespace_raw_ = dataset_raw_.getSpace();
-
-    int dims = filespace_raw_.getSimpleExtentNdims();
-    if (dims != 4)
-    {
-       ERR << "<FileHDF5> bad rank for Raw dataset 4 != " << dims;
-       return;
-    }
-
-    dim_raw_.resize(dims, 0);
-    filespace_raw_.getSimpleExtentDims(dim_raw_.data());
-
-    if (dim_raw_.at(1) != 2)
-    {
-      ERR << "<FileHDF5> bad number of planes for Raw dataset 2 != " << dim_raw_.at(1);
-      return;
-    }
-
-    if ((dim_raw_.at(2) < 1) || (dim_raw_.at(3) < 1))
-    {
-      ERR << "<FileHDF5> bad slab dimensions " << dim_raw_.at(2) << "x" << dim_raw_.at(3);
-      return;
-    }
-
-    // Everything ok, set it up for reading
-    event_count_ = dim_raw_.at(0);
-    slab_dim_raw_ = dim_raw_;
-    slab_dim_raw_[0] = 1;
-    slab_dim_raw_[1] = 1;
-    slabspace_raw_ = DataSpace(4, slab_dim_raw_.data());
-
-    DBG << "<FileHDF5> Found " << event_count_ << " items in " << filename;
-
+    ERR << "<FileHDF5> bad size for raw datset "
+        << " rank=" << dataset_.rank() << " dims="
+        << " " << dataset_.dim(0)
+        << " " << dataset_.dim(1)
+        << " " << dataset_.dim(2)
+        << " " << dataset_.dim(3);
+    return;
   }
-  catch (...)
-  {
-    ERR << "<FileHDF5> Could not open " << filename << "\n";
-  }
+
+  event_count_ = dataset_.dim(0);
+
+  DBG << "<FileHDF5> Found " << event_count_ << " items in " << filename;
 
   read_analysis_groups();
 }
 
 void FileHDF5::read_analysis_groups()
 {
-  analysis_groups_.clear();
-
-  try
-  {
-    Group group = file_.openGroup("/Analyses");
-    int numsets = group.getNumObjs();
-    for (int i=0; i < numsets; ++i)
-    {
-      std::string objname(group.getObjnameByIdx(i));
-      if (group.childObjType(objname) == H5O_TYPE_GROUP)
-        analysis_groups_.push_back(objname);
-    }
-  }
-  catch (...)
-  {
-    ERR << "<FileHDF5> Could not read analysis groups";
-  }
+  analysis_groups_ = file_.open_group("/Analyses").members(H5O_TYPE_GROUP);
 }
 
 size_t FileHDF5::event_count()
@@ -94,25 +57,15 @@ Record FileHDF5::read_record(size_t index, size_t plane)
   if (index >= event_count_)
     return ret;
 
-  try
-  {
-    std::vector<hsize_t> start { index, plane, 0, 0 };
-    filespace_raw_.selectHyperslab(H5S_SELECT_SET, slab_dim_raw_.data(), start.data());
+  std::vector<short> data;
+  dataset_.read(data, PredType::STD_I16LE, {1,1,-1,-1}, {index, plane, 0, 0});
 
-    std::vector<short> data(dim_raw_.at(2) * dim_raw_.at(3));
-    dataset_raw_.read(data.data(), PredType::STD_I16LE, slabspace_raw_, filespace_raw_);
-
-    for (size_t j = 0; j < dim_raw_.at(2); j++)
-    {
-      std::vector<short> strip;
-      for (size_t i = 0; i < dim_raw_.at(3); i++)
-        strip.push_back(data[j*dim_raw_.at(3) + i]);
-      ret.add_strip(j, Strip(strip));
-    }
-  }
-  catch (...)
+  auto striplength = dataset_.dim(3);
+  size_t i = 0;
+  for (size_t j = 0; j < data.size(); j += striplength)
   {
-    ERR << "<FileHDF5> Failed to read record " << index;
+    ret.add_strip(i, std::vector<short>(data.begin() + j, data.begin() + j + striplength));
+    i++;
   }
 
   return ret;
@@ -188,22 +141,8 @@ void FileHDF5::clear_analysis()
 
 bool FileHDF5::create_analysis(std::string name)
 {
-  try
-  {
-    file_.createGroup("/Analyses");
-  }
-  catch (...)
-  {
-  }
-
-  try
-  {
-    file_.createGroup("/Analyses/" + name);
-  }
-  catch (...)
-  {
-    return false;
-  }
+  H5CC::HGroup analyses = file_.open_group("/Analyses");
+  H5CC::HGroup agroup = analyses.open_group("/Analyses/" + name);
 
   read_analysis_groups();
   return true;
@@ -211,17 +150,7 @@ bool FileHDF5::create_analysis(std::string name)
 
 bool FileHDF5::delete_analysis(std::string name)
 {
-  try
-  {
-    Group group_analysis;
-    group_analysis = file_.openGroup("/Analyses");
-    group_analysis.unlink(name);
-  }
-  catch (...)
-  {
-    ERR << "<FileHDF5> Analysis group '" << name << "' does not exist.";
-    return false;
-  }
+  file_.open_group("/Analyses").remove(name);
 
   if (name == analysis_name_)
   {
@@ -271,123 +200,36 @@ bool FileHDF5::save_analysis()
   if (analysis_name_.empty())
     return false;
 
-  bool success {false};
-  Group group_analysis;
+  H5CC::HGroup analyses = file_.open_group("/Analyses");
+  H5CC::HGroup agroup = analyses.open_group("/Analyses/" + analysis_name_);
 
-  try
-  {
-    file_.createGroup("/Analyses");
-  }
-  catch (...)
-  {
-  }
+  agroup.write_attribute("nunm_analyzed", Variant::from_int(num_analyzed_));
+  for (auto &p : analysis_params_)
+    agroup.write_attribute(p.first, p.second.value);
+  for (auto &ax : metrics_)
+    metric_to_dataset(agroup, ax.first, ax.second);
 
-  std::string name = "/Analyses/" + analysis_name_;
-  try
-  {
-    group_analysis = file_.openGroup(name);
-    //    DBG << "<FileHDF5> Analysis group '" << name << "' already exists.";
-    success = true;
-  }
-  catch (...)
-  {
-  }
-
-  if (!success)
-  {
-    try
-    {
-      group_analysis = file_.createGroup(name);
-      success = true;
-    }
-    catch (...)
-    {
-      ERR << "<FileHDF5> Could not create " << name;
-      return false;
-    }
-  }
-
-  if (success)
-  {
-    write_attribute(group_analysis, "num_analyzed", Variant::from_int(num_analyzed_));
-    for (auto p : analysis_params_)
-      write_attribute(group_analysis, p.first, p.second.value);
-    for (auto &ax : metrics_)
-      metric_to_dataset(group_analysis, ax.first, ax.second);
-    DBG << "<FileHDF5> Saved analysis to group '" << name << "' with data for " << num_analyzed_ << " events.";
-    //    file_.close();
-    //    file_.reOpen();
-    return true;
-  }
-
-  return false;
-}
-
-void FileHDF5::cache_metric(std::string metric_name)
-{
-  DBG << "<FileHDF5> Caching metric '" << metric_name << "'";
-
-  Group group;
-  std::string name = "/Analyses/" + analysis_name_;
-  try
-  {
-    group = file_.openGroup(name);
-  }
-  catch (...)
-  {
-    ERR << "<FileHDF5> analysis group '" << name << "' does not exist.";
-    return;
-  }
-
-  dataset_to_metric(group, metric_name);
+  return true;
 }
 
 bool FileHDF5::load_analysis(std::string name)
 {
-  Group group_analysis;
+  H5CC::HGroup group_analysis = file_.open_group("/Analyses/" + name);
 
-  analysis_name_.clear();
-  try
-  {
-    group_analysis = file_.openGroup("/Analyses/" + name);
-  }
-  catch (...)
-  {
-    ERR << "<FileHDF5> Analysis group '" << name << "' does not exist.";
-    return false;
-  }
+  clear_analysis();
+  for (auto &name : group_analysis.members())
+    metrics_descr_[name] = group_analysis.open_dataset(name).read_attribute("description").to_string();
 
-  clear_analysis();  
-  try
-  {
-    int numsets = group_analysis.getNumObjs();
-    for (int i=0; i < numsets; ++i)
-    {
-      std::string objname(group_analysis.getObjnameByIdx(i));
-      DataSet dataset = group_analysis.openDataSet(objname);
-      metrics_descr_[objname] = read_attribute(dataset, "description").to_string();
-    }
+  for (auto &a : group_analysis.attributes())
+    analysis_params_[a].value = group_analysis.read_attribute(a);
 
-    int numattrs = group_analysis.getNumAttrs();
-    for (int i=0; i < numattrs; ++i)
-    {
-      Attribute attr = group_analysis.openAttribute(i);
-      analysis_params_[attr.getName()].value = read_attribute(group_analysis, attr.getName());
-    }
-    num_analyzed_ = 0;
-    if (analysis_params_.count("num_analyzed"))
-    {
-      num_analyzed_ = analysis_params_["num_analyzed"].value.as_uint();
-      analysis_params_.erase("num_analyzed");
-    }
-    analysis_name_ = name;
-  }
-  catch (...)
+  num_analyzed_ = 0;
+  if (analysis_params_.count("num_analyzed"))
   {
-    WARN << "<FileHDF5> Could not read children for analysis group '" << name << "'.";
-    clear_analysis();
-    return false;
+    num_analyzed_ = analysis_params_["num_analyzed"].value.as_uint();
+    analysis_params_.erase("num_analyzed");
   }
+  analysis_name_ = name;
 
   DBG << "<FileHDF5> Loaded analysis '" << name
       << "' with data for " << num_analyzed_ << " events"
@@ -395,113 +237,36 @@ bool FileHDF5::load_analysis(std::string name)
   return true;
 }
 
-void FileHDF5::metric_to_dataset(Group &group, std::string name, std::vector<Variant> &data)
+void FileHDF5::cache_metric(std::string metric_name)
 {
-  try
-  {
-    group.unlink(name);
-  }
-  catch (...)
-  {
-  }
+  DBG << "<FileHDF5> Caching metric '" << metric_name << "'";
+  dataset_to_metric(file_.open_group("/Analyses/" + analysis_name_), metric_name);
+}
+
+void FileHDF5::metric_to_dataset(H5CC::HGroup &group, std::string name, std::vector<Variant> &data)
+{
+  group.remove(name);
 
   std::vector<double> data_out;
   for (auto &d : data)
     data_out.push_back(d.as_float());
 
-  try
-  {
-    std::vector<hsize_t> dim { data.size() };
-    DataSpace memspace_(1, dim.data());
-    DataSet dataset = group.createDataSet(name, PredType::NATIVE_DOUBLE, memspace_);
-    dataset.write(data_out.data(), PredType::NATIVE_DOUBLE, memspace_);
-    write_attribute(dataset, "description", Variant::from_menu(metrics_descr_[name]) );
-  }
-  catch (...)
-  {
-    DBG << "<FileHDF5> Failed to write " << name;
-  }
+  H5CC::Data dataset = group.create_dataset(name, PredType::NATIVE_DOUBLE, {data.size()});
+  dataset.write(data_out, PredType::NATIVE_DOUBLE);
+  dataset.write_attribute("description", Variant::from_menu(metrics_descr_[name]));
 }
 
-void FileHDF5::dataset_to_metric(Group &group, std::string name)
+void FileHDF5::dataset_to_metric(const H5CC::HGroup &group, std::string name)
 {
-  try
-  {
-    DataSet dataset = group.openDataSet(name);
-    DataSpace filespace = dataset.getSpace();
+  std::vector<double> data;
+  group.open_dataset(name).read(data, PredType::NATIVE_DOUBLE);
 
-    int dims = filespace.getSimpleExtentNdims();
-    if (dims != 1)
-    {
-       WARN << "<FileHDF5> bad rank for dataset 1 != " << dims;
-       return;
-    }
+  std::vector<Variant> dt;
+  for (auto &d :data)
+    dt.push_back(Variant::from_float(d));
 
-    std::vector<hsize_t> dim(dims, 0);
-    filespace.getSimpleExtentDims(dim.data());
-    size_t evtct = dim.at(0);
-
-    if (!evtct)
-      return;
-
-    std::vector<double> data(evtct, 0);
-
-    dataset.read(data.data(), PredType::NATIVE_DOUBLE, filespace);
-
-    std::vector<Variant> dt;
-    for (auto &d :data)
-      dt.push_back(Variant::from_float(d));
-
-    metrics_[name] = dt;
-  }
-  catch (...)
-  {
-    DBG << "<FileHDF5> Failed to read " << name;
-  }
+  metrics_[name] = dt;
 }
-
-void FileHDF5::write_attribute(H5Location &group, std::string name, Variant val)
-{
-  try
-  {
-    group.removeAttr(name);
-  }
-  catch (...)
-  {
-  }
-
-  DataSpace attr_dataspace = DataSpace (H5S_SCALAR);
-  StrType strtype(PredType::C_S1, H5T_VARIABLE);
-
-  try
-  {
-    auto str = val.to_string();
-    Attribute attribute = group.createAttribute(name, strtype, attr_dataspace);
-    attribute.write(strtype, str);
-  }
-  catch (...)
-  {
-    DBG << "<FileHDF5> Failed to write attr " << name;
-  }
-}
-
-Variant FileHDF5::read_attribute(H5Location &group, std::string name)
-{
-  try
-  {
-    std::string str;
-    Attribute attribute = group.openAttribute(name);
-    StrType strtype = attribute.getStrType();
-    attribute.read( strtype, str );
-    return Variant::infer(boost::trim_copy(str));
-  }
-  catch (...)
-  {
-    DBG << "<FileHDF5> Failed to read attr " << name;
-  }
-  return Variant();
-}
-
 
 
 }
