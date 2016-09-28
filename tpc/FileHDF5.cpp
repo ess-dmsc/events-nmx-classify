@@ -6,7 +6,7 @@ namespace NMX {
 
 FileHDF5::FileHDF5(std::string filename)
 {
-  Exception::dontPrint();
+  H5::Exception::dontPrint();
   file_ = H5CC::HFile(filename);
 
   dataset_ = file_.open_dataset("Raw");
@@ -58,7 +58,7 @@ Record FileHDF5::read_record(size_t index, size_t plane)
     return ret;
 
   std::vector<short> data;
-  dataset_.read(data, PredType::STD_I16LE, {1,1,-1,-1}, {index, plane, 0, 0});
+  dataset_.read(data, H5::PredType::STD_I16LE, {1,1,-1,-1}, {index, plane, 0, 0});
 
   auto striplength = dataset_.dim(3);
   size_t i = 0;
@@ -251,15 +251,15 @@ void FileHDF5::metric_to_dataset(H5CC::HGroup &group, std::string name, std::vec
   for (auto &d : data)
     data_out.push_back(d.as_float());
 
-  H5CC::Data dataset = group.create_dataset(name, PredType::NATIVE_DOUBLE, {data.size()});
-  dataset.write(data_out, PredType::NATIVE_DOUBLE);
+  H5CC::Data dataset = group.create_dataset(name, H5::PredType::NATIVE_DOUBLE, {data.size()});
+  dataset.write(data_out, H5::PredType::NATIVE_DOUBLE);
   dataset.write_attribute("description", Variant::from_menu(metrics_descr_[name]));
 }
 
 void FileHDF5::dataset_to_metric(const H5CC::HGroup &group, std::string name)
 {
   std::vector<double> data;
-  group.open_dataset(name).read(data, PredType::NATIVE_DOUBLE);
+  group.open_dataset(name).read(data, H5::PredType::NATIVE_DOUBLE);
 
   std::vector<Variant> dt;
   for (auto &d :data)

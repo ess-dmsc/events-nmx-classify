@@ -9,7 +9,7 @@ Space::Space (std::initializer_list<hsize_t> list)
   std::vector<hsize_t> dims = std::vector<hsize_t>(list.begin(), list.end());
   try
   {
-    space_ = DataSpace(dims.size(), dims.data());
+    space_ = H5::DataSpace(dims.size(), dims.data());
     dims_ = dims;
   }
   catch (...)
@@ -31,7 +31,7 @@ hsize_t Space::dim(size_t d) const
 }
 
 
-Space Space::get_space(const DataSet& ds)
+Space Space::get_space(const H5::DataSet& ds)
 {
   Space ret;
   try
@@ -64,7 +64,7 @@ Space Space::slab_space(std::initializer_list<int> list) const
 
     try
     {
-      ret.space_ = DataSpace(newdims.size(), newdims.data());
+      ret.space_ = H5::DataSpace(newdims.size(), newdims.data());
     }
     catch (...) {}
 
@@ -131,7 +131,7 @@ bool Space::select_slab(const Space& slabspace, std::initializer_list<hsize_t> i
 
 
 
-Data::Data(DataSet ds)
+Data::Data(H5::DataSet ds)
 {
   dataset_ = ds;
   space_ = Space::get_space(ds);
@@ -211,12 +211,12 @@ void HGroup::remove(std::string name)
   }
 }
 
-Data HGroup::create_dataset(std::string name, PredType h5type, std::initializer_list<hsize_t> dims)
+Data HGroup::create_dataset(std::string name, H5::PredType h5type, std::initializer_list<hsize_t> dims)
 {
   Data ret;
   try
   {
-    DataSet data = group_.createDataSet(name, h5type, Space(dims).space());
+    H5::DataSet data = group_.createDataSet(name, h5type, Space(dims).space());
     ret = Data(data);
   }
   catch (...) {}
@@ -228,7 +228,7 @@ Data HGroup::open_dataset(std::string name) const
   Data ret;
   try
   {
-    DataSet data = group_.openDataSet(name);
+    H5::DataSet data = group_.openDataSet(name);
     ret = Data(data);
   }
   catch (...) {}
@@ -345,12 +345,12 @@ void HFile::remove(std::string name)
   }
 }
 
-Data HFile::create_dataset(std::string name, PredType h5type, std::initializer_list<hsize_t> dims)
+Data HFile::create_dataset(std::string name, H5::PredType h5type, std::initializer_list<hsize_t> dims)
 {
   Data ret;
   try
   {
-    DataSet data = file_.createDataSet(name, h5type, Space(dims).space());
+    H5::DataSet data = file_.createDataSet(name, h5type, Space(dims).space());
     ret = Data(data);
   }
   catch (...) {}
@@ -362,7 +362,7 @@ Data HFile::open_dataset(std::string name) const
   Data ret;
   try
   {
-    DataSet data = file_.openDataSet(name);
+    H5::DataSet data = file_.openDataSet(name);
     ret = Data(data);
   }
   catch (...) {}
@@ -401,7 +401,7 @@ HGroup HFile::open_group(std::string name)
 
 
 
-std::list<std::string> attributes(const H5Location &loc)
+std::list<std::string> attributes(const H5::H5Location &loc)
 {
   std::list<std::string> ret;
   try
@@ -409,7 +409,7 @@ std::list<std::string> attributes(const H5Location &loc)
     int numattrs = loc.getNumAttrs();
     for (int i=0; i < numattrs; ++i)
     {
-      Attribute attr = loc.openAttribute(i);
+      H5::Attribute attr = loc.openAttribute(i);
       ret.push_back(attr.getName());
     }
   }
@@ -417,7 +417,7 @@ std::list<std::string> attributes(const H5Location &loc)
   return ret;
 }
 
-void remove_attribute(H5Location &group, std::string name)
+void remove_attribute(H5::H5Location &group, std::string name)
 {
   try
   {
@@ -428,13 +428,13 @@ void remove_attribute(H5Location &group, std::string name)
   }
 }
 
-void write_attribute(H5Location &group, std::string name, Variant val)
+void write_attribute(H5::H5Location &group, std::string name, Variant val)
 {
   try
   {
-    DataSpace attr_dataspace = DataSpace (H5S_SCALAR);
-    StrType strtype(PredType::C_S1, H5T_VARIABLE);
-    Attribute attribute = group.createAttribute(name, strtype, attr_dataspace);
+    H5::DataSpace attr_dataspace = H5::DataSpace (H5S_SCALAR);
+    H5::StrType strtype(H5::PredType::C_S1, H5T_VARIABLE);
+    H5::Attribute attribute = group.createAttribute(name, strtype, attr_dataspace);
     attribute.write(strtype, val.to_string());
   }
   catch (...)
@@ -442,14 +442,14 @@ void write_attribute(H5Location &group, std::string name, Variant val)
   }
 }
 
-Variant read_attribute(const H5Location &loc, std::string name)
+Variant read_attribute(const H5::H5Location &loc, std::string name)
 {
   Variant ret;
   try
   {
     std::string str;
-    Attribute attribute = loc.openAttribute(name);
-    StrType strtype = attribute.getStrType();
+    H5::Attribute attribute = loc.openAttribute(name);
+    H5::StrType strtype = attribute.getStrType();
     attribute.read( strtype, str );
     ret = Variant::infer(boost::trim_copy(str));
   }

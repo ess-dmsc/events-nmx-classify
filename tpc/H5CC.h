@@ -6,10 +6,6 @@
 #include <list>
 #include "Variant.h"
 
-#ifndef H5_NO_NAMESPACE
-    using namespace H5;
-#endif
-
 namespace H5CC {
 
 class Space
@@ -17,7 +13,7 @@ class Space
 public:
   Space() {}
   Space (std::initializer_list<hsize_t> list);
-  static Space get_space(const DataSet& ds);
+  static Space get_space(const H5::DataSet& ds);
   Space slab_space(std::initializer_list<int> list) const;
   size_t data_size() const;
 
@@ -28,10 +24,10 @@ public:
 
   size_t rank() const;
   hsize_t dim(size_t) const;
-  DataSpace space() const { return space_; }
+  H5::DataSpace space() const { return space_; }
 
 private:
-  DataSpace space_;
+  H5::DataSpace space_;
   std::vector<hsize_t> dims_;
 };
 
@@ -40,10 +36,10 @@ class Data
 {
 public:
   Data() {}
-  Data(DataSet ds);
+  Data(H5::DataSet ds);
 
   template<typename T>
-  void write(std::vector<T>& data, PredType h5type)
+  void write(std::vector<T>& data, H5::PredType h5type)
   {
     data.resize(space_.data_size());
     try
@@ -54,7 +50,7 @@ public:
   }
 
   template<typename T>
-  void read(std::vector<T>& data, PredType h5type) const
+  void read(std::vector<T>& data, H5::PredType h5type) const
   {
     data.resize(space_.data_size());
     try
@@ -65,7 +61,7 @@ public:
   }
 
   template<typename T>
-  void read(std::vector<T>& data, PredType h5type, Space slab, std::initializer_list<hsize_t> index) const
+  void read(std::vector<T>& data, H5::PredType h5type, Space slab, std::initializer_list<hsize_t> index) const
   {
     data.resize(slab.data_size());
     auto space = space_;
@@ -79,7 +75,7 @@ public:
   }
 
   template<typename T>
-  void read(std::vector<T>& data, PredType h5type,
+  void read(std::vector<T>& data, H5::PredType h5type,
             std::initializer_list<int> slab_size, std::initializer_list<hsize_t> index) const
   {
     read(data, h5type, space_.slab_space(slab_size), index);
@@ -95,7 +91,7 @@ public:
   Variant read_attribute(std::string name) const;
 
 private:
-  DataSet dataset_;
+  H5::DataSet dataset_;
   Space space_;
 };
 
@@ -111,7 +107,7 @@ public:
   std::list<std::string> members(H5O_type_t t) const;
 
   void remove(std::string name);
-  Data create_dataset(std::string name, PredType h5type, std::initializer_list<hsize_t> dims);
+  Data create_dataset(std::string name, H5::PredType h5type, std::initializer_list<hsize_t> dims);
   Data open_dataset(std::string name) const;
 
   HGroup create_group(std::string name);
@@ -123,7 +119,7 @@ public:
   Variant read_attribute(std::string name) const;
 
 private:
-  Group group_;
+  H5::Group group_;
 };
 
 class HFile
@@ -137,20 +133,20 @@ public:
   std::list<std::string> members(H5O_type_t t) const;
 
   void remove(std::string name);
-  Data create_dataset(std::string name, PredType h5type, std::initializer_list<hsize_t> dims);
+  Data create_dataset(std::string name, H5::PredType h5type, std::initializer_list<hsize_t> dims);
   Data open_dataset(std::string name) const;
 
   HGroup create_group(std::string name);
   HGroup open_group(std::string name);
 
 private:
-  H5File file_;
+  H5::H5File file_;
 };
 
-std::list<std::string> attributes(const H5Location &loc);
-void remove_attribute(H5Location &loc, std::string name);
-void write_attribute(H5Location &loc, std::string name, Variant val);
-Variant read_attribute(const H5Location &loc, std::string name);
+std::list<std::string> attributes(const H5::H5Location &loc);
+void remove_attribute(H5::H5Location &loc, std::string name);
+void write_attribute(H5::H5Location &loc, std::string name, Variant val);
+Variant read_attribute(const H5::H5Location &loc, std::string name);
 
 }
 
