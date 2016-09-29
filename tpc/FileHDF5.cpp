@@ -209,6 +209,8 @@ bool FileHDF5::save_analysis()
 bool FileHDF5::load_analysis(std::string name)
 {
   clear_analysis();
+  if (name.empty())
+    return false;
 
   auto group = file_.group("Analyses").group(name);
   num_analyzed_ = group.read_attribute("num_analyzed").as_uint(0);
@@ -232,10 +234,10 @@ bool FileHDF5::load_analysis(std::string name)
   auto eventnum = dataset.dim(1);
   for (hsize_t i=0; i < dataset.dim(0); i++)
   {
-    DBG << "<FileHDF5> Converting metric " << names[i];
+    DBG << "<FileHDF5> caching " << names[i];
     std::vector<Variant> dt(event_count_);
     for (hsize_t j=0; j < num_analyzed_; j++)
-      dt.push_back(Variant::from_float(data[i*eventnum + j]));
+      dt[j] = Variant::from_float(data[i*eventnum + j]);
     metrics_[names[i]] = dt;
   }
 

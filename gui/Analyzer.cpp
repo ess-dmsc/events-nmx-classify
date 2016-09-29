@@ -87,7 +87,17 @@ void Analyzer::enableIO(bool enable)
 void Analyzer::set_new_source(std::shared_ptr<NMX::FileHDF5> r)
 {
   reader_ = r;
+
+  auto weight_x = ui->comboWeightsX->currentText();
+  auto weight_y = ui->comboWeightsY->currentText();
+  auto weight_z = ui->comboWeightsZ->currentText();
+
   populate_combos();
+
+  ui->comboWeightsX->setCurrentText(weight_x);
+  ui->comboWeightsY->setCurrentText(weight_y);
+  ui->comboWeightsZ->setCurrentText(weight_z);
+
   rebuild_data();
   plot_block();
   plot_boxes();
