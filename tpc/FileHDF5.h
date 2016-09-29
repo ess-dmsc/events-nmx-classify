@@ -39,7 +39,7 @@ private:
   H5CC::DataSet  dataset_;
 
   std::list<std::string> analysis_groups_;
-  std::string analysis_name_;
+  std::string current_analysis_name_;
   Settings analysis_params_;
   std::map<std::string, std::vector<Variant>> metrics_;
   std::map<std::string, std::string> metrics_descr_;
@@ -47,10 +47,6 @@ private:
 
   Record read_record(size_t index, size_t plane);
   void read_analysis_groups();
-
-  void metric_to_dataset(H5CC::Group &group, std::string name, std::vector<Variant> &data);
-  void cache_metric(std::string metric_name);
-  void dataset_to_metric(const H5CC::Group &group, std::string name);
 
 };
 

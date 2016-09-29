@@ -83,23 +83,14 @@ void FileHDF5::push_event_metrics(size_t index, const Event &event)
 
   //check if params the same
   if (analysis_params_.empty())
-  {
     analysis_params_ = event.parameters();
-    for (auto &a : analysis_params_)
-      metrics_descr_[a.first] = a.second.description;
-  }
 
   for (auto &a : event.metrics())
   {
     if (metrics_[a.first].empty())
     {
-      if (num_analyzed_ > 0)
-        cache_metric(a.first);
-      else
-      {
-        metrics_[a.first].resize(event_count_);
-        metrics_descr_[a.first] = a.second.description;
-      }
+      metrics_[a.first].resize(event_count_);
+      metrics_descr_[a.first] = a.second.description;
     }
     metrics_[a.first][index] = a.second.value;
   }
@@ -121,8 +112,6 @@ Event FileHDF5::get_event_with_metrics(size_t index)
   event.clear_metrics();
   for (auto &m : metrics_descr_)
   {
-    if (!metrics_.count(m.first))
-      cache_metric(m.first);
     if (metrics_.count(m.first) && (index < metrics_.at(m.first).size()))
       event.set_metric(m.first, metrics_.at(m.first).at(index), m.second);
   }
@@ -132,7 +121,7 @@ Event FileHDF5::get_event_with_metrics(size_t index)
 
 void FileHDF5::clear_analysis()
 {
-  analysis_name_.clear();
+  current_analysis_name_.clear();
   metrics_.clear();
   metrics_descr_.clear();
   analysis_params_.clear();
@@ -150,10 +139,10 @@ bool FileHDF5::delete_analysis(std::string name)
 {
   file_.group("Analyses").remove(name);
 
-  if (name == analysis_name_)
+  if (name == current_analysis_name_)
   {
     clear_analysis();
-    analysis_name_.clear();
+    current_analysis_name_.clear();
   }
 
   read_analysis_groups();
@@ -169,13 +158,8 @@ std::list<std::string> FileHDF5::metrics() const
 
 std::vector<Variant> FileHDF5::get_metric(std::string cat)
 {
-  if (metrics_descr_.count(cat))
-  {
-    if (!metrics_.count(cat))
-      cache_metric(cat);
-    if (metrics_.count(cat))
-      return metrics_.at(cat);
-  }
+  if (metrics_.count(cat))
+    return metrics_.at(cat);
   else
     return std::vector<Variant>();
 }
@@ -195,75 +179,73 @@ std::list<std::string> FileHDF5::analysis_groups() const
 
 bool FileHDF5::save_analysis()
 {
-  if (analysis_name_.empty())
+  if (current_analysis_name_.empty())
     return false;
 
-  H5CC::Group agroup = file_.group("Analyses").group(analysis_name_);
+  auto group = file_.group("Analyses").group(current_analysis_name_);
+  group.write_attribute("num_analyzed", Variant::from_int(num_analyzed_));
 
-  agroup.write_attribute("num_analyzed", Variant::from_int(num_analyzed_));
-  for (auto &p : analysis_params_)
-    agroup.write_attribute(p.first, p.second.value);
-  for (auto &ax : metrics_)
-    metric_to_dataset(agroup, ax.first, ax.second);
+  auto params_group = group.group("parameters");
+  auto params_descr_group = params_group.group("descriptions");
+  for (auto &d : analysis_params_)
+  {
+    params_group.write_attribute(d.first, d.second.value);
+    params_descr_group.write_attribute(d.first, Variant::from_menu(d.second.description));
+  }
+
+  std::vector<double> data;
+  for (auto &m : metrics_)
+    for (auto &d : m.second)
+      data.push_back(d.as_float());
+
+  auto dataset = group.create_dataset("metrics",
+                                      H5::PredType::NATIVE_DOUBLE,
+                                      {metrics_.size(), event_count_});
+  dataset.write(data, H5::PredType::NATIVE_DOUBLE);
+  for (auto &d : metrics_)
+    dataset.write_attribute(d.first, Variant::from_menu(metrics_descr_[d.first]));
 
   return true;
 }
 
 bool FileHDF5::load_analysis(std::string name)
 {
-  H5CC::Group group_analysis = file_.group("Analyses/" + name);
-
   clear_analysis();
-  for (auto &name : group_analysis.datasets())
-    metrics_descr_[name] = group_analysis.open_dataset(name).read_attribute("description").to_string();
 
-  for (auto &a : group_analysis.attributes())
-    analysis_params_[a].value = group_analysis.read_attribute(a);
+  auto group = file_.group("Analyses/" + name);
+  num_analyzed_ = group.read_attribute("num_analyzed").as_uint(0);
 
-  num_analyzed_ = 0;
-  if (analysis_params_.count("num_analyzed"))
+  auto params_group = group.group("parameters");
+  auto params_descr_group = params_group.group("descriptions");
+  for (auto &p : params_group.attributes())
+    analysis_params_[p] = Setting(params_group.read_attribute(p),
+                                  params_descr_group.read_attribute(p).to_string());
+
+  std::vector<std::string> names;
+  std::vector<double> data;
+  auto dataset = group.open_dataset("metrics");
+  dataset.read(data, H5::PredType::NATIVE_DOUBLE);
+  for (auto &p : dataset.attributes())
   {
-    num_analyzed_ = analysis_params_["num_analyzed"].value.as_uint();
-    analysis_params_.erase("num_analyzed");
+    metrics_descr_[p] = dataset.read_attribute(p).to_string();
+    names.push_back(p);
   }
-  analysis_name_ = name;
+
+  auto eventnum = dataset.dim(1);
+  for (int i=0; i < dataset.dim(0); i++)
+  {
+    DBG << "<FileHDF5> Converting " << names[i];
+    std::vector<Variant> dt;
+    for (int j=0; j < eventnum; j++)
+      dt.push_back(Variant::from_float(data[i*eventnum + j]));
+    metrics_[names[i]] = dt;
+  }
+
 
   DBG << "<FileHDF5> Loaded analysis '" << name
       << "' with data for " << num_analyzed_ << " events"
       << " and " << metrics_descr_.size() << " metrics.";
   return true;
 }
-
-void FileHDF5::cache_metric(std::string metric_name)
-{
-  DBG << "<FileHDF5> Caching metric '" << metric_name << "'";
-  dataset_to_metric(file_.group("Analyses/" + analysis_name_), metric_name);
-}
-
-void FileHDF5::metric_to_dataset(H5CC::Group &group, std::string name, std::vector<Variant> &data)
-{
-  group.remove(name);
-
-  std::vector<double> data_out;
-  for (auto &d : data)
-    data_out.push_back(d.as_float());
-
-  H5CC::DataSet dataset = group.create_dataset(name, H5::PredType::NATIVE_DOUBLE, {data.size()});
-  dataset.write(data_out, H5::PredType::NATIVE_DOUBLE);
-  dataset.write_attribute("description", Variant::from_menu(metrics_descr_[name]));
-}
-
-void FileHDF5::dataset_to_metric(const H5CC::Group &group, std::string name)
-{
-  std::vector<double> data;
-  group.open_dataset(name).read(data, H5::PredType::NATIVE_DOUBLE);
-
-  std::vector<Variant> dt;
-  for (auto &d :data)
-    dt.push_back(Variant::from_float(d));
-
-  metrics_[name] = dt;
-}
-
 
 }
