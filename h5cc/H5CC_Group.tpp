@@ -34,7 +34,7 @@ std::list<std::string> Groupoid<T>::members(H5O_type_t t) const
   std::list<std::string> ret;
   try
   {
-    for (auto i=0; i < Location<T>::location_.getNumObjs(); ++i)
+    for (hsize_t i=0; i < Location<T>::location_.getNumObjs(); ++i)
     {
       std::string name(Location<T>::location_.getObjnameByIdx(i));
       if (Location<T>::location_.childObjType(name) == t)
@@ -85,6 +85,9 @@ void Groupoid<T>::remove(std::string name)
 template<typename T>
 DataSet Groupoid<T>::create_dataset(std::string name, H5::PredType h5type, std::initializer_list<hsize_t> dims)
 {
+  if (has_dataset(name))
+    remove(name);
+
   DataSet ret;
   try
   {

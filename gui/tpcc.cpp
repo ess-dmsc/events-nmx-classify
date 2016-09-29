@@ -43,7 +43,7 @@ tpcc::tpcc(QWidget *parent) :
   parameters_ = NMX::Event().parameters();
   display_params();
 
-  thread_classify_.set_refresh_frequency(2);
+  thread_classify_.set_refresh_frequency(5);
   ui->comboGroup->setSizeAdjustPolicy(QComboBox::AdjustToContents);
 
   QTimer::singleShot(1000, this, SLOT(loadSettings()));

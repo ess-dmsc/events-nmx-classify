@@ -111,10 +111,8 @@ Event FileHDF5::get_event_with_metrics(size_t index)
 
   event.clear_metrics();
   for (auto &m : metrics_descr_)
-  {
     if (metrics_.count(m.first) && (index < metrics_.at(m.first).size()))
       event.set_metric(m.first, metrics_.at(m.first).at(index), m.second);
-  }
 
   return event;
 }
@@ -212,11 +210,11 @@ bool FileHDF5::load_analysis(std::string name)
 {
   clear_analysis();
 
-  auto group = file_.group("Analyses/" + name);
+  auto group = file_.group("Analyses").group(name);
   num_analyzed_ = group.read_attribute("num_analyzed").as_uint(0);
 
-  auto params_group = group.group("parameters");
-  auto params_descr_group = params_group.group("descriptions");
+  auto params_group = group.open_group("parameters");
+  auto params_descr_group = params_group.open_group("descriptions");
   for (auto &p : params_group.attributes())
     analysis_params_[p] = Setting(params_group.read_attribute(p),
                                   params_descr_group.read_attribute(p).to_string());
@@ -232,17 +230,18 @@ bool FileHDF5::load_analysis(std::string name)
   }
 
   auto eventnum = dataset.dim(1);
-  for (int i=0; i < dataset.dim(0); i++)
+  for (hsize_t i=0; i < dataset.dim(0); i++)
   {
-    DBG << "<FileHDF5> Converting " << names[i];
-    std::vector<Variant> dt;
-    for (int j=0; j < eventnum; j++)
+    DBG << "<FileHDF5> Converting metric " << names[i];
+    std::vector<Variant> dt(event_count_);
+    for (hsize_t j=0; j < num_analyzed_; j++)
       dt.push_back(Variant::from_float(data[i*eventnum + j]));
     metrics_[names[i]] = dt;
   }
 
+  current_analysis_name_ = name;
 
-  DBG << "<FileHDF5> Loaded analysis '" << name
+  DBG << "<FileHDF5> Loaded analysis '" << current_analysis_name_
       << "' with data for " << num_analyzed_ << " events"
       << " and " << metrics_descr_.size() << " metrics.";
   return true;

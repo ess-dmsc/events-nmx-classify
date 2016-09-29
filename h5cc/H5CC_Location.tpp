@@ -46,6 +46,8 @@ void Location<T>::remove_attribute(std::string name)
 template<typename T>
 void Location<T>::write_attribute(std::string name, Variant val)
 {
+  if (has_attribute(name))
+    remove_attribute(name);
   try
   {
     H5::DataSpace attr_dataspace = H5::DataSpace (H5S_SCALAR);
