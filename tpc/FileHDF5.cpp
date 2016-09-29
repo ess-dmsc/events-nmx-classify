@@ -7,7 +7,7 @@ namespace NMX {
 FileHDF5::FileHDF5(std::string filename)
 {
   H5::Exception::dontPrint();
-  file_ = H5CC::HFile(filename);
+  file_ = H5CC::File(filename);
 
   dataset_ = file_.open_dataset("Raw");
 
@@ -35,7 +35,7 @@ FileHDF5::FileHDF5(std::string filename)
 
 void FileHDF5::read_analysis_groups()
 {
-  analysis_groups_ = file_.open_group("/Analyses").members(H5O_TYPE_GROUP);
+  analysis_groups_ = file_.open_group("Analyses").groups();
 }
 
 size_t FileHDF5::event_count()
@@ -141,16 +141,14 @@ void FileHDF5::clear_analysis()
 
 bool FileHDF5::create_analysis(std::string name)
 {
-  H5CC::HGroup analyses = file_.open_group("/Analyses");
-  H5CC::HGroup agroup = analyses.open_group("/Analyses/" + name);
-
+  file_.group("Analyses").create_group(name);
   read_analysis_groups();
   return true;
 }
 
 bool FileHDF5::delete_analysis(std::string name)
 {
-  file_.open_group("/Analyses").remove(name);
+  file_.group("Analyses").remove(name);
 
   if (name == analysis_name_)
   {
@@ -200,10 +198,9 @@ bool FileHDF5::save_analysis()
   if (analysis_name_.empty())
     return false;
 
-  H5CC::HGroup analyses = file_.open_group("/Analyses");
-  H5CC::HGroup agroup = analyses.open_group("/Analyses/" + analysis_name_);
+  H5CC::Group agroup = file_.group("Analyses").group(analysis_name_);
 
-  agroup.write_attribute("nunm_analyzed", Variant::from_int(num_analyzed_));
+  agroup.write_attribute("num_analyzed", Variant::from_int(num_analyzed_));
   for (auto &p : analysis_params_)
     agroup.write_attribute(p.first, p.second.value);
   for (auto &ax : metrics_)
@@ -214,10 +211,10 @@ bool FileHDF5::save_analysis()
 
 bool FileHDF5::load_analysis(std::string name)
 {
-  H5CC::HGroup group_analysis = file_.open_group("/Analyses/" + name);
+  H5CC::Group group_analysis = file_.group("Analyses/" + name);
 
   clear_analysis();
-  for (auto &name : group_analysis.members())
+  for (auto &name : group_analysis.datasets())
     metrics_descr_[name] = group_analysis.open_dataset(name).read_attribute("description").to_string();
 
   for (auto &a : group_analysis.attributes())
@@ -240,10 +237,10 @@ bool FileHDF5::load_analysis(std::string name)
 void FileHDF5::cache_metric(std::string metric_name)
 {
   DBG << "<FileHDF5> Caching metric '" << metric_name << "'";
-  dataset_to_metric(file_.open_group("/Analyses/" + analysis_name_), metric_name);
+  dataset_to_metric(file_.group("Analyses/" + analysis_name_), metric_name);
 }
 
-void FileHDF5::metric_to_dataset(H5CC::HGroup &group, std::string name, std::vector<Variant> &data)
+void FileHDF5::metric_to_dataset(H5CC::Group &group, std::string name, std::vector<Variant> &data)
 {
   group.remove(name);
 
@@ -251,12 +248,12 @@ void FileHDF5::metric_to_dataset(H5CC::HGroup &group, std::string name, std::vec
   for (auto &d : data)
     data_out.push_back(d.as_float());
 
-  H5CC::Data dataset = group.create_dataset(name, H5::PredType::NATIVE_DOUBLE, {data.size()});
+  H5CC::DataSet dataset = group.create_dataset(name, H5::PredType::NATIVE_DOUBLE, {data.size()});
   dataset.write(data_out, H5::PredType::NATIVE_DOUBLE);
   dataset.write_attribute("description", Variant::from_menu(metrics_descr_[name]));
 }
 
-void FileHDF5::dataset_to_metric(const H5CC::HGroup &group, std::string name)
+void FileHDF5::dataset_to_metric(const H5CC::Group &group, std::string name)
 {
   std::vector<double> data;
   group.open_dataset(name).read(data, H5::PredType::NATIVE_DOUBLE);

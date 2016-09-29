@@ -1,7 +1,7 @@
 #ifndef NMX_READER_HDF5_H
 #define NMX_READER_HDF5_H
 
-#include "H5CC.h"
+#include "H5CC_File.h"
 #include <memory>
 #include <map>
 #include "Event.h"
@@ -33,10 +33,10 @@ public:
   bool save_analysis();
 
 private:
-  H5CC::HFile file_;
+  H5CC::File file_;
   size_t event_count_ {0};
 
-  H5CC::Data  dataset_;
+  H5CC::DataSet  dataset_;
 
   std::list<std::string> analysis_groups_;
   std::string analysis_name_;
@@ -48,9 +48,9 @@ private:
   Record read_record(size_t index, size_t plane);
   void read_analysis_groups();
 
-  void metric_to_dataset(H5CC::HGroup &group, std::string name, std::vector<Variant> &data);
+  void metric_to_dataset(H5CC::Group &group, std::string name, std::vector<Variant> &data);
   void cache_metric(std::string metric_name);
-  void dataset_to_metric(const H5CC::HGroup &group, std::string name);
+  void dataset_to_metric(const H5CC::Group &group, std::string name);
 
 };
 

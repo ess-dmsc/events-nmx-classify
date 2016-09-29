@@ -62,20 +62,23 @@ INCLUDEPATH += $$PWD/gui \
                $$PWD/gui/qtcolorpicker \
                $$PWD/gui/plots \
                $$PWD/gui/plots/qcustomplot \
-               $$PWD/tpc
+               $$PWD/tpc \
+               $$PWD/h5cc
 
 SOURCES += $$files($$PWD/gui/*.cpp) \
            $$files($$PWD/gui/qtcolorpicker/*.cpp) \
            $$files($$PWD/gui/plots/*.cpp) \
            $$files($$PWD/gui/plots/qcustomplot/*.cpp) \
            $$files($$PWD/tpc/*.cpp) \
-           $$files($$PWD/tpc/*.tpp)
+           $$files($$PWD/h5cc/*.tpp) \
+           $$files($$PWD/h5cc/*.cpp)
 
 HEADERS  += $$files($$PWD/gui/*.h) \
             $$files($$PWD/gui/qtcolorpicker/*.h) \
             $$files($$PWD/gui/plots/*.h) \
             $$files($$PWD/gui/plots/qcustomplot/*.h) \
-            $$files($$PWD/tpc/*.h)
+            $$files($$PWD/tpc/*.h) \
+            $$files($$PWD/h5cc/*.h)
 
 FORMS   += $$files($$PWD/gui/*.ui) \
            $$files($$PWD/gui/plots/*.ui) \
