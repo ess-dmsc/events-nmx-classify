@@ -53,20 +53,19 @@ public:
   Record suppress_negatives() const;
 
   void analyze();
-  void set_parameter(std::string, Variant);
-  void set_metric(std::string id, Variant val, std::string descr);
   void clear_metrics();
-  Settings metrics() const {return metrics_;}
+
+  void set_parameter(std::string, Variant);
   Settings parameters() const {return parameters_;}
 
-  PointList get_points(std::string) const;
+  void set_metric(std::string id, Variant val, std::string descr);
+  Settings metrics() const {return metrics_;}
+
   std::list<std::string> point_categories() const;
+  PointList get_points(std::string) const;
 
-  ProjPointList get_projection(std::string) const;
   std::list<std::string> projection_categories() const;
-
-  // save/load with zero suppression
-  std::list<int16_t> save() const;
+  ProjPointList get_projection(std::string) const;
 
 private:
   std::map<int16_t , Strip> strips_;

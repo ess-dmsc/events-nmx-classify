@@ -164,41 +164,6 @@ std::string Record::debug() const
   return ss.str();
 }
 
-std::list<int16_t> Record::save() const
-{
-  std::list<int16_t> ret;
-  ret.push_back(strips_.size());
-
-  for (const auto &strip : strips_)
-  {
-    ret.push_back(strip.first);                    //strip id;
-    ret.push_back(strip.second.raw_data().size()); //strip length
-
-    //counted zero compression
-    int16_t z_count = 0;
-    for (auto &val : strip.second.raw_data())
-      if (val != 0)
-        if (z_count == 0)
-          ret.push_back(val);
-        else
-        {
-          ret.push_back(0);
-          ret.push_back(z_count);
-          ret.push_back(val);
-          z_count = 0;
-        }
-      else
-        z_count++;
-    if (z_count)
-    {
-      ret.push_back(0);
-      ret.push_back(z_count);
-    }
-  }
-
-  return ret;
-}
-
 std::list<std::string> Record::point_categories() const
 {
   std::list<std::string> ret;
