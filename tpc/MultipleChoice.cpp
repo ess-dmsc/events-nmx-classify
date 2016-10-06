@@ -48,6 +48,7 @@ MultipleChoice& MultipleChoice::operator++()
   }
   else
     choice_.clear();
+  return *this;
 }
 
 MultipleChoice& MultipleChoice::operator--()
@@ -62,6 +63,7 @@ MultipleChoice& MultipleChoice::operator--()
   }
   else
     choice_.clear();
+  return *this;
 }
 
 // postfix

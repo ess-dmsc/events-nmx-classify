@@ -127,8 +127,7 @@ Variant::uint_t Variant::as_uint(Variant::uint_t default_val) const
     if (ret > 0)
       return static_cast<uint_t>(ret);
   }
-  else
-    return default_val;
+  return default_val;
 }
 
 Variant::floating_t Variant::as_float(Variant::floating_t default_val) const

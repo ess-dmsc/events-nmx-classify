@@ -283,7 +283,7 @@ void ViewEvent::display_projection(NMX::Event &evt)
 }
 
 
-void ViewEvent::on_comboPlanes_currentIndexChanged(const QString &arg1)
+void ViewEvent::on_comboPlanes_currentIndexChanged(const QString&)
 {
   ui->eventX->setVisible(ui->comboPlanes->currentText().contains("X"));
   ui->eventY->setVisible(ui->comboPlanes->currentText().contains("Y"));

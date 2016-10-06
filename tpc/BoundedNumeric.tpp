@@ -71,6 +71,7 @@ Bounded<T>& Bounded<T>::operator++()
 {
   val_ += step_;
   enforce();
+  return *this;
 }
 
 template <typename T>
@@ -78,6 +79,7 @@ Bounded<T>& Bounded<T>::operator--()
 {
   val_ -= step_;
   enforce();
+  return *this;
 }
 
 // postfix

@@ -69,7 +69,7 @@ private:
 
   struct increment_visitor : public boost::static_visitor<void>
   {
-    result_type operator () (null_t& v) const {  }
+    result_type operator () (null_t&) const {  }
     result_type operator () (bool_t& v) const { ++v;  }
     result_type operator () (int_t& v) const { ++v;  }
     result_type operator () (uint_t& v) const { ++v;  }
@@ -79,7 +79,7 @@ private:
 
   struct decrement_visitor : public boost::static_visitor<void>
   {
-    result_type operator () (null_t& v) const {}
+    result_type operator () (null_t&) const {}
     result_type operator () (bool_t& v) const { --v; }
     result_type operator () (int_t& v) const { --v; }
     result_type operator () (uint_t& v) const { --v; }

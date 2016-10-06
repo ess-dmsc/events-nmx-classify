@@ -28,7 +28,7 @@ public:
 
   std::list<std::string> analysis_groups() const;
   bool create_analysis(std::string name);
-  bool delete_analysis(std::string name);
+  void delete_analysis(std::string name);
   bool load_analysis(std::string name);
   bool save_analysis();
 

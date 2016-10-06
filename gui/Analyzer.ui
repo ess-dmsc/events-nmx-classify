@@ -37,7 +37,11 @@
       </widget>
      </item>
      <item>
-      <widget class="QComboBox" name="comboWeightsY"/>
+      <widget class="QComboBox" name="comboWeightsY">
+       <property name="sizeAdjustPolicy">
+        <enum>QComboBox::AdjustToContents</enum>
+       </property>
+      </widget>
      </item>
      <item>
       <widget class="QLabel" name="label_10">
@@ -271,7 +275,11 @@
       </widget>
      </item>
      <item>
-      <widget class="QComboBox" name="comboWeightsX"/>
+      <widget class="QComboBox" name="comboWeightsX">
+       <property name="sizeAdjustPolicy">
+        <enum>QComboBox::AdjustToContents</enum>
+       </property>
+      </widget>
      </item>
      <item>
       <widget class="QLabel" name="label_15">
@@ -389,7 +397,11 @@
       </widget>
      </item>
      <item>
-      <widget class="QComboBox" name="comboWeightsZ"/>
+      <widget class="QComboBox" name="comboWeightsZ">
+       <property name="sizeAdjustPolicy">
+        <enum>QComboBox::AdjustToContents</enum>
+       </property>
+      </widget>
      </item>
      <item>
       <widget class="QLabel" name="label_4">

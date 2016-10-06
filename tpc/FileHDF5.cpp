@@ -133,7 +133,7 @@ bool FileHDF5::create_analysis(std::string name)
   return true;
 }
 
-bool FileHDF5::delete_analysis(std::string name)
+void FileHDF5::delete_analysis(std::string name)
 {
   file_.group("Analyses").remove(name);
 
