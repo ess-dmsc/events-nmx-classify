@@ -1,20 +1,18 @@
 #include "widget_plot2d.h"
-#include "ui_widget_plot2d.h"
 #include "qt_util.h"
 #include "CustomLogger.h"
+#include "qcp_overlay_button.h"
 
 WidgetPlot2D::WidgetPlot2D(QWidget *parent) :
-  QWidget(parent),
+  QSquareCustomPlot(parent),
   scale_types_({{"Linear", QCPAxis::stLinear}, {"Logarithmic", QCPAxis::stLogarithmic}}),
   gradients_({{"Grayscale", QCPColorGradient::gpGrayscale}, {"Hot",  QCPColorGradient::gpHot},
 {"Cold", QCPColorGradient::gpCold}, {"Night", QCPColorGradient::gpNight},
 {"Candy", QCPColorGradient::gpCandy}, {"Geography", QCPColorGradient::gpGeography},
 {"Ion", QCPColorGradient::gpIon}, {"Thermal", QCPColorGradient::gpThermal},
 {"Polar", QCPColorGradient::gpPolar}, {"Spectrum", QCPColorGradient::gpSpectrum},
-{"Jet", QCPColorGradient::gpJet}, {"Hues", QCPColorGradient::gpHues}}),
-  ui(new Ui::WidgetPlot2D)
+{"Jet", QCPColorGradient::gpJet}, {"Hues", QCPColorGradient::gpHues}})
 {
-  ui->setupUi(this);
 
   current_gradient_ = "Night";
   current_scale_type_ = "Linear";
@@ -22,11 +20,13 @@ WidgetPlot2D::WidgetPlot2D(QWidget *parent) :
   antialiased_ = false;
   show_labels_ = true;
 
-  setColorScheme(Qt::white, Qt::black, QColor(144, 144, 144), QColor(80, 80, 80));
-  ui->plot->xAxis->grid()->setVisible(true);
-  ui->plot->yAxis->grid()->setVisible(true);
-  ui->plot->xAxis->grid()->setSubGridVisible(true);
-  ui->plot->yAxis->grid()->setSubGridVisible(true);
+//  setColorScheme(Qt::white, Qt::black, QColor(144, 144, 144), QColor(80, 80, 80));
+  setColorScheme(Qt::black, Qt::white, QColor(112, 112, 112), QColor(170, 170, 170));
+
+  xAxis->grid()->setVisible(true);
+  yAxis->grid()->setVisible(true);
+  xAxis->grid()->setSubGridVisible(true);
+  yAxis->grid()->setSubGridVisible(true);
 
   //color theme setup
   marker_looks.themes["Grayscale"] = QPen(Qt::cyan, 1);
@@ -43,23 +43,23 @@ WidgetPlot2D::WidgetPlot2D(QWidget *parent) :
   marker_looks.themes["Hues"] = QPen(Qt::black, 1);
 
   //colormap setup
-  ui->plot->setAlwaysSquare(true);
-  colorMap = new QCPColorMap(ui->plot->xAxis, ui->plot->yAxis);
+  setAlwaysSquare(true);
+  colorMap = new QCPColorMap(xAxis, yAxis);
   colorMap->clearData();
-  ui->plot->addPlottable(colorMap);
+  addPlottable(colorMap);
   colorMap->setInterpolate(antialiased_);
   colorMap->setTightBoundary(false);
-  ui->plot->axisRect()->setupFullAxesBox();
-  ui->plot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
-  ui->plot->setNoAntialiasingOnDrag(true);
+  axisRect()->setupFullAxesBox();
+  setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
+  setNoAntialiasingOnDrag(true);
 
   colorMap->setGradient(gradients_[current_gradient_]);
   colorMap->setDataScaleType(scale_types_[current_scale_type_]);
   colorMap->rescaleDataRange(true);
-  connect(ui->plot, SIGNAL(mouse_clicked(double,double,QMouseEvent*, bool)), this, SLOT(plot_2d_mouse_clicked(double,double,QMouseEvent*, bool)));
-  //connect(ui->plot, SIGNAL(plottableClick(QCPAbstractPlottable*,QMouseEvent*)), this, SLOT(clicked_plottable(QCPAbstractPlottable*)));
-  connect(ui->plot, SIGNAL(selectionChangedByUser()), this, SLOT(selection_changed()));
-  connect(ui->plot, SIGNAL(clickedAbstractItem(QCPAbstractItem*)), this, SLOT(clicked_item(QCPAbstractItem*)));
+  connect(this, SIGNAL(mouse_clicked(double,double,QMouseEvent*, bool)), this, SLOT(plot_2d_mouse_clicked(double,double,QMouseEvent*, bool)));
+  //connect(this, SIGNAL(plottableClick(QCPAbstractPlottable*,QMouseEvent*)), this, SLOT(clicked_plottable(QCPAbstractPlottable*)));
+  connect(this, SIGNAL(selectionChangedByUser()), this, SLOT(selection_changed()));
+  connect(this, SIGNAL(clickedAbstractItem(QCPAbstractItem*)), this, SLOT(clicked_item(QCPAbstractItem*)));
 
   menuExportFormat.addAction("png");
   menuExportFormat.addAction("jpg");
@@ -73,20 +73,22 @@ WidgetPlot2D::WidgetPlot2D(QWidget *parent) :
 
 void WidgetPlot2D::set_zoom_drag(Qt::Orientation o)
 {
-  ui->plot->yAxis->axisRect()->setRangeDrag(o);
-  ui->plot->yAxis->axisRect()->setRangeZoom(o);
+  yAxis->axisRect()->setRangeDrag(o);
+  yAxis->axisRect()->setRangeZoom(o);
 }
 
 
 void WidgetPlot2D::clicked_item(QCPAbstractItem* itm) {
-  if (QCPItemPixmap *pix = qobject_cast<QCPItemPixmap*>(itm)) {
-//    QPoint p = this->mapFromGlobal(QCursor::pos());
-    QString name = pix->property("button_name").toString();
-    if (name == "options") {
+  if (!itm->visible())
+    return;
+
+  if (QCPOverlayButton *button = qobject_cast<QCPOverlayButton*>(itm)) {
+    //    QPoint p = this->mapFromGlobal(QCursor::pos());
+    if (button->name() == "options") {
       menuOptions.exec(QCursor::pos());
-    } else if (name == "export") {
+    } else if (button->name() == "export") {
       menuExportFormat.exec(QCursor::pos());
-    } else if (name == "reset_scales") {
+    } else if (button->name() == "reset_scales") {
       zoom_out();
     }
   }
@@ -133,7 +135,7 @@ void WidgetPlot2D::optionsChanged(QAction* action) {
     current_scale_type_ = choice;
     colorMap->setDataScaleType(scale_types_[current_scale_type_]);
     colorMap->rescaleDataRange(true);
-    ui->plot->replot();
+    replot();
   } else if (gradients_.count(choice)) {
     current_gradient_ = choice;
     colorMap->setGradient(gradients_[current_gradient_]);
@@ -154,11 +156,6 @@ void WidgetPlot2D::optionsChanged(QAction* action) {
 }
 
 
-WidgetPlot2D::~WidgetPlot2D()
-{
-  delete ui;
-}
-
 void WidgetPlot2D::selection_changed() {
   emit stuff_selected();
 }
@@ -166,7 +163,7 @@ void WidgetPlot2D::selection_changed() {
 
 std::list<MarkerBox2D> WidgetPlot2D::get_selected_boxes() {
   std::list<MarkerBox2D> selection;
-  for (auto &q : ui->plot->selectedItems())
+  for (auto &q : selectedItems())
     if (QCPItemRect *b = qobject_cast<QCPItemRect*>(q)) {
       MarkerBox2D box;
       box.x1 = b->property("chan_x").toDouble();
@@ -191,12 +188,12 @@ void WidgetPlot2D::reset_content() {
 
 void WidgetPlot2D::refresh()
 {
-  ui->plot->replot();
+  replot();
 }
 
 void WidgetPlot2D::replot_markers() {
 
-  ui->plot->clearItems();
+  clearItems();
 
   QPen pen = marker_looks.get_pen(current_gradient_);
 
@@ -212,7 +209,7 @@ void WidgetPlot2D::replot_markers() {
 
     //    if (!q.visible)
 //      continue;
-    box = new QCPItemRect(ui->plot);
+    box = new QCPItemRect(this);
     box->setSelectable(q.selectable);
     box->setPen(q.border);
 //    box->setSelectedPen(pen);
@@ -225,14 +222,14 @@ void WidgetPlot2D::replot_markers() {
     box->setProperty("chan_y", q.y1);
     box->topLeft->setCoords(q.x1, q.y1);
     box->bottomRight->setCoords(q.x2, q.y2);
-    ui->plot->addItem(box);
+    addItem(box);
 
     if (q.selectable)
       selectables++;
 
     if (!q.label.isEmpty())
     {
-      QCPItemText *labelItem = new QCPItemText(ui->plot);
+      QCPItemText *labelItem = new QCPItemText(this);
       labelItem->setText(q.label);
       labelItem->setProperty("chan_x", q.x1);
       labelItem->setProperty("chan_y", q.y1);
@@ -256,86 +253,79 @@ void WidgetPlot2D::replot_markers() {
 
       labelItem->setPadding(QMargins(1, 1, 1, 1));
 
-      ui->plot->addItem(labelItem);
+      addItem(labelItem);
     }
 
   }
 
   if (selectables) {
-    ui->plot->setInteraction(QCP::iSelectItems, true);
-    ui->plot->setInteraction(QCP::iMultiSelect, false);
+    setInteraction(QCP::iSelectItems, true);
+    setInteraction(QCP::iMultiSelect, false);
   } else {
-    ui->plot->setInteraction(QCP::iSelectItems, false);
-    ui->plot->setInteraction(QCP::iMultiSelect, false);
+    setInteraction(QCP::iSelectItems, false);
+    setInteraction(QCP::iMultiSelect, false);
   }
 
+  plotButtons();
 
-  QCPItemPixmap *overlayButton;
+  replot();
+}
 
-  overlayButton = new QCPItemPixmap(ui->plot);
-  overlayButton->setClipToAxisRect(false);
-  overlayButton->setPixmap(QPixmap(":/icons/oxy/16/view_fullscreen.png"));
-  overlayButton->topLeft->setType(QCPItemPosition::ptAbsolute);
-  overlayButton->topLeft->setCoords(5, 5);
-  overlayButton->bottomRight->setParentAnchor(overlayButton->topLeft);
-  overlayButton->bottomRight->setCoords(16, 16);
-  overlayButton->setScaled(true);
-  overlayButton->setSelectable(false);
-  overlayButton->setProperty("button_name", QString("reset_scales"));
-  overlayButton->setProperty("tooltip", QString("Reset plot scales"));
-  ui->plot->addItem(overlayButton);
+void WidgetPlot2D::plotButtons() {
+  QCPOverlayButton *overlayButton;
+  QCPOverlayButton *newButton;
+
+  newButton = new QCPOverlayButton(this,
+                                   QPixmap(":/icons/oxy/22/view_fullscreen.png"),
+                                   "reset_scales", "Zoom out",
+                                   Qt::AlignBottom | Qt::AlignRight);
+  newButton->setClipToAxisRect(false);
+  newButton->topLeft->setType(QCPItemPosition::ptAbsolute);
+  newButton->topLeft->setCoords(5, 5);
+  addItem(newButton);
+  overlayButton = newButton;
 
   if (!menuOptions.isEmpty()) {
-    QCPItemPixmap *newButton = new QCPItemPixmap(ui->plot);
+    newButton = new QCPOverlayButton(this, QPixmap(":/icons/oxy/22/view_statistics.png"),
+                                     "options", "Style options",
+                                     Qt::AlignBottom | Qt::AlignRight);
+
     newButton->setClipToAxisRect(false);
-    newButton->setPixmap(QPixmap(":/icons/oxy/16/view_statistics.png"));
-    newButton->topLeft->setType(QCPItemPosition::ptAbsolute);
     newButton->topLeft->setParentAnchor(overlayButton->bottomLeft);
     newButton->topLeft->setCoords(0, 5);
-    newButton->bottomRight->setParentAnchor(newButton->topLeft);
-    newButton->bottomRight->setCoords(16, 16);
-    newButton->setScaled(false);
-    newButton->setSelectable(false);
-    newButton->setProperty("button_name", QString("options"));
-    newButton->setProperty("tooltip", QString("Style options"));
-    ui->plot->addItem(newButton);
+    addItem(newButton);
     overlayButton = newButton;
   }
 
-  QCPItemPixmap *newButton = new QCPItemPixmap(ui->plot);
-  newButton->setClipToAxisRect(false);
-  newButton->setPixmap(QPixmap(":/icons/oxy/16/document_save.png"));
-  newButton->topLeft->setType(QCPItemPosition::ptAbsolute);
-  newButton->topLeft->setParentAnchor(overlayButton->bottomLeft);
-  newButton->topLeft->setCoords(0, 5);
-  newButton->bottomRight->setParentAnchor(newButton->topLeft);
-  newButton->bottomRight->setCoords(16, 16);
-  newButton->setScaled(true);
-  newButton->setSelectable(false);
-  newButton->setProperty("button_name", QString("export"));
-  newButton->setProperty("tooltip", QString("Export plot"));
-  ui->plot->addItem(newButton);
-  overlayButton = newButton;
-
-  ui->plot->replot();
+//  if (visible_options_ & ShowOptions::save) {
+    newButton = new QCPOverlayButton(this,
+                                     QPixmap(":/icons/oxy/22/document_save.png"),
+                                     "export", "Export plot",
+                                     Qt::AlignBottom | Qt::AlignRight);
+    newButton->setClipToAxisRect(false);
+    newButton->topLeft->setParentAnchor(overlayButton->bottomLeft);
+    newButton->topLeft->setCoords(0, 5);
+    addItem(newButton);
+//    overlayButton = newButton;
+//  }
 }
 
 void WidgetPlot2D::update_plot(uint64_t sizex, uint64_t sizey, const EntryList &spectrum_data)
 {
 //  DBG << "2d size " << sizex << "x" << sizey << " list " << spectrum_data.size();
 
-  ui->plot->clearGraphs();
+  clearGraphs();
   colorMap->clearData();
-  ui->plot->setAlwaysSquare(sizex == sizey);
+  setAlwaysSquare(sizex == sizey);
   if (sizex == sizey)
   {
-    ui->plot->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::MinimumExpanding);
-    ui->verticalLayout->setSizeConstraint(QLayout::SetMaximumSize);
+    setSizePolicy(QSizePolicy::Maximum, QSizePolicy::MinimumExpanding);
+//    verticalLayout->setSizeConstraint(QLayout::SetMaximumSize);
   }
   else
   {
-    ui->plot->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
-    ui->verticalLayout->setSizeConstraint(QLayout::SetNoConstraint);
+    setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
+//    verticalLayout->setSizeConstraint(QLayout::SetNoConstraint);
   }
 
   if ((sizex > 0) && (sizey > 0) && (spectrum_data.size())) {
@@ -344,9 +334,9 @@ void WidgetPlot2D::update_plot(uint64_t sizex, uint64_t sizey, const EntryList &
       if ((it.first.size() > 1) && (it.first[0] >= 0) && (it.first[1] >= 0))
         colorMap->data()->setCell(it.first[0], it.first[1], it.second);
     colorMap->rescaleDataRange(true);
-    ui->plot->updateGeometry();
+    updateGeometry();
   } else {
-    ui->plot->clearGraphs();
+    clearGraphs();
     colorMap->clearData();
     colorMap->keyAxis()->setLabel("");
     colorMap->valueAxis()->setLabel("");
@@ -360,15 +350,15 @@ void WidgetPlot2D::set_axes(QString xlabel, double x1, double x2,
                             QString zlabel)
 {
   Z_label_ = zlabel;
-  for (int i=0; i < ui->plot->plotLayout()->elementCount(); i++)
-    if (QCPColorScale *le = qobject_cast<QCPColorScale*>(ui->plot->plotLayout()->elementAt(i)))
+  for (int i=0; i < plotLayout()->elementCount(); i++)
+    if (QCPColorScale *le = qobject_cast<QCPColorScale*>(plotLayout()->elementAt(i)))
       le->axis()->setLabel(zlabel);
 
   colorMap->keyAxis()->setLabel(xlabel);
   colorMap->valueAxis()->setLabel(ylabel);
   colorMap->data()->setRange(QCPRange(x1, x2),
                              QCPRange(y1, y2));
-  ui->plot->rescaleAxes();
+  rescaleAxes();
 }
 
 void WidgetPlot2D::plot_2d_mouse_clicked(double x, double y, QMouseEvent *event, bool /*channels*/)
@@ -380,18 +370,18 @@ void WidgetPlot2D::plot_2d_mouse_clicked(double x, double y, QMouseEvent *event,
 void WidgetPlot2D::zoom_out()
 {
   this->setCursor(Qt::WaitCursor);
-  ui->plot->rescaleAxes();
-  ui->plot->replot();
+  rescaleAxes();
+  replot();
 
   double margin = 0.5;
-  double x_lower = ui->plot->xAxis->range().lower;
-  double x_upper = ui->plot->xAxis->range().upper;
-  double y_lower = ui->plot->yAxis->range().lower;
-  double y_upper = ui->plot->yAxis->range().upper;
-  ui->plot->xAxis->setRange(x_lower - margin, x_upper + margin);
-  ui->plot->yAxis->setRange(y_lower - margin, y_upper + margin);
+  double x_lower = xAxis->range().lower;
+  double x_upper = xAxis->range().upper;
+  double y_lower = yAxis->range().lower;
+  double y_upper = yAxis->range().upper;
+  xAxis->setRange(x_lower - margin, x_upper + margin);
+  yAxis->setRange(y_lower - margin, y_upper + margin);
 
-  ui->plot->replot();
+  replot();
 
 
   this->setCursor(Qt::ArrowCursor);
@@ -402,22 +392,22 @@ void WidgetPlot2D::toggle_gradient_scale()
 {
   if (show_gradient_scale_) {
     //add color scale
-    QCPColorScale *colorScale = new QCPColorScale(ui->plot);
-    ui->plot->plotLayout()->addElement(0, 1, colorScale);
+    QCPColorScale *colorScale = new QCPColorScale(this);
+    plotLayout()->addElement(0, 1, colorScale);
     colorScale->setType(QCPAxis::atRight);
     colorMap->setColorScale(colorScale);
 
-    colorScale->axis()->setBasePen(QPen(Qt::white, 1));
-    colorScale->axis()->setTickPen(QPen(Qt::white, 1));
-    colorScale->axis()->setSubTickPen(QPen(Qt::white, 1));
-    colorScale->axis()->setTickLabelColor(Qt::white);
-    colorScale->axis()->setLabelColor(Qt::white);
+//    colorScale->axis()->setBasePen(QPen(Qt::white, 1));
+//    colorScale->axis()->setTickPen(QPen(Qt::white, 1));
+//    colorScale->axis()->setSubTickPen(QPen(Qt::white, 1));
+//    colorScale->axis()->setTickLabelColor(Qt::white);
+//    colorScale->axis()->setLabelColor(Qt::white);
 
     colorScale->axis()->setLabel(Z_label_);
 
     //readjust margins
-    QCPMarginGroup *marginGroup = new QCPMarginGroup(ui->plot);
-    ui->plot->axisRect()->setMarginGroup(QCP::msBottom|QCP::msTop, marginGroup);
+    QCPMarginGroup *marginGroup = new QCPMarginGroup(this);
+    axisRect()->setMarginGroup(QCP::msBottom|QCP::msTop, marginGroup);
     colorScale->setMarginGroup(QCP::msBottom|QCP::msTop, marginGroup);
 
     colorMap->setGradient(gradients_[current_gradient_]);
@@ -429,15 +419,15 @@ void WidgetPlot2D::toggle_gradient_scale()
     colorScale->axis()->setNumberPrecision(0);
     colorScale->axis()->setRangeLower(1);
 
-    ui->plot->replot();
-    ui->plot->updateGeometry();
+    replot();
+    updateGeometry();
   } else {
-    for (int i=0; i < ui->plot->plotLayout()->elementCount(); i++) {
-      if (QCPColorScale *le = qobject_cast<QCPColorScale*>(ui->plot->plotLayout()->elementAt(i)))
-        ui->plot->plotLayout()->remove(le);
+    for (int i=0; i < plotLayout()->elementCount(); i++) {
+      if (QCPColorScale *le = qobject_cast<QCPColorScale*>(plotLayout()->elementAt(i)))
+        plotLayout()->remove(le);
     }
-    ui->plot->plotLayout()->simplify();
-    ui->plot->updateGeometry();
+    plotLayout()->simplify();
+    updateGeometry();
   }
 }
 
@@ -446,7 +436,7 @@ void WidgetPlot2D::set_scale_type(QString sct) {
   current_scale_type_ = sct;
   colorMap->setDataScaleType(scale_types_[current_scale_type_]);
   colorMap->rescaleDataRange(true);
-  ui->plot->replot();
+  replot();
   build_menu();
   this->setCursor(Qt::ArrowCursor);
 }
@@ -485,35 +475,112 @@ void WidgetPlot2D::exportRequested(QAction* choice) {
                                           filter);
   if (validateFile(this, fileName, true))
   {
+
+    int fontUpscale = 5;
+
+    for (int i = 0; i < itemCount(); ++i) {
+      QCPAbstractItem* itm = item(i);
+      if (QCPItemLine *line = qobject_cast<QCPItemLine*>(itm))
+      {
+        QCPLineEnding head = line->head();
+        QPen pen = line->selectedPen();
+        head.setWidth(head.width() + fontUpscale);
+        head.setLength(head.length() + fontUpscale);
+        line->setHead(head);
+        line->setPen(pen);
+        line->start->setCoords(0, -50);
+        line->end->setCoords(0, -15);
+      }
+      else if (QCPItemText *txt = qobject_cast<QCPItemText*>(itm))
+      {
+        QPen pen = txt->selectedPen();
+        txt->setPen(pen);
+        QFont font = txt->font();
+        font.setPointSize(font.pointSize() + fontUpscale);
+        txt->setFont(font);
+        txt->setColor(pen.color());
+        txt->position->setCoords(0, -50);
+      }
+    }
+
+    prepPlotExport(2, fontUpscale, 20);
+    replot();
+
+//    plot_rezoom();
+    for (int i = 0; i < itemCount(); ++i) {
+      QCPAbstractItem* itm = item(i);
+      if (QCPOverlayButton *btn = qobject_cast<QCPOverlayButton*>(itm))
+        btn->setVisible(false);
+    }
+
+    replot();
+
     QFileInfo file(fileName);
     if (file.suffix() == "png")
-      ui->plot->savePng(fileName,0,0,1,100);
+      savePng(fileName,0,0,1,100);
     else if (file.suffix() == "jpg")
-      ui->plot->saveJpg(fileName,0,0,1,100);
+      saveJpg(fileName,0,0,1,100);
     else if (file.suffix() == "bmp")
-      ui->plot->saveBmp(fileName);
+      saveBmp(fileName);
     else if (file.suffix() == "pdf")
-      ui->plot->savePdf(fileName, true);
+      savePdf(fileName, true);
+
+
+    for (int i = 0; i < itemCount(); ++i) {
+      QCPAbstractItem* itm = item(i);
+      if (QCPItemLine *line = qobject_cast<QCPItemLine*>(itm))
+      {
+        QCPLineEnding head = line->head();
+        QPen pen = line->selectedPen();
+        head.setWidth(head.width() - fontUpscale);
+        head.setLength(head.length() - fontUpscale);
+        line->setHead(head);
+        line->setPen(pen);
+        line->start->setCoords(0, -30);
+        line->end->setCoords(0, -5);
+      }
+      else if (QCPItemText *txt = qobject_cast<QCPItemText*>(itm))
+      {
+        QPen pen = txt->selectedPen();
+        txt->setPen(pen);
+        QFont font = txt->font();
+        font.setPointSize(font.pointSize() - fontUpscale);
+        txt->setFont(font);
+        txt->setColor(pen.color());
+        txt->position->setCoords(0, -30);
+      }
+    }
+
+    postPlotExport(2, fontUpscale, 20);
+    replot();
+//    plot_rezoom();
+    for (int i = 0; i < itemCount(); ++i) {
+      QCPAbstractItem* itm = item(i);
+      if (QCPOverlayButton *btn = qobject_cast<QCPOverlayButton*>(itm))
+        btn->setVisible(true);
+    }
+
+    replot();
   }
 }
 
 void WidgetPlot2D::setColorScheme(QColor fore, QColor back, QColor grid1, QColor grid2)
 {
-  ui->plot->xAxis->setBasePen(QPen(fore, 1));
-  ui->plot->yAxis->setBasePen(QPen(fore, 1));
-  ui->plot->xAxis->setTickPen(QPen(fore, 1));
-  ui->plot->yAxis->setTickPen(QPen(fore, 1));
-  ui->plot->xAxis->setSubTickPen(QPen(fore, 1));
-  ui->plot->yAxis->setSubTickPen(QPen(fore, 1));
-  ui->plot->xAxis->setTickLabelColor(fore);
-  ui->plot->yAxis->setTickLabelColor(fore);
-  ui->plot->xAxis->setLabelColor(fore);
-  ui->plot->yAxis->setLabelColor(fore);
-  ui->plot->xAxis->grid()->setPen(QPen(grid1, 1, Qt::DotLine));
-  ui->plot->yAxis->grid()->setPen(QPen(grid1, 1, Qt::DotLine));
-  ui->plot->xAxis->grid()->setSubGridPen(QPen(grid2, 1, Qt::DotLine));
-  ui->plot->yAxis->grid()->setSubGridPen(QPen(grid2, 1, Qt::DotLine));
-  ui->plot->xAxis->grid()->setZeroLinePen(Qt::NoPen);
-  ui->plot->yAxis->grid()->setZeroLinePen(Qt::NoPen);
-  ui->plot->setBackground(QBrush(back));
+  xAxis->setBasePen(QPen(fore, 1));
+  yAxis->setBasePen(QPen(fore, 1));
+  xAxis->setTickPen(QPen(fore, 1));
+  yAxis->setTickPen(QPen(fore, 1));
+  xAxis->setSubTickPen(QPen(fore, 1));
+  yAxis->setSubTickPen(QPen(fore, 1));
+  xAxis->setTickLabelColor(fore);
+  yAxis->setTickLabelColor(fore);
+  xAxis->setLabelColor(fore);
+  yAxis->setLabelColor(fore);
+  xAxis->grid()->setPen(QPen(grid1, 1, Qt::DotLine));
+  yAxis->grid()->setPen(QPen(grid1, 1, Qt::DotLine));
+  xAxis->grid()->setSubGridPen(QPen(grid2, 1, Qt::DotLine));
+  yAxis->grid()->setSubGridPen(QPen(grid2, 1, Qt::DotLine));
+  xAxis->grid()->setZeroLinePen(Qt::NoPen);
+  yAxis->grid()->setZeroLinePen(Qt::NoPen);
+  setBackground(QBrush(back));
 }

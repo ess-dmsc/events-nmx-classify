@@ -1,34 +1,31 @@
 #include "widget_plot_multi1d.h"
-#include "ui_widget_plot_multi1d.h"
+//#include "ui_widget_plot_multi1d.h"
 #include "CustomLogger.h"
 #include "qt_util.h"
 #include "qcp_overlay_button.h"
 
 WidgetPlotMulti1D::WidgetPlotMulti1D(QWidget *parent) :
-  QWidget(parent),
-  ui(new Ui::WidgetPlotMulti1D)
+  QSquareCustomPlot(parent)
 {
-  ui->setupUi(this);
-
   visible_options_  =
       (ShowOptions::style | ShowOptions::scale | ShowOptions::labels | ShowOptions::thickness | ShowOptions::grid | ShowOptions::save);
 
 
-  ui->mcaPlot->setInteraction(QCP::iSelectItems, true);
-  ui->mcaPlot->setInteraction(QCP::iRangeDrag, true);
-  ui->mcaPlot->yAxis->axisRect()->setRangeDrag(Qt::Horizontal);
-  ui->mcaPlot->setInteraction(QCP::iRangeZoom, true);
-  ui->mcaPlot->setInteraction(QCP::iMultiSelect, true);
-  ui->mcaPlot->yAxis->setPadding(28);
-  ui->mcaPlot->setNoAntialiasingOnDrag(true);
+  setInteraction(QCP::iSelectItems, true);
+  setInteraction(QCP::iRangeDrag, true);
+  yAxis->axisRect()->setRangeDrag(Qt::Horizontal);
+  setInteraction(QCP::iRangeZoom, true);
+  setInteraction(QCP::iMultiSelect, true);
+  yAxis->setPadding(28);
+  setNoAntialiasingOnDrag(true);
 
-  connect(ui->mcaPlot, SIGNAL(mouse_clicked(double,double,QMouseEvent*,bool)), this, SLOT(plot_mouse_clicked(double,double,QMouseEvent*,bool)));
-  connect(ui->mcaPlot, SIGNAL(plottableClick(QCPAbstractPlottable*,QMouseEvent*)), this, SLOT(clicked_plottable(QCPAbstractPlottable*)));
-  connect(ui->mcaPlot, SIGNAL(clickedAbstractItem(QCPAbstractItem*)), this, SLOT(clicked_item(QCPAbstractItem*)));
-  connect(ui->mcaPlot, SIGNAL(selectionChangedByUser()), this, SLOT(selection_changed()));
-  connect(ui->mcaPlot, SIGNAL(beforeReplot()), this, SLOT(plot_rezoom()));
-  connect(ui->mcaPlot, SIGNAL(mouseRelease(QMouseEvent*)), this, SLOT(plot_mouse_release(QMouseEvent*)));
-  connect(ui->mcaPlot, SIGNAL(mousePress(QMouseEvent*)), this, SLOT(plot_mouse_press(QMouseEvent*)));
+  connect(this, SIGNAL(mouse_clicked(double,double,QMouseEvent*,bool)), this, SLOT(plot_mouse_clicked(double,double,QMouseEvent*,bool)));
+  connect(this, SIGNAL(plottableClick(QCPAbstractPlottable*,QMouseEvent*)), this, SLOT(clicked_plottable(QCPAbstractPlottable*)));
+  connect(this, SIGNAL(clickedAbstractItem(QCPAbstractItem*)), this, SLOT(clicked_item(QCPAbstractItem*)));
+  connect(this, SIGNAL(selectionChangedByUser()), this, SLOT(selection_changed()));
+  connect(this, SIGNAL(beforeReplot()), this, SLOT(plot_rezoom()));
+  connect(this, SIGNAL(mouseRelease(QMouseEvent*)), this, SLOT(plot_mouse_release(QMouseEvent*)));
+  connect(this, SIGNAL(mousePress(QMouseEvent*)), this, SLOT(plot_mouse_press(QMouseEvent*)));
 
   minx_zoom = 0; maxx_zoom = 0;
   minx = std::numeric_limits<double>::max();
@@ -44,14 +41,14 @@ WidgetPlotMulti1D::WidgetPlotMulti1D(QWidget *parent) :
 
   plot_style_ = "Lines";
   scale_type_ = "Logarithmic";
-  ui->mcaPlot->yAxis->setScaleType(QCPAxis::stLogarithmic);
+  yAxis->setScaleType(QCPAxis::stLogarithmic);
   grid_style_ = "Grid + subgrid";
   setColorScheme(Qt::black, Qt::white, QColor(112, 112, 112), QColor(170, 170, 170));
 
-  ui->mcaPlot->xAxis->grid()->setVisible(true);
-  ui->mcaPlot->yAxis->grid()->setVisible(true);
-  ui->mcaPlot->xAxis->grid()->setSubGridVisible(true);
-  ui->mcaPlot->yAxis->grid()->setSubGridVisible(true);
+  xAxis->grid()->setVisible(true);
+  yAxis->grid()->setVisible(true);
+  xAxis->grid()->setSubGridVisible(true);
+  yAxis->grid()->setSubGridVisible(true);
 
   marker_labels_ = true;
   thickness_ = 1;
@@ -64,7 +61,7 @@ WidgetPlotMulti1D::WidgetPlotMulti1D(QWidget *parent) :
 
   connect(&menuOptions, SIGNAL(triggered(QAction*)), this, SLOT(optionsChanged(QAction*)));
 
-  QShortcut *shortcut = new QShortcut(QKeySequence(Qt::Key_Backspace), ui->mcaPlot);
+  QShortcut *shortcut = new QShortcut(QKeySequence(Qt::Key_Backspace), this);
   connect(shortcut, SIGNAL(activated()), this, SLOT(zoom_out()));
 
   build_menu();
@@ -73,16 +70,11 @@ WidgetPlotMulti1D::WidgetPlotMulti1D(QWidget *parent) :
   //  redraw();
 }
 
-WidgetPlotMulti1D::~WidgetPlotMulti1D()
-{
-  delete ui;
-}
-
 void WidgetPlotMulti1D::set_visible_options(ShowOptions options) {
   visible_options_ = options;
 
-  ui->mcaPlot->setInteraction(QCP::iRangeDrag, options & ShowOptions::zoom);
-  ui->mcaPlot->setInteraction(QCP::iRangeZoom, options & ShowOptions::zoom);
+  setInteraction(QCP::iRangeDrag, options & ShowOptions::zoom);
+  setInteraction(QCP::iRangeZoom, options & ShowOptions::zoom);
 
   build_menu();
   replot_markers();
@@ -138,7 +130,7 @@ void WidgetPlotMulti1D::build_menu() {
 
 void WidgetPlotMulti1D::clearGraphs()
 {
-  ui->mcaPlot->clearGraphs();
+  QSquareCustomPlot::clearGraphs();
   minima_.clear();
   maxima_.clear();
 }
@@ -156,7 +148,7 @@ void WidgetPlotMulti1D::rescale() {
 }
 
 void WidgetPlotMulti1D::redraw() {
-  ui->mcaPlot->replot();
+  replot();
 }
 
 void WidgetPlotMulti1D::reset_scales()
@@ -165,7 +157,7 @@ void WidgetPlotMulti1D::reset_scales()
   maxx = - std::numeric_limits<double>::max();
   miny = std::numeric_limits<double>::max();
   maxy = - std::numeric_limits<double>::max();
-  ui->mcaPlot->rescaleAxes();
+  rescaleAxes();
 }
 
 void WidgetPlotMulti1D::setTitle(QString title) {
@@ -174,8 +166,8 @@ void WidgetPlotMulti1D::setTitle(QString title) {
 }
 
 void WidgetPlotMulti1D::setLabels(QString x, QString y) {
-  ui->mcaPlot->xAxis->setLabel(x);
-  ui->mcaPlot->yAxis->setLabel(y);
+  xAxis->setLabel(x);
+  yAxis->setLabel(y);
 }
 
 void WidgetPlotMulti1D::set_markers(const std::list<Marker1D>& markers) {
@@ -190,7 +182,7 @@ void WidgetPlotMulti1D::set_block(Marker1D a, Marker1D b) {
 
 std::set<double> WidgetPlotMulti1D::get_selected_markers() {
   std::set<double> selection;
-  for (auto &q : ui->mcaPlot->selectedItems())
+  for (auto &q : selectedItems())
     if (QCPItemText *txt = qobject_cast<QCPItemText*>(q)) {
       if (txt->property("position").isValid())
         selection.insert(txt->property("position").toDouble());
@@ -216,25 +208,25 @@ void WidgetPlotMulti1D::addGraph(const QVector<double>& x, const QVector<double>
   if (x.empty() || y.empty() || (x.size() != y.size()))
     return;
 
-  ui->mcaPlot->addGraph();
-  int g = ui->mcaPlot->graphCount() - 1;
-  ui->mcaPlot->graph(g)->addData(x, y);
+  QSquareCustomPlot::addGraph();
+  int g = graphCount() - 1;
+  graph(g)->addData(x, y);
   QPen pen = appearance.default_pen;
   if (fittable && (visible_options_ & ShowOptions::thickness))
     pen.setWidth(thickness_);
-  ui->mcaPlot->graph(g)->setPen(pen);
-  ui->mcaPlot->graph(g)->setProperty("fittable", fittable);
-  ui->mcaPlot->graph(g)->setProperty("bits", QVariant::fromValue(bits));
-  set_graph_style(ui->mcaPlot->graph(g), plot_style_);
+  graph(g)->setPen(pen);
+  graph(g)->setProperty("fittable", fittable);
+  graph(g)->setProperty("bits", QVariant::fromValue(bits));
+  set_graph_style(graph(g), plot_style_);
 
   if (x[0] < minx) {
     minx = x[0];
     //DBG << "new minx " << minx;
-    ui->mcaPlot->xAxis->rescale();
+    xAxis->rescale();
   }
   if (x[x.size() - 1] > maxx) {
     maxx = x[x.size() - 1];
-    ui->mcaPlot->xAxis->rescale();
+    xAxis->rescale();
   }
 }
 
@@ -242,22 +234,22 @@ void WidgetPlotMulti1D::addPoints(const QVector<double>& x, const QVector<double
   if (x.empty() || y.empty() || (x.size() != y.size()))
     return;
 
-  ui->mcaPlot->addGraph();
-  int g = ui->mcaPlot->graphCount() - 1;
-  ui->mcaPlot->graph(g)->addData(x, y);
-  ui->mcaPlot->graph(g)->setPen(appearance.default_pen);
-  ui->mcaPlot->graph(g)->setBrush(QBrush());
-  ui->mcaPlot->graph(g)->setScatterStyle(QCPScatterStyle(shape, appearance.default_pen.color(), appearance.default_pen.color(), 6 /*appearance.default_pen.width()*/));
-  ui->mcaPlot->graph(g)->setLineStyle(QCPGraph::lsNone);
+  QSquareCustomPlot::addGraph();
+  int g = graphCount() - 1;
+  graph(g)->addData(x, y);
+  graph(g)->setPen(appearance.default_pen);
+  graph(g)->setBrush(QBrush());
+  graph(g)->setScatterStyle(QCPScatterStyle(shape, appearance.default_pen.color(), appearance.default_pen.color(), 6 /*appearance.default_pen.width()*/));
+  graph(g)->setLineStyle(QCPGraph::lsNone);
 
   if (x[0] < minx) {
     minx = x[0];
     //DBG << "new minx " << minx;
-    ui->mcaPlot->xAxis->rescale();
+    xAxis->rescale();
   }
   if (x[x.size() - 1] > maxx) {
     maxx = x[x.size() - 1];
-    ui->mcaPlot->xAxis->rescale();
+    xAxis->rescale();
   }
 }
 
@@ -267,12 +259,12 @@ void WidgetPlotMulti1D::plot_rezoom() {
     return;
 
   if (minima_.empty() || maxima_.empty()) {
-    ui->mcaPlot->yAxis->rescale();
+    yAxis->rescale();
     return;
   }
 
-  double upperc = ui->mcaPlot->xAxis->range().upper;
-  double lowerc = ui->mcaPlot->xAxis->range().lower;
+  double upperc = xAxis->range().upper;
+  double lowerc = xAxis->range().lower;
 
   if (!force_rezoom_ && (lowerc == minx_zoom) && (upperc == maxx_zoom))
     return;
@@ -286,16 +278,16 @@ void WidgetPlotMulti1D::plot_rezoom() {
   //DBG << "Rezoom";
 
   if (miny <= 0)
-    ui->mcaPlot->yAxis->rescale();
+    yAxis->rescale();
   else
-    ui->mcaPlot->yAxis->setRangeLower(miny);
-  ui->mcaPlot->yAxis->setRangeUpper(maxy);
+    yAxis->setRangeLower(miny);
+  yAxis->setRangeUpper(maxy);
 }
 
 void WidgetPlotMulti1D::tight_x() {
   //DBG << "tightning x to " << minx << " " << maxx;
-  ui->mcaPlot->xAxis->setRangeLower(minx);
-  ui->mcaPlot->xAxis->setRangeUpper(maxx);
+  xAxis->setRangeLower(minx);
+  xAxis->setRangeUpper(maxx);
 }
 
 void WidgetPlotMulti1D::calc_y_bounds(double lower, double upper) {
@@ -311,7 +303,7 @@ void WidgetPlotMulti1D::calc_y_bounds(double lower, double upper) {
       maxy = it->second;
   }
 
-  maxy = ui->mcaPlot->yAxis->pixelToCoord(ui->mcaPlot->yAxis->coordToPixel(maxy) - 75);
+  maxy = yAxis->pixelToCoord(yAxis->coordToPixel(maxy) - 75);
 
   /*if ((maxy > 1) && (miny == 0))
     miny = 1;*/
@@ -319,27 +311,27 @@ void WidgetPlotMulti1D::calc_y_bounds(double lower, double upper) {
 
 void WidgetPlotMulti1D::setColorScheme(QColor fore, QColor back, QColor grid1, QColor grid2)
 {
-  ui->mcaPlot->xAxis->setBasePen(QPen(fore, 1));
-  ui->mcaPlot->yAxis->setBasePen(QPen(fore, 1));
-  ui->mcaPlot->xAxis->setTickPen(QPen(fore, 1));
-  ui->mcaPlot->yAxis->setTickPen(QPen(fore, 1));
-  ui->mcaPlot->xAxis->setSubTickPen(QPen(fore, 1));
-  ui->mcaPlot->yAxis->setSubTickPen(QPen(fore, 1));
-  ui->mcaPlot->xAxis->setTickLabelColor(fore);
-  ui->mcaPlot->yAxis->setTickLabelColor(fore);
-  ui->mcaPlot->xAxis->setLabelColor(fore);
-  ui->mcaPlot->yAxis->setLabelColor(fore);
-  ui->mcaPlot->xAxis->grid()->setPen(QPen(grid1, 1, Qt::DotLine));
-  ui->mcaPlot->yAxis->grid()->setPen(QPen(grid1, 1, Qt::DotLine));
-  ui->mcaPlot->xAxis->grid()->setSubGridPen(QPen(grid2, 1, Qt::DotLine));
-  ui->mcaPlot->yAxis->grid()->setSubGridPen(QPen(grid2, 1, Qt::DotLine));
-  ui->mcaPlot->xAxis->grid()->setZeroLinePen(Qt::NoPen);
-  ui->mcaPlot->yAxis->grid()->setZeroLinePen(Qt::NoPen);
-  ui->mcaPlot->setBackground(QBrush(back));
+  xAxis->setBasePen(QPen(fore, 1));
+  yAxis->setBasePen(QPen(fore, 1));
+  xAxis->setTickPen(QPen(fore, 1));
+  yAxis->setTickPen(QPen(fore, 1));
+  xAxis->setSubTickPen(QPen(fore, 1));
+  yAxis->setSubTickPen(QPen(fore, 1));
+  xAxis->setTickLabelColor(fore);
+  yAxis->setTickLabelColor(fore);
+  xAxis->setLabelColor(fore);
+  yAxis->setLabelColor(fore);
+  xAxis->grid()->setPen(QPen(grid1, 1, Qt::DotLine));
+  yAxis->grid()->setPen(QPen(grid1, 1, Qt::DotLine));
+  xAxis->grid()->setSubGridPen(QPen(grid2, 1, Qt::DotLine));
+  yAxis->grid()->setSubGridPen(QPen(grid2, 1, Qt::DotLine));
+  xAxis->grid()->setZeroLinePen(Qt::NoPen);
+  yAxis->grid()->setZeroLinePen(Qt::NoPen);
+  setBackground(QBrush(back));
 }
 
 void WidgetPlotMulti1D::replot_markers() {
-  ui->mcaPlot->clearItems();
+  clearItems();
   edge_trc1 = nullptr;
   edge_trc2 = nullptr;
   double min_marker = std::numeric_limits<double>::max();
@@ -351,31 +343,31 @@ void WidgetPlotMulti1D::replot_markers() {
     if (q.visible) {
 
       double max = std::numeric_limits<double>::lowest();
-      int total = ui->mcaPlot->graphCount();
+      int total = graphCount();
       for (int i=0; i < total; i++) {
 
-        if ((ui->mcaPlot->graph(i)->scatterStyle().shape() != QCPScatterStyle::ssNone) &&
-            (ui->mcaPlot->graph(i)->scatterStyle().shape() != QCPScatterStyle::ssDisc))
+        if ((graph(i)->scatterStyle().shape() != QCPScatterStyle::ssNone) &&
+            (graph(i)->scatterStyle().shape() != QCPScatterStyle::ssDisc))
           continue;
 
-        if (!ui->mcaPlot->graph(i)->property("fittable").toBool())
+        if (!graph(i)->property("fittable").toBool())
           continue;
 
-        if ((ui->mcaPlot->graph(i)->data()->firstKey() >= q.pos)
-            || (q.pos >= ui->mcaPlot->graph(i)->data()->lastKey()))
+        if ((graph(i)->data()->firstKey() >= q.pos)
+            || (q.pos >= graph(i)->data()->lastKey()))
           continue;
 
-        QCPItemTracer *crs = new QCPItemTracer(ui->mcaPlot);
+        QCPItemTracer *crs = new QCPItemTracer(this);
         crs->setStyle(QCPItemTracer::tsNone); //tsCirlce?
         crs->setProperty("position", q.pos);
 
         crs->setSize(4);
-        crs->setGraph(ui->mcaPlot->graph(i));
+        crs->setGraph(graph(i));
         crs->setInterpolating(true);
         crs->setGraphKey(q.pos);
         crs->setPen(q.appearance.default_pen);
         crs->setSelectable(false);
-        ui->mcaPlot->addItem(crs);
+        addItem(crs);
 
         crs->updatePosition();
         double val = crs->positions().first()->value();
@@ -388,7 +380,7 @@ void WidgetPlotMulti1D::replot_markers() {
     if (top_crs != nullptr) {
       QPen pen = q.appearance.default_pen;
 
-      QCPItemLine *line = new QCPItemLine(ui->mcaPlot);
+      QCPItemLine *line = new QCPItemLine(this);
       line->start->setParentAnchor(top_crs->position);
       line->start->setCoords(0, -30);
       line->end->setParentAnchor(top_crs->position);
@@ -399,10 +391,10 @@ void WidgetPlotMulti1D::replot_markers() {
       line->setProperty("true_value", top_crs->graphKey());
       line->setProperty("position", top_crs->property("position"));
       line->setSelectable(false);
-      ui->mcaPlot->addItem(line);
+      addItem(line);
 
       if (marker_labels_) {
-        QCPItemText *markerText = new QCPItemText(ui->mcaPlot);
+        QCPItemText *markerText = new QCPItemText(this);
         markerText->setProperty("true_value", top_crs->graphKey());
         markerText->setProperty("position", top_crs->property("position"));
 
@@ -418,14 +410,14 @@ void WidgetPlotMulti1D::replot_markers() {
         markerText->setSelectedPen(pen);
         markerText->setPadding(QMargins(1, 1, 1, 1));
         markerText->setSelectable(false);
-        ui->mcaPlot->addItem(markerText);
+        addItem(markerText);
       }
     }
 
-    //ui->mcaPlot->xAxis->setRangeLower(min_marker);
-    //ui->mcaPlot->xAxis->setRangeUpper(max_marker);
-    //ui->mcaPlot->xAxis->setRange(min, max);
-    //ui->mcaPlot->xAxis2->setRange(min, max);
+    //xAxis->setRangeLower(min_marker);
+    //xAxis->setRangeUpper(max_marker);
+    //xAxis->setRange(min, max);
+    //xAxis2->setRange(min, max);
 
   }
 
@@ -438,7 +430,7 @@ void WidgetPlotMulti1D::replot_markers() {
     double pos1 = rect[0].pos;
     double pos2 = rect[1].pos;
 
-    QCPItemRect *cprect = new QCPItemRect(ui->mcaPlot);
+    QCPItemRect *cprect = new QCPItemRect(this);
     double x1 = pos1;
     double y1 = maxy;
     double x2 = pos2;
@@ -451,12 +443,12 @@ void WidgetPlotMulti1D::replot_markers() {
     cprect->setPen(rect[0].appearance.default_pen);
     cprect->setBrush(QBrush(rect[1].appearance.default_pen.color()));
     cprect->setSelectable(false);
-    ui->mcaPlot->addItem(cprect);
+    addItem(cprect);
   }
 
   if (!title_text_.isEmpty()) {
-    QCPItemText *floatingText = new QCPItemText(ui->mcaPlot);
-    ui->mcaPlot->addItem(floatingText);
+    QCPItemText *floatingText = new QCPItemText(this);
+    addItem(floatingText);
     floatingText->setPositionAlignment(Qt::AlignTop|Qt::AlignHCenter);
     floatingText->position->setType(QCPItemPosition::ptAxisRectRatio);
     floatingText->position->setCoords(0.5, 0); // place position at center/top of axis rect
@@ -469,24 +461,24 @@ void WidgetPlotMulti1D::replot_markers() {
   plotButtons();
 
   bool xaxis_changed = false;
-  double dif_lower = min_marker - ui->mcaPlot->xAxis->range().lower;
-  double dif_upper = max_marker - ui->mcaPlot->xAxis->range().upper;
+  double dif_lower = min_marker - xAxis->range().lower;
+  double dif_upper = max_marker - xAxis->range().upper;
   if (dif_upper > 0) {
-    ui->mcaPlot->xAxis->setRangeUpper(max_marker + 20);
+    xAxis->setRangeUpper(max_marker + 20);
     if (dif_lower > (dif_upper + 20))
-      ui->mcaPlot->xAxis->setRangeLower(ui->mcaPlot->xAxis->range().lower + dif_upper + 20);
+      xAxis->setRangeLower(xAxis->range().lower + dif_upper + 20);
     xaxis_changed = true;
   }
 
   if (dif_lower < 0) {
-    ui->mcaPlot->xAxis->setRangeLower(min_marker - 20);
+    xAxis->setRangeLower(min_marker - 20);
     if (dif_upper < (dif_lower - 20))
-      ui->mcaPlot->xAxis->setRangeUpper(ui->mcaPlot->xAxis->range().upper + dif_lower - 20);
+      xAxis->setRangeUpper(xAxis->range().upper + dif_lower - 20);
     xaxis_changed = true;
   }
 
   if (xaxis_changed) {
-    ui->mcaPlot->replot();
+    replot();
     plot_rezoom();
   }
 
@@ -496,37 +488,37 @@ void WidgetPlotMulti1D::plotButtons() {
   QCPOverlayButton *overlayButton;
   QCPOverlayButton *newButton;
 
-  newButton = new QCPOverlayButton(ui->mcaPlot,
+  newButton = new QCPOverlayButton(this,
                                    QPixmap(":/icons/oxy/22/view_fullscreen.png"),
                                    "reset_scales", "Zoom out",
                                    Qt::AlignBottom | Qt::AlignRight);
   newButton->setClipToAxisRect(false);
   newButton->topLeft->setType(QCPItemPosition::ptAbsolute);
   newButton->topLeft->setCoords(5, 5);
-  ui->mcaPlot->addItem(newButton);
+  addItem(newButton);
   overlayButton = newButton;
 
   if (!menuOptions.isEmpty()) {
-    newButton = new QCPOverlayButton(ui->mcaPlot, QPixmap(":/icons/oxy/22/view_statistics.png"),
+    newButton = new QCPOverlayButton(this, QPixmap(":/icons/oxy/22/view_statistics.png"),
                                      "options", "Style options",
                                      Qt::AlignBottom | Qt::AlignRight);
 
     newButton->setClipToAxisRect(false);
     newButton->topLeft->setParentAnchor(overlayButton->bottomLeft);
     newButton->topLeft->setCoords(0, 5);
-    ui->mcaPlot->addItem(newButton);
+    addItem(newButton);
     overlayButton = newButton;
   }
 
   if (visible_options_ & ShowOptions::save) {
-    newButton = new QCPOverlayButton(ui->mcaPlot,
+    newButton = new QCPOverlayButton(this,
                                      QPixmap(":/icons/oxy/22/document_save.png"),
                                      "export", "Export plot",
                                      Qt::AlignBottom | Qt::AlignRight);
     newButton->setClipToAxisRect(false);
     newButton->topLeft->setParentAnchor(overlayButton->bottomLeft);
     newButton->topLeft->setCoords(0, 5);
-    ui->mcaPlot->addItem(newButton);
+    addItem(newButton);
     overlayButton = newButton;
   }
 }
@@ -566,32 +558,32 @@ void WidgetPlotMulti1D::clicked_item(QCPAbstractItem* itm) {
 }
 
 void WidgetPlotMulti1D::zoom_out() {
-  ui->mcaPlot->xAxis->rescale();
+  xAxis->rescale();
   force_rezoom_ = true;
   plot_rezoom();
-  ui->mcaPlot->replot();
+  replot();
 
 }
 
 void WidgetPlotMulti1D::plot_mouse_press(QMouseEvent*) {
-  disconnect(ui->mcaPlot, 0, this, 0);
-  connect(ui->mcaPlot, SIGNAL(mouseRelease(QMouseEvent*)), this, SLOT(plot_mouse_release(QMouseEvent*)));
-  connect(ui->mcaPlot, SIGNAL(plottableClick(QCPAbstractPlottable*,QMouseEvent*)), this, SLOT(clicked_plottable(QCPAbstractPlottable*)));
-  connect(ui->mcaPlot, SIGNAL(clickedAbstractItem(QCPAbstractItem*)), this, SLOT(clicked_item(QCPAbstractItem*)));
-  connect(ui->mcaPlot, SIGNAL(selectionChangedByUser()), this, SLOT(selection_changed()));
+  disconnect(this, 0, this, 0);
+  connect(this, SIGNAL(mouseRelease(QMouseEvent*)), this, SLOT(plot_mouse_release(QMouseEvent*)));
+  connect(this, SIGNAL(plottableClick(QCPAbstractPlottable*,QMouseEvent*)), this, SLOT(clicked_plottable(QCPAbstractPlottable*)));
+  connect(this, SIGNAL(clickedAbstractItem(QCPAbstractItem*)), this, SLOT(clicked_item(QCPAbstractItem*)));
+  connect(this, SIGNAL(selectionChangedByUser()), this, SLOT(selection_changed()));
 
   force_rezoom_ = false;
   mouse_pressed_ = true;
 }
 
 void WidgetPlotMulti1D::plot_mouse_release(QMouseEvent*) {
-  connect(ui->mcaPlot, SIGNAL(mouse_clicked(double,double,QMouseEvent*,bool)), this, SLOT(plot_mouse_clicked(double,double,QMouseEvent*,bool)));
-  connect(ui->mcaPlot, SIGNAL(beforeReplot()), this, SLOT(plot_rezoom()));
-  connect(ui->mcaPlot, SIGNAL(mousePress(QMouseEvent*)), this, SLOT(plot_mouse_press(QMouseEvent*)));
+  connect(this, SIGNAL(mouse_clicked(double,double,QMouseEvent*,bool)), this, SLOT(plot_mouse_clicked(double,double,QMouseEvent*,bool)));
+  connect(this, SIGNAL(beforeReplot()), this, SLOT(plot_rezoom()));
+  connect(this, SIGNAL(mousePress(QMouseEvent*)), this, SLOT(plot_mouse_press(QMouseEvent*)));
   force_rezoom_ = true;
   mouse_pressed_ = false;
   plot_rezoom();
-  ui->mcaPlot->replot();
+  replot();
 }
 
 void WidgetPlotMulti1D::optionsChanged(QAction* action) {
@@ -599,58 +591,58 @@ void WidgetPlotMulti1D::optionsChanged(QAction* action) {
   QString choice = action->text();
   if (choice == "Linear") {
     scale_type_ = choice;
-    ui->mcaPlot->yAxis->setScaleType(QCPAxis::stLinear);
+    yAxis->setScaleType(QCPAxis::stLinear);
   } else if (choice == "Logarithmic") {
-    ui->mcaPlot->yAxis->setScaleType(QCPAxis::stLogarithmic);
+    yAxis->setScaleType(QCPAxis::stLogarithmic);
     scale_type_ = choice;
   } else if ((choice == "Scatter") || (choice == "Lines") || (choice == "Fill")
              || (choice == "Step center") || (choice == "Step left") || (choice == "Step right")) {
     plot_style_ = choice;
-    int total = ui->mcaPlot->graphCount();
+    int total = graphCount();
     for (int i=0; i < total; i++)
-      if ((ui->mcaPlot->graph(i)->scatterStyle().shape() == QCPScatterStyle::ssNone) || (ui->mcaPlot->graph(i)->scatterStyle().shape() == QCPScatterStyle::ssDisc))
-        set_graph_style(ui->mcaPlot->graph(i), choice);
+      if ((graph(i)->scatterStyle().shape() == QCPScatterStyle::ssNone) || (graph(i)->scatterStyle().shape() == QCPScatterStyle::ssDisc))
+        set_graph_style(graph(i), choice);
   } else if (choice == "Energy labels") {
     marker_labels_ = !marker_labels_;
     replot_markers();
   } else if (choice == "1") {
     thickness_ = 1;
-    int total = ui->mcaPlot->graphCount();
+    int total = graphCount();
     for (int i=0; i < total; i++)
-      if ((ui->mcaPlot->graph(i)->scatterStyle().shape() == QCPScatterStyle::ssNone) || (ui->mcaPlot->graph(i)->scatterStyle().shape() == QCPScatterStyle::ssDisc))
-        set_graph_style(ui->mcaPlot->graph(i), choice);
+      if ((graph(i)->scatterStyle().shape() == QCPScatterStyle::ssNone) || (graph(i)->scatterStyle().shape() == QCPScatterStyle::ssDisc))
+        set_graph_style(graph(i), choice);
   } else if (choice == "2") {
     thickness_ = 2;
-    int total = ui->mcaPlot->graphCount();
+    int total = graphCount();
     for (int i=0; i < total; i++)
-      if ((ui->mcaPlot->graph(i)->scatterStyle().shape() == QCPScatterStyle::ssNone) || (ui->mcaPlot->graph(i)->scatterStyle().shape() == QCPScatterStyle::ssDisc))
-        set_graph_style(ui->mcaPlot->graph(i), choice);
+      if ((graph(i)->scatterStyle().shape() == QCPScatterStyle::ssNone) || (graph(i)->scatterStyle().shape() == QCPScatterStyle::ssDisc))
+        set_graph_style(graph(i), choice);
   } else if (choice == "3") {
     thickness_ = 3;
-    int total = ui->mcaPlot->graphCount();
+    int total = graphCount();
     for (int i=0; i < total; i++)
-      if ((ui->mcaPlot->graph(i)->scatterStyle().shape() == QCPScatterStyle::ssNone) || (ui->mcaPlot->graph(i)->scatterStyle().shape() == QCPScatterStyle::ssDisc))
-        set_graph_style(ui->mcaPlot->graph(i), choice);
+      if ((graph(i)->scatterStyle().shape() == QCPScatterStyle::ssNone) || (graph(i)->scatterStyle().shape() == QCPScatterStyle::ssDisc))
+        set_graph_style(graph(i), choice);
   } else if ((choice == "No grid") || (choice == "Grid") || (choice == "Grid + subgrid")) {
     grid_style_ = choice;
-    ui->mcaPlot->xAxis->grid()->setVisible(grid_style_ != "No grid");
-    ui->mcaPlot->yAxis->grid()->setVisible(grid_style_ != "No grid");
-    ui->mcaPlot->xAxis->grid()->setSubGridVisible(grid_style_ == "Grid + subgrid");
-    ui->mcaPlot->yAxis->grid()->setSubGridVisible(grid_style_ == "Grid + subgrid");
+    xAxis->grid()->setVisible(grid_style_ != "No grid");
+    yAxis->grid()->setVisible(grid_style_ != "No grid");
+    xAxis->grid()->setSubGridVisible(grid_style_ == "Grid + subgrid");
+    yAxis->grid()->setSubGridVisible(grid_style_ == "Grid + subgrid");
   }
 
   build_menu();
-  ui->mcaPlot->replot();
+  replot();
   this->setCursor(Qt::ArrowCursor);
 }
 
 void WidgetPlotMulti1D::set_grid_style(QString grd) {
   if ((grd == "No grid") || (grd == "Grid") || (grd == "Grid + subgrid")) {
     grid_style_ = grd;
-    ui->mcaPlot->xAxis->grid()->setVisible(grid_style_ != "No grid");
-    ui->mcaPlot->yAxis->grid()->setVisible(grid_style_ != "No grid");
-    ui->mcaPlot->xAxis->grid()->setSubGridVisible(grid_style_ == "Grid + subgrid");
-    ui->mcaPlot->yAxis->grid()->setSubGridVisible(grid_style_ == "Grid + subgrid");
+    xAxis->grid()->setVisible(grid_style_ != "No grid");
+    yAxis->grid()->setVisible(grid_style_ != "No grid");
+    xAxis->grid()->setSubGridVisible(grid_style_ == "Grid + subgrid");
+    yAxis->grid()->setSubGridVisible(grid_style_ == "Grid + subgrid");
     build_menu();
   }
 }
@@ -712,10 +704,10 @@ void WidgetPlotMulti1D::set_scale_type(QString sct) {
   this->setCursor(Qt::WaitCursor);
   scale_type_ = sct;
   if (scale_type_ == "Linear")
-    ui->mcaPlot->yAxis->setScaleType(QCPAxis::stLinear);
+    yAxis->setScaleType(QCPAxis::stLinear);
   else if (scale_type() == "Logarithmic")
-    ui->mcaPlot->yAxis->setScaleType(QCPAxis::stLogarithmic);
-  ui->mcaPlot->replot();
+    yAxis->setScaleType(QCPAxis::stLogarithmic);
+  replot();
   build_menu();
   this->setCursor(Qt::ArrowCursor);
 }
@@ -723,13 +715,13 @@ void WidgetPlotMulti1D::set_scale_type(QString sct) {
 void WidgetPlotMulti1D::set_plot_style(QString stl) {
   this->setCursor(Qt::WaitCursor);
   plot_style_ = stl;
-  int total = ui->mcaPlot->graphCount();
+  int total = graphCount();
   for (int i=0; i < total; i++) {
-    if ((ui->mcaPlot->graph(i)->scatterStyle().shape() == QCPScatterStyle::ssNone) || (ui->mcaPlot->graph(i)->scatterStyle().shape() == QCPScatterStyle::ssDisc))
-      set_graph_style(ui->mcaPlot->graph(i), stl);
+    if ((graph(i)->scatterStyle().shape() == QCPScatterStyle::ssNone) || (graph(i)->scatterStyle().shape() == QCPScatterStyle::ssDisc))
+      set_graph_style(graph(i), stl);
   }
   build_menu();
-  ui->mcaPlot->replot();
+  replot();
   this->setCursor(Qt::ArrowCursor);
 }
 
@@ -738,7 +730,7 @@ void WidgetPlotMulti1D::set_marker_labels(bool sl)
   marker_labels_ = sl;
   replot_markers();
   build_menu();
-  ui->mcaPlot->replot();
+  replot();
 }
 
 bool WidgetPlotMulti1D::marker_labels() {
@@ -755,9 +747,9 @@ void WidgetPlotMulti1D::exportRequested(QAction* choice) {
 
     int fontUpscale = 5;
 
-    for (int i = 0; i < ui->mcaPlot->itemCount(); ++i) {
-      QCPAbstractItem* item = ui->mcaPlot->item(i);
-      if (QCPItemLine *line = qobject_cast<QCPItemLine*>(item))
+    for (int i = 0; i < itemCount(); ++i) {
+      QCPAbstractItem* itm = item(i);
+      if (QCPItemLine *line = qobject_cast<QCPItemLine*>(itm))
       {
         QCPLineEnding head = line->head();
         QPen pen = line->selectedPen();
@@ -768,7 +760,7 @@ void WidgetPlotMulti1D::exportRequested(QAction* choice) {
         line->start->setCoords(0, -50);
         line->end->setCoords(0, -15);
       }
-      else if (QCPItemText *txt = qobject_cast<QCPItemText*>(item))
+      else if (QCPItemText *txt = qobject_cast<QCPItemText*>(itm))
       {
         QPen pen = txt->selectedPen();
         txt->setPen(pen);
@@ -780,32 +772,32 @@ void WidgetPlotMulti1D::exportRequested(QAction* choice) {
       }
     }
 
-    ui->mcaPlot->prepPlotExport(2, fontUpscale, 20);
-    ui->mcaPlot->replot();
+    prepPlotExport(2, fontUpscale, 20);
+    replot();
 
     plot_rezoom();
-    for (int i = 0; i < ui->mcaPlot->itemCount(); ++i) {
-      QCPAbstractItem* item = ui->mcaPlot->item(i);
-      if (QCPOverlayButton *btn = qobject_cast<QCPOverlayButton*>(item))
+    for (int i = 0; i < itemCount(); ++i) {
+      QCPAbstractItem* itm = item(i);
+      if (QCPOverlayButton *btn = qobject_cast<QCPOverlayButton*>(itm))
         btn->setVisible(false);
     }
 
-    ui->mcaPlot->replot();
+    replot();
 
     QFileInfo file(fileName);
     if (file.suffix() == "png")
-      ui->mcaPlot->savePng(fileName,0,0,1,100);
+      savePng(fileName,0,0,1,100);
     else if (file.suffix() == "jpg")
-      ui->mcaPlot->saveJpg(fileName,0,0,1,100);
+      saveJpg(fileName,0,0,1,100);
     else if (file.suffix() == "bmp")
-      ui->mcaPlot->saveBmp(fileName);
+      saveBmp(fileName);
     else if (file.suffix() == "pdf")
-      ui->mcaPlot->savePdf(fileName, true);
+      savePdf(fileName, true);
 
 
-    for (int i = 0; i < ui->mcaPlot->itemCount(); ++i) {
-      QCPAbstractItem* item = ui->mcaPlot->item(i);
-      if (QCPItemLine *line = qobject_cast<QCPItemLine*>(item))
+    for (int i = 0; i < itemCount(); ++i) {
+      QCPAbstractItem* itm = item(i);
+      if (QCPItemLine *line = qobject_cast<QCPItemLine*>(itm))
       {
         QCPLineEnding head = line->head();
         QPen pen = line->selectedPen();
@@ -816,7 +808,7 @@ void WidgetPlotMulti1D::exportRequested(QAction* choice) {
         line->start->setCoords(0, -30);
         line->end->setCoords(0, -5);
       }
-      else if (QCPItemText *txt = qobject_cast<QCPItemText*>(item))
+      else if (QCPItemText *txt = qobject_cast<QCPItemText*>(itm))
       {
         QPen pen = txt->selectedPen();
         txt->setPen(pen);
@@ -828,16 +820,16 @@ void WidgetPlotMulti1D::exportRequested(QAction* choice) {
       }
     }
 
-    ui->mcaPlot->postPlotExport(2, fontUpscale, 20);
-    ui->mcaPlot->replot();
+    postPlotExport(2, fontUpscale, 20);
+    replot();
     plot_rezoom();
-    for (int i = 0; i < ui->mcaPlot->itemCount(); ++i) {
-      QCPAbstractItem* item = ui->mcaPlot->item(i);
-      if (QCPOverlayButton *btn = qobject_cast<QCPOverlayButton*>(item))
+    for (int i = 0; i < itemCount(); ++i) {
+      QCPAbstractItem* itm = item(i);
+      if (QCPOverlayButton *btn = qobject_cast<QCPOverlayButton*>(itm))
         btn->setVisible(true);
     }
 
-    ui->mcaPlot->replot();
+    replot();
 
 
 

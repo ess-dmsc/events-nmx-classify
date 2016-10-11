@@ -21,17 +21,12 @@ struct Marker1D {
 };
 
 
-namespace Ui {
-class WidgetPlotMulti1D;
-}
-
-class WidgetPlotMulti1D : public QWidget
+class WidgetPlotMulti1D : public QSquareCustomPlot
 {
   Q_OBJECT
 
 public:
   explicit WidgetPlotMulti1D(QWidget *parent = 0);
-  ~WidgetPlotMulti1D();
   virtual void clearGraphs();
 
   void clearExtras();
@@ -96,8 +91,6 @@ protected:
   void set_graph_style(QCPGraph*, QString);
 
   void build_menu();
-
-  Ui::WidgetPlotMulti1D *ui;
 
   std::list<Marker1D> my_markers_;
   std::vector<Marker1D> rect;

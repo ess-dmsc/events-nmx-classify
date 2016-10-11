@@ -7,10 +7,6 @@
 #include <memory>
 #include "entry2d.h"
 
-namespace Ui {
-class WidgetPlot2D;
-}
-
 struct MarkerBox2D {
   MarkerBox2D()
     : selected(false)
@@ -37,13 +33,12 @@ struct MarkerBox2D {
 };
 
 
-class WidgetPlot2D : public QWidget
+class WidgetPlot2D : public QSquareCustomPlot
 {
   Q_OBJECT
 
 public:
   explicit WidgetPlot2D(QWidget *parent = 0);
-  ~WidgetPlot2D();
 
   void update_plot(uint64_t sizex, uint64_t sizey, const EntryList &spectrum_data);
   void set_axes(QString xlabel, double x1, double x2,
@@ -87,7 +82,6 @@ private slots:
 private:
 
   //gui stuff
-  Ui::WidgetPlot2D *ui;
   QCPColorMap *colorMap;
 
   std::map<QString, QCPColorGradient> gradients_;
@@ -111,6 +105,7 @@ private:
 
   void build_menu();
   void toggle_gradient_scale();
+  void plotButtons();
 
   void setColorScheme(QColor fore, QColor back, QColor grid1, QColor grid2);
 };
