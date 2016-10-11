@@ -11,6 +11,7 @@ ViewRecord::ViewRecord(QWidget *parent) :
 
   ui->plotRecord->set_antialiased(false);
   ui->plotRecord->set_scale_type("Linear");
+  ui->plotRecord->set_gradient("YlGnBu5");
   ui->plotRecord->set_show_legend(true);
   ui->plotRecord->set_zoom_drag(Qt::Horizontal);
 }

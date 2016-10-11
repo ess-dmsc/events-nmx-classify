@@ -89,8 +89,10 @@ private:
 
   double normalizer(const std::vector<Variant> &data);
 
-  QVector<QColor> palette_ {Qt::black, Qt::darkRed, Qt::darkGreen, Qt::darkCyan,
-        Qt::darkYellow, Qt::darkMagenta, Qt::darkBlue, Qt::red, Qt::blue};
+  QVector<QColor> palette_ {Qt::black, Qt::darkRed, Qt::darkGreen,
+                            Qt::darkYellow, Qt::darkMagenta,
+                            Qt::red, Qt::blue,
+                            Qt::darkCyan, Qt::darkBlue};
 };
 
 #endif // FORM_CALIBRATION_H

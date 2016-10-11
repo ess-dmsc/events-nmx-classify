@@ -3,50 +3,29 @@
 #include "CustomLogger.h"
 #include "qcp_overlay_button.h"
 
-WidgetPlot2D::WidgetPlot2D(QWidget *parent) :
-  QSquareCustomPlot(parent),
-  scale_types_({{"Linear", QCPAxis::stLinear}, {"Logarithmic", QCPAxis::stLogarithmic}}),
-  gradients_({{"Grayscale", QCPColorGradient::gpGrayscale}, {"Hot",  QCPColorGradient::gpHot},
-{"Cold", QCPColorGradient::gpCold}, {"Night", QCPColorGradient::gpNight},
-{"Candy", QCPColorGradient::gpCandy}, {"Geography", QCPColorGradient::gpGeography},
-{"Ion", QCPColorGradient::gpIon}, {"Thermal", QCPColorGradient::gpThermal},
-{"Polar", QCPColorGradient::gpPolar}, {"Spectrum", QCPColorGradient::gpSpectrum},
-{"Jet", QCPColorGradient::gpJet}, {"Hues", QCPColorGradient::gpHues}})
+WidgetPlot2D::WidgetPlot2D(QWidget *parent)
+  : QSquareCustomPlot(parent)
 {
-
-  current_gradient_ = "Night";
+  current_gradient_ = "Greys";
   current_scale_type_ = "Linear";
   show_gradient_scale_ = false;
   antialiased_ = false;
   show_labels_ = true;
 
-//  setColorScheme(Qt::white, Qt::black, QColor(144, 144, 144), QColor(80, 80, 80));
   setColorScheme(Qt::black, Qt::white, QColor(112, 112, 112), QColor(170, 170, 170));
+
+  makeCustomGradients();
 
   xAxis->grid()->setVisible(true);
   yAxis->grid()->setVisible(true);
   xAxis->grid()->setSubGridVisible(true);
   yAxis->grid()->setSubGridVisible(true);
 
-  //color theme setup
-  marker_looks.themes["Grayscale"] = QPen(Qt::cyan, 1);
-  marker_looks.themes["Hot"] = QPen(Qt::cyan, 1);
-  marker_looks.themes["Cold"] = QPen(Qt::yellow, 1);
-  marker_looks.themes["Night"] = QPen(Qt::red, 1);
-  marker_looks.themes["Candy"] = QPen(Qt::red, 1);
-  marker_looks.themes["Geography"] = QPen(Qt::yellow, 1);
-  marker_looks.themes["Ion"] = QPen(Qt::magenta, 1);
-  marker_looks.themes["Thermal"] = QPen(Qt::cyan, 1);
-  marker_looks.themes["Polar"] = QPen(Qt::green, 1);
-  marker_looks.themes["Spectrum"] = QPen(Qt::cyan, 1);
-  marker_looks.themes["Jet"] = QPen(Qt::darkMagenta, 1);
-  marker_looks.themes["Hues"] = QPen(Qt::black, 1);
-
   //colormap setup
   setAlwaysSquare(true);
   colorMap = new QCPColorMap(xAxis, yAxis);
-  colorMap->clearData();
-  addPlottable(colorMap);
+  colorMap->data()->clear();
+//  addPlottable(colorMap);
   colorMap->setInterpolate(antialiased_);
   colorMap->setTightBoundary(false);
   axisRect()->setupFullAxesBox();
@@ -70,6 +49,39 @@ WidgetPlot2D::WidgetPlot2D(QWidget *parent) :
 
   build_menu();
 }
+
+void WidgetPlot2D::makeCustomGradients()
+{
+  addCustomGradient("Blues", {"#ffffff","#deebf7","#9ecae1","#3182bd"});
+  addCustomGradient("Greens", {"#ffffff","#e5f5e0","#a1d99b","#31a354"});
+  addCustomGradient("Oranges", {"#ffffff","#fee6ce","#fdae6b","#e6550d"});
+  addCustomGradient("Purples", {"#ffffff","#efedf5","#bcbddc","#756bb1"});
+  addCustomGradient("Reds", {"#ffffff","#fee0d2","#fc9272","#de2d26"});
+  addCustomGradient("Greys", {"#ffffff","#f0f0f0","#bdbdbd","#636363"});
+
+  addCustomGradient("GnBu5", {"#ffffff","#f0f9e8","#bae4bc","#7bccc4","#43a2ca","#0868ac"});
+  addCustomGradient("PuRd5", {"#ffffff","#f1eef6","#d7b5d8","#df65b0","#dd1c77","#980043"});
+  addCustomGradient("RdPu5", {"#ffffff","#feebe2","#fbb4b9","#f768a1","#c51b8a","#7a0177"});
+  addCustomGradient("YlGn5", {"#ffffff","#ffffcc","#c2e699","#78c679","#31a354","#006837"});
+  addCustomGradient("YlGnBu5", {"#ffffff","#ffffcc","#a1dab4","#41b6c4","#2c7fb8","#253494"});
+}
+
+void WidgetPlot2D::addCustomGradient(QString name, std::initializer_list<std::string> colors)
+{
+  QVector<QColor> cols;
+  for (auto &c : colors)
+    cols.push_back(QColor(QString::fromStdString(c)));
+
+  if (name.isEmpty() || (cols.size() < 2))
+    return;
+
+  QCPColorGradient gr;
+  gr.clearColorStops();
+  for (int i=0; i < cols.size(); ++i)
+    gr.setColorStopAt(double(i) / double(cols.size() - 1), cols[i]);
+  gradients_[name] = gr;
+}
+
 
 void WidgetPlot2D::set_zoom_drag(Qt::Orientation o)
 {
@@ -181,7 +193,7 @@ void WidgetPlot2D::set_boxes(std::list<MarkerBox2D> boxes) {
 
 
 void WidgetPlot2D::reset_content() {
-  colorMap->clearData();
+  colorMap->data()->clear();
   boxes_.clear();
 //  labels_.clear();
 }
@@ -194,13 +206,6 @@ void WidgetPlot2D::refresh()
 void WidgetPlot2D::replot_markers() {
 
   clearItems();
-
-  QPen pen = marker_looks.get_pen(current_gradient_);
-
-  QColor cc = pen.color();
-  cc.setAlpha(169);
-  pen.setColor(cc);
-  pen.setWidth(3);
 
   QCPItemRect *box;
 
@@ -216,13 +221,12 @@ void WidgetPlot2D::replot_markers() {
     box->setBrush(QBrush(q.fill));
     box->setSelected(q.selected);
     QColor sel = box->selectedPen().color();
-    box->setSelectedBrush(QBrush(QColor::fromHsv(sel.hsvHue(), sel.saturation(), sel.value(), 48)));
+    box->setSelectedBrush(QBrush(QColor::fromHsv(sel.hsvHue(), sel.saturation(), sel.value(), sel.alpha() * 0.15)));
 
     box->setProperty("chan_x", q.x1);
     box->setProperty("chan_y", q.y1);
     box->topLeft->setCoords(q.x1, q.y1);
     box->bottomRight->setCoords(q.x2, q.y2);
-    addItem(box);
 
     if (q.selectable)
       selectables++;
@@ -252,8 +256,6 @@ void WidgetPlot2D::replot_markers() {
       labelItem->setSelectedBrush(QBrush(Qt::white));
 
       labelItem->setPadding(QMargins(1, 1, 1, 1));
-
-      addItem(labelItem);
     }
 
   }
@@ -271,7 +273,8 @@ void WidgetPlot2D::replot_markers() {
   replot();
 }
 
-void WidgetPlot2D::plotButtons() {
+void WidgetPlot2D::plotButtons()
+{
   QCPOverlayButton *overlayButton;
   QCPOverlayButton *newButton;
 
@@ -282,7 +285,6 @@ void WidgetPlot2D::plotButtons() {
   newButton->setClipToAxisRect(false);
   newButton->topLeft->setType(QCPItemPosition::ptAbsolute);
   newButton->topLeft->setCoords(5, 5);
-  addItem(newButton);
   overlayButton = newButton;
 
   if (!menuOptions.isEmpty()) {
@@ -293,21 +295,16 @@ void WidgetPlot2D::plotButtons() {
     newButton->setClipToAxisRect(false);
     newButton->topLeft->setParentAnchor(overlayButton->bottomLeft);
     newButton->topLeft->setCoords(0, 5);
-    addItem(newButton);
     overlayButton = newButton;
   }
 
-//  if (visible_options_ & ShowOptions::save) {
-    newButton = new QCPOverlayButton(this,
-                                     QPixmap(":/icons/oxy/22/document_save.png"),
-                                     "export", "Export plot",
-                                     Qt::AlignBottom | Qt::AlignRight);
-    newButton->setClipToAxisRect(false);
-    newButton->topLeft->setParentAnchor(overlayButton->bottomLeft);
-    newButton->topLeft->setCoords(0, 5);
-    addItem(newButton);
-//    overlayButton = newButton;
-//  }
+  newButton = new QCPOverlayButton(this,
+                                   QPixmap(":/icons/oxy/22/document_save.png"),
+                                   "export", "Export plot",
+                                   Qt::AlignBottom | Qt::AlignRight);
+  newButton->setClipToAxisRect(false);
+  newButton->topLeft->setParentAnchor(overlayButton->bottomLeft);
+  newButton->topLeft->setCoords(0, 5);
 }
 
 void WidgetPlot2D::update_plot(uint64_t sizex, uint64_t sizey, const EntryList &spectrum_data)
@@ -315,18 +312,12 @@ void WidgetPlot2D::update_plot(uint64_t sizex, uint64_t sizey, const EntryList &
 //  DBG << "2d size " << sizex << "x" << sizey << " list " << spectrum_data.size();
 
   clearGraphs();
-  colorMap->clearData();
+  colorMap->data()->clear();
   setAlwaysSquare(sizex == sizey);
   if (sizex == sizey)
-  {
     setSizePolicy(QSizePolicy::Maximum, QSizePolicy::MinimumExpanding);
-//    verticalLayout->setSizeConstraint(QLayout::SetMaximumSize);
-  }
   else
-  {
     setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
-//    verticalLayout->setSizeConstraint(QLayout::SetNoConstraint);
-  }
 
   if ((sizex > 0) && (sizey > 0) && (spectrum_data.size())) {
     colorMap->data()->setSize(sizex, sizey);
@@ -337,7 +328,7 @@ void WidgetPlot2D::update_plot(uint64_t sizex, uint64_t sizey, const EntryList &
     updateGeometry();
   } else {
     clearGraphs();
-    colorMap->clearData();
+    colorMap->data()->clear();
     colorMap->keyAxis()->setLabel("");
     colorMap->valueAxis()->setLabel("");
   }
@@ -397,12 +388,6 @@ void WidgetPlot2D::toggle_gradient_scale()
     colorScale->setType(QCPAxis::atRight);
     colorMap->setColorScale(colorScale);
 
-//    colorScale->axis()->setBasePen(QPen(Qt::white, 1));
-//    colorScale->axis()->setTickPen(QPen(Qt::white, 1));
-//    colorScale->axis()->setSubTickPen(QPen(Qt::white, 1));
-//    colorScale->axis()->setTickLabelColor(Qt::white);
-//    colorScale->axis()->setLabelColor(Qt::white);
-
     colorScale->axis()->setLabel(Z_label_);
 
     //readjust margins
@@ -414,7 +399,7 @@ void WidgetPlot2D::toggle_gradient_scale()
     colorMap->setDataScaleType(scale_types_[current_scale_type_]);
     colorMap->rescaleDataRange(true);
 
-    colorScale->axis()->setScaleLogBase(10);
+//    colorScale->axis()->setScaleLogBase(10);
     colorScale->axis()->setNumberFormat("gbc");
     colorScale->axis()->setNumberPrecision(0);
     colorScale->axis()->setRangeLower(1);
@@ -446,6 +431,9 @@ QString WidgetPlot2D::scale_type() {
 }
 
 void WidgetPlot2D::set_gradient(QString grd) {
+  if (!gradients_.count(grd))
+    return;
+
   this->setCursor(Qt::WaitCursor);
   current_gradient_ = grd;
   colorMap->setGradient(gradients_[current_gradient_]);

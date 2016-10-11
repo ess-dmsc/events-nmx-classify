@@ -14,7 +14,7 @@ Analyzer::Analyzer(QWidget *parent)
 
   Histogram params;
   params.visible = true;
-  params.color = palette_[histograms1d_.size() % palette_.size()];
+  params.color = QColor(0,0,0,0);
   params.set_x(0, 250);
   params.set_y(0, 250);
   histograms1d_.push_back(params);
@@ -25,6 +25,7 @@ Analyzer::Analyzer(QWidget *parent)
 
   ui->plot2D->set_antialiased(false);
   ui->plot2D->set_scale_type("Linear");
+  ui->plot2D->set_gradient("YlGnBu5");
   ui->plot2D->set_show_legend(true);
   connect(ui->plot2D, SIGNAL(markers_set(double, double, bool)), this, SLOT(update_box(double, double, bool)));
 
@@ -168,23 +169,14 @@ void Analyzer::rebuild_data()
   yy_norm = normalizer(yy);
   zz_norm = normalizer(zz);
 
-//  DBG << weight_x << " normalized by " << xx_norm;
-//  DBG << weight_y << " normalized by " << yy_norm;
-//  DBG << weight_z << " normalized by " << zz_norm;
-
   for (size_t eventID = 0; eventID < reader_->num_analyzed(); ++eventID)
   {
-    if ((eventID >= xx.size()) || (eventID >= yy.size()))
+    if ((eventID >= xx.size()) || (eventID >= yy.size()) || (eventID >= zz.size()))
       continue;
 
-    double quality {0};
-    if (eventID < zz.size())
-      quality = zz.at(eventID).as_float() / zz_norm;
-
-    std::pair<int,int> pos{int(xx.at(eventID).as_float() / xx_norm),
-                           int(yy.at(eventID).as_float() / yy_norm)};
-
-    data_[int(quality)][pos].push_back(eventID);
+    data_[int(zz.at(eventID).as_float() / zz_norm)]
+         [std::pair<int,int>({int(xx.at(eventID).as_float() / xx_norm),
+                              int(yy.at(eventID).as_float() / yy_norm)})].push_back(eventID);
   }
 
   for (auto &i : histograms1d_)
@@ -249,7 +241,7 @@ void Analyzer::make_projections()
   EntryList data_list;
   for (auto &point : projection2d)
     data_list.push_back(Entry{{point.first.first - xmin, point.first.second - ymin}, point.second});
-  ui->plot2D->update_plot(xmax-xmin, ymax-ymin, data_list);
+  ui->plot2D->update_plot(xmax-xmin+1, ymax-ymin+1, data_list);
   ui->plot2D->set_axes(ui->comboWeightsX->currentText(), xmin * xx_norm, xmax * xx_norm,
                      ui->comboWeightsY->currentText(), ymin * yy_norm, ymax * yy_norm,
                      "Count");
@@ -343,9 +335,9 @@ void Analyzer::plot_boxes()
 {
   std::list<MarkerBox2D> boxes;
 
-  int i=0;
-  for (auto &p : histograms1d_)
+  for (int i=0; i < histograms1d_.size(); ++i)
   {
+    const auto &p = histograms1d_[i];
     if (!p.visible)
       continue;
 
@@ -357,11 +349,10 @@ void Analyzer::plot_boxes()
     box.selectable = false;
 //    box.selected = true;
     box.fill = box.border = p.color;
-    box.fill.setAlpha(48);
+    box.fill.setAlpha(box.fill.alpha() * 0.15);
     box.label = QString::number(i);
 
     boxes.push_back(box);
-    i++;
   }
 
   ui->plot2D->set_boxes(boxes);

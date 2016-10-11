@@ -80,25 +80,43 @@ private slots:
   void clicked_item(QCPAbstractItem*);
 
 private:
-
-  //gui stuff
   QCPColorMap *colorMap;
 
-  std::map<QString, QCPColorGradient> gradients_;
+  std::map<QString, QCPAxis::ScaleType> scale_types_
+  {
+    {"Linear", QCPAxis::stLinear},
+    {"Logarithmic", QCPAxis::stLogarithmic}
+  };
+
+  std::map<QString, QCPColorGradient> gradients_
+  {
+    {"Grayscale", QCPColorGradient::gpGrayscale},
+    {"Hot",  QCPColorGradient::gpHot},
+    {"Cold", QCPColorGradient::gpCold},
+    {"Night", QCPColorGradient::gpNight},
+    {"Candy", QCPColorGradient::gpCandy},
+    {"Geography", QCPColorGradient::gpGeography},
+    {"Ion", QCPColorGradient::gpIon},
+    {"Thermal", QCPColorGradient::gpThermal},
+    {"Polar", QCPColorGradient::gpPolar},
+    {"Spectrum", QCPColorGradient::gpSpectrum},
+    {"Jet", QCPColorGradient::gpJet},
+    {"Hues", QCPColorGradient::gpHues}
+  };
+
   QString current_gradient_;
 
   QMenu menuExportFormat;
   QMenu       menuOptions;
   bool show_gradient_scale_;
 
-  std::map<QString, QCPAxis::ScaleType> scale_types_;
+
   QString current_scale_type_;
 
   QString Z_label_;
 
   std::list<MarkerBox2D> boxes_;
 
-  AppearanceProfile marker_looks;
 
   bool show_labels_, antialiased_;
 
@@ -106,6 +124,9 @@ private:
   void build_menu();
   void toggle_gradient_scale();
   void plotButtons();
+
+  void makeCustomGradients();
+  void addCustomGradient(QString name, std::initializer_list<std::string> colors);
 
   void setColorScheme(QColor fore, QColor back, QColor grid1, QColor grid2);
 };

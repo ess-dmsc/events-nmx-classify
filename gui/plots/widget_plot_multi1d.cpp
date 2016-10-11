@@ -1,5 +1,4 @@
 #include "widget_plot_multi1d.h"
-//#include "ui_widget_plot_multi1d.h"
 #include "CustomLogger.h"
 #include "qt_util.h"
 #include "qcp_overlay_button.h"
@@ -20,7 +19,7 @@ WidgetPlotMulti1D::WidgetPlotMulti1D(QWidget *parent) :
   setNoAntialiasingOnDrag(true);
 
   connect(this, SIGNAL(mouse_clicked(double,double,QMouseEvent*,bool)), this, SLOT(plot_mouse_clicked(double,double,QMouseEvent*,bool)));
-  connect(this, SIGNAL(plottableClick(QCPAbstractPlottable*,QMouseEvent*)), this, SLOT(clicked_plottable(QCPAbstractPlottable*)));
+//  connect(this, SIGNAL(plottableClick(QCPAbstractPlottable*,QMouseEvent*)), this, SLOT(clicked_plottable(QCPAbstractPlottable*)));
   connect(this, SIGNAL(clickedAbstractItem(QCPAbstractItem*)), this, SLOT(clicked_item(QCPAbstractItem*)));
   connect(this, SIGNAL(selectionChangedByUser()), this, SLOT(selection_changed()));
   connect(this, SIGNAL(beforeReplot()), this, SLOT(plot_rezoom()));
@@ -353,8 +352,8 @@ void WidgetPlotMulti1D::replot_markers() {
         if (!graph(i)->property("fittable").toBool())
           continue;
 
-        if ((graph(i)->data()->firstKey() >= q.pos)
-            || (q.pos >= graph(i)->data()->lastKey()))
+        if ((graph(i)->data()->begin()->key >= q.pos)
+            || (q.pos >= graph(i)->data()->end()->key))
           continue;
 
         QCPItemTracer *crs = new QCPItemTracer(this);
@@ -367,7 +366,7 @@ void WidgetPlotMulti1D::replot_markers() {
         crs->setGraphKey(q.pos);
         crs->setPen(q.appearance.default_pen);
         crs->setSelectable(false);
-        addItem(crs);
+//        addItem(crs);
 
         crs->updatePosition();
         double val = crs->positions().first()->value();
@@ -391,7 +390,7 @@ void WidgetPlotMulti1D::replot_markers() {
       line->setProperty("true_value", top_crs->graphKey());
       line->setProperty("position", top_crs->property("position"));
       line->setSelectable(false);
-      addItem(line);
+//      addItem(line);
 
       if (marker_labels_) {
         QCPItemText *markerText = new QCPItemText(this);
@@ -410,7 +409,7 @@ void WidgetPlotMulti1D::replot_markers() {
         markerText->setSelectedPen(pen);
         markerText->setPadding(QMargins(1, 1, 1, 1));
         markerText->setSelectable(false);
-        addItem(markerText);
+//        addItem(markerText);
       }
     }
 
@@ -443,12 +442,12 @@ void WidgetPlotMulti1D::replot_markers() {
     cprect->setPen(rect[0].appearance.default_pen);
     cprect->setBrush(QBrush(rect[1].appearance.default_pen.color()));
     cprect->setSelectable(false);
-    addItem(cprect);
+//    addItem(cprect);
   }
 
   if (!title_text_.isEmpty()) {
     QCPItemText *floatingText = new QCPItemText(this);
-    addItem(floatingText);
+//    addItem(floatingText);
     floatingText->setPositionAlignment(Qt::AlignTop|Qt::AlignHCenter);
     floatingText->position->setType(QCPItemPosition::ptAxisRectRatio);
     floatingText->position->setCoords(0.5, 0); // place position at center/top of axis rect
@@ -495,7 +494,7 @@ void WidgetPlotMulti1D::plotButtons() {
   newButton->setClipToAxisRect(false);
   newButton->topLeft->setType(QCPItemPosition::ptAbsolute);
   newButton->topLeft->setCoords(5, 5);
-  addItem(newButton);
+//  addItem(newButton);
   overlayButton = newButton;
 
   if (!menuOptions.isEmpty()) {
@@ -506,7 +505,7 @@ void WidgetPlotMulti1D::plotButtons() {
     newButton->setClipToAxisRect(false);
     newButton->topLeft->setParentAnchor(overlayButton->bottomLeft);
     newButton->topLeft->setCoords(0, 5);
-    addItem(newButton);
+//    addItem(newButton);
     overlayButton = newButton;
   }
 
@@ -518,7 +517,7 @@ void WidgetPlotMulti1D::plotButtons() {
     newButton->setClipToAxisRect(false);
     newButton->topLeft->setParentAnchor(overlayButton->bottomLeft);
     newButton->topLeft->setCoords(0, 5);
-    addItem(newButton);
+//    addItem(newButton);
     overlayButton = newButton;
   }
 }
@@ -537,9 +536,9 @@ void WidgetPlotMulti1D::selection_changed() {
   emit markers_selected();
 }
 
-void WidgetPlotMulti1D::clicked_plottable(QCPAbstractPlottable *plt) {
-  //  LINFO << "<WidgetPlotMulti1D> clickedplottable";
-}
+//void WidgetPlotMulti1D::clicked_plottable(QCPAbstractPlottable *plt) {
+//  //  LINFO << "<WidgetPlotMulti1D> clickedplottable";
+//}
 
 void WidgetPlotMulti1D::clicked_item(QCPAbstractItem* itm) {
   if (!itm->visible())
@@ -557,18 +556,17 @@ void WidgetPlotMulti1D::clicked_item(QCPAbstractItem* itm) {
   }
 }
 
-void WidgetPlotMulti1D::zoom_out() {
+void WidgetPlotMulti1D::zoom_out()
+{
   xAxis->rescale();
   force_rezoom_ = true;
   plot_rezoom();
   replot();
-
 }
 
 void WidgetPlotMulti1D::plot_mouse_press(QMouseEvent*) {
   disconnect(this, 0, this, 0);
   connect(this, SIGNAL(mouseRelease(QMouseEvent*)), this, SLOT(plot_mouse_release(QMouseEvent*)));
-  connect(this, SIGNAL(plottableClick(QCPAbstractPlottable*,QMouseEvent*)), this, SLOT(clicked_plottable(QCPAbstractPlottable*)));
   connect(this, SIGNAL(clickedAbstractItem(QCPAbstractItem*)), this, SLOT(clicked_item(QCPAbstractItem*)));
   connect(this, SIGNAL(selectionChangedByUser()), this, SLOT(selection_changed()));
 

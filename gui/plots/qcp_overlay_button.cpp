@@ -35,10 +35,10 @@ void QCPOverlayButton::showTip(QMouseEvent *event)
   double y = event->pos().y();
 
   if (visible()
-      && (left->pixelPoint().x() <= x)
-      && (x <= right->pixelPoint().x())
-      && (top->pixelPoint().y() <= y)
-      && (y <= bottom->pixelPoint().y()))
+      && (left->pixelPosition().x() <= x)
+      && (x <= right->pixelPosition().x())
+      && (top->pixelPosition().y() <= y)
+      && (y <= bottom->pixelPosition().y()))
   {
     QToolTip::showText(parentPlot()->mapToGlobal(event->pos()), tooltip_);
   }
