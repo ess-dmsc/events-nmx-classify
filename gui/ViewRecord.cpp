@@ -58,7 +58,7 @@ void ViewRecord::display_current_record()
 {
   clear();
 
-  ui->plotRecord->set_axes("Position (mm)", record_.strip_start(), record_.strip_end(),
+  ui->plotRecord->set_axes("Position (strip)", record_.strip_start(), record_.strip_end(),
                            "Time bin",                          0, record_.time_end(),
                            "Charge");
 

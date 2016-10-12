@@ -379,13 +379,30 @@ void WidgetPlot2D::zoom_out()
 }
 
 
-void WidgetPlot2D::toggle_gradient_scale()
+void WidgetPlot2D::toggle_gradient_scale(int fontUpscale)
 {
-  if (show_gradient_scale_) {
+  for (int i=0; i < plotLayout()->elementCount(); i++) {
+    if (QCPColorScale *le = qobject_cast<QCPColorScale*>(plotLayout()->elementAt(i)))
+      plotLayout()->remove(le);
+  }
+  plotLayout()->simplify();
+
+  if (show_gradient_scale_)
+  {
     //add color scale
     QCPColorScale *colorScale = new QCPColorScale(this);
     plotLayout()->addElement(0, 1, colorScale);
     colorScale->setType(QCPAxis::atRight);
+    colorScale->setRangeDrag(false);
+    colorScale->setRangeZoom(false);
+
+    QFont font = colorScale->axis()->labelFont();
+    font.setPointSize(font.pointSize() + fontUpscale);
+    colorScale->axis()->setLabelFont(font);
+    QFont tickfont = colorScale->axis()->tickLabelFont();
+    tickfont.setPointSize(tickfont.pointSize() + fontUpscale);
+    colorScale->axis()->setTickLabelFont(tickfont);
+
     colorMap->setColorScale(colorScale);
 
     colorScale->axis()->setLabel(Z_label_);
@@ -400,37 +417,34 @@ void WidgetPlot2D::toggle_gradient_scale()
     colorMap->rescaleDataRange(true);
 
 //    colorScale->axis()->setScaleLogBase(10);
-    colorScale->axis()->setNumberFormat("gbc");
-    colorScale->axis()->setNumberPrecision(0);
-    colorScale->axis()->setRangeLower(1);
+//    colorScale->axis()->setNumberFormat("gbc");
+//    colorScale->axis()->setNumberPrecision(0);
+//    colorScale->axis()->setRangeLower(1);
 
-    replot();
-    updateGeometry();
-  } else {
-    for (int i=0; i < plotLayout()->elementCount(); i++) {
-      if (QCPColorScale *le = qobject_cast<QCPColorScale*>(plotLayout()->elementAt(i)))
-        plotLayout()->remove(le);
-    }
-    plotLayout()->simplify();
-    updateGeometry();
+//    replot();
   }
+  updateGeometry();
 }
 
-void WidgetPlot2D::set_scale_type(QString sct) {
+void WidgetPlot2D::set_scale_type(QString sct)
+{
   this->setCursor(Qt::WaitCursor);
   current_scale_type_ = sct;
   colorMap->setDataScaleType(scale_types_[current_scale_type_]);
   colorMap->rescaleDataRange(true);
   replot();
   build_menu();
+//  toggle_gradient_scale();
   this->setCursor(Qt::ArrowCursor);
 }
 
-QString WidgetPlot2D::scale_type() {
+QString WidgetPlot2D::scale_type()
+{
   return current_scale_type_;
 }
 
-void WidgetPlot2D::set_gradient(QString grd) {
+void WidgetPlot2D::set_gradient(QString grd)
+{
   if (!gradients_.count(grd))
     return;
 
@@ -442,17 +456,20 @@ void WidgetPlot2D::set_gradient(QString grd) {
   this->setCursor(Qt::ArrowCursor);
 }
 
-QString WidgetPlot2D::gradient() {
+QString WidgetPlot2D::gradient()
+{
   return current_gradient_;
 }
 
-void WidgetPlot2D::set_show_legend(bool show) {
+void WidgetPlot2D::set_show_legend(bool show)
+{
   show_gradient_scale_ = show;
   toggle_gradient_scale();
   build_menu();
 }
 
-bool WidgetPlot2D::show_legend() {
+bool WidgetPlot2D::show_legend()
+{
   return show_gradient_scale_;
 }
 
@@ -471,28 +488,22 @@ void WidgetPlot2D::exportRequested(QAction* choice) {
       if (QCPItemLine *line = qobject_cast<QCPItemLine*>(itm))
       {
         QCPLineEnding head = line->head();
-        QPen pen = line->selectedPen();
         head.setWidth(head.width() + fontUpscale);
         head.setLength(head.length() + fontUpscale);
         line->setHead(head);
-        line->setPen(pen);
         line->start->setCoords(0, -50);
         line->end->setCoords(0, -15);
       }
       else if (QCPItemText *txt = qobject_cast<QCPItemText*>(itm))
       {
-        QPen pen = txt->selectedPen();
-        txt->setPen(pen);
         QFont font = txt->font();
         font.setPointSize(font.pointSize() + fontUpscale);
         txt->setFont(font);
-        txt->setColor(pen.color());
         txt->position->setCoords(0, -50);
       }
     }
 
     prepPlotExport(2, fontUpscale, 20);
-    replot();
 
 //    plot_rezoom();
     for (int i = 0; i < itemCount(); ++i) {
@@ -501,7 +512,7 @@ void WidgetPlot2D::exportRequested(QAction* choice) {
         btn->setVisible(false);
     }
 
-    replot();
+    toggle_gradient_scale(fontUpscale);
 
     QFileInfo file(fileName);
     if (file.suffix() == "png")
@@ -519,22 +530,17 @@ void WidgetPlot2D::exportRequested(QAction* choice) {
       if (QCPItemLine *line = qobject_cast<QCPItemLine*>(itm))
       {
         QCPLineEnding head = line->head();
-        QPen pen = line->selectedPen();
         head.setWidth(head.width() - fontUpscale);
         head.setLength(head.length() - fontUpscale);
         line->setHead(head);
-        line->setPen(pen);
         line->start->setCoords(0, -30);
         line->end->setCoords(0, -5);
       }
       else if (QCPItemText *txt = qobject_cast<QCPItemText*>(itm))
       {
-        QPen pen = txt->selectedPen();
-        txt->setPen(pen);
         QFont font = txt->font();
         font.setPointSize(font.pointSize() - fontUpscale);
         txt->setFont(font);
-        txt->setColor(pen.color());
         txt->position->setCoords(0, -30);
       }
     }
@@ -548,7 +554,7 @@ void WidgetPlot2D::exportRequested(QAction* choice) {
         btn->setVisible(true);
     }
 
-    replot();
+    toggle_gradient_scale();
   }
 }
 

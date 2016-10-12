@@ -53,6 +53,8 @@ CONFIG(debug, debug|release) {
    DEFINES += "TPCC_DBG_"
 }
 
+DEFINES += QCUSTOMPLOT_USE_OPENGL
+
 INSTALLS += target
 
 QT += core gui

@@ -122,7 +122,7 @@ private:
 
 
   void build_menu();
-  void toggle_gradient_scale();
+  void toggle_gradient_scale(int fontUpscale = 0);
   void plotButtons();
 
   void makeCustomGradients();
