@@ -143,11 +143,9 @@ void WidgetPlot2D::set_antialiased(bool anti) {
 void WidgetPlot2D::optionsChanged(QAction* action) {
   this->setCursor(Qt::WaitCursor);
   QString choice = action->text();
-  if (scale_types_.count(choice)) {
-    current_scale_type_ = choice;
-    colorMap->setDataScaleType(scale_types_[current_scale_type_]);
-    colorMap->rescaleDataRange(true);
-    replot();
+  if (scale_types_.count(choice))
+  {
+    set_scale_type(choice);
   } else if (gradients_.count(choice)) {
     current_gradient_ = choice;
     colorMap->setGradient(gradients_[current_gradient_]);
@@ -349,6 +347,11 @@ void WidgetPlot2D::set_axes(QString xlabel, double x1, double x2,
   colorMap->valueAxis()->setLabel(ylabel);
   colorMap->data()->setRange(QCPRange(x1, x2),
                              QCPRange(y1, y2));
+
+  colorMap->keyAxis()->setNumberFormat("f");
+  colorMap->keyAxis()->setNumberPrecision(0);
+  colorMap->valueAxis()->setNumberFormat("f");
+  colorMap->valueAxis()->setNumberPrecision(0);
   rescaleAxes();
 }
 
@@ -414,13 +417,26 @@ void WidgetPlot2D::toggle_gradient_scale(int fontUpscale)
 
     colorMap->setGradient(gradients_[current_gradient_]);
     colorMap->setDataScaleType(scale_types_[current_scale_type_]);
+
+//    colorScale->axis()->setScaleType(scale_types_[current_scale_type_]);
+    colorScale->axis()->setTickLength(6,6);
+    colorScale->axis()->setSubTickLength(2,1);
+
+    if (current_scale_type_ == "Logarithmic")
+    {
+      colorScale->axis()->setNumberFormat("gbc");
+      colorScale->axis()->setNumberPrecision(1);
+      colorScale->axis()->setSubTicks(true);
+      colorScale->axis()->setTickLabelRotation(-50);
+    }
+    else
+    {
+      colorScale->axis()->setNumberFormat("gbc");
+      colorScale->axis()->setSubTicks(false);
+      colorScale->axis()->setTickLabelRotation(0);
+    }
     colorMap->rescaleDataRange(true);
-
-//    colorScale->axis()->setScaleLogBase(10);
-//    colorScale->axis()->setNumberFormat("gbc");
-//    colorScale->axis()->setNumberPrecision(0);
-//    colorScale->axis()->setRangeLower(1);
-
+    rescaleAxes();
 //    replot();
   }
   updateGeometry();
@@ -428,13 +444,16 @@ void WidgetPlot2D::toggle_gradient_scale(int fontUpscale)
 
 void WidgetPlot2D::set_scale_type(QString sct)
 {
+  if (!scale_types_.count(sct))
+    return;
+
   this->setCursor(Qt::WaitCursor);
   current_scale_type_ = sct;
   colorMap->setDataScaleType(scale_types_[current_scale_type_]);
   colorMap->rescaleDataRange(true);
   replot();
   build_menu();
-//  toggle_gradient_scale();
+  toggle_gradient_scale();
   this->setCursor(Qt::ArrowCursor);
 }
 
