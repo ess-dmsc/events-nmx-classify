@@ -3,12 +3,12 @@
 #include "qt_util.h"
 #include "qcp_overlay_button.h"
 
-WidgetPlotMulti1D::WidgetPlotMulti1D(QWidget *parent) :
-  QSquareCustomPlot(parent)
+WidgetPlotMulti1D::WidgetPlotMulti1D(QWidget *parent)
+  : QSquareCustomPlot(parent)
 {
-  visible_options_  =
-      (ShowOptions::style | ShowOptions::scale | ShowOptions::labels | ShowOptions::thickness | ShowOptions::grid | ShowOptions::save);
-
+  visible_options_ =
+      (ShowOptions::zoom | ShowOptions::save |
+       ShowOptions::scale | ShowOptions::style | ShowOptions::thickness);
 
   setInteraction(QCP::iSelectItems, true);
   setInteraction(QCP::iRangeDrag, true);
@@ -26,47 +26,16 @@ WidgetPlotMulti1D::WidgetPlotMulti1D(QWidget *parent) :
   connect(this, SIGNAL(mouseRelease(QMouseEvent*)), this, SLOT(plot_mouse_release(QMouseEvent*)));
   connect(this, SIGNAL(mousePress(QMouseEvent*)), this, SLOT(plot_mouse_press(QMouseEvent*)));
 
-  minx_zoom = 0; maxx_zoom = 0;
-  minx = std::numeric_limits<double>::max();
-  maxx = - std::numeric_limits<double>::max();
-  miny = std::numeric_limits<double>::max();
-  maxy = - std::numeric_limits<double>::max();
-
-  force_rezoom_ = false;
-  mouse_pressed_ = false;
-
-  edge_trc1 = nullptr;
-  edge_trc2 = nullptr;
-
-  plot_style_ = "Lines";
-  scale_type_ = "Logarithmic";
-  yAxis->setScaleType(QCPAxis::stLogarithmic);
-  grid_style_ = "Grid + subgrid";
+  set_scale_type("Logarithmic");
+  set_plot_style("Step center");
+  set_grid_style(current_grid_style_);
   setColorScheme(Qt::black, Qt::white, QColor(112, 112, 112), QColor(170, 170, 170));
-
-  xAxis->grid()->setVisible(true);
-  yAxis->grid()->setVisible(true);
-  xAxis->grid()->setSubGridVisible(true);
-  yAxis->grid()->setSubGridVisible(true);
-
-  marker_labels_ = true;
-  thickness_ = 1;
-
-  menuExportFormat.addAction("png");
-  menuExportFormat.addAction("jpg");
-  menuExportFormat.addAction("pdf");
-  menuExportFormat.addAction("bmp");
-  connect(&menuExportFormat, SIGNAL(triggered(QAction*)), this, SLOT(exportRequested(QAction*)));
-
-  connect(&menuOptions, SIGNAL(triggered(QAction*)), this, SLOT(optionsChanged(QAction*)));
 
   QShortcut *shortcut = new QShortcut(QKeySequence(Qt::Key_Backspace), this);
   connect(shortcut, SIGNAL(activated()), this, SLOT(zoom_out()));
 
   build_menu();
-
   replot_markers();
-  //  redraw();
 }
 
 void WidgetPlotMulti1D::set_visible_options(ShowOptions options) {
@@ -78,54 +47,6 @@ void WidgetPlotMulti1D::set_visible_options(ShowOptions options) {
   build_menu();
   replot_markers();
 }
-
-void WidgetPlotMulti1D::build_menu() {
-  menuOptions.clear();
-
-  if (visible_options_ & ShowOptions::style) {
-    menuOptions.addAction("Step center");
-    menuOptions.addAction("Step left");
-    menuOptions.addAction("Step right");
-    menuOptions.addAction("Lines");
-    menuOptions.addAction("Scatter");
-    menuOptions.addAction("Fill");
-  }
-
-  if (visible_options_ & ShowOptions::scale) {
-    menuOptions.addSeparator();
-    menuOptions.addAction("Linear");
-    menuOptions.addAction("Logarithmic");
-  }
-
-  if (visible_options_ & ShowOptions::labels) {
-    menuOptions.addSeparator();
-    menuOptions.addAction("Energy labels");
-  }
-
-  if (visible_options_ & ShowOptions::thickness) {
-    menuOptions.addSeparator();
-    menuOptions.addAction("1");
-    menuOptions.addAction("2");
-    menuOptions.addAction("3");
-  }
-
-  if (visible_options_ & ShowOptions::grid) {
-    menuOptions.addSeparator();
-    menuOptions.addAction("No grid");
-    menuOptions.addAction("Grid");
-    menuOptions.addAction("Grid + subgrid");
-  }
-
-  for (auto &q : menuOptions.actions()) {
-    q->setCheckable(true);
-    q->setChecked((q->text() == scale_type_) ||
-                  (q->text() == plot_style_) ||
-                  (q->text() == grid_style_) ||
-                  (q->text() == QString::number(thickness_)) ||
-                  ((q->text() == "Energy labels") && marker_labels_));
-  }
-}
-
 
 void WidgetPlotMulti1D::clearGraphs()
 {
@@ -153,9 +74,9 @@ void WidgetPlotMulti1D::redraw() {
 void WidgetPlotMulti1D::reset_scales()
 {
   minx = std::numeric_limits<double>::max();
-  maxx = - std::numeric_limits<double>::max();
+  maxx = std::numeric_limits<double>::min();
   miny = std::numeric_limits<double>::max();
-  maxy = - std::numeric_limits<double>::max();
+  maxy = std::numeric_limits<double>::min();
   rescaleAxes();
 }
 
@@ -196,40 +117,18 @@ std::set<double> WidgetPlotMulti1D::get_selected_markers() {
 }
 
 
-void WidgetPlotMulti1D::setYBounds(const std::map<double, double> &minima, const std::map<double, double> &maxima) {
+void WidgetPlotMulti1D::setYBounds(const std::map<double, double> &minima,
+                                   const std::map<double, double> &maxima)
+{
   minima_ = minima;
   maxima_ = maxima;
   rescale();
 }
 
 
-void WidgetPlotMulti1D::addGraph(const QVector<double>& x, const QVector<double>& y, AppearanceProfile appearance, bool fittable, int32_t bits) {
-  if (x.empty() || y.empty() || (x.size() != y.size()))
-    return;
-
-  QSquareCustomPlot::addGraph();
-  int g = graphCount() - 1;
-  graph(g)->addData(x, y);
-  QPen pen = appearance.default_pen;
-  if (fittable && (visible_options_ & ShowOptions::thickness))
-    pen.setWidth(thickness_);
-  graph(g)->setPen(pen);
-  graph(g)->setProperty("fittable", fittable);
-  graph(g)->setProperty("bits", QVariant::fromValue(bits));
-  set_graph_style(graph(g), plot_style_);
-
-  if (x[0] < minx) {
-    minx = x[0];
-    //DBG << "new minx " << minx;
-    xAxis->rescale();
-  }
-  if (x[x.size() - 1] > maxx) {
-    maxx = x[x.size() - 1];
-    xAxis->rescale();
-  }
-}
-
-void WidgetPlotMulti1D::addPoints(const QVector<double>& x, const QVector<double>& y, AppearanceProfile appearance, QCPScatterStyle::ScatterShape shape) {
+void WidgetPlotMulti1D::addGraph(const QVector<double>& x, const QVector<double>& y,
+                                 AppearanceProfile appearance, bool fittable, int32_t bits)
+{
   if (x.empty() || y.empty() || (x.size() != y.size()))
     return;
 
@@ -237,9 +136,9 @@ void WidgetPlotMulti1D::addPoints(const QVector<double>& x, const QVector<double
   int g = graphCount() - 1;
   graph(g)->addData(x, y);
   graph(g)->setPen(appearance.default_pen);
-  graph(g)->setBrush(QBrush());
-  graph(g)->setScatterStyle(QCPScatterStyle(shape, appearance.default_pen.color(), appearance.default_pen.color(), 6 /*appearance.default_pen.width()*/));
-  graph(g)->setLineStyle(QCPGraph::lsNone);
+  graph(g)->setProperty("fittable", fittable);
+  graph(g)->setProperty("bits", QVariant::fromValue(bits));
+  set_graph_style(graph(g), current_plot_style_);
 
   if (x[0] < minx) {
     minx = x[0];
@@ -251,7 +150,6 @@ void WidgetPlotMulti1D::addPoints(const QVector<double>& x, const QVector<double
     xAxis->rescale();
   }
 }
-
 
 void WidgetPlotMulti1D::plot_rezoom() {
   if (mouse_pressed_)
@@ -291,7 +189,7 @@ void WidgetPlotMulti1D::tight_x() {
 
 void WidgetPlotMulti1D::calc_y_bounds(double lower, double upper) {
   miny = std::numeric_limits<double>::max();
-  maxy = - std::numeric_limits<double>::min();
+  maxy = std::numeric_limits<double>::min();
 
   for (std::map<double, double>::const_iterator it = minima_.lower_bound(lower); it != minima_.upper_bound(upper); ++it)
     if (it->second < miny)
@@ -308,33 +206,10 @@ void WidgetPlotMulti1D::calc_y_bounds(double lower, double upper) {
     miny = 1;*/
 }
 
-void WidgetPlotMulti1D::setColorScheme(QColor fore, QColor back, QColor grid1, QColor grid2)
-{
-  xAxis->setBasePen(QPen(fore, 1));
-  yAxis->setBasePen(QPen(fore, 1));
-  xAxis->setTickPen(QPen(fore, 1));
-  yAxis->setTickPen(QPen(fore, 1));
-  xAxis->setSubTickPen(QPen(fore, 1));
-  yAxis->setSubTickPen(QPen(fore, 1));
-  xAxis->setTickLabelColor(fore);
-  yAxis->setTickLabelColor(fore);
-  xAxis->setLabelColor(fore);
-  yAxis->setLabelColor(fore);
-  xAxis->grid()->setPen(QPen(grid1, 1, Qt::DotLine));
-  yAxis->grid()->setPen(QPen(grid1, 1, Qt::DotLine));
-  xAxis->grid()->setSubGridPen(QPen(grid2, 1, Qt::DotLine));
-  yAxis->grid()->setSubGridPen(QPen(grid2, 1, Qt::DotLine));
-  xAxis->grid()->setZeroLinePen(Qt::NoPen);
-  yAxis->grid()->setZeroLinePen(Qt::NoPen);
-  setBackground(QBrush(back));
-}
-
 void WidgetPlotMulti1D::replot_markers() {
   clearItems();
-  edge_trc1 = nullptr;
-  edge_trc2 = nullptr;
   double min_marker = std::numeric_limits<double>::max();
-  double max_marker = - std::numeric_limits<double>::max();
+  double max_marker = std::numeric_limits<double>::min();
   //  int total_markers = 0;
 
   for (auto &q : my_markers_) {
@@ -344,10 +219,6 @@ void WidgetPlotMulti1D::replot_markers() {
       double max = std::numeric_limits<double>::lowest();
       int total = graphCount();
       for (int i=0; i < total; i++) {
-
-        if ((graph(i)->scatterStyle().shape() != QCPScatterStyle::ssNone) &&
-            (graph(i)->scatterStyle().shape() != QCPScatterStyle::ssDisc))
-          continue;
 
         if (!graph(i)->property("fittable").toBool())
           continue;
@@ -366,7 +237,6 @@ void WidgetPlotMulti1D::replot_markers() {
         crs->setGraphKey(q.pos);
         crs->setPen(q.appearance.default_pen);
         crs->setSelectable(false);
-//        addItem(crs);
 
         crs->updatePosition();
         double val = crs->positions().first()->value();
@@ -390,9 +260,9 @@ void WidgetPlotMulti1D::replot_markers() {
       line->setProperty("true_value", top_crs->graphKey());
       line->setProperty("position", top_crs->property("position"));
       line->setSelectable(false);
-//      addItem(line);
 
-      if (marker_labels_) {
+      if (show_marker_labels_)
+      {
         QCPItemText *markerText = new QCPItemText(this);
         markerText->setProperty("true_value", top_crs->graphKey());
         markerText->setProperty("position", top_crs->property("position"));
@@ -409,7 +279,6 @@ void WidgetPlotMulti1D::replot_markers() {
         markerText->setSelectedPen(pen);
         markerText->setPadding(QMargins(1, 1, 1, 1));
         markerText->setSelectable(false);
-//        addItem(markerText);
       }
     }
 
@@ -442,12 +311,10 @@ void WidgetPlotMulti1D::replot_markers() {
     cprect->setPen(rect[0].appearance.default_pen);
     cprect->setBrush(QBrush(rect[1].appearance.default_pen.color()));
     cprect->setSelectable(false);
-//    addItem(cprect);
   }
 
   if (!title_text_.isEmpty()) {
     QCPItemText *floatingText = new QCPItemText(this);
-//    addItem(floatingText);
     floatingText->setPositionAlignment(Qt::AlignTop|Qt::AlignHCenter);
     floatingText->position->setType(QCPItemPosition::ptAxisRectRatio);
     floatingText->position->setCoords(0.5, 0); // place position at center/top of axis rect
@@ -483,46 +350,6 @@ void WidgetPlotMulti1D::replot_markers() {
 
 }
 
-void WidgetPlotMulti1D::plotButtons() {
-  QCPOverlayButton *overlayButton;
-  QCPOverlayButton *newButton;
-
-  newButton = new QCPOverlayButton(this,
-                                   QPixmap(":/icons/oxy/22/view_fullscreen.png"),
-                                   "reset_scales", "Zoom out",
-                                   Qt::AlignBottom | Qt::AlignRight);
-  newButton->setClipToAxisRect(false);
-  newButton->topLeft->setType(QCPItemPosition::ptAbsolute);
-  newButton->topLeft->setCoords(5, 5);
-//  addItem(newButton);
-  overlayButton = newButton;
-
-  if (!menuOptions.isEmpty()) {
-    newButton = new QCPOverlayButton(this, QPixmap(":/icons/oxy/22/view_statistics.png"),
-                                     "options", "Style options",
-                                     Qt::AlignBottom | Qt::AlignRight);
-
-    newButton->setClipToAxisRect(false);
-    newButton->topLeft->setParentAnchor(overlayButton->bottomLeft);
-    newButton->topLeft->setCoords(0, 5);
-//    addItem(newButton);
-    overlayButton = newButton;
-  }
-
-  if (visible_options_ & ShowOptions::save) {
-    newButton = new QCPOverlayButton(this,
-                                     QPixmap(":/icons/oxy/22/document_save.png"),
-                                     "export", "Export plot",
-                                     Qt::AlignBottom | Qt::AlignRight);
-    newButton->setClipToAxisRect(false);
-    newButton->topLeft->setParentAnchor(overlayButton->bottomLeft);
-    newButton->topLeft->setCoords(0, 5);
-//    addItem(newButton);
-    overlayButton = newButton;
-  }
-}
-
-
 void WidgetPlotMulti1D::plot_mouse_clicked(double x, double y, QMouseEvent* event, bool on_item) {
   if (event->button() == Qt::RightButton) {
     emit clickedRight(x);
@@ -547,9 +374,9 @@ void WidgetPlotMulti1D::clicked_item(QCPAbstractItem* itm) {
   if (QCPOverlayButton *button = qobject_cast<QCPOverlayButton*>(itm)) {
     //    QPoint p = this->mapFromGlobal(QCursor::pos());
     if (button->name() == "options") {
-      menuOptions.exec(QCursor::pos());
+      options_menu_.exec(QCursor::pos());
     } else if (button->name() == "export") {
-      menuExportFormat.exec(QCursor::pos());
+      export_menu_.exec(QCursor::pos());
     } else if (button->name() == "reset_scales") {
       zoom_out();
     }
@@ -584,252 +411,4 @@ void WidgetPlotMulti1D::plot_mouse_release(QMouseEvent*) {
   replot();
 }
 
-void WidgetPlotMulti1D::optionsChanged(QAction* action) {
-  this->setCursor(Qt::WaitCursor);
-  QString choice = action->text();
-  if (choice == "Linear") {
-    scale_type_ = choice;
-    yAxis->setScaleType(QCPAxis::stLinear);
-  } else if (choice == "Logarithmic") {
-    yAxis->setScaleType(QCPAxis::stLogarithmic);
-    scale_type_ = choice;
-  } else if ((choice == "Scatter") || (choice == "Lines") || (choice == "Fill")
-             || (choice == "Step center") || (choice == "Step left") || (choice == "Step right")) {
-    plot_style_ = choice;
-    int total = graphCount();
-    for (int i=0; i < total; i++)
-      if ((graph(i)->scatterStyle().shape() == QCPScatterStyle::ssNone) || (graph(i)->scatterStyle().shape() == QCPScatterStyle::ssDisc))
-        set_graph_style(graph(i), choice);
-  } else if (choice == "Energy labels") {
-    marker_labels_ = !marker_labels_;
-    replot_markers();
-  } else if (choice == "1") {
-    thickness_ = 1;
-    int total = graphCount();
-    for (int i=0; i < total; i++)
-      if ((graph(i)->scatterStyle().shape() == QCPScatterStyle::ssNone) || (graph(i)->scatterStyle().shape() == QCPScatterStyle::ssDisc))
-        set_graph_style(graph(i), choice);
-  } else if (choice == "2") {
-    thickness_ = 2;
-    int total = graphCount();
-    for (int i=0; i < total; i++)
-      if ((graph(i)->scatterStyle().shape() == QCPScatterStyle::ssNone) || (graph(i)->scatterStyle().shape() == QCPScatterStyle::ssDisc))
-        set_graph_style(graph(i), choice);
-  } else if (choice == "3") {
-    thickness_ = 3;
-    int total = graphCount();
-    for (int i=0; i < total; i++)
-      if ((graph(i)->scatterStyle().shape() == QCPScatterStyle::ssNone) || (graph(i)->scatterStyle().shape() == QCPScatterStyle::ssDisc))
-        set_graph_style(graph(i), choice);
-  } else if ((choice == "No grid") || (choice == "Grid") || (choice == "Grid + subgrid")) {
-    grid_style_ = choice;
-    xAxis->grid()->setVisible(grid_style_ != "No grid");
-    yAxis->grid()->setVisible(grid_style_ != "No grid");
-    xAxis->grid()->setSubGridVisible(grid_style_ == "Grid + subgrid");
-    yAxis->grid()->setSubGridVisible(grid_style_ == "Grid + subgrid");
-  }
 
-  build_menu();
-  replot();
-  this->setCursor(Qt::ArrowCursor);
-}
-
-void WidgetPlotMulti1D::set_grid_style(QString grd) {
-  if ((grd == "No grid") || (grd == "Grid") || (grd == "Grid + subgrid")) {
-    grid_style_ = grd;
-    xAxis->grid()->setVisible(grid_style_ != "No grid");
-    yAxis->grid()->setVisible(grid_style_ != "No grid");
-    xAxis->grid()->setSubGridVisible(grid_style_ == "Grid + subgrid");
-    yAxis->grid()->setSubGridVisible(grid_style_ == "Grid + subgrid");
-    build_menu();
-  }
-}
-
-QString WidgetPlotMulti1D::scale_type() {
-  return scale_type_;
-}
-
-QString WidgetPlotMulti1D::plot_style() {
-  return plot_style_;
-}
-
-QString WidgetPlotMulti1D::grid_style() {
-  return grid_style_;
-}
-
-void WidgetPlotMulti1D::set_graph_style(QCPGraph* graph, QString style) {
-  if (!graph->property("fittable").toBool()) {
-    graph->setBrush(QBrush());
-    graph->setLineStyle(QCPGraph::lsLine);
-    graph->setScatterStyle(QCPScatterStyle::ssNone);
-  } else {
-    if (style == "Fill") {
-      graph->setBrush(QBrush(graph->pen().color()));
-      graph->setLineStyle(QCPGraph::lsLine);
-      graph->setScatterStyle(QCPScatterStyle::ssNone);
-    } else if (style == "Lines") {
-      graph->setBrush(QBrush());
-      graph->setLineStyle(QCPGraph::lsLine);
-      graph->setScatterStyle(QCPScatterStyle::ssNone);
-    } else if (style == "Step center") {
-      graph->setBrush(QBrush());
-      graph->setLineStyle(QCPGraph::lsStepCenter);
-      graph->setScatterStyle(QCPScatterStyle::ssNone);
-    } else if (style == "Step left") {
-      graph->setBrush(QBrush());
-      graph->setLineStyle(QCPGraph::lsStepLeft);
-      graph->setScatterStyle(QCPScatterStyle::ssNone);
-    } else if (style == "Step right") {
-      graph->setBrush(QBrush());
-      graph->setLineStyle(QCPGraph::lsStepRight);
-      graph->setScatterStyle(QCPScatterStyle::ssNone);
-    } else if (style == "Scatter") {
-      graph->setBrush(QBrush());
-      graph->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc));
-      graph->setLineStyle(QCPGraph::lsNone);
-    }
-
-    if (visible_options_ & ShowOptions::thickness) {
-      QPen pen = graph->pen();
-      pen.setWidth(thickness_);
-      graph->setPen(pen);
-    }
-  }
-
-}
-
-void WidgetPlotMulti1D::set_scale_type(QString sct) {
-  this->setCursor(Qt::WaitCursor);
-  scale_type_ = sct;
-  if (scale_type_ == "Linear")
-    yAxis->setScaleType(QCPAxis::stLinear);
-  else if (scale_type() == "Logarithmic")
-    yAxis->setScaleType(QCPAxis::stLogarithmic);
-  replot();
-  build_menu();
-  this->setCursor(Qt::ArrowCursor);
-}
-
-void WidgetPlotMulti1D::set_plot_style(QString stl) {
-  this->setCursor(Qt::WaitCursor);
-  plot_style_ = stl;
-  int total = graphCount();
-  for (int i=0; i < total; i++) {
-    if ((graph(i)->scatterStyle().shape() == QCPScatterStyle::ssNone) || (graph(i)->scatterStyle().shape() == QCPScatterStyle::ssDisc))
-      set_graph_style(graph(i), stl);
-  }
-  build_menu();
-  replot();
-  this->setCursor(Qt::ArrowCursor);
-}
-
-void WidgetPlotMulti1D::set_marker_labels(bool sl)
-{
-  marker_labels_ = sl;
-  replot_markers();
-  build_menu();
-  replot();
-}
-
-bool WidgetPlotMulti1D::marker_labels() {
-  return marker_labels_;
-}
-
-
-void WidgetPlotMulti1D::exportRequested(QAction* choice) {
-  QString filter = choice->text() + "(*." + choice->text() + ")";
-  QString fileName = CustomSaveFileDialog(this, "Export plot",
-                                          QStandardPaths::locate(QStandardPaths::HomeLocation, ""),
-                                          filter);
-  if (validateFile(this, fileName, true)) {
-
-    int fontUpscale = 5;
-
-    for (int i = 0; i < itemCount(); ++i) {
-      QCPAbstractItem* itm = item(i);
-      if (QCPItemLine *line = qobject_cast<QCPItemLine*>(itm))
-      {
-        QCPLineEnding head = line->head();
-        QPen pen = line->selectedPen();
-        head.setWidth(head.width() + fontUpscale);
-        head.setLength(head.length() + fontUpscale);
-        line->setHead(head);
-        line->setPen(pen);
-        line->start->setCoords(0, -50);
-        line->end->setCoords(0, -15);
-      }
-      else if (QCPItemText *txt = qobject_cast<QCPItemText*>(itm))
-      {
-        QPen pen = txt->selectedPen();
-        txt->setPen(pen);
-        QFont font = txt->font();
-        font.setPointSize(font.pointSize() + fontUpscale);
-        txt->setFont(font);
-        txt->setColor(pen.color());
-        txt->position->setCoords(0, -50);
-      }
-    }
-
-    prepPlotExport(2, fontUpscale, 20);
-    replot();
-
-    plot_rezoom();
-    for (int i = 0; i < itemCount(); ++i) {
-      QCPAbstractItem* itm = item(i);
-      if (QCPOverlayButton *btn = qobject_cast<QCPOverlayButton*>(itm))
-        btn->setVisible(false);
-    }
-
-    replot();
-
-    QFileInfo file(fileName);
-    if (file.suffix() == "png")
-      savePng(fileName,0,0,1,100);
-    else if (file.suffix() == "jpg")
-      saveJpg(fileName,0,0,1,100);
-    else if (file.suffix() == "bmp")
-      saveBmp(fileName);
-    else if (file.suffix() == "pdf")
-      savePdf(fileName, true);
-
-
-    for (int i = 0; i < itemCount(); ++i) {
-      QCPAbstractItem* itm = item(i);
-      if (QCPItemLine *line = qobject_cast<QCPItemLine*>(itm))
-      {
-        QCPLineEnding head = line->head();
-        QPen pen = line->selectedPen();
-        head.setWidth(head.width() - fontUpscale);
-        head.setLength(head.length() - fontUpscale);
-        line->setHead(head);
-        line->setPen(pen);
-        line->start->setCoords(0, -30);
-        line->end->setCoords(0, -5);
-      }
-      else if (QCPItemText *txt = qobject_cast<QCPItemText*>(itm))
-      {
-        QPen pen = txt->selectedPen();
-        txt->setPen(pen);
-        QFont font = txt->font();
-        font.setPointSize(font.pointSize() - fontUpscale);
-        txt->setFont(font);
-        txt->setColor(pen.color());
-        txt->position->setCoords(0, -30);
-      }
-    }
-
-    postPlotExport(2, fontUpscale, 20);
-    replot();
-    plot_rezoom();
-    for (int i = 0; i < itemCount(); ++i) {
-      QCPAbstractItem* itm = item(i);
-      if (QCPOverlayButton *btn = qobject_cast<QCPOverlayButton*>(itm))
-        btn->setVisible(true);
-    }
-
-    replot();
-
-
-
-  }
-}

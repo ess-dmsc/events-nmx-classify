@@ -51,15 +51,6 @@ public:
 
   void set_boxes(std::list<MarkerBox2D> boxes);
 
-  void set_scale_type(QString);
-  void set_gradient(QString);
-  void set_zoom(double);
-  void set_show_legend(bool);
-  void set_antialiased(bool);
-  QString scale_type();
-  QString gradient();
-  bool show_legend();
-
   std::list<MarkerBox2D> get_selected_boxes();
 
 public slots:
@@ -70,65 +61,21 @@ signals:
   void stuff_selected();
 
 private slots:
-  //void clicked_plottable(QCPAbstractPlottable*);
   void selection_changed();
 
   void plot_2d_mouse_clicked(double x, double y, QMouseEvent* event, bool channels);
 
-  void optionsChanged(QAction*);
-  void exportRequested(QAction*);
   void clicked_item(QCPAbstractItem*);
 
 private:
-  QCPColorMap *colorMap;
-
-  std::map<QString, QCPAxis::ScaleType> scale_types_
-  {
-    {"Linear", QCPAxis::stLinear},
-    {"Logarithmic", QCPAxis::stLogarithmic}
-  };
-
-  std::map<QString, QCPColorGradient> gradients_
-  {
-    {"Grayscale", QCPColorGradient::gpGrayscale},
-    {"Hot",  QCPColorGradient::gpHot},
-    {"Cold", QCPColorGradient::gpCold},
-    {"Night", QCPColorGradient::gpNight},
-    {"Candy", QCPColorGradient::gpCandy},
-    {"Geography", QCPColorGradient::gpGeography},
-    {"Ion", QCPColorGradient::gpIon},
-    {"Thermal", QCPColorGradient::gpThermal},
-    {"Polar", QCPColorGradient::gpPolar},
-    {"Spectrum", QCPColorGradient::gpSpectrum},
-    {"Jet", QCPColorGradient::gpJet},
-    {"Hues", QCPColorGradient::gpHues}
-  };
-
-  QString current_gradient_;
-
-  QMenu menuExportFormat;
-  QMenu       menuOptions;
-  bool show_gradient_scale_;
-
-
-  QString current_scale_type_;
+  QCPColorMap *colorMap {new QCPColorMap(xAxis, yAxis)};
+  std::list<MarkerBox2D> boxes_;
 
   QString Z_label_;
 
-  std::list<MarkerBox2D> boxes_;
-
-
-  bool show_labels_, antialiased_;
-
-
-  void build_menu();
-  void toggle_gradient_scale(int fontUpscale = 0);
-  void plotButtons();
-
-  void makeCustomGradients();
+  void initializeGradients();
   void addCustomGradient(QString name, std::initializer_list<std::string> colors);
 
-  void setColorScheme(QColor fore, QColor back, QColor grid1, QColor grid2);
 };
 
 #endif // WIDGET_PLOT2D_H

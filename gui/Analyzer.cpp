@@ -21,7 +21,7 @@ Analyzer::Analyzer(QWidget *parent)
 
   ui->plotHistogram->set_scale_type("Linear");
   ui->plotHistogram->set_plot_style("Step center");
-  ui->plotHistogram->set_visible_options(ShowOptions::zoom | ShowOptions::thickness | ShowOptions::scale | ShowOptions::grid | ShowOptions::save);
+//  ui->plotHistogram->set_visible_options(ShowOptions::zoom | ShowOptions::thickness | ShowOptions::scale | ShowOptions::grid | ShowOptions::save);
 
   ui->plot2D->set_antialiased(false);
   ui->plot2D->set_scale_type("Linear");

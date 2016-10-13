@@ -47,7 +47,10 @@ ViewEvent::ViewEvent(QWidget *parent) :
 
   ui->plotProjection->set_scale_type("Linear");
   ui->plotProjection->set_plot_style("Step center");
-  ui->plotProjection->set_visible_options(ShowOptions::zoom | ShowOptions::thickness | ShowOptions::grid | ShowOptions::save);
+//  ui->plotProjection->set_visible_options(ShowOptions::style | ShowOptions::scale |
+//                                          ShowOptions::labels | ShowOptions::thickness |
+//                                          ShowOptions::grid | ShowOptions::save |
+//                                          ShowOptions::zoom | ShowOptions::dither);
 
   on_comboPlanes_currentIndexChanged("");
 }
