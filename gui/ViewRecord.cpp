@@ -9,10 +9,10 @@ ViewRecord::ViewRecord(QWidget *parent) :
 {
   ui->setupUi(this);
 
-  ui->plotRecord->set_antialiased(false);
-  ui->plotRecord->set_scale_type("Linear");
-  ui->plotRecord->set_gradient("YlGnBu5");
-  ui->plotRecord->set_show_legend(true);
+  ui->plotRecord->setAntialiased(false);
+  ui->plotRecord->setScaleType("Linear");
+  ui->plotRecord->setGradient("YlGnBu5");
+  ui->plotRecord->setShowGradientLegend(true);
   ui->plotRecord->set_zoom_drag(Qt::Horizontal);
 }
 
@@ -41,7 +41,7 @@ void ViewRecord::set_overlay_type(QString overlay_type)
 void ViewRecord::clear()
 {
   ui->plotRecord->reset_content();
-  ui->plotRecord->set_boxes(std::list<MarkerBox2D>());
+  ui->plotRecord->set_boxes(std::list<QPlot::MarkerBox2D>());
   ui->plotRecord->refresh();
 
   moving_.visible = false;
@@ -65,7 +65,7 @@ void ViewRecord::display_current_record()
   if (show_raw_)
     ui->plotRecord->update_plot(record_.strip_span(), record_.time_end() + 1, make_list());
   else
-    ui->plotRecord->update_plot(record_.strip_span(), record_.time_end() + 1, EntryList());
+    ui->plotRecord->update_plot(record_.strip_span(), record_.time_end() + 1, QPlot::EntryList());
 
   auto metrics = record_.metrics();
 
@@ -75,8 +75,7 @@ void ViewRecord::display_current_record()
   {
     int timei = metrics["entry_time"].value.as_int(-1);
 
-    MarkerBox2D box;
-    box.selectable = false;
+    QPlot::MarkerBox2D box;
     box.x1 = stripi - 0.2;
     box.x2 = stripi + 0.2;
     box.y1  = timei - 0.2;
@@ -90,9 +89,9 @@ void ViewRecord::display_current_record()
   ui->plotRecord->zoom_out();
 }
 
-EntryList ViewRecord::make_list()
+QPlot::EntryList ViewRecord::make_list()
 {
-  EntryList data;
+  QPlot::EntryList data;
 
   NMX::Record r;
   if (noneg_)
@@ -106,21 +105,20 @@ EntryList ViewRecord::make_list()
     int stripi = i - r.strip_start();
     for (int tb=strip.bin_start(); tb <= strip.bin_end(); ++tb)
       if (strip.value(tb))
-        data.push_back(Entry{{stripi,tb}, strip.value(tb)});
+        data.push_back(QPlot::Entry{{stripi,tb}, strip.value(tb)});
   }
   return data;
 }
 
-std::list<MarkerBox2D> ViewRecord::make_overlay()
+std::list<QPlot::MarkerBox2D> ViewRecord::make_overlay()
 {
-  std::list<MarkerBox2D> ret;
+  std::list<QPlot::MarkerBox2D> ret;
 
   for (auto &i : record_.get_points(overlay_type_.toStdString()))
   {
     int stripi = i.first;
 
-    MarkerBox2D box;
-    box.selectable = false;
+    QPlot::MarkerBox2D box;
     box.x1 = stripi - 0.45;
     box.x2 = stripi + 0.45;
     box.y1 = i.second - 0.45;

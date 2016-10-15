@@ -5,8 +5,8 @@
 
 #include "Record.h"
 
-#include "widget_plot2d.h"
-#include "widget_plot_multi1d.h"
+#include "qp_2d.h"
+#include "qp_multi1d.h"
 
 namespace Ui {
 class ViewRecord;
@@ -34,7 +34,7 @@ private:
 
   NMX::Record record_;
 
-  Marker1D moving_;
+  QPlot::Marker1D moving_;
 
   bool show_raw_{true};
   bool noneg_{false};
@@ -42,8 +42,8 @@ private:
 
   void display_current_record();
 
-  EntryList make_list();
-  std::list<MarkerBox2D> make_overlay();
+  QPlot::EntryList make_list();
+  std::list<QPlot::MarkerBox2D> make_overlay();
 };
 
 #endif // FORM_CALIBRATION_H

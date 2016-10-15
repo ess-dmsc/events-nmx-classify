@@ -2,7 +2,7 @@
 #define HISTOGRAM_H_
 
 #include <QColor>
-#include "entry2d.h"
+#include "qp_entry2d.h"
 
 class Histogram
 {
@@ -38,7 +38,7 @@ public:
   double max() const {return max_;}
   double avg() const;
   double total_count() const {return total_count_;}
-  EntryList data_list() const;
+  QPlot::EntryList data_list() const;
   const std::map<int32_t, int64_t> & data() const { return data_; }
 
   bool visible {true};

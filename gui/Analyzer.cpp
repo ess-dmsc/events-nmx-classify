@@ -19,14 +19,14 @@ Analyzer::Analyzer(QWidget *parent)
   params.set_y(0, 250);
   histograms1d_.push_back(params);
 
-  ui->plotHistogram->set_scale_type("Linear");
-  ui->plotHistogram->set_plot_style("Step center");
+  ui->plotHistogram->setScaleType("Linear");
+  ui->plotHistogram->setPlotStyle("Step center");
 //  ui->plotHistogram->set_visible_options(ShowOptions::zoom | ShowOptions::thickness | ShowOptions::scale | ShowOptions::grid | ShowOptions::save);
 
-  ui->plot2D->set_antialiased(false);
-  ui->plot2D->set_scale_type("Linear");
-  ui->plot2D->set_gradient("YlGnBu5");
-  ui->plot2D->set_show_legend(true);
+  ui->plot2D->setAntialiased(false);
+  ui->plot2D->setScaleType("Linear");
+  ui->plot2D->setGradient("YlGnBu5");
+  ui->plot2D->setShowGradientLegend(true);
   connect(ui->plot2D, SIGNAL(markers_set(double, double, bool)), this, SLOT(update_box(double, double, bool)));
 
   ui->tableBoxes->setModel(&model_);
@@ -238,9 +238,9 @@ void Analyzer::make_projections()
   for (auto &i : histograms1d_)
     i.close_data();
 
-  EntryList data_list;
+  QPlot::EntryList data_list;
   for (auto &point : projection2d)
-    data_list.push_back(Entry{{point.first.first - xmin, point.first.second - ymin}, point.second});
+    data_list.push_back(QPlot::Entry{{point.first.first - xmin, point.first.second - ymin}, point.second});
   ui->plot2D->update_plot(xmax-xmin+1, ymax-ymin+1, data_list);
   ui->plot2D->set_axes(ui->comboWeightsX->currentText(), xmin * xx_norm, xmax * xx_norm,
                      ui->comboWeightsY->currentText(), ymin * yy_norm, ymax * yy_norm,
@@ -278,7 +278,7 @@ void Analyzer::update_histograms()
       if (!maxima.count(xx) || (maxima[xx] < yy))
         maxima[xx] = yy;
     }
-    AppearanceProfile profile;
+    QPlot::Appearance profile;
     profile.default_pen = QPen(palette_[i % palette_.size()], 2);
 
     ui->plotHistogram->addGraph(x, y, profile, 8);
@@ -333,7 +333,7 @@ void Analyzer::on_pushRemoveBox_clicked()
 
 void Analyzer::plot_boxes()
 {
-  std::list<MarkerBox2D> boxes;
+  std::list<QPlot::MarkerBox2D> boxes;
 
   for (int i=0; i < histograms1d_.size(); ++i)
   {
@@ -341,7 +341,7 @@ void Analyzer::plot_boxes()
     if (!p.visible)
       continue;
 
-    MarkerBox2D box;
+    QPlot::MarkerBox2D box;
     box.x1 = p.x1();
     box.x2 = p.x2();
     box.y1 = p.y1();
@@ -437,16 +437,16 @@ void Analyzer::on_spinMaxZ_valueChanged(int /*arg1*/)
 
 void Analyzer::plot_block()
 {
-  Marker1D marker_;
+  QPlot::Marker1D marker_;
   marker_.visible = true;//ui->checkShowUngated->isChecked();
   QColor cc (Qt::darkGray);
   cc.setAlpha(64);
   marker_.appearance.default_pen = QPen(cc, 2);
 
-  Marker1D left = marker_;
+  QPlot::Marker1D left = marker_;
   left.pos = ui->spinMinZ->value();
 
-  Marker1D right = marker_;
+  QPlot::Marker1D right = marker_;
   right.pos = ui->spinMaxZ->value();
 
   ui->plotHistogram->set_block(left, right);

@@ -1,13 +1,16 @@
-#include "widget_plot2d.h"
+#include "qp_2d.h"
 #include "qt_util.h"
 #include "CustomLogger.h"
-#include "qcp_overlay_button.h"
+#include "qp_button.h"
 
-WidgetPlot2D::WidgetPlot2D(QWidget *parent)
-  : QSquareCustomPlot(parent)
+namespace QPlot
+{
+
+Plot2D::Plot2D(QWidget *parent)
+  : GenericPlot(parent)
 {
   visible_options_  =
-      (ShowOptions::zoom | ShowOptions::save |
+      (ShowOptions::zoom | ShowOptions::save | ShowOptions::grid |
        ShowOptions::scale | ShowOptions::gradients);
 //       ShowOptions::grid | ShowOptions::labels | ShowOptions::dither);
 
@@ -15,25 +18,25 @@ WidgetPlot2D::WidgetPlot2D(QWidget *parent)
 
   colorMap->setTightBoundary(false);
   axisRect()->setupFullAxesBox();
-  setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
+  setInteractions(static_cast<QCP::Interactions>(QCP::iRangeDrag | QCP::iRangeZoom));
   setNoAntialiasingOnDrag(true);
 
-  connect(this, SIGNAL(mouse_clicked(double,double,QMouseEvent*, bool)), this, SLOT(plot_2d_mouse_clicked(double,double,QMouseEvent*, bool)));
+  connect(this, SIGNAL(mouseClicked(double,double,QMouseEvent*, bool)), this, SLOT(plot_2d_mouse_clicked(double,double,QMouseEvent*, bool)));
   //connect(this, SIGNAL(plottableClick(QCPAbstractPlottable*,QMouseEvent*)), this, SLOT(clicked_plottable(QCPAbstractPlottable*)));
   connect(this, SIGNAL(selectionChangedByUser()), this, SLOT(selection_changed()));
   connect(this, SIGNAL(clickedAbstractItem(QCPAbstractItem*)), this, SLOT(clicked_item(QCPAbstractItem*)));
 
-  set_gradient("Greys");
-  set_grid_style("Grid + subgrid");
-  set_scale_type("Linear");
+  setGradient("Greys");
+  setGridStyle("Grid + subgrid");
+  setScaleType("Linear");
   setAlwaysSquare(true);
-  set_antialiased(false);
+  setAntialiased(false);
   setColorScheme(Qt::black, Qt::white, QColor(112, 112, 112), QColor(170, 170, 170));
 
-  build_menu();
+  rebuild_menu();
 }
 
-void WidgetPlot2D::initializeGradients()
+void Plot2D::initializeGradients()
 {
   gradients_["Grayscale"] = QCPColorGradient::gpGrayscale;
   gradients_["Hot"] =  QCPColorGradient::gpHot;
@@ -60,9 +63,11 @@ void WidgetPlot2D::initializeGradients()
   addCustomGradient("RdPu5", {"#ffffff","#feebe2","#fbb4b9","#f768a1","#c51b8a","#7a0177"});
   addCustomGradient("YlGn5", {"#ffffff","#ffffcc","#c2e699","#78c679","#31a354","#006837"});
   addCustomGradient("YlGnBu5", {"#ffffff","#ffffcc","#a1dab4","#41b6c4","#2c7fb8","#253494"});
+
+  addCustomGradient("Spectrum2", {"#ffffff","#0000ff","#00ffff","#00ff00","#ffff00","#ff0000","#000000"});
 }
 
-void WidgetPlot2D::addCustomGradient(QString name, std::initializer_list<std::string> colors)
+void Plot2D::addCustomGradient(QString name, std::initializer_list<std::string> colors)
 {
   QVector<QColor> cols;
   for (auto &c : colors)
@@ -79,18 +84,18 @@ void WidgetPlot2D::addCustomGradient(QString name, std::initializer_list<std::st
 }
 
 
-void WidgetPlot2D::set_zoom_drag(Qt::Orientation o)
+void Plot2D::set_zoom_drag(Qt::Orientation o)
 {
   yAxis->axisRect()->setRangeDrag(o);
   yAxis->axisRect()->setRangeZoom(o);
 }
 
 
-void WidgetPlot2D::clicked_item(QCPAbstractItem* itm) {
+void Plot2D::clicked_item(QCPAbstractItem* itm) {
   if (!itm->visible())
     return;
 
-  if (QCPOverlayButton *button = qobject_cast<QCPOverlayButton*>(itm)) {
+  if (Button *button = qobject_cast<Button*>(itm)) {
     //    QPoint p = this->mapFromGlobal(QCursor::pos());
     if (button->name() == "options") {
       options_menu_.exec(QCursor::pos());
@@ -103,12 +108,12 @@ void WidgetPlot2D::clicked_item(QCPAbstractItem* itm) {
 }
 
 
-void WidgetPlot2D::selection_changed() {
+void Plot2D::selection_changed() {
   emit stuff_selected();
 }
 
 
-std::list<MarkerBox2D> WidgetPlot2D::get_selected_boxes()
+std::list<MarkerBox2D> Plot2D::get_selected_boxes()
 {
   std::list<MarkerBox2D> selection;
   for (auto &q : selectedItems())
@@ -123,24 +128,24 @@ std::list<MarkerBox2D> WidgetPlot2D::get_selected_boxes()
 }
 
 
-void WidgetPlot2D::set_boxes(std::list<MarkerBox2D> boxes)
+void Plot2D::set_boxes(std::list<MarkerBox2D> boxes)
 {
   boxes_ = boxes;
 }
 
-void WidgetPlot2D::reset_content()
+void Plot2D::reset_content()
 {
   colorMap->data()->clear();
   boxes_.clear();
 //  labels_.clear();
 }
 
-void WidgetPlot2D::refresh()
+void Plot2D::refresh()
 {
   replot();
 }
 
-void WidgetPlot2D::replot_markers()
+void Plot2D::replot_markers()
 {
   clearItems();
 
@@ -177,7 +182,7 @@ void WidgetPlot2D::replot_markers()
       labelItem->position->setType(QCPItemPosition::ptPlotCoords);
       labelItem->position->setCoords(q.x1, q.y2);
 
-      labelItem->setPositionAlignment(Qt::AlignTop|Qt::AlignLeft);
+      labelItem->setPositionAlignment(static_cast<Qt::AlignmentFlag>(Qt::AlignTop|Qt::AlignLeft));
       labelItem->setFont(QFont("Helvetica", 14));
       labelItem->setSelectable(q.selectable);
       labelItem->setSelected(q.selected);
@@ -207,14 +212,13 @@ void WidgetPlot2D::replot_markers()
     setInteraction(QCP::iMultiSelect, false);
   }
 
-  plotButtons();
+  plot_buttons();
   replot();
 }
 
-void WidgetPlot2D::update_plot(uint64_t sizex, uint64_t sizey, const EntryList &spectrum_data)
+void Plot2D::update_plot(uint64_t sizex, uint64_t sizey, const EntryList &spectrum_data)
 {
 //  DBG << "2d size " << sizex << "x" << sizey << " list " << spectrum_data.size();
-
 //  clearGraphs();
   colorMap->data()->clear();
   setAlwaysSquare(sizex == sizey);
@@ -231,14 +235,14 @@ void WidgetPlot2D::update_plot(uint64_t sizex, uint64_t sizey, const EntryList &
         colorMap->data()->setCell(it.first[0], it.first[1], it.second);
     if (gradients_.count(current_gradient_))
       colorMap->setGradient(gradients_[current_gradient_]);
-    colorMap->rescaleDataRange(true);
+    setScaleType(current_scale_type_);
+    rescaleAxes();
     updateGeometry();
   }
-
   replot_markers();
 }
 
-void WidgetPlot2D::set_axes(QString xlabel, double x1, double x2,
+void Plot2D::set_axes(QString xlabel, double x1, double x2,
                             QString ylabel, double y1, double y2,
                             QString zlabel)
 {
@@ -260,13 +264,13 @@ void WidgetPlot2D::set_axes(QString xlabel, double x1, double x2,
   rescaleAxes();
 }
 
-void WidgetPlot2D::plot_2d_mouse_clicked(double x, double y, QMouseEvent *event, bool /*channels*/)
+void Plot2D::plot_2d_mouse_clicked(double x, double y, QMouseEvent *event, bool /*channels*/)
 {
   emit markers_set(x, y, event->button() == Qt::LeftButton);
 }
 
 
-void WidgetPlot2D::zoom_out()
+void Plot2D::zoom_out()
 {
   this->setCursor(Qt::WaitCursor);
   rescaleAxes();
@@ -287,3 +291,4 @@ void WidgetPlot2D::zoom_out()
 
 
 
+}

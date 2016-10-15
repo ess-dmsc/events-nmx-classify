@@ -16,13 +16,24 @@
  *
  ******************************************************************************/
 
-#include "appearance.h"
+#ifndef QP_APPEARANCE_H
+#define QP_APPEARANCE_H
 
-QPen AppearanceProfile::get_pen(QString theme) {
-  if (themes.count(theme))
-    return themes[theme];
-  else
-    return default_pen;
+#include <QPen>
+#include <QMap>
+
+namespace QPlot
+{
+
+struct Appearance
+{
+  QMap<QString, QPen> themes;
+  QPen default_pen {Qt::gray, 1, Qt::SolidLine};
+
+  QPen get_pen(QString theme);
+};
+
+
 }
 
-
+#endif

@@ -1,12 +1,13 @@
-#include "qsquarecustomplot.h"
+#include "qp_generic.h"
 #include "CustomLogger.h"
-#include "qcp_overlay_button.h"
+#include "qp_button.h"
 #include "qt_util.h"
 
-QSquareCustomPlot::QSquareCustomPlot(QWidget *parent)
+namespace QPlot
+{
+
+GenericPlot::GenericPlot(QWidget *parent)
   : QCustomPlot(parent)
-  , square(false)
-  , under_mouse_(nullptr)
 {
   export_menu_.addAction("png");
   export_menu_.addAction("jpg");
@@ -16,17 +17,230 @@ QSquareCustomPlot::QSquareCustomPlot(QWidget *parent)
   connect(&options_menu_, SIGNAL(triggered(QAction*)), this, SLOT(optionsChanged(QAction*)));
 }
 
-void QSquareCustomPlot::setAlwaysSquare(bool sq)
+
+//getters
+
+bool GenericPlot::alwaysSquare() const
 {
-  square = sq;
+  return always_square_;
+}
+
+bool GenericPlot::antialiased() const
+{
+  return antialiased_;
+}
+
+bool GenericPlot::showGradientLegend() const
+{
+  return show_gradient_legend_;
+}
+
+bool GenericPlot::showMarkerLabels() const
+{
+  return show_marker_labels_;
+}
+
+uint16_t GenericPlot::lineThickness() const
+{
+  return line_thickness_;
+}
+
+QString GenericPlot::scaleType() const
+{
+  return current_scale_type_;
+}
+
+QString GenericPlot::gridStyle() const
+{
+  return current_grid_style_;
+}
+
+QString GenericPlot::gradient() const
+{
+  return current_gradient_;
+}
+
+QString GenericPlot::plotStyle() const
+{
+  return current_plotStyle_;
+}
+
+
+//setters
+
+void GenericPlot::setAlwaysSquare(bool sq)
+{
+  always_square_ = sq;
   updateGeometry();
 }
 
-QSize QSquareCustomPlot::sizeHint() const
+void GenericPlot::setAntialiased(bool anti)
 {
-  if (square) {
+  antialiased_ = anti;
+  for (int i=0; i < plottableCount(); ++i)
+    if (QCPColorMap *colorMap = qobject_cast<QCPColorMap*>(plottable(i)))
+      colorMap->setInterpolate(antialiased_);
+  rebuild_menu();
+}
+
+void GenericPlot::setShowGradientLegend(bool show)
+{
+  if (show_gradient_legend_ == show)
+    return;
+
+  show_gradient_legend_ = show;
+
+  QCPColorMap *colorMap {nullptr};
+  for (int i=0; i < plottableCount(); ++i)
+    if (colorMap = qobject_cast<QCPColorMap*>(plottable(i)))
+      break;
+
+  if (show_gradient_legend_ && colorMap)
+  {
+    addGradientLegend(colorMap);
+    setScaleType(current_scale_type_);
+  }
+
+  updateGeometry();
+  rebuild_menu();
+}
+
+void GenericPlot::removeGradientLegend()
+{
+  for (int i=0; i < plotLayout()->elementCount(); i++) {
+    if (QCPColorScale *le = qobject_cast<QCPColorScale*>(plotLayout()->elementAt(i)))
+      plotLayout()->remove(le);
+  }
+  plotLayout()->simplify();
+}
+
+void GenericPlot::addGradientLegend(QCPColorMap *colorMap)
+{
+  if (!colorMap)
+    return;
+
+  //add color scale
+  QCPColorScale *colorScale = new QCPColorScale(this);
+  plotLayout()->addElement(0, 1, colorScale);
+  colorMap->setColorScale(colorScale);
+
+  colorScale->setType(QCPAxis::atRight);
+  colorScale->setRangeDrag(false);
+  colorScale->setRangeZoom(false);
+  colorScale->axis()->setTickLength(6,6);
+  colorScale->axis()->setSubTickLength(2,1);
+  colorScale->axis()->setLabel(colorMap->property("z_label").toString());
+  colorScale->axis()->setNumberFormat("gbc");
+  colorScale->axis()->setSubTicks(true);
+
+  //readjust margins
+  QCPMarginGroup *marginGroup = new QCPMarginGroup(this);
+  axisRect()->setMarginGroup(static_cast<QCP::MarginSide>(QCP::msBottom|QCP::msTop), marginGroup);
+  colorScale->setMarginGroup(static_cast<QCP::MarginSide>(QCP::msBottom|QCP::msTop), marginGroup);
+}
+
+void GenericPlot::setShowMarkerLabels(bool sl)
+{
+  show_marker_labels_ = sl;
+  //  replot_markers();
+  rebuild_menu();
+  replot();
+}
+
+void GenericPlot::setLineThickness(uint16_t th)
+{
+  line_thickness_ = th;
+  for (int i=0; i < graphCount(); i++)
+    set_graph_thickness(graph(i));
+}
+
+void GenericPlot::setGridStyle(QString grd)
+{
+  if ((grd == "No grid") || (grd == "Grid") || (grd == "Grid + subgrid"))
+  {
+    current_grid_style_ = grd;
+    xAxis->grid()->setVisible(current_grid_style_ != "No grid");
+    yAxis->grid()->setVisible(current_grid_style_ != "No grid");
+    xAxis->grid()->setSubGridVisible(current_grid_style_ == "Grid + subgrid");
+    yAxis->grid()->setSubGridVisible(current_grid_style_ == "Grid + subgrid");
+    rebuild_menu();
+  }
+}
+
+void GenericPlot::setScaleType(QString sct)
+{
+  if (!scale_types_.count(sct))
+    return;
+
+  this->setCursor(Qt::WaitCursor);
+  current_scale_type_ = sct;
+
+  bool has2d {false};
+  for (int i=0; i < plottableCount(); ++i)
+    if (QCPColorMap *cm = qobject_cast<QCPColorMap*>(plottable(i)))
+    {
+      has2d = true;
+      cm->setDataScaleType(scale_types_[current_scale_type_]);
+      //      cm->rescaleDataRange(true);
+    }
+
+  if (has2d)
+  {
+    for (int i=0; i < layerCount(); i++)
+    {
+      QCPLayer *this_layer = layer(i);
+      for (auto &q : this_layer->children())
+        if (QCPColorScale *colorScale = qobject_cast<QCPColorScale*>(q))
+        {
+          colorScale->axis()->setScaleType(scale_types_[current_scale_type_]);
+          colorScale->rescaleDataRange(true);
+        }
+    }
+    if (current_scale_type_ != sct)
+      rescaleAxes();
+  }
+  else
+    yAxis->setScaleType(scale_types_[current_scale_type_]);
+
+  current_scale_type_ = sct;
+  rebuild_menu();
+  this->setCursor(Qt::ArrowCursor);
+}
+
+void GenericPlot::setPlotStyle(QString stl)
+{
+  this->setCursor(Qt::WaitCursor);
+  current_plotStyle_ = stl;
+  for (int i=0; i < graphCount(); i++)
+    set_graph_style(graph(i), stl);
+  rebuild_menu();
+  //  replot();
+  this->setCursor(Qt::ArrowCursor);
+}
+
+void GenericPlot::setGradient(QString grd)
+{
+  if (!gradients_.count(grd))
+    return;
+
+  this->setCursor(Qt::WaitCursor);
+  current_gradient_ = grd;
+  for (int i=0; i < plottableCount(); ++i)
+    if (QCPColorMap *cm = qobject_cast<QCPColorMap*>(plottable(i)))
+      cm->setGradient(gradients_[current_gradient_]);
+  rebuild_menu();
+  this->setCursor(Qt::ArrowCursor);
+}
+
+
+
+
+
+QSize GenericPlot::sizeHint() const
+{
+  if (always_square_) {
     QSize s = size();
-    lastHeight = s.height();
+    previous_height_ = s.height();
 
     int extra_width = 0, extra_height = 0;
     for (int i=0; i < layerCount(); i++) {
@@ -55,16 +269,16 @@ QSize QSquareCustomPlot::sizeHint() const
     return QCustomPlot::sizeHint();
 }
 
-void QSquareCustomPlot::resizeEvent(QResizeEvent * event)
+void GenericPlot::resizeEvent(QResizeEvent * event)
 {
   QCustomPlot::resizeEvent(event);
 
-  if (square && (lastHeight!=height())) {
-    updateGeometry(); // maybe this call should be scheduled for next iteration of event loop
-  }
+  // maybe this call should be scheduled for next iteration of event loop?
+  if (always_square_ && (previous_height_ != height()))
+    updateGeometry();
 }
 
-void QSquareCustomPlot::mousePressEvent(QMouseEvent *event)
+void GenericPlot::mousePressEvent(QMouseEvent *event)
 {
   emit mousePress(event);
 
@@ -78,7 +292,7 @@ void QSquareCustomPlot::mousePressEvent(QMouseEvent *event)
 }
 
 
-void QSquareCustomPlot::mouseMoveEvent(QMouseEvent *event)
+void GenericPlot::mouseMoveEvent(QMouseEvent *event)
 {
   emit mouseMove(event);
   double co_x, co_y;
@@ -91,13 +305,13 @@ void QSquareCustomPlot::mouseMoveEvent(QMouseEvent *event)
   if (QCPColorMap *ap = qobject_cast<QCPColorMap*>(clickedLayerable)) {
     int x = co_x, y = co_y;
     ap->data()->coordToCell(co_x, co_y, &x, &y);
-    emit mouse_upon(static_cast<double>(x), static_cast<double>(y));
+    emit mouseHover(static_cast<double>(x), static_cast<double>(y));
   } //else
-  //emit mouse_upon(co_x, co_y);
+  //emit mouseHover(co_x, co_y);
 
   if (event->buttons() == Qt::NoButton) {
     DraggableTracer *trc = qobject_cast<DraggableTracer*>(itemAt(event->localPos(), false));
-    QCPOverlayButton *button = qobject_cast<QCPOverlayButton*>(itemAt(event->localPos(), false));
+    Button *button = qobject_cast<Button*>(itemAt(event->localPos(), false));
 
     if (trc && trc->visible())
       setCursor(Qt::SizeHorCursor);
@@ -110,11 +324,11 @@ void QSquareCustomPlot::mouseMoveEvent(QMouseEvent *event)
   QCustomPlot::mouseMoveEvent(event);
 }
 
-void QSquareCustomPlot::mouseReleaseEvent(QMouseEvent *event)
+void GenericPlot::mouseReleaseEvent(QMouseEvent *event)
 {
   emit mouseRelease(event);
 
-  //DBG << "QSquareCustomPlot::mouseReleaseEvent";
+  //DBG << "GenericPlot::mouseReleaseEvent";
 
   if ((mMousePressPos-event->pos()).manhattanLength() < 5) {
     double co_x, co_y;
@@ -136,16 +350,16 @@ void QSquareCustomPlot::mouseReleaseEvent(QMouseEvent *event)
       int xx, yy;
       ap->data()->coordToCell(co_x, co_y, &xx, &yy);
       //DBG << "Corrected to cell : " << xx << ", " << yy;
-      emit mouse_clicked(static_cast<double>(xx), static_cast<double>(yy), event, true); //true?
+      emit mouseClicked(static_cast<double>(xx), static_cast<double>(yy), event, true); //true?
     } else if (ai == nullptr) {
-      emit mouse_clicked(co_x, co_y, event, false);
+      emit mouseClicked(co_x, co_y, event, false);
       //DBG << "Uncorrected click coords";
     }
   }
   QCustomPlot::mouseReleaseEvent(event);
 }
 
-void QSquareCustomPlot::keyPressEvent(QKeyEvent *event)
+void GenericPlot::keyPressEvent(QKeyEvent *event)
 {
   if (event->key() == Qt::Key_Shift) {
     emit shiftStateChanged(true);
@@ -153,7 +367,7 @@ void QSquareCustomPlot::keyPressEvent(QKeyEvent *event)
   QCustomPlot::keyPressEvent(event);
 }
 
-void QSquareCustomPlot::keyReleaseEvent(QKeyEvent *event)
+void GenericPlot::keyReleaseEvent(QKeyEvent *event)
 {
   if (event->key() == Qt::Key_Shift) {
     emit shiftStateChanged(false);
@@ -161,7 +375,7 @@ void QSquareCustomPlot::keyReleaseEvent(QKeyEvent *event)
   QCustomPlot::keyReleaseEvent(event);
 }
 
-void QSquareCustomPlot::setColorScheme(QColor fore, QColor back, QColor grid1, QColor grid2)
+void GenericPlot::setColorScheme(QColor fore, QColor back, QColor grid1, QColor grid2)
 {
   xAxis->setBasePen(QPen(fore, 1));
   yAxis->setBasePen(QPen(fore, 1));
@@ -182,17 +396,17 @@ void QSquareCustomPlot::setColorScheme(QColor fore, QColor back, QColor grid1, Q
   setBackground(QBrush(back));
 }
 
-void QSquareCustomPlot::plotButtons()
+void GenericPlot::plot_buttons()
 {
-  QCPOverlayButton *overlayButton;
-  QCPOverlayButton *newButton;
+  Button *overlayButton;
+  Button *newButton;
 
   if (visible_options_ & ShowOptions::zoom)
   {
-    newButton = new QCPOverlayButton(this,
-                                     QPixmap(":/icons/oxy/22/view_fullscreen.png"),
-                                     "reset_scales", "Zoom out",
-                                     Qt::AlignBottom | Qt::AlignRight);
+    newButton = new Button(this,
+                           QPixmap(":/icons/oxy/22/view_fullscreen.png"),
+                           "reset_scales", "Zoom out",
+                           Qt::AlignBottom | Qt::AlignRight);
     newButton->setClipToAxisRect(false);
     newButton->topLeft->setType(QCPItemPosition::ptAbsolute);
     newButton->topLeft->setCoords(5, 5);
@@ -201,9 +415,9 @@ void QSquareCustomPlot::plotButtons()
 
   if (!options_menu_.isEmpty())
   {
-    newButton = new QCPOverlayButton(this, QPixmap(":/icons/oxy/22/view_statistics.png"),
-                                     "options", "Style options",
-                                     Qt::AlignBottom | Qt::AlignRight);
+    newButton = new Button(this, QPixmap(":/icons/oxy/22/view_statistics.png"),
+                           "options", "Style options",
+                           Qt::AlignBottom | Qt::AlignRight);
 
     newButton->setClipToAxisRect(false);
     newButton->topLeft->setParentAnchor(overlayButton->bottomLeft);
@@ -213,17 +427,17 @@ void QSquareCustomPlot::plotButtons()
 
   if (visible_options_ & ShowOptions::save)
   {
-    newButton = new QCPOverlayButton(this,
-                                     QPixmap(":/icons/oxy/22/document_save.png"),
-                                     "export", "Export plot",
-                                     Qt::AlignBottom | Qt::AlignRight);
+    newButton = new Button(this,
+                           QPixmap(":/icons/oxy/22/document_save.png"),
+                           "export", "Export plot",
+                           Qt::AlignBottom | Qt::AlignRight);
     newButton->setClipToAxisRect(false);
     newButton->topLeft->setParentAnchor(overlayButton->bottomLeft);
     newButton->topLeft->setCoords(0, 5);
   }
 }
 
-void QSquareCustomPlot::exportPlot(QAction* choice)
+void GenericPlot::exportPlot(QAction* choice)
 {
   QString filter = choice->text() + "(*." + choice->text() + ")";
   QString fileName = CustomSaveFileDialog(this, "Export plot",
@@ -249,8 +463,8 @@ void QSquareCustomPlot::exportPlot(QAction* choice)
   updateGeometry();
 }
 
-void QSquareCustomPlot::rescaleEverything(int fontUpscale, int plotThicken, int marginUpscale,
-                                          bool buttons_visible)
+void GenericPlot::rescaleEverything(int fontUpscale, int plotThicken, int marginUpscale,
+                                    bool buttons_visible)
 {
   for (int i = 0; i < graphCount(); ++i)
   {
@@ -276,11 +490,14 @@ void QSquareCustomPlot::rescaleEverything(int fontUpscale, int plotThicken, int 
       txt->setFont(rescaleFont(txt->font(), fontUpscale));
       txt->position->setCoords(0, -50);
     }
-    else if (QCPOverlayButton *btn = qobject_cast<QCPOverlayButton*>(itm))
+    else if (Button *btn = qobject_cast<Button*>(itm))
       btn->setVisible(buttons_visible);
   }
 
-  for (int i=0; i < layerCount(); i++) {
+  bool has_colormap {false};
+
+  for (int i=0; i < layerCount(); i++)
+  {
     QCPLayer *this_layer = layer(i);
     for (auto &q : this_layer->children()) {
       if (QCPColorScale *cs = qobject_cast<QCPColorScale*>(q))
@@ -288,6 +505,7 @@ void QSquareCustomPlot::rescaleEverything(int fontUpscale, int plotThicken, int 
         cs->axis()->setLabelFont(rescaleFont(cs->axis()->labelFont(), fontUpscale));
         cs->axis()->setTickLabelFont(rescaleFont(cs->axis()->tickLabelFont(), fontUpscale));
         cs->axis()->setPadding(cs->axis()->padding() + marginUpscale);
+        has_colormap = true;
       }
       else if (QCPAxisRect *ar = qobject_cast<QCPAxisRect*>(q))
       {
@@ -300,86 +518,18 @@ void QSquareCustomPlot::rescaleEverything(int fontUpscale, int plotThicken, int 
       }
     }
   }
+
+  if (has_colormap)
+    setScaleType(current_scale_type_);
 }
 
-QFont QSquareCustomPlot::rescaleFont(QFont font, double size_offset)
+QFont GenericPlot::rescaleFont(QFont font, double size_offset)
 {
   font.setPointSize(font.pointSize() + size_offset);
   return font;
 }
 
-QString QSquareCustomPlot::scale_type()
-{
-  return current_scale_type_;
-}
-
-void QSquareCustomPlot::set_scale_type(QString sct)
-{
-  if (!scale_types_.count(sct))
-    return;
-
-  this->setCursor(Qt::WaitCursor);
-  current_scale_type_ = sct;
-
-  bool has2d {false};
-  for (int i=0; i < plottableCount(); ++i)
-    if (QCPColorMap *cm = qobject_cast<QCPColorMap*>(plottable(i)))
-    {
-      has2d = true;
-      cm->setDataScaleType(scale_types_[current_scale_type_]);
-      cm->rescaleDataRange(true);
-    }
-  if (!has2d)
-    yAxis->setScaleType(scale_types_[current_scale_type_]);
-
-  build_menu();
-  this->setCursor(Qt::ArrowCursor);
-}
-
-QString QSquareCustomPlot::grid_style()
-{
-  return current_grid_style_;
-}
-
-void QSquareCustomPlot::set_grid_style(QString grd)
-{
-  if ((grd == "No grid") || (grd == "Grid") || (grd == "Grid + subgrid"))
-  {
-    current_grid_style_ = grd;
-    xAxis->grid()->setVisible(current_grid_style_ != "No grid");
-    yAxis->grid()->setVisible(current_grid_style_ != "No grid");
-    xAxis->grid()->setSubGridVisible(current_grid_style_ == "Grid + subgrid");
-    yAxis->grid()->setSubGridVisible(current_grid_style_ == "Grid + subgrid");
-    build_menu();
-  }
-}
-
-void QSquareCustomPlot::set_marker_labels(bool sl)
-{
-  show_marker_labels_ = sl;
-  //  replot_markers();
-  build_menu();
-  replot();
-}
-
-bool QSquareCustomPlot::marker_labels()
-{
-  return show_marker_labels_;
-}
-
-uint16_t QSquareCustomPlot::line_thickness()
-{
-  return line_thickness_;
-}
-
-void QSquareCustomPlot::set_line_thickness(uint16_t th)
-{
-  line_thickness_ = th;
-  for (int i=0; i < graphCount(); i++)
-    set_graph_thickness(graph(i));
-}
-
-void QSquareCustomPlot::set_graph_thickness(QCPGraph* graph)
+void GenericPlot::set_graph_thickness(QCPGraph* graph)
 {
   if (visible_options_ & ShowOptions::thickness)
   {
@@ -389,116 +539,7 @@ void QSquareCustomPlot::set_graph_thickness(QCPGraph* graph)
   }
 }
 
-void QSquareCustomPlot::set_gradient(QString grd)
-{
-  if (!gradients_.count(grd))
-    return;
-
-  this->setCursor(Qt::WaitCursor);
-  current_gradient_ = grd;
-  for (int i=0; i < plottableCount(); ++i)
-    if (QCPColorMap *cm = qobject_cast<QCPColorMap*>(plottable(i)))
-      cm->setGradient(gradients_[current_gradient_]);
-  build_menu();
-  this->setCursor(Qt::ArrowCursor);
-}
-
-QString QSquareCustomPlot::gradient()
-{
-  return current_gradient_;
-}
-
-void QSquareCustomPlot::set_show_legend(bool show)
-{
-  if (show_gradient_scale_ == show)
-    return;
-
-  show_gradient_scale_ = show;
-
-  for (int i=0; i < plotLayout()->elementCount(); i++) {
-    if (QCPColorScale *le = qobject_cast<QCPColorScale*>(plotLayout()->elementAt(i)))
-      plotLayout()->remove(le);
-  }
-  plotLayout()->simplify();
-
-  QCPColorMap *colorMap = nullptr;
-  for (int i=0; i < plottableCount(); ++i)
-    if (colorMap = qobject_cast<QCPColorMap*>(plottable(i)))
-      break;
-
-  if (show_gradient_scale_ && colorMap)
-  {
-    //add color scale
-    QCPColorScale *colorScale = new QCPColorScale(this);
-    plotLayout()->addElement(0, 1, colorScale);
-    colorScale->setType(QCPAxis::atRight);
-    colorScale->setRangeDrag(false);
-    colorScale->setRangeZoom(false);
-
-    colorMap->setColorScale(colorScale);
-
-    colorScale->axis()->setLabel(colorMap->property("z_label").toString());
-
-    //readjust margins
-    QCPMarginGroup *marginGroup = new QCPMarginGroup(this);
-    axisRect()->setMarginGroup(QCP::msBottom|QCP::msTop, marginGroup);
-    colorScale->setMarginGroup(QCP::msBottom|QCP::msTop, marginGroup);
-
-    if (gradients_.count(current_gradient_))
-      colorMap->setGradient(gradients_[current_gradient_]);
-    colorMap->setDataScaleType(scale_types_[current_scale_type_]);
-
-    colorScale->axis()->setScaleType(scale_types_[current_scale_type_]);
-    colorScale->axis()->setTickLength(6,6);
-    colorScale->axis()->setSubTickLength(2,1);
-
-    if (current_scale_type_ == "Logarithmic")
-    {
-      colorScale->axis()->setNumberFormat("gbc");
-      colorScale->axis()->setNumberPrecision(1);
-      colorScale->axis()->setSubTicks(true);
-      colorScale->axis()->setTickLabelRotation(-50);
-    }
-    else
-    {
-      colorScale->axis()->setNumberFormat("gbc");
-      colorScale->axis()->setSubTicks(false);
-      colorScale->axis()->setTickLabelRotation(0);
-    }
-    colorMap->rescaleDataRange(true);
-    rescaleAxes();
-    //    replot();
-  }
-  updateGeometry();
-  build_menu();
-}
-
-bool QSquareCustomPlot::show_legend()
-{
-  return show_gradient_scale_;
-}
-
-void QSquareCustomPlot::set_antialiased(bool anti)
-{
-  antialiased_ = anti;
-  QCPColorMap *colorMap = nullptr;
-  for (int i=0; i < plottableCount(); ++i)
-    if (QCPColorMap *colorMap = qobject_cast<QCPColorMap*>(plottable(i)))
-      colorMap->setInterpolate(antialiased_);
-  build_menu();
-}
-
-bool QSquareCustomPlot::antialiased()
-{
-  return antialiased_;
-}
-
-QString QSquareCustomPlot::plot_style()
-{
-  return current_plot_style_;
-}
-
-void QSquareCustomPlot::set_graph_style(QCPGraph* graph, QString style)
+void GenericPlot::set_graph_style(QCPGraph* graph, QString style)
 {
   if (style == "Fill") {
     graph->setBrush(QBrush(graph->pen().color()));
@@ -529,44 +570,35 @@ void QSquareCustomPlot::set_graph_style(QCPGraph* graph, QString style)
   set_graph_thickness(graph);
 }
 
-void QSquareCustomPlot::set_plot_style(QString stl)
-{
-  this->setCursor(Qt::WaitCursor);
-  current_plot_style_ = stl;
-  for (int i=0; i < graphCount(); i++)
-    set_graph_style(graph(i), stl);
-  build_menu();
-//  replot();
-  this->setCursor(Qt::ArrowCursor);
-}
 
-void QSquareCustomPlot::optionsChanged(QAction* action)
+
+void GenericPlot::optionsChanged(QAction* action)
 {
   this->setCursor(Qt::WaitCursor);
   QString choice = action->text();
 
   if (scale_types_.count(choice))
-    set_scale_type(choice);
+    setScaleType(choice);
   else if (grid_styles_.count(choice))
-    set_grid_style(choice);
+    setGridStyle(choice);
   else if (choice == "Show marker labels")
-    set_marker_labels(!show_marker_labels_);
+    setShowMarkerLabels(!show_marker_labels_);
   else if (choice == "Antialiased")
-    set_antialiased(!antialiased_);
+    setAntialiased(!antialiased_);
   else if (plot_styles_.count(choice))
-    set_plot_style(choice);
+    setPlotStyle(choice);
   else if (gradients_.count(choice))
-    set_gradient(choice);
+    setGradient(choice);
   else if (choice == "Show gradient scale")
-    set_show_legend(!show_gradient_scale_);
+    setShowGradientLegend(!show_gradient_legend_);
   else if ((choice == "1") || (choice == "2") || (choice == "3"))
-    set_line_thickness(choice.toInt());
+    setLineThickness(choice.toInt());
 
-  build_menu();
+  rebuild_menu();
   this->setCursor(Qt::ArrowCursor);
 }
 
-void QSquareCustomPlot::build_menu()
+void GenericPlot::rebuild_menu()
 {
   options_menu_.clear();
 
@@ -626,12 +658,15 @@ void QSquareCustomPlot::build_menu()
   {
     q->setCheckable(true);
     q->setChecked((q->text() == current_scale_type_) ||
-                  (q->text() == current_plot_style_) ||
+                  (q->text() == current_plotStyle_) ||
                   (q->text() == current_grid_style_) ||
                   (q->text() == current_gradient_) ||
                   (q->text() == QString::number(line_thickness_)) ||
                   ((q->text() == "Show marker labels") && show_marker_labels_) ||
-                  ((q->text() == "Show gradient scale") && show_gradient_scale_)||
+                  ((q->text() == "Show gradient scale") && show_gradient_legend_)||
                   ((q->text() == "Antialiased") && antialiased_));
   }
+}
+
+
 }

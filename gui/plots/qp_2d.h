@@ -2,18 +2,18 @@
 #define WIDGET_PLOT2D_H
 
 #include <QWidget>
-#include "qsquarecustomplot.h"
-#include "appearance.h"
+#include "qp_generic.h"
+#include "qp_appearance.h"
 #include <memory>
-#include "entry2d.h"
+#include "qp_entry2d.h"
 
-struct MarkerBox2D {
-  MarkerBox2D()
-    : selected(false)
-    , selectable (true)
-  {}
+namespace QPlot
+{
 
-  bool operator== (const MarkerBox2D& other) const {
+struct MarkerBox2D
+{
+  bool operator== (const MarkerBox2D& other) const
+  {
     if (x1 != other.x1) return false;
     if (x2 != other.x2) return false;
     if (y1 != other.y1) return false;
@@ -24,8 +24,8 @@ struct MarkerBox2D {
   bool operator!= (const MarkerBox2D& other) const
     { return !operator==(other); }
 
-  bool selected;
-  bool selectable;
+  bool selected {false};
+  bool selectable {false};
   double x1, x2, y1, y2;
   QString label;
   QColor border;
@@ -33,12 +33,12 @@ struct MarkerBox2D {
 };
 
 
-class WidgetPlot2D : public QSquareCustomPlot
+class Plot2D : public GenericPlot
 {
   Q_OBJECT
 
 public:
-  explicit WidgetPlot2D(QWidget *parent = 0);
+  explicit Plot2D(QWidget *parent = 0);
 
   void update_plot(uint64_t sizex, uint64_t sizey, const EntryList &spectrum_data);
   void set_axes(QString xlabel, double x1, double x2,
@@ -62,20 +62,18 @@ signals:
 
 private slots:
   void selection_changed();
-
   void plot_2d_mouse_clicked(double x, double y, QMouseEvent* event, bool channels);
-
   void clicked_item(QCPAbstractItem*);
 
 private:
   QCPColorMap *colorMap {new QCPColorMap(xAxis, yAxis)};
   std::list<MarkerBox2D> boxes_;
-
   QString Z_label_;
 
   void initializeGradients();
   void addCustomGradient(QString name, std::initializer_list<std::string> colors);
-
 };
 
-#endif // WIDGET_PLOT2D_H
+}
+
+#endif

@@ -45,8 +45,8 @@ ViewEvent::ViewEvent(QWidget *parent) :
   ui->eventX->set_show_raw(ui->checkRaw->isChecked());
   ui->eventY->set_show_raw(ui->checkRaw->isChecked());
 
-  ui->plotProjection->set_scale_type("Linear");
-  ui->plotProjection->set_plot_style("Step center");
+  ui->plotProjection->setScaleType("Linear");
+  ui->plotProjection->setPlotStyle("Step center");
 //  ui->plotProjection->set_visible_options(ShowOptions::style | ShowOptions::scale |
 //                                          ShowOptions::labels | ShowOptions::thickness |
 //                                          ShowOptions::grid | ShowOptions::save |
@@ -273,7 +273,7 @@ void ViewEvent::display_projection(NMX::Event &evt)
       maxima[xx] = yy;
   }
 
-  AppearanceProfile profile;
+  QPlot::Appearance profile;
   profile.default_pen = QPen(Qt::darkRed, 2);
   ui->plotProjection->addGraph(x, y, profile, 8);
 

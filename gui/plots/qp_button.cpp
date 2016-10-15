@@ -1,12 +1,15 @@
-#include "qcp_overlay_button.h"
+#include "qp_button.h"
 #include "CustomLogger.h"
 #include <QToolTip>
 
-QCPOverlayButton::QCPOverlayButton(QCustomPlot *parentPlot,
-                             QPixmap pixmap,
-                             QString name,
-                             QString tooltip,
-                             int second_point)
+namespace QPlot
+{
+
+Button::Button(QCustomPlot *parentPlot,
+               QPixmap pixmap,
+               QString name,
+               QString tooltip,
+               int second_point)
   : QCPItemPixmap(parentPlot)
   , name_(name)
   , tooltip_(tooltip)
@@ -15,12 +18,12 @@ QCPOverlayButton::QCPOverlayButton(QCustomPlot *parentPlot,
   setSelectable(false);
 
   if (second_point == (Qt::AlignBottom | Qt::AlignRight)) {
-//    DBG << "Alightning bottom right";
+    //    DBG << "Alightning bottom right";
     bottomRight->setType(QCPItemPosition::ptAbsolute);
     bottomRight->setParentAnchor(topLeft);
     bottomRight->setCoords(pixmap.width(), pixmap.height());
   } else {
-//    DBG << "Alightning top left";
+    //    DBG << "Alightning top left";
     topLeft->setType(QCPItemPosition::ptAbsolute);
     topLeft->setParentAnchor(bottomRight);
     topLeft->setCoords(-pixmap.width(), -pixmap.height());
@@ -29,7 +32,7 @@ QCPOverlayButton::QCPOverlayButton(QCustomPlot *parentPlot,
   connect(parentPlot, SIGNAL(mouseMove(QMouseEvent*)), this, SLOT(showTip(QMouseEvent*)));
 }
 
-void QCPOverlayButton::showTip(QMouseEvent *event)
+void Button::showTip(QMouseEvent *event)
 {
   double x = event->pos().x();
   double y = event->pos().y();
@@ -49,3 +52,4 @@ void QCPOverlayButton::showTip(QMouseEvent *event)
 //  setPixmap(img);
 //}
 
+}

@@ -2,31 +2,30 @@
 #define WIDGET_PLOT_MULTI1D_H
 
 #include <QWidget>
-#include "qsquarecustomplot.h"
+#include "qp_generic.h"
 #include <set>
-#include "appearance.h"
+#include "qp_appearance.h"
 
-struct Marker1D {
+namespace QPlot
+{
+
+struct Marker1D
+{
   bool operator!= (const Marker1D& other) const { return (!operator==(other)); }
-  bool operator== (const Marker1D& other) const {
-    if (pos != other.pos) return false;
-    return true;
-  }
+  bool operator== (const Marker1D& other) const { return (pos == other.pos); }
 
-  double pos;
-  AppearanceProfile appearance;
-  bool visible;
-
-  Marker1D() : visible(false) {}
+  bool visible {false};
+  double pos {0};
+  Appearance appearance;
 };
 
 
-class WidgetPlotMulti1D : public QSquareCustomPlot
+class Multi1D : public GenericPlot
 {
   Q_OBJECT
 
 public:
-  explicit WidgetPlotMulti1D(QWidget *parent = 0);
+  explicit Multi1D(QWidget *parent = 0);
   virtual void clearGraphs();
 
   void clearExtras();
@@ -50,7 +49,7 @@ public:
 
   void addGraph(const QVector<double>& x,
                 const QVector<double>& y,
-                AppearanceProfile appearance,
+                Appearance appearance,
                 bool fittable = false, int32_t bits = 0);
 
   void setYBounds(const std::map<double, double> &minima,
@@ -60,7 +59,6 @@ public slots:
   void zoom_out();
 
 signals:
-
   void clickedLeft(double);
   void clickedRight(double);
   void markers_selected();
@@ -93,4 +91,6 @@ protected:
   void calc_y_bounds(double lower, double upper);
 };
 
-#endif // WIDGET_PLOT_MULTI1D_H
+}
+
+#endif

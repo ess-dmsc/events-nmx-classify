@@ -16,8 +16,11 @@
  *
  ******************************************************************************/
 
-#include "draggable_tracer.h"
-#include "CustomLogger.h"
+#include "qp_draggable_tracer.h"
+//#include "CustomLogger.h"
+
+namespace QPlot
+{
 
 DraggableTracer::DraggableTracer(QCustomPlot *parentPlot, QCPItemTracer *trc, int size)
   : QCPItemLine(parentPlot)
@@ -127,4 +130,6 @@ void DraggableTracer::moveToWantedPos()
     movePx(xx, pos_current_.y());
     pos_current_ = QPointF();
   }
+}
+
 }

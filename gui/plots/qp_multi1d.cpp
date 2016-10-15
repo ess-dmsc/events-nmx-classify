@@ -1,10 +1,13 @@
-#include "widget_plot_multi1d.h"
+#include "qp_multi1d.h"
 #include "CustomLogger.h"
 #include "qt_util.h"
-#include "qcp_overlay_button.h"
+#include "qp_button.h"
 
-WidgetPlotMulti1D::WidgetPlotMulti1D(QWidget *parent)
-  : QSquareCustomPlot(parent)
+namespace QPlot
+{
+
+Multi1D::Multi1D(QWidget *parent)
+  : GenericPlot(parent)
 {
   visible_options_ =
       (ShowOptions::zoom | ShowOptions::save |
@@ -18,60 +21,60 @@ WidgetPlotMulti1D::WidgetPlotMulti1D(QWidget *parent)
   yAxis->setPadding(28);
   setNoAntialiasingOnDrag(true);
 
-  connect(this, SIGNAL(mouse_clicked(double,double,QMouseEvent*,bool)), this, SLOT(plot_mouse_clicked(double,double,QMouseEvent*,bool)));
-//  connect(this, SIGNAL(plottableClick(QCPAbstractPlottable*,QMouseEvent*)), this, SLOT(clicked_plottable(QCPAbstractPlottable*)));
+  connect(this, SIGNAL(mouseClicked(double,double,QMouseEvent*,bool)), this, SLOT(plot_mouse_clicked(double,double,QMouseEvent*,bool)));
+  //  connect(this, SIGNAL(plottableClick(QCPAbstractPlottable*,QMouseEvent*)), this, SLOT(clicked_plottable(QCPAbstractPlottable*)));
   connect(this, SIGNAL(clickedAbstractItem(QCPAbstractItem*)), this, SLOT(clicked_item(QCPAbstractItem*)));
   connect(this, SIGNAL(selectionChangedByUser()), this, SLOT(selection_changed()));
   connect(this, SIGNAL(beforeReplot()), this, SLOT(plot_rezoom()));
   connect(this, SIGNAL(mouseRelease(QMouseEvent*)), this, SLOT(plot_mouse_release(QMouseEvent*)));
   connect(this, SIGNAL(mousePress(QMouseEvent*)), this, SLOT(plot_mouse_press(QMouseEvent*)));
 
-  set_scale_type("Logarithmic");
-  set_plot_style("Step center");
-  set_grid_style(current_grid_style_);
+  setScaleType("Logarithmic");
+  setPlotStyle("Step center");
+  setGridStyle(current_grid_style_);
   setColorScheme(Qt::black, Qt::white, QColor(112, 112, 112), QColor(170, 170, 170));
 
   QShortcut *shortcut = new QShortcut(QKeySequence(Qt::Key_Backspace), this);
   connect(shortcut, SIGNAL(activated()), this, SLOT(zoom_out()));
 
-  build_menu();
+  rebuild_menu();
   replot_markers();
 }
 
-void WidgetPlotMulti1D::set_visible_options(ShowOptions options) {
+void Multi1D::set_visible_options(ShowOptions options) {
   visible_options_ = options;
 
   setInteraction(QCP::iRangeDrag, options & ShowOptions::zoom);
   setInteraction(QCP::iRangeZoom, options & ShowOptions::zoom);
 
-  build_menu();
+  rebuild_menu();
   replot_markers();
 }
 
-void WidgetPlotMulti1D::clearGraphs()
+void Multi1D::clearGraphs()
 {
-  QSquareCustomPlot::clearGraphs();
+  GenericPlot::clearGraphs();
   minima_.clear();
   maxima_.clear();
 }
 
-void WidgetPlotMulti1D::clearExtras()
+void Multi1D::clearExtras()
 {
-  //DBG << "WidgetPlotMulti1D::clearExtras()";
+  //DBG << "Multi1D::clearExtras()";
   my_markers_.clear();
   rect.clear();
 }
 
-void WidgetPlotMulti1D::rescale() {
+void Multi1D::rescale() {
   force_rezoom_ = true;
   plot_rezoom();
 }
 
-void WidgetPlotMulti1D::redraw() {
+void Multi1D::redraw() {
   replot();
 }
 
-void WidgetPlotMulti1D::reset_scales()
+void Multi1D::reset_scales()
 {
   minx = std::numeric_limits<double>::max();
   maxx = std::numeric_limits<double>::min();
@@ -80,27 +83,27 @@ void WidgetPlotMulti1D::reset_scales()
   rescaleAxes();
 }
 
-void WidgetPlotMulti1D::setTitle(QString title) {
+void Multi1D::setTitle(QString title) {
   title_text_ = title;
   replot_markers();
 }
 
-void WidgetPlotMulti1D::setLabels(QString x, QString y) {
+void Multi1D::setLabels(QString x, QString y) {
   xAxis->setLabel(x);
   yAxis->setLabel(y);
 }
 
-void WidgetPlotMulti1D::set_markers(const std::list<Marker1D>& markers) {
+void Multi1D::set_markers(const std::list<Marker1D>& markers) {
   my_markers_ = markers;
 }
 
-void WidgetPlotMulti1D::set_block(Marker1D a, Marker1D b) {
+void Multi1D::set_block(Marker1D a, Marker1D b) {
   rect.resize(2);
   rect[0] = a;
   rect[1] = b;
 }
 
-std::set<double> WidgetPlotMulti1D::get_selected_markers() {
+std::set<double> Multi1D::get_selected_markers() {
   std::set<double> selection;
   for (auto &q : selectedItems())
     if (QCPItemText *txt = qobject_cast<QCPItemText*>(q)) {
@@ -117,8 +120,8 @@ std::set<double> WidgetPlotMulti1D::get_selected_markers() {
 }
 
 
-void WidgetPlotMulti1D::setYBounds(const std::map<double, double> &minima,
-                                   const std::map<double, double> &maxima)
+void Multi1D::setYBounds(const std::map<double, double> &minima,
+                         const std::map<double, double> &maxima)
 {
   minima_ = minima;
   maxima_ = maxima;
@@ -126,19 +129,19 @@ void WidgetPlotMulti1D::setYBounds(const std::map<double, double> &minima,
 }
 
 
-void WidgetPlotMulti1D::addGraph(const QVector<double>& x, const QVector<double>& y,
-                                 AppearanceProfile appearance, bool fittable, int32_t bits)
+void Multi1D::addGraph(const QVector<double>& x, const QVector<double>& y,
+                       Appearance appearance, bool fittable, int32_t bits)
 {
   if (x.empty() || y.empty() || (x.size() != y.size()))
     return;
 
-  QSquareCustomPlot::addGraph();
+  GenericPlot::addGraph();
   int g = graphCount() - 1;
   graph(g)->addData(x, y);
   graph(g)->setPen(appearance.default_pen);
   graph(g)->setProperty("fittable", fittable);
   graph(g)->setProperty("bits", QVariant::fromValue(bits));
-  set_graph_style(graph(g), current_plot_style_);
+  set_graph_style(graph(g), current_plotStyle_);
 
   if (x[0] < minx) {
     minx = x[0];
@@ -151,7 +154,7 @@ void WidgetPlotMulti1D::addGraph(const QVector<double>& x, const QVector<double>
   }
 }
 
-void WidgetPlotMulti1D::plot_rezoom() {
+void Multi1D::plot_rezoom() {
   if (mouse_pressed_)
     return;
 
@@ -181,13 +184,13 @@ void WidgetPlotMulti1D::plot_rezoom() {
   yAxis->setRangeUpper(maxy);
 }
 
-void WidgetPlotMulti1D::tight_x() {
+void Multi1D::tight_x() {
   //DBG << "tightning x to " << minx << " " << maxx;
   xAxis->setRangeLower(minx);
   xAxis->setRangeUpper(maxx);
 }
 
-void WidgetPlotMulti1D::calc_y_bounds(double lower, double upper) {
+void Multi1D::calc_y_bounds(double lower, double upper) {
   miny = std::numeric_limits<double>::max();
   maxy = std::numeric_limits<double>::min();
 
@@ -206,7 +209,7 @@ void WidgetPlotMulti1D::calc_y_bounds(double lower, double upper) {
     miny = 1;*/
 }
 
-void WidgetPlotMulti1D::replot_markers() {
+void Multi1D::replot_markers() {
   clearItems();
   double min_marker = std::numeric_limits<double>::max();
   double max_marker = std::numeric_limits<double>::min();
@@ -268,7 +271,7 @@ void WidgetPlotMulti1D::replot_markers() {
         markerText->setProperty("position", top_crs->property("position"));
 
         markerText->position->setParentAnchor(top_crs->position);
-        markerText->setPositionAlignment(Qt::AlignHCenter|Qt::AlignBottom);
+        markerText->setPositionAlignment(static_cast<Qt::AlignmentFlag>(Qt::AlignHCenter|Qt::AlignBottom));
         markerText->position->setCoords(0, -30);
         markerText->setText(QString::number(q.pos));
         markerText->setTextAlignment(Qt::AlignLeft);
@@ -315,7 +318,7 @@ void WidgetPlotMulti1D::replot_markers() {
 
   if (!title_text_.isEmpty()) {
     QCPItemText *floatingText = new QCPItemText(this);
-    floatingText->setPositionAlignment(Qt::AlignTop|Qt::AlignHCenter);
+    floatingText->setPositionAlignment(static_cast<Qt::AlignmentFlag>(Qt::AlignTop|Qt::AlignHCenter));
     floatingText->position->setType(QCPItemPosition::ptAxisRectRatio);
     floatingText->position->setCoords(0.5, 0); // place position at center/top of axis rect
     floatingText->setText(title_text_);
@@ -324,7 +327,7 @@ void WidgetPlotMulti1D::replot_markers() {
     floatingText->setColor(Qt::black);
   }
 
-  plotButtons();
+  plot_buttons();
 
   bool xaxis_changed = false;
   double dif_lower = min_marker - xAxis->range().lower;
@@ -350,7 +353,7 @@ void WidgetPlotMulti1D::replot_markers() {
 
 }
 
-void WidgetPlotMulti1D::plot_mouse_clicked(double x, double y, QMouseEvent* event, bool on_item) {
+void Multi1D::plot_mouse_clicked(double x, double y, QMouseEvent* event, bool on_item) {
   if (event->button() == Qt::RightButton) {
     emit clickedRight(x);
   } else if (!on_item) { //tricky
@@ -359,19 +362,20 @@ void WidgetPlotMulti1D::plot_mouse_clicked(double x, double y, QMouseEvent* even
 }
 
 
-void WidgetPlotMulti1D::selection_changed() {
+void Multi1D::selection_changed() {
   emit markers_selected();
 }
 
-//void WidgetPlotMulti1D::clicked_plottable(QCPAbstractPlottable *plt) {
-//  //  LINFO << "<WidgetPlotMulti1D> clickedplottable";
+//void Multi1D::clicked_plottable(QCPAbstractPlottable *plt) {
+//  //  LINFO << "<Multi1D> clickedplottable";
 //}
 
-void WidgetPlotMulti1D::clicked_item(QCPAbstractItem* itm) {
+void Multi1D::clicked_item(QCPAbstractItem* itm) {
   if (!itm->visible())
     return;
 
-  if (QCPOverlayButton *button = qobject_cast<QCPOverlayButton*>(itm)) {
+  if (Button *button = qobject_cast<Button*>(itm))
+  {
     //    QPoint p = this->mapFromGlobal(QCursor::pos());
     if (button->name() == "options") {
       options_menu_.exec(QCursor::pos());
@@ -383,7 +387,7 @@ void WidgetPlotMulti1D::clicked_item(QCPAbstractItem* itm) {
   }
 }
 
-void WidgetPlotMulti1D::zoom_out()
+void Multi1D::zoom_out()
 {
   xAxis->rescale();
   force_rezoom_ = true;
@@ -391,7 +395,7 @@ void WidgetPlotMulti1D::zoom_out()
   replot();
 }
 
-void WidgetPlotMulti1D::plot_mouse_press(QMouseEvent*) {
+void Multi1D::plot_mouse_press(QMouseEvent*) {
   disconnect(this, 0, this, 0);
   connect(this, SIGNAL(mouseRelease(QMouseEvent*)), this, SLOT(plot_mouse_release(QMouseEvent*)));
   connect(this, SIGNAL(clickedAbstractItem(QCPAbstractItem*)), this, SLOT(clicked_item(QCPAbstractItem*)));
@@ -401,7 +405,7 @@ void WidgetPlotMulti1D::plot_mouse_press(QMouseEvent*) {
   mouse_pressed_ = true;
 }
 
-void WidgetPlotMulti1D::plot_mouse_release(QMouseEvent*) {
+void Multi1D::plot_mouse_release(QMouseEvent*) {
   connect(this, SIGNAL(mouse_clicked(double,double,QMouseEvent*,bool)), this, SLOT(plot_mouse_clicked(double,double,QMouseEvent*,bool)));
   connect(this, SIGNAL(beforeReplot()), this, SLOT(plot_rezoom()));
   connect(this, SIGNAL(mousePress(QMouseEvent*)), this, SLOT(plot_mouse_press(QMouseEvent*)));
@@ -412,3 +416,4 @@ void WidgetPlotMulti1D::plot_mouse_release(QMouseEvent*) {
 }
 
 
+}

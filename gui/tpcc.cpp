@@ -12,7 +12,7 @@ tpcc::tpcc(QWidget *parent) :
   QMainWindow(parent),
   ui(new Ui::tpcc)
 {
-  qRegisterMetaType<std::shared_ptr<EntryList>>("std::shared_ptr<EntryList>");
+  qRegisterMetaType<std::shared_ptr<QPlot::EntryList>>("std::shared_ptr<QPlot::EntryList>");
 
   CustomLogger::initLogger();
   ui->setupUi(this);

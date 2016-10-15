@@ -49,7 +49,7 @@
     </widget>
    </item>
    <item row="2" column="0">
-    <widget class="WidgetPlot2D" name="plotRecord" native="true">
+    <widget class="QPlot::Plot2D" name="plotRecord" native="true">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
        <horstretch>0</horstretch>
@@ -62,9 +62,9 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>WidgetPlot2D</class>
+   <class>QPlot::Plot2D</class>
    <extends>QWidget</extends>
-   <header>widget_plot2d.h</header>
+   <header>qp_2d.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

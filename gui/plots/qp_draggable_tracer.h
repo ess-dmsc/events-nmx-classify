@@ -16,11 +16,13 @@
  *
  ******************************************************************************/
 
-#ifndef Q_PLOT_POINT_H
-#define Q_PLOT_POINT_H
-
+#ifndef QP_DRAGGABLE_TRACER_H
+#define QP_DRAGGABLE_TRACER_H
 
 #include "qcustomplot.h"
+
+namespace QPlot
+{
 
 class DraggableTracer : public QCPItemLine
 {
@@ -54,5 +56,7 @@ private:
 
     double limit_l, limit_r;
 };
+
+}
 
 #endif

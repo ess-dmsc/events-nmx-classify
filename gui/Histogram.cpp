@@ -41,11 +41,11 @@ double Histogram::avg() const
     return 0;
 }
 
-EntryList Histogram::data_list() const
+QPlot::EntryList Histogram::data_list() const
 {
-  EntryList ret;
+  QPlot::EntryList ret;
   for (const auto &i : data_)
-    ret.push_back(Entry{{i.first}, i.second});
+    ret.push_back(QPlot::Entry{{i.first}, i.second});
   return ret;
 }
 

@@ -10,8 +10,8 @@
 #include "BoxesModel.h"
 #include "SpecialDelegate.h"
 
-#include "widget_plot2d.h"
-#include "widget_plot_multi1d.h"
+#include "qp_2d.h"
+#include "qp_multi1d.h"
 
 namespace Ui {
 class Analyzer;

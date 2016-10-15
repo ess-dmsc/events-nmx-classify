@@ -1,10 +1,13 @@
-#ifndef Q_SQUARE_CP_H
-#define Q_SQUARE_CP_H
+#ifndef QP_GENERIC_PLOT_H
+#define QP_GENERIC_PLOT_H
 
 #include "qcustomplot.h"
-#include "draggable_tracer.h"
+#include "qp_draggable_tracer.h"
 #include <QWidget>
 #include <set>
+
+namespace QPlot
+{
 
 enum ShowOptions {
   empty     = 0,
@@ -24,44 +27,36 @@ enum ShowOptions {
 inline ShowOptions operator|(ShowOptions a, ShowOptions b) {return static_cast<ShowOptions>(static_cast<int>(a) | static_cast<int>(b));}
 inline ShowOptions operator&(ShowOptions a, ShowOptions b) {return static_cast<ShowOptions>(static_cast<int>(a) & static_cast<int>(b));}
 
-class QSquareCustomPlot : public QCustomPlot
+class GenericPlot : public QCustomPlot
 {
   Q_OBJECT
 public:
-  explicit QSquareCustomPlot(QWidget *parent = 0);
-
-  void setAlwaysSquare(bool sq);
-
-  QString scale_type();
-  void set_scale_type(QString);
-
-  bool marker_labels();
-  void set_marker_labels(bool);
-
-  QString grid_style();
-  void set_grid_style(QString);
-
-  uint16_t line_thickness();
-  void set_line_thickness(uint16_t);
-
-  void set_gradient(QString);
-  QString gradient();
-
-  void set_show_legend(bool);
-  bool show_legend();
-
-  void set_antialiased(bool);
-  bool antialiased();
-
-  void set_plot_style(QString);
-  QString plot_style();
-
-
+  explicit GenericPlot(QWidget *parent = 0);
   QSize sizeHint() const Q_DECL_OVERRIDE;
 
+  bool alwaysSquare() const;
+  bool antialiased() const;
+  bool showGradientLegend() const;
+  bool showMarkerLabels() const;
+  uint16_t lineThickness() const;
+  QString gridStyle() const;
+  QString scaleType() const;
+  QString plotStyle() const;
+  QString gradient() const;
+
+  void setAlwaysSquare(bool);
+  void setAntialiased(bool);
+  void setShowGradientLegend(bool);
+  void setShowMarkerLabels(bool);
+  void setLineThickness(uint16_t);
+  void setGridStyle(QString);
+  void setScaleType(QString);
+  void setPlotStyle(QString);
+  void setGradient(QString);
+
 signals:
-  void mouse_upon(double x, double y);
-  void mouse_clicked(double x, double y, QMouseEvent* e, bool on_item); //why on_item?
+  void mouseHover(double x, double y);
+  void mouseClicked(double x, double y, QMouseEvent* e, bool on_item); //why on_item?
   void shiftStateChanged(bool);
   void clickedAbstractItem(QCPAbstractItem *);
 
@@ -70,7 +65,6 @@ protected:
   void mouseMoveEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
   void mouseReleaseEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
   void resizeEvent(QResizeEvent * event) Q_DECL_OVERRIDE;
-
   void keyPressEvent(QKeyEvent*) Q_DECL_OVERRIDE;
   void keyReleaseEvent(QKeyEvent*) Q_DECL_OVERRIDE;
 
@@ -78,46 +72,45 @@ protected:
   QMenu options_menu_;
   QMenu export_menu_;
 
+  bool always_square_ {false};
+  bool antialiased_ {false};
+  bool show_gradient_legend_ {false};
+  bool show_marker_labels_ {true};
+  uint16_t line_thickness_ {1};
   QString current_scale_type_ {"Linear"};
-  std::map<QString, QCPAxis::ScaleType> scale_types_
-  {
-    {"Linear", QCPAxis::stLinear},
-    {"Logarithmic", QCPAxis::stLogarithmic}
-  };
-
   QString current_grid_style_ {"Grid + subgrid"};
-  std::set<QString> grid_styles_ {"No grid", "Grid", "Grid + subgrid"};
+  QString current_plotStyle_ {"Step center"};
+  QString current_gradient_;
 
-  QString current_plot_style_ {"Step center"};
+  std::map<QString, QCPColorGradient> gradients_;
+  std::map<QString, QCPAxis::ScaleType> scale_types_
+    { {"Linear", QCPAxis::stLinear}, {"Logarithmic", QCPAxis::stLogarithmic} };
+  std::set<QString> grid_styles_ {"No grid", "Grid", "Grid + subgrid"};
   std::set<QString> plot_styles_ {"Step center", "Step left", "Step right",
                                   "Lines", "Scatter", "Fill"};
 
-  QString current_gradient_;
-  std::map<QString, QCPColorGradient> gradients_;
-
-  bool show_gradient_scale_ {false};
-  bool antialiased_ {false};
-  bool show_marker_labels_ {true};
-  uint16_t line_thickness_ {1};
-
-
-  void plotButtons();
+  void plot_buttons();
   void setColorScheme(QColor fore, QColor back, QColor grid1, QColor grid2);
   QFont rescaleFont(QFont font, double size_offset);
   void rescaleEverything(int fontUpscale, int plotThicken, int marginUpscale, bool buttons_visible);
   void set_graph_thickness(QCPGraph* graph);
   void set_graph_style(QCPGraph*, QString);
-  void build_menu();
+  void rebuild_menu();
+
+  void removeGradientLegend();
+  void addGradientLegend(QCPColorMap *colorMap);
 
 protected slots:
   void exportPlot(QAction*);
   void optionsChanged(QAction*);
 
 private:
-  mutable int lastHeight;
-  bool square;
-  DraggableTracer *under_mouse_;
+  mutable int previous_height_ {0};
+  DraggableTracer *under_mouse_ {nullptr};
 
 };
+
+
+}
 
 #endif
