@@ -84,7 +84,7 @@ void Plot2D::addCustomGradient(QString name, std::initializer_list<std::string> 
 }
 
 
-void Plot2D::set_zoom_drag(Qt::Orientation o)
+void Plot2D::setOrientation(Qt::Orientation o)
 {
   yAxis->axisRect()->setRangeDrag(o);
   yAxis->axisRect()->setRangeZoom(o);
@@ -102,7 +102,7 @@ void Plot2D::clicked_item(QCPAbstractItem* itm) {
     } else if (button->name() == "export") {
       export_menu_.exec(QCursor::pos());
     } else if (button->name() == "reset_scales") {
-      zoom_out();
+      zoomOut();
     }
   }
 }
@@ -113,7 +113,7 @@ void Plot2D::selection_changed() {
 }
 
 
-std::list<MarkerBox2D> Plot2D::get_selected_boxes()
+std::list<MarkerBox2D> Plot2D::selectedBoxes()
 {
   std::list<MarkerBox2D> selection;
   for (auto &q : selectedItems())
@@ -128,12 +128,12 @@ std::list<MarkerBox2D> Plot2D::get_selected_boxes()
 }
 
 
-void Plot2D::set_boxes(std::list<MarkerBox2D> boxes)
+void Plot2D::setBoxes(std::list<MarkerBox2D> boxes)
 {
   boxes_ = boxes;
 }
 
-void Plot2D::reset_content()
+void Plot2D::resetContent()
 {
   colorMap->data()->clear();
   boxes_.clear();
@@ -145,7 +145,7 @@ void Plot2D::refresh()
   replot();
 }
 
-void Plot2D::replot_markers()
+void Plot2D::replotExtras()
 {
   clearItems();
 
@@ -216,7 +216,7 @@ void Plot2D::replot_markers()
   replot();
 }
 
-void Plot2D::update_plot(uint64_t sizex, uint64_t sizey, const EntryList &spectrum_data)
+void Plot2D::updatePlot(uint64_t sizex, uint64_t sizey, const EntryList &spectrum_data)
 {
 //  DBG << "2d size " << sizex << "x" << sizey << " list " << spectrum_data.size();
 //  clearGraphs();
@@ -239,10 +239,10 @@ void Plot2D::update_plot(uint64_t sizex, uint64_t sizey, const EntryList &spectr
     rescaleAxes();
     updateGeometry();
   }
-  replot_markers();
+  replotExtras();
 }
 
-void Plot2D::set_axes(QString xlabel, double x1, double x2,
+void Plot2D::setAxes(QString xlabel, double x1, double x2,
                             QString ylabel, double y1, double y2,
                             QString zlabel)
 {
@@ -270,7 +270,7 @@ void Plot2D::plot_2d_mouse_clicked(double x, double y, QMouseEvent *event, bool 
 }
 
 
-void Plot2D::zoom_out()
+void Plot2D::zoomOut()
 {
   this->setCursor(Qt::WaitCursor);
   rescaleAxes();

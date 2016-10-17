@@ -40,21 +40,22 @@ class Plot2D : public GenericPlot
 public:
   explicit Plot2D(QWidget *parent = 0);
 
-  void update_plot(uint64_t sizex, uint64_t sizey, const EntryList &spectrum_data);
-  void set_axes(QString xlabel, double x1, double x2,
+  void updatePlot(uint64_t sizex, uint64_t sizey, const EntryList &spectrum_data);
+  void setAxes(QString xlabel, double x1, double x2,
                 QString ylabel, double y1, double y2,
                 QString zlabel);
-  void set_zoom_drag(Qt::Orientation);
+  void setOrientation(Qt::Orientation);
+
+  void resetContent();
   void refresh();
-  void replot_markers();
-  void reset_content();
+  void setBoxes(std::list<MarkerBox2D> boxes);
 
-  void set_boxes(std::list<MarkerBox2D> boxes);
+  std::list<MarkerBox2D> selectedBoxes();
 
-  std::list<MarkerBox2D> get_selected_boxes();
+  void replotExtras() override;
 
 public slots:
-  void zoom_out();
+  void zoomOut() Q_DECL_OVERRIDE;
 
 signals:
   void markers_set(double x, double y, bool left_mouse);

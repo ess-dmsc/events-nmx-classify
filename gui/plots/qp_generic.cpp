@@ -17,6 +17,18 @@ GenericPlot::GenericPlot(QWidget *parent)
   connect(&options_menu_, SIGNAL(triggered(QAction*)), this, SLOT(optionsChanged(QAction*)));
 }
 
+void GenericPlot::setVisibleOptions(ShowOptions options)
+{
+  visible_options_ = options;
+
+  setInteraction(QCP::iRangeDrag, options & ShowOptions::zoom);
+  setInteraction(QCP::iRangeZoom, options & ShowOptions::zoom);
+
+  rebuild_menu();
+  replotExtras();
+  replot();
+}
+
 
 //getters
 
@@ -142,7 +154,7 @@ void GenericPlot::addGradientLegend(QCPColorMap *colorMap)
 void GenericPlot::setShowMarkerLabels(bool sl)
 {
   show_marker_labels_ = sl;
-  //  replot_markers();
+  replotExtras();
   rebuild_menu();
   replot();
 }

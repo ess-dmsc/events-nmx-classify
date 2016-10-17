@@ -38,17 +38,7 @@ Multi1D::Multi1D(QWidget *parent)
   connect(shortcut, SIGNAL(activated()), this, SLOT(zoom_out()));
 
   rebuild_menu();
-  replot_markers();
-}
-
-void Multi1D::set_visible_options(ShowOptions options) {
-  visible_options_ = options;
-
-  setInteraction(QCP::iRangeDrag, options & ShowOptions::zoom);
-  setInteraction(QCP::iRangeZoom, options & ShowOptions::zoom);
-
-  rebuild_menu();
-  replot_markers();
+  replotExtras();
 }
 
 void Multi1D::clearGraphs()
@@ -85,25 +75,29 @@ void Multi1D::reset_scales()
 
 void Multi1D::setTitle(QString title) {
   title_text_ = title;
-  replot_markers();
+  replotExtras();
 }
 
-void Multi1D::setLabels(QString x, QString y) {
+void Multi1D::setAxisLabels(QString x, QString y)
+{
   xAxis->setLabel(x);
   yAxis->setLabel(y);
 }
 
-void Multi1D::set_markers(const std::list<Marker1D>& markers) {
+void Multi1D::setMarkers(const std::list<Marker1D>& markers)
+{
   my_markers_ = markers;
 }
 
-void Multi1D::set_block(Marker1D a, Marker1D b) {
+void Multi1D::setHighlight(Marker1D a, Marker1D b)
+{
   rect.resize(2);
   rect[0] = a;
   rect[1] = b;
 }
 
-std::set<double> Multi1D::get_selected_markers() {
+std::set<double> Multi1D::selectedMarkers()
+{
   std::set<double> selection;
   for (auto &q : selectedItems())
     if (QCPItemText *txt = qobject_cast<QCPItemText*>(q)) {
@@ -209,7 +203,8 @@ void Multi1D::calc_y_bounds(double lower, double upper) {
     miny = 1;*/
 }
 
-void Multi1D::replot_markers() {
+void Multi1D::replotExtras()
+{
   clearItems();
   double min_marker = std::numeric_limits<double>::max();
   double max_marker = std::numeric_limits<double>::min();
@@ -382,12 +377,12 @@ void Multi1D::clicked_item(QCPAbstractItem* itm) {
     } else if (button->name() == "export") {
       export_menu_.exec(QCursor::pos());
     } else if (button->name() == "reset_scales") {
-      zoom_out();
+      zoomOut();
     }
   }
 }
 
-void Multi1D::zoom_out()
+void Multi1D::zoomOut()
 {
   xAxis->rescale();
   force_rezoom_ = true;

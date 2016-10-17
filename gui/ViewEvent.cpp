@@ -130,7 +130,7 @@ void ViewEvent::clear()
   ui->plotProjection->reset_scales();
   ui->plotProjection->clearGraphs();
   ui->plotProjection->clearExtras();
-  ui->plotProjection->replot_markers();
+  ui->plotProjection->replotExtras();
   ui->plotProjection->rescale();
   ui->plotProjection->redraw();
 }
@@ -277,11 +277,11 @@ void ViewEvent::display_projection(NMX::Event &evt)
   profile.default_pen = QPen(Qt::darkRed, 2);
   ui->plotProjection->addGraph(x, y, profile, 8);
 
-  ui->plotProjection->setLabels("position", "value");
+  ui->plotProjection->setAxisLabels("position", "value");
   ui->plotProjection->setYBounds(minima, maxima);
 
   ui->plotProjection->setTitle(ui->comboProjection->currentText());
-  ui->plotProjection->replot_markers();
+  ui->plotProjection->replotExtras();
   ui->plotProjection->redraw();
 }
 

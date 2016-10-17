@@ -13,7 +13,7 @@ ViewRecord::ViewRecord(QWidget *parent) :
   ui->plotRecord->setScaleType("Linear");
   ui->plotRecord->setGradient("YlGnBu5");
   ui->plotRecord->setShowGradientLegend(true);
-  ui->plotRecord->set_zoom_drag(Qt::Horizontal);
+  ui->plotRecord->setOrientation(Qt::Horizontal);
 }
 
 ViewRecord::~ViewRecord()
@@ -40,8 +40,8 @@ void ViewRecord::set_overlay_type(QString overlay_type)
 
 void ViewRecord::clear()
 {
-  ui->plotRecord->reset_content();
-  ui->plotRecord->set_boxes(std::list<QPlot::MarkerBox2D>());
+  ui->plotRecord->resetContent();
+  ui->plotRecord->setBoxes(std::list<QPlot::MarkerBox2D>());
   ui->plotRecord->refresh();
 
   moving_.visible = false;
@@ -58,14 +58,14 @@ void ViewRecord::display_current_record()
 {
   clear();
 
-  ui->plotRecord->set_axes("Position (strip)", record_.strip_start(), record_.strip_end(),
-                           "Time bin",                          0, record_.time_end(),
-                           "Charge");
+  ui->plotRecord->setAxes("Position (strip)", record_.strip_start(), record_.strip_end(),
+                          "Time bin",                          0, record_.time_end(),
+                          "Charge");
 
   if (show_raw_)
-    ui->plotRecord->update_plot(record_.strip_span(), record_.time_end() + 1, make_list());
+    ui->plotRecord->updatePlot(record_.strip_span(), record_.time_end() + 1, make_list());
   else
-    ui->plotRecord->update_plot(record_.strip_span(), record_.time_end() + 1, QPlot::EntryList());
+    ui->plotRecord->updatePlot(record_.strip_span(), record_.time_end() + 1, QPlot::EntryList());
 
   auto metrics = record_.metrics();
 
@@ -84,9 +84,9 @@ void ViewRecord::display_current_record()
     box.fill = Qt::darkYellow;
     overlay.push_back(box);
   }
-  ui->plotRecord->set_boxes(overlay);
-  ui->plotRecord->replot_markers();
-  ui->plotRecord->zoom_out();
+  ui->plotRecord->setBoxes(overlay);
+  ui->plotRecord->replotExtras();
+  ui->plotRecord->zoomOut();
 }
 
 QPlot::EntryList ViewRecord::make_list()

@@ -32,31 +32,28 @@ public:
 
   void redraw();
   void reset_scales();
-
   void tight_x();
   void rescale();
-  void replot_markers();
 
-  void setLabels(QString x, QString y);
   void setTitle(QString title);
-
-  void set_visible_options(ShowOptions);
-
-  void set_markers(const std::list<Marker1D>&);
-  void set_block(Marker1D, Marker1D);
-
-  std::set<double> get_selected_markers();
 
   void addGraph(const QVector<double>& x,
                 const QVector<double>& y,
                 Appearance appearance,
                 bool fittable = false, int32_t bits = 0);
-
   void setYBounds(const std::map<double, double> &minima,
                   const std::map<double, double> &maxima);
+  void setAxisLabels(QString x, QString y);
+
+  void setMarkers(const std::list<Marker1D>&);
+  std::set<double> selectedMarkers();
+  void setHighlight(Marker1D, Marker1D);
+
+
+  void replotExtras() override;
 
 public slots:
-  void zoom_out();
+  void zoomOut() Q_DECL_OVERRIDE;
 
 signals:
   void clickedLeft(double);

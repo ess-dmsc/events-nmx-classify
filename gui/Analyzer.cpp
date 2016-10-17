@@ -241,10 +241,10 @@ void Analyzer::make_projections()
   QPlot::EntryList data_list;
   for (auto &point : projection2d)
     data_list.push_back(QPlot::Entry{{point.first.first - xmin, point.first.second - ymin}, point.second});
-  ui->plot2D->update_plot(xmax-xmin+1, ymax-ymin+1, data_list);
-  ui->plot2D->set_axes(ui->comboWeightsX->currentText(), xmin * xx_norm, xmax * xx_norm,
-                     ui->comboWeightsY->currentText(), ymin * yy_norm, ymax * yy_norm,
-                     "Count");
+  ui->plot2D->updatePlot(xmax-xmin+1, ymax-ymin+1, data_list);
+  ui->plot2D->setAxes(ui->comboWeightsX->currentText(), xmin * xx_norm, xmax * xx_norm,
+                      ui->comboWeightsY->currentText(), ymin * yy_norm, ymax * yy_norm,
+                      "Count");
   ui->plot2D->refresh();
 
   update_histograms();
@@ -284,7 +284,7 @@ void Analyzer::update_histograms()
     ui->plotHistogram->addGraph(x, y, profile, 8);
   }
 
-  ui->plotHistogram->setLabels(ui->comboWeightsZ->currentText(), "count");
+  ui->plotHistogram->setAxisLabels(ui->comboWeightsZ->currentText(), "count");
   ui->plotHistogram->setYBounds(minima, maxima);
 
   ui->plotHistogram->setTitle(ui->comboWeightsZ->currentText()
@@ -355,8 +355,8 @@ void Analyzer::plot_boxes()
     boxes.push_back(box);
   }
 
-  ui->plot2D->set_boxes(boxes);
-  ui->plot2D->replot_markers();
+  ui->plot2D->setBoxes(boxes);
+  ui->plot2D->replotExtras();
 }
 
 void Analyzer::parameters_set()
@@ -449,9 +449,9 @@ void Analyzer::plot_block()
   QPlot::Marker1D right = marker_;
   right.pos = ui->spinMaxZ->value();
 
-  ui->plotHistogram->set_block(left, right);
+  ui->plotHistogram->setHighlight(left, right);
 
-  ui->plotHistogram->replot_markers();
+  ui->plotHistogram->replotExtras();
   ui->plotHistogram->redraw();
 }
 

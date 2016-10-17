@@ -34,6 +34,8 @@ public:
   explicit GenericPlot(QWidget *parent = 0);
   QSize sizeHint() const Q_DECL_OVERRIDE;
 
+  void setVisibleOptions(ShowOptions);
+
   bool alwaysSquare() const;
   bool antialiased() const;
   bool showGradientLegend() const;
@@ -53,6 +55,11 @@ public:
   void setScaleType(QString);
   void setPlotStyle(QString);
   void setGradient(QString);
+
+  virtual void replotExtras() {}
+
+public slots:
+  virtual void zoomOut() {}
 
 signals:
   void mouseHover(double x, double y);
