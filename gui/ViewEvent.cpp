@@ -132,7 +132,7 @@ void ViewEvent::clear()
   ui->plotProjection->clearExtras();
   ui->plotProjection->replotExtras();
   ui->plotProjection->rescale();
-  ui->plotProjection->redraw();
+  ui->plotProjection->replot();
 }
 
 void ViewEvent::on_spinEventIdx_valueChanged(int /*arg1*/)
@@ -282,7 +282,7 @@ void ViewEvent::display_projection(NMX::Event &evt)
 
   ui->plotProjection->setTitle(ui->comboProjection->currentText());
   ui->plotProjection->replotExtras();
-  ui->plotProjection->redraw();
+  ui->plotProjection->replot();
 }
 
 

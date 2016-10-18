@@ -245,7 +245,7 @@ void Analyzer::make_projections()
   ui->plot2D->setAxes(ui->comboWeightsX->currentText(), xmin * xx_norm, xmax * xx_norm,
                       ui->comboWeightsY->currentText(), ymin * yy_norm, ymax * yy_norm,
                       "Count");
-  ui->plot2D->refresh();
+  ui->plot2D->replot();
 
   update_histograms();
 
@@ -437,22 +437,16 @@ void Analyzer::on_spinMaxZ_valueChanged(int /*arg1*/)
 
 void Analyzer::plot_block()
 {
-  QPlot::Marker1D marker_;
-  marker_.visible = true;//ui->checkShowUngated->isChecked();
+  QPlot::Appearance app;
   QColor cc (Qt::darkGray);
   cc.setAlpha(64);
-  marker_.appearance.default_pen = QPen(cc, 2);
+  app.default_pen = QPen(cc, 2);
 
-  QPlot::Marker1D left = marker_;
-  left.pos = ui->spinMinZ->value();
-
-  QPlot::Marker1D right = marker_;
-  right.pos = ui->spinMaxZ->value();
-
-  ui->plotHistogram->setHighlight(left, right);
+  ui->plotHistogram->setHighlight(QPlot::Marker1D(ui->spinMinZ->value(), app),
+                                  QPlot::Marker1D(ui->spinMaxZ->value(), app));
 
   ui->plotHistogram->replotExtras();
-  ui->plotHistogram->redraw();
+  ui->plotHistogram->replot();
 }
 
 double Analyzer::normalizer(const std::vector<Variant> &data)

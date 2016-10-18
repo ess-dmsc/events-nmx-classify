@@ -3,7 +3,6 @@
 
 #include <QWidget>
 #include "qp_generic.h"
-#include <set>
 #include "qp_appearance.h"
 
 namespace QPlot
@@ -11,6 +10,10 @@ namespace QPlot
 
 struct Marker1D
 {
+  Marker1D() {}
+  Marker1D(double p, Appearance app = Appearance(), bool vis = true)
+    : pos(p), visible(vis), appearance(app) {}
+
   bool operator!= (const Marker1D& other) const { return (!operator==(other)); }
   bool operator== (const Marker1D& other) const { return (pos == other.pos); }
 
@@ -26,11 +29,11 @@ class Multi1D : public GenericPlot
 
 public:
   explicit Multi1D(QWidget *parent = 0);
-  virtual void clearGraphs();
 
-  void clearExtras();
+  void clearAll() override;
+  void clearExtras() override;
+  void replotExtras() override;
 
-  void redraw();
   void reset_scales();
   void tight_x();
   void rescale();
@@ -49,27 +52,22 @@ public:
   std::set<double> selectedMarkers();
   void setHighlight(Marker1D, Marker1D);
 
-
-  void replotExtras() override;
-
 public slots:
   void zoomOut() Q_DECL_OVERRIDE;
 
 signals:
   void clickedLeft(double);
   void clickedRight(double);
-  void markers_selected();
 
 protected slots:
-  void plot_mouse_clicked(double x, double y, QMouseEvent *event, bool channels);
   void plot_mouse_press(QMouseEvent*);
   void plot_mouse_release(QMouseEvent*);
-  void clicked_item(QCPAbstractItem *);
 
-  void selection_changed();
   void plot_rezoom();
 
 protected:
+  void mouseClicked(double x, double y, QMouseEvent *event) override;
+
   QString title_text_;
   std::list<Marker1D> my_markers_;
   std::vector<Marker1D> rect;

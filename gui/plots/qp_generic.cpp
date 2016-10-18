@@ -1,6 +1,5 @@
 #include "qp_generic.h"
 #include "CustomLogger.h"
-#include "qp_button.h"
 #include "qt_util.h"
 
 namespace QPlot
@@ -24,8 +23,8 @@ void GenericPlot::setVisibleOptions(ShowOptions options)
   setInteraction(QCP::iRangeDrag, options & ShowOptions::zoom);
   setInteraction(QCP::iRangeZoom, options & ShowOptions::zoom);
 
-  rebuild_menu();
-  replotExtras();
+  rebuildOptionsMenu();
+  this->replotExtras();
   replot();
 }
 
@@ -74,7 +73,7 @@ QString GenericPlot::gradient() const
 
 QString GenericPlot::plotStyle() const
 {
-  return current_plotStyle_;
+  return current_plot_style_;
 }
 
 
@@ -92,7 +91,7 @@ void GenericPlot::setAntialiased(bool anti)
   for (int i=0; i < plottableCount(); ++i)
     if (QCPColorMap *colorMap = qobject_cast<QCPColorMap*>(plottable(i)))
       colorMap->setInterpolate(antialiased_);
-  rebuild_menu();
+  rebuildOptionsMenu();
 }
 
 void GenericPlot::setShowGradientLegend(bool show)
@@ -114,7 +113,7 @@ void GenericPlot::setShowGradientLegend(bool show)
   }
 
   updateGeometry();
-  rebuild_menu();
+  rebuildOptionsMenu();
 }
 
 void GenericPlot::removeGradientLegend()
@@ -154,8 +153,8 @@ void GenericPlot::addGradientLegend(QCPColorMap *colorMap)
 void GenericPlot::setShowMarkerLabels(bool sl)
 {
   show_marker_labels_ = sl;
-  replotExtras();
-  rebuild_menu();
+  this->replotExtras();
+  rebuildOptionsMenu();
   replot();
 }
 
@@ -163,7 +162,7 @@ void GenericPlot::setLineThickness(uint16_t th)
 {
   line_thickness_ = th;
   for (int i=0; i < graphCount(); i++)
-    set_graph_thickness(graph(i));
+    setGraphThickness(graph(i));
 }
 
 void GenericPlot::setGridStyle(QString grd)
@@ -175,7 +174,7 @@ void GenericPlot::setGridStyle(QString grd)
     yAxis->grid()->setVisible(current_grid_style_ != "No grid");
     xAxis->grid()->setSubGridVisible(current_grid_style_ == "Grid + subgrid");
     yAxis->grid()->setSubGridVisible(current_grid_style_ == "Grid + subgrid");
-    rebuild_menu();
+    rebuildOptionsMenu();
   }
 }
 
@@ -215,17 +214,17 @@ void GenericPlot::setScaleType(QString sct)
     yAxis->setScaleType(scale_types_[current_scale_type_]);
 
   current_scale_type_ = sct;
-  rebuild_menu();
+  rebuildOptionsMenu();
   this->setCursor(Qt::ArrowCursor);
 }
 
 void GenericPlot::setPlotStyle(QString stl)
 {
   this->setCursor(Qt::WaitCursor);
-  current_plotStyle_ = stl;
+  current_plot_style_ = stl;
   for (int i=0; i < graphCount(); i++)
-    set_graph_style(graph(i), stl);
-  rebuild_menu();
+    setGraphStyle(graph(i));
+  rebuildOptionsMenu();
   //  replot();
   this->setCursor(Qt::ArrowCursor);
 }
@@ -240,11 +239,41 @@ void GenericPlot::setGradient(QString grd)
   for (int i=0; i < plottableCount(); ++i)
     if (QCPColorMap *cm = qobject_cast<QCPColorMap*>(plottable(i)))
       cm->setGradient(gradients_[current_gradient_]);
-  rebuild_menu();
+  rebuildOptionsMenu();
   this->setCursor(Qt::ArrowCursor);
 }
 
+void GenericPlot::addCustomGradient(QString name, std::initializer_list<std::string> colors)
+{
+  QVector<QColor> cols;
+  for (auto &c : colors)
+    cols.push_back(QColor(QString::fromStdString(c)));
 
+  if (name.isEmpty() || (cols.size() < 2))
+    return;
+
+  QCPColorGradient gr;
+  gr.clearColorStops();
+  for (int i=0; i < cols.size(); ++i)
+    gr.setColorStopAt(double(i) / double(cols.size() - 1), cols[i]);
+  gradients_[name] = gr;
+}
+
+void GenericPlot::addStandardGradients()
+{
+  gradients_["Grayscale"] = QCPColorGradient::gpGrayscale;
+  gradients_["Hot"] =  QCPColorGradient::gpHot;
+  gradients_["Cold"] = QCPColorGradient::gpCold;
+  gradients_["Night"] = QCPColorGradient::gpNight;
+  gradients_["Candy"] = QCPColorGradient::gpCandy;
+  gradients_["Geography"] = QCPColorGradient::gpGeography;
+  gradients_["Ion"] = QCPColorGradient::gpIon;
+  gradients_["Thermal"] = QCPColorGradient::gpThermal;
+  gradients_["Polar"] = QCPColorGradient::gpPolar;
+  gradients_["Spectrum"] = QCPColorGradient::gpSpectrum;
+  gradients_["Jet"] = QCPColorGradient::gpJet;
+  gradients_["Hues"] = QCPColorGradient::gpHues;
+}
 
 
 
@@ -351,24 +380,37 @@ void GenericPlot::mouseReleaseEvent(QMouseEvent *event)
     //DBG << "Custom plot mouse released at coords: " << co_x << ", " << co_y;
 
     QCPAbstractItem *ai = qobject_cast<QCPAbstractItem*>(itemAt(event->localPos(), false));
-    if (ai != nullptr) {
-      emit clickedAbstractItem(ai);
-      //      DBG << "clicked abstract item";
-    }
 
-    QVariant details;
-    QCPLayerable *clickedLayerable = layerableAt(event->pos(), false, &details);
-    if (QCPColorMap *ap = qobject_cast<QCPColorMap*>(clickedLayerable)) {
-      int xx, yy;
-      ap->data()->coordToCell(co_x, co_y, &xx, &yy);
-      //DBG << "Corrected to cell : " << xx << ", " << yy;
-      emit mouseClicked(static_cast<double>(xx), static_cast<double>(yy), event, true); //true?
-    } else if (ai == nullptr) {
-      emit mouseClicked(co_x, co_y, event, false);
-      //DBG << "Uncorrected click coords";
+    if (Button *button = qobject_cast<Button*>(ai))
+      if (button->visible())
+        this->executeButton(button);
+
+    if (!ai)
+    {
+      QVariant details;
+      QCPLayerable *clickedLayerable = layerableAt(event->pos(), false, &details);
+      if (QCPColorMap *ap = qobject_cast<QCPColorMap*>(clickedLayerable))
+      {
+        int xx, yy;
+        ap->data()->coordToCell(co_x, co_y, &xx, &yy);
+        this->mouseClicked(static_cast<double>(xx), static_cast<double>(yy), event);
+      }
+      else
+        this->mouseClicked(co_x, co_y, event);
     }
   }
   QCustomPlot::mouseReleaseEvent(event);
+}
+
+void GenericPlot::executeButton(Button *button)
+{
+  if (button->name() == "options") {
+    options_menu_.exec(QCursor::pos());
+  } else if (button->name() == "export") {
+    export_menu_.exec(QCursor::pos());
+  } else if (button->name() == "reset_scales") {
+    this->zoomOut();
+  }
 }
 
 void GenericPlot::keyPressEvent(QKeyEvent *event)
@@ -387,28 +429,7 @@ void GenericPlot::keyReleaseEvent(QKeyEvent *event)
   QCustomPlot::keyReleaseEvent(event);
 }
 
-void GenericPlot::setColorScheme(QColor fore, QColor back, QColor grid1, QColor grid2)
-{
-  xAxis->setBasePen(QPen(fore, 1));
-  yAxis->setBasePen(QPen(fore, 1));
-  xAxis->setTickPen(QPen(fore, 1));
-  yAxis->setTickPen(QPen(fore, 1));
-  xAxis->setSubTickPen(QPen(fore, 1));
-  yAxis->setSubTickPen(QPen(fore, 1));
-  xAxis->setTickLabelColor(fore);
-  yAxis->setTickLabelColor(fore);
-  xAxis->setLabelColor(fore);
-  yAxis->setLabelColor(fore);
-  xAxis->grid()->setPen(QPen(grid1, 1, Qt::DotLine));
-  yAxis->grid()->setPen(QPen(grid1, 1, Qt::DotLine));
-  xAxis->grid()->setSubGridPen(QPen(grid2, 1, Qt::DotLine));
-  yAxis->grid()->setSubGridPen(QPen(grid2, 1, Qt::DotLine));
-  xAxis->grid()->setZeroLinePen(Qt::NoPen);
-  yAxis->grid()->setZeroLinePen(Qt::NoPen);
-  setBackground(QBrush(back));
-}
-
-void GenericPlot::plot_buttons()
+void GenericPlot::plotButtons()
 {
   Button *overlayButton;
   Button *newButton;
@@ -541,7 +562,7 @@ QFont GenericPlot::rescaleFont(QFont font, double size_offset)
   return font;
 }
 
-void GenericPlot::set_graph_thickness(QCPGraph* graph)
+void GenericPlot::setGraphThickness(QCPGraph* graph)
 {
   if (visible_options_ & ShowOptions::thickness)
   {
@@ -551,35 +572,35 @@ void GenericPlot::set_graph_thickness(QCPGraph* graph)
   }
 }
 
-void GenericPlot::set_graph_style(QCPGraph* graph, QString style)
+void GenericPlot::setGraphStyle(QCPGraph* graph)
 {
-  if (style == "Fill") {
+  if (current_plot_style_ == "Fill") {
     graph->setBrush(QBrush(graph->pen().color()));
     graph->setLineStyle(QCPGraph::lsLine);
     graph->setScatterStyle(QCPScatterStyle::ssNone);
-  } else if (style == "Lines") {
+  } else if (current_plot_style_ == "Lines") {
     graph->setBrush(QBrush());
     graph->setLineStyle(QCPGraph::lsLine);
     graph->setScatterStyle(QCPScatterStyle::ssNone);
-  } else if (style == "Step center") {
+  } else if (current_plot_style_ == "Step center") {
     graph->setBrush(QBrush());
     graph->setLineStyle(QCPGraph::lsStepCenter);
     graph->setScatterStyle(QCPScatterStyle::ssNone);
-  } else if (style == "Step left") {
+  } else if (current_plot_style_ == "Step left") {
     graph->setBrush(QBrush());
     graph->setLineStyle(QCPGraph::lsStepLeft);
     graph->setScatterStyle(QCPScatterStyle::ssNone);
-  } else if (style == "Step right") {
+  } else if (current_plot_style_ == "Step right") {
     graph->setBrush(QBrush());
     graph->setLineStyle(QCPGraph::lsStepRight);
     graph->setScatterStyle(QCPScatterStyle::ssNone);
-  } else if (style == "Scatter") {
+  } else if (current_plot_style_ == "Scatter") {
     graph->setBrush(QBrush());
     graph->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc));
     graph->setLineStyle(QCPGraph::lsNone);
   }
 
-  set_graph_thickness(graph);
+  setGraphThickness(graph);
 }
 
 
@@ -606,11 +627,11 @@ void GenericPlot::optionsChanged(QAction* action)
   else if ((choice == "1") || (choice == "2") || (choice == "3"))
     setLineThickness(choice.toInt());
 
-  rebuild_menu();
+  rebuildOptionsMenu();
   this->setCursor(Qt::ArrowCursor);
 }
 
-void GenericPlot::rebuild_menu()
+void GenericPlot::rebuildOptionsMenu()
 {
   options_menu_.clear();
 
@@ -670,7 +691,7 @@ void GenericPlot::rebuild_menu()
   {
     q->setCheckable(true);
     q->setChecked((q->text() == current_scale_type_) ||
-                  (q->text() == current_plotStyle_) ||
+                  (q->text() == current_plot_style_) ||
                   (q->text() == current_grid_style_) ||
                   (q->text() == current_gradient_) ||
                   (q->text() == QString::number(line_thickness_)) ||

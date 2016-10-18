@@ -1,7 +1,4 @@
 #include "qp_multi1d.h"
-#include "CustomLogger.h"
-#include "qt_util.h"
-#include "qp_button.h"
 
 namespace QPlot
 {
@@ -9,10 +6,6 @@ namespace QPlot
 Multi1D::Multi1D(QWidget *parent)
   : GenericPlot(parent)
 {
-  visible_options_ =
-      (ShowOptions::zoom | ShowOptions::save |
-       ShowOptions::scale | ShowOptions::style | ShowOptions::thickness);
-
   setInteraction(QCP::iSelectItems, true);
   setInteraction(QCP::iRangeDrag, true);
   yAxis->axisRect()->setRangeDrag(Qt::Horizontal);
@@ -21,36 +14,34 @@ Multi1D::Multi1D(QWidget *parent)
   yAxis->setPadding(28);
   setNoAntialiasingOnDrag(true);
 
-  connect(this, SIGNAL(mouseClicked(double,double,QMouseEvent*,bool)), this, SLOT(plot_mouse_clicked(double,double,QMouseEvent*,bool)));
-  //  connect(this, SIGNAL(plottableClick(QCPAbstractPlottable*,QMouseEvent*)), this, SLOT(clicked_plottable(QCPAbstractPlottable*)));
-  connect(this, SIGNAL(clickedAbstractItem(QCPAbstractItem*)), this, SLOT(clicked_item(QCPAbstractItem*)));
-  connect(this, SIGNAL(selectionChangedByUser()), this, SLOT(selection_changed()));
   connect(this, SIGNAL(beforeReplot()), this, SLOT(plot_rezoom()));
   connect(this, SIGNAL(mouseRelease(QMouseEvent*)), this, SLOT(plot_mouse_release(QMouseEvent*)));
   connect(this, SIGNAL(mousePress(QMouseEvent*)), this, SLOT(plot_mouse_press(QMouseEvent*)));
 
+  QShortcut *shortcut = new QShortcut(QKeySequence(Qt::Key_Backspace), this);
+  connect(shortcut, SIGNAL(activated()), this, SLOT(zoomOut()));
+
   setScaleType("Logarithmic");
   setPlotStyle("Step center");
-  setGridStyle(current_grid_style_);
-  setColorScheme(Qt::black, Qt::white, QColor(112, 112, 112), QColor(170, 170, 170));
+  setGridStyle("Grid + subgrid");
 
-  QShortcut *shortcut = new QShortcut(QKeySequence(Qt::Key_Backspace), this);
-  connect(shortcut, SIGNAL(activated()), this, SLOT(zoom_out()));
+  setVisibleOptions(ShowOptions::zoom | ShowOptions::save |
+                    ShowOptions::scale | ShowOptions::style |
+                    ShowOptions::thickness);
 
-  rebuild_menu();
   replotExtras();
 }
 
-void Multi1D::clearGraphs()
+void Multi1D::clearAll()
 {
   GenericPlot::clearGraphs();
   minima_.clear();
   maxima_.clear();
+  clearExtras();
 }
 
 void Multi1D::clearExtras()
 {
-  //DBG << "Multi1D::clearExtras()";
   my_markers_.clear();
   rect.clear();
 }
@@ -58,10 +49,6 @@ void Multi1D::clearExtras()
 void Multi1D::rescale() {
   force_rezoom_ = true;
   plot_rezoom();
-}
-
-void Multi1D::redraw() {
-  replot();
 }
 
 void Multi1D::reset_scales()
@@ -135,7 +122,8 @@ void Multi1D::addGraph(const QVector<double>& x, const QVector<double>& y,
   graph(g)->setPen(appearance.default_pen);
   graph(g)->setProperty("fittable", fittable);
   graph(g)->setProperty("bits", QVariant::fromValue(bits));
-  set_graph_style(graph(g), current_plotStyle_);
+  setGraphStyle(graph(g));
+  setGraphThickness(graph(g));
 
   if (x[0] < minx) {
     minx = x[0];
@@ -259,7 +247,7 @@ void Multi1D::replotExtras()
       line->setProperty("position", top_crs->property("position"));
       line->setSelectable(false);
 
-      if (show_marker_labels_)
+      if (showMarkerLabels())
       {
         QCPItemText *markerText = new QCPItemText(this);
         markerText->setProperty("true_value", top_crs->graphKey());
@@ -322,7 +310,7 @@ void Multi1D::replotExtras()
     floatingText->setColor(Qt::black);
   }
 
-  plot_buttons();
+  plotButtons();
 
   bool xaxis_changed = false;
   double dif_lower = min_marker - xAxis->range().lower;
@@ -348,38 +336,12 @@ void Multi1D::replotExtras()
 
 }
 
-void Multi1D::plot_mouse_clicked(double x, double y, QMouseEvent* event, bool on_item) {
-  if (event->button() == Qt::RightButton) {
+void Multi1D::mouseClicked(double x, double y, QMouseEvent* event)
+{
+  if (event->button() == Qt::RightButton)
     emit clickedRight(x);
-  } else if (!on_item) { //tricky
+  else
     emit clickedLeft(x);
-  }
-}
-
-
-void Multi1D::selection_changed() {
-  emit markers_selected();
-}
-
-//void Multi1D::clicked_plottable(QCPAbstractPlottable *plt) {
-//  //  LINFO << "<Multi1D> clickedplottable";
-//}
-
-void Multi1D::clicked_item(QCPAbstractItem* itm) {
-  if (!itm->visible())
-    return;
-
-  if (Button *button = qobject_cast<Button*>(itm))
-  {
-    //    QPoint p = this->mapFromGlobal(QCursor::pos());
-    if (button->name() == "options") {
-      options_menu_.exec(QCursor::pos());
-    } else if (button->name() == "export") {
-      export_menu_.exec(QCursor::pos());
-    } else if (button->name() == "reset_scales") {
-      zoomOut();
-    }
-  }
 }
 
 void Multi1D::zoomOut()
@@ -390,18 +352,18 @@ void Multi1D::zoomOut()
   replot();
 }
 
-void Multi1D::plot_mouse_press(QMouseEvent*) {
+void Multi1D::plot_mouse_press(QMouseEvent*)
+{
   disconnect(this, 0, this, 0);
   connect(this, SIGNAL(mouseRelease(QMouseEvent*)), this, SLOT(plot_mouse_release(QMouseEvent*)));
-  connect(this, SIGNAL(clickedAbstractItem(QCPAbstractItem*)), this, SLOT(clicked_item(QCPAbstractItem*)));
   connect(this, SIGNAL(selectionChangedByUser()), this, SLOT(selection_changed()));
 
   force_rezoom_ = false;
   mouse_pressed_ = true;
 }
 
-void Multi1D::plot_mouse_release(QMouseEvent*) {
-  connect(this, SIGNAL(mouse_clicked(double,double,QMouseEvent*,bool)), this, SLOT(plot_mouse_clicked(double,double,QMouseEvent*,bool)));
+void Multi1D::plot_mouse_release(QMouseEvent*)
+{
   connect(this, SIGNAL(beforeReplot()), this, SLOT(plot_rezoom()));
   connect(this, SIGNAL(mousePress(QMouseEvent*)), this, SLOT(plot_mouse_press(QMouseEvent*)));
   force_rezoom_ = true;

@@ -3,7 +3,7 @@
 
 #include "qcustomplot.h"
 #include "qp_draggable_tracer.h"
-#include <QWidget>
+#include "qp_button.h"
 #include <set>
 
 namespace QPlot
@@ -34,6 +34,10 @@ public:
   explicit GenericPlot(QWidget *parent = 0);
   QSize sizeHint() const Q_DECL_OVERRIDE;
 
+  virtual void replotExtras() {}
+  virtual void clearAll() {}
+  virtual void clearExtras() {}
+
   void setVisibleOptions(ShowOptions);
 
   bool alwaysSquare() const;
@@ -56,16 +60,16 @@ public:
   void setPlotStyle(QString);
   void setGradient(QString);
 
-  virtual void replotExtras() {}
+  void addStandardGradients();
+  void addCustomGradient(QString name,
+                         std::initializer_list<std::string> colors);
 
 public slots:
   virtual void zoomOut() {}
 
 signals:
   void mouseHover(double x, double y);
-  void mouseClicked(double x, double y, QMouseEvent* e, bool on_item); //why on_item?
   void shiftStateChanged(bool);
-  void clickedAbstractItem(QCPAbstractItem *);
 
 protected:
   void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
@@ -74,6 +78,21 @@ protected:
   void resizeEvent(QResizeEvent * event) Q_DECL_OVERRIDE;
   void keyPressEvent(QKeyEvent*) Q_DECL_OVERRIDE;
   void keyReleaseEvent(QKeyEvent*) Q_DECL_OVERRIDE;
+
+  virtual void executeButton(Button *);
+  virtual void mouseClicked(double x, double y, QMouseEvent* e) {}
+
+  void plotButtons();
+  void setGraphThickness(QCPGraph* graph);
+  void setGraphStyle(QCPGraph* graph);
+
+protected slots:
+  void exportPlot(QAction*);
+  void optionsChanged(QAction*);
+
+private:
+  mutable int previous_height_ {0};
+  DraggableTracer *under_mouse_ {nullptr};
 
   ShowOptions visible_options_;
   QMenu options_menu_;
@@ -85,8 +104,8 @@ protected:
   bool show_marker_labels_ {true};
   uint16_t line_thickness_ {1};
   QString current_scale_type_ {"Linear"};
-  QString current_grid_style_ {"Grid + subgrid"};
-  QString current_plotStyle_ {"Step center"};
+  QString current_grid_style_ {"Grid"};
+  QString current_plot_style_ {"Lines"};
   QString current_gradient_;
 
   std::map<QString, QCPColorGradient> gradients_;
@@ -96,25 +115,13 @@ protected:
   std::set<QString> plot_styles_ {"Step center", "Step left", "Step right",
                                   "Lines", "Scatter", "Fill"};
 
-  void plot_buttons();
-  void setColorScheme(QColor fore, QColor back, QColor grid1, QColor grid2);
+  //helper functions
   QFont rescaleFont(QFont font, double size_offset);
-  void rescaleEverything(int fontUpscale, int plotThicken, int marginUpscale, bool buttons_visible);
-  void set_graph_thickness(QCPGraph* graph);
-  void set_graph_style(QCPGraph*, QString);
-  void rebuild_menu();
-
+  void rescaleEverything(int fontUpscale, int plotThicken,
+                         int marginUpscale, bool buttons_visible);
+  void rebuildOptionsMenu();
   void removeGradientLegend();
   void addGradientLegend(QCPColorMap *colorMap);
-
-protected slots:
-  void exportPlot(QAction*);
-  void optionsChanged(QAction*);
-
-private:
-  mutable int previous_height_ {0};
-  DraggableTracer *under_mouse_ {nullptr};
-
 };
 
 

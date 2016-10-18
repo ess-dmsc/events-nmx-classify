@@ -40,10 +40,8 @@ void ViewRecord::set_overlay_type(QString overlay_type)
 
 void ViewRecord::clear()
 {
-  ui->plotRecord->resetContent();
-  ui->plotRecord->setBoxes(std::list<QPlot::MarkerBox2D>());
-  ui->plotRecord->refresh();
-
+  ui->plotRecord->clearAll();
+  ui->plotRecord->replot();
   moving_.visible = false;
 }
 

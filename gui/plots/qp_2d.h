@@ -1,10 +1,8 @@
 #ifndef WIDGET_PLOT2D_H
 #define WIDGET_PLOT2D_H
 
-#include <QWidget>
 #include "qp_generic.h"
 #include "qp_appearance.h"
-#include <memory>
 #include "qp_entry2d.h"
 
 namespace QPlot
@@ -40,39 +38,32 @@ class Plot2D : public GenericPlot
 public:
   explicit Plot2D(QWidget *parent = 0);
 
+  void clearAll() override;
+  void clearExtras() override;
+  void replotExtras() override;
+
   void updatePlot(uint64_t sizex, uint64_t sizey, const EntryList &spectrum_data);
   void setAxes(QString xlabel, double x1, double x2,
                 QString ylabel, double y1, double y2,
                 QString zlabel);
   void setOrientation(Qt::Orientation);
 
-  void resetContent();
-  void refresh();
   void setBoxes(std::list<MarkerBox2D> boxes);
-
   std::list<MarkerBox2D> selectedBoxes();
-
-  void replotExtras() override;
 
 public slots:
   void zoomOut() Q_DECL_OVERRIDE;
 
 signals:
   void markers_set(double x, double y, bool left_mouse);
-  void stuff_selected();
 
-private slots:
-  void selection_changed();
-  void plot_2d_mouse_clicked(double x, double y, QMouseEvent* event, bool channels);
-  void clicked_item(QCPAbstractItem*);
+protected:
+  void mouseClicked(double x, double y, QMouseEvent* event) override;
 
-private:
   QCPColorMap *colorMap {new QCPColorMap(xAxis, yAxis)};
   std::list<MarkerBox2D> boxes_;
-  QString Z_label_;
 
   void initializeGradients();
-  void addCustomGradient(QString name, std::initializer_list<std::string> colors);
 };
 
 }
