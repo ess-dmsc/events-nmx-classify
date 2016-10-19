@@ -14,9 +14,9 @@ Multi1D::Multi1D(QWidget *parent)
   yAxis->setPadding(28);
   setNoAntialiasingOnDrag(true);
 
-  connect(this, SIGNAL(beforeReplot()), this, SLOT(plot_rezoom()));
-  connect(this, SIGNAL(mouseRelease(QMouseEvent*)), this, SLOT(plot_mouse_release(QMouseEvent*)));
-  connect(this, SIGNAL(mousePress(QMouseEvent*)), this, SLOT(plot_mouse_press(QMouseEvent*)));
+  connect(this, SIGNAL(beforeReplot()), this, SLOT(adjustY()));
+  connect(this, SIGNAL(mouseRelease(QMouseEvent*)), this, SLOT(mouseReleased(QMouseEvent*)));
+  connect(this, SIGNAL(mousePress(QMouseEvent*)), this, SLOT(mousePressed(QMouseEvent*)));
 
   QShortcut *shortcut = new QShortcut(QKeySequence(Qt::Key_Backspace), this);
   connect(shortcut, SIGNAL(activated()), this, SLOT(zoomOut()));
@@ -27,48 +27,34 @@ Multi1D::Multi1D(QWidget *parent)
 
   setVisibleOptions(ShowOptions::zoom | ShowOptions::save |
                     ShowOptions::scale | ShowOptions::style |
-                    ShowOptions::thickness);
+                    ShowOptions::thickness | ShowOptions::title);
 
   replotExtras();
 }
 
-void Multi1D::clearAll()
+void Multi1D::clearPrimary()
 {
   GenericPlot::clearGraphs();
-  minima_.clear();
-  maxima_.clear();
-  clearExtras();
+  aggregate_.clear();
 }
 
 void Multi1D::clearExtras()
 {
   my_markers_.clear();
-  rect.clear();
-}
-
-void Multi1D::rescale() {
-  force_rezoom_ = true;
-  plot_rezoom();
-}
-
-void Multi1D::reset_scales()
-{
-  minx = std::numeric_limits<double>::max();
-  maxx = std::numeric_limits<double>::min();
-  miny = std::numeric_limits<double>::max();
-  maxy = std::numeric_limits<double>::min();
-  rescaleAxes();
-}
-
-void Multi1D::setTitle(QString title) {
-  title_text_ = title;
-  replotExtras();
+  highlight_.clear();
+  title_text_.clear();
 }
 
 void Multi1D::setAxisLabels(QString x, QString y)
 {
   xAxis->setLabel(x);
   yAxis->setLabel(y);
+}
+
+
+void Multi1D::setTitle(QString title)
+{
+  title_text_ = title;
 }
 
 void Multi1D::setMarkers(const std::list<Marker1D>& markers)
@@ -78,130 +64,100 @@ void Multi1D::setMarkers(const std::list<Marker1D>& markers)
 
 void Multi1D::setHighlight(Marker1D a, Marker1D b)
 {
-  rect.resize(2);
-  rect[0] = a;
-  rect[1] = b;
+  highlight_.resize(2);
+  highlight_[0] = a;
+  highlight_[1] = b;
 }
 
 std::set<double> Multi1D::selectedMarkers()
 {
   std::set<double> selection;
   for (auto &q : selectedItems())
-    if (QCPItemText *txt = qobject_cast<QCPItemText*>(q)) {
+    if (QCPItemText *txt = qobject_cast<QCPItemText*>(q))
+    {
       if (txt->property("position").isValid())
         selection.insert(txt->property("position").toDouble());
-      //DBG << "found selected " << txt->property("true_value").toDouble() << " chan=" << txt->property("position").toDouble();
-    } else if (QCPItemLine *line = qobject_cast<QCPItemLine*>(q)) {
+    }
+    else if (QCPItemLine *line = qobject_cast<QCPItemLine*>(q))
+    {
       if (line->property("position").isValid())
         selection.insert(line->property("position").toDouble());
-      //DBG << "found selected " << line->property("true_value").toDouble() << " chan=" << line->property("position").toDouble();
     }
 
   return selection;
 }
 
 
-void Multi1D::setYBounds(const std::map<double, double> &minima,
-                         const std::map<double, double> &maxima)
+void Multi1D::addGraph(HistoData hist, Appearance appearance)
 {
-  minima_ = minima;
-  maxima_ = maxima;
-  rescale();
-}
-
-
-void Multi1D::addGraph(const QVector<double>& x, const QVector<double>& y,
-                       Appearance appearance, bool fittable, int32_t bits)
-{
-  if (x.empty() || y.empty() || (x.size() != y.size()))
+  if (hist.empty())
     return;
 
   GenericPlot::addGraph();
   int g = graphCount() - 1;
-  graph(g)->addData(x, y);
+  auto data = graph(g)->data();
+  for (auto p :hist)
+  {
+    QCPGraphData point(p.first, p.second);
+    data->add(point);
+    aggregate_.add(point);
+  }
+
   graph(g)->setPen(appearance.default_pen);
-  graph(g)->setProperty("fittable", fittable);
-  graph(g)->setProperty("bits", QVariant::fromValue(bits));
   setGraphStyle(graph(g));
   setGraphThickness(graph(g));
-
-  if (x[0] < minx) {
-    minx = x[0];
-    //DBG << "new minx " << minx;
-    xAxis->rescale();
-  }
-  if (x[x.size() - 1] > maxx) {
-    maxx = x[x.size() - 1];
-    xAxis->rescale();
-  }
 }
 
-void Multi1D::plot_rezoom() {
-  if (mouse_pressed_)
-    return;
-
-  if (minima_.empty() || maxima_.empty()) {
-    yAxis->rescale();
-    return;
-  }
-
-  double upperc = xAxis->range().upper;
-  double lowerc = xAxis->range().lower;
-
-  if (!force_rezoom_ && (lowerc == minx_zoom) && (upperc == maxx_zoom))
-    return;
-
-  minx_zoom = lowerc;
-  maxx_zoom = upperc;
-  force_rezoom_ = false;
-
-  calc_y_bounds(lowerc, upperc);
-
-  //DBG << "Rezoom";
-
-  if (miny <= 0)
-    yAxis->rescale();
-  else
-    yAxis->setRangeLower(miny);
-  yAxis->setRangeUpper(maxy);
+QCPRange Multi1D::getDomain()
+{
+  QCP::SignDomain sd = QCP::sdBoth;
+  if (scaleType() == "Logarithmic")
+    sd = QCP::sdPositive;
+  bool ok{false};
+  return aggregate_.keyRange(ok, sd);
 }
 
-void Multi1D::tight_x() {
-  //DBG << "tightning x to " << minx << " " << maxx;
-  xAxis->setRangeLower(minx);
-  xAxis->setRangeUpper(maxx);
+QCPRange Multi1D::getRange(QCPRange domain)
+{
+  bool log = (scaleType() == "Logarithmic");
+  QCP::SignDomain sd = QCP::sdBoth;
+  if (log)
+    sd = QCP::sdPositive;
+  bool ok{false};
+  QCPRange range = aggregate_.valueRange(ok, sd, domain);
+  if (ok)
+  {
+    range.upper = yAxis->pixelToCoord(yAxis->coordToPixel(range.upper) -
+                                      ((!showTitle() || title_text_.isEmpty()) ? 5 : 25));
+    double lower = yAxis->pixelToCoord(yAxis->coordToPixel(range.lower) + 5);
+    if (log && (lower < 0))
+      range.lower = 0;
+    else
+      range.lower = lower;
+  }
+  return range;
 }
 
-void Multi1D::calc_y_bounds(double lower, double upper) {
-  miny = std::numeric_limits<double>::max();
-  maxy = std::numeric_limits<double>::min();
-
-  for (std::map<double, double>::const_iterator it = minima_.lower_bound(lower); it != minima_.upper_bound(upper); ++it)
-    if (it->second < miny)
-      miny = it->second;
-
-  for (std::map<double, double>::const_iterator it = maxima_.lower_bound(lower); it != maxima_.upper_bound(upper); ++it) {
-    if (it->second > maxy)
-      maxy = it->second;
-  }
-
-  maxy = yAxis->pixelToCoord(yAxis->coordToPixel(maxy) - 75);
-
-  /*if ((maxy > 1) && (miny == 0))
-    miny = 1;*/
+void Multi1D::tightenX()
+{
+  xAxis->setRange(getDomain());
 }
 
 void Multi1D::replotExtras()
 {
   clearItems();
-  double min_marker = std::numeric_limits<double>::max();
-  double max_marker = std::numeric_limits<double>::min();
-  //  int total_markers = 0;
+  plotMarkers();
+  plotHighlight();
+  plotTitle();
+  plotButtons();
+}
 
+void Multi1D::plotMarkers()
+{
   for (auto &q : my_markers_) {
     QCPItemTracer *top_crs = nullptr;
-    if (q.visible) {
-
+    if (q.visible)
+    {
       double max = std::numeric_limits<double>::lowest();
       int total = graphCount();
       for (int i=0; i < total; i++) {
@@ -232,7 +188,9 @@ void Multi1D::replotExtras()
         }
       }
     }
-    if (top_crs != nullptr) {
+
+    if (top_crs != nullptr)
+    {
       QPen pen = q.appearance.default_pen;
 
       QCPItemLine *line = new QCPItemLine(this);
@@ -267,39 +225,29 @@ void Multi1D::replotExtras()
         markerText->setSelectable(false);
       }
     }
-
-    //xAxis->setRangeLower(min_marker);
-    //xAxis->setRangeUpper(max_marker);
-    //xAxis->setRange(min, max);
-    //xAxis2->setRange(min, max);
-
   }
+}
 
-  if ((rect.size() == 2) && (rect[0].visible) && !maxima_.empty() && !minima_.empty()){
-    double upperc = maxima_.rbegin()->first;
-    double lowerc = maxima_.begin()->first;
-
-    calc_y_bounds(lowerc, upperc);
-
-    double pos1 = rect[0].pos;
-    double pos2 = rect[1].pos;
+void Multi1D::plotHighlight()
+{
+  if ((highlight_.size() == 2) && (highlight_[0].visible) && !aggregate_.isEmpty())
+  {
+    QCPRange range = getRange(getDomain());
 
     QCPItemRect *cprect = new QCPItemRect(this);
-    double x1 = pos1;
-    double y1 = maxy;
-    double x2 = pos2;
-    double y2 = miny;
 
-    //DBG << "will make box x=" << x1 << "-" << x2 << " y=" << y1 << "-" << y2;
-
-    cprect->topLeft->setCoords(x1, y1);
-    cprect->bottomRight->setCoords(x2, y2);
-    cprect->setPen(rect[0].appearance.default_pen);
-    cprect->setBrush(QBrush(rect[1].appearance.default_pen.color()));
+    cprect->topLeft->setCoords(highlight_[0].pos, range.upper);
+    cprect->bottomRight->setCoords( highlight_[1].pos, range.lower);
+    cprect->setPen(highlight_[0].appearance.default_pen);
+    cprect->setBrush(QBrush(highlight_[1].appearance.default_pen.color()));
     cprect->setSelectable(false);
   }
+}
 
-  if (!title_text_.isEmpty()) {
+void Multi1D::plotTitle()
+{
+  if (showTitle() && !title_text_.isEmpty())
+  {
     QCPItemText *floatingText = new QCPItemText(this);
     floatingText->setPositionAlignment(static_cast<Qt::AlignmentFlag>(Qt::AlignTop|Qt::AlignHCenter));
     floatingText->position->setType(QCPItemPosition::ptAxisRectRatio);
@@ -309,31 +257,6 @@ void Multi1D::replotExtras()
     floatingText->setSelectable(false);
     floatingText->setColor(Qt::black);
   }
-
-  plotButtons();
-
-  bool xaxis_changed = false;
-  double dif_lower = min_marker - xAxis->range().lower;
-  double dif_upper = max_marker - xAxis->range().upper;
-  if (dif_upper > 0) {
-    xAxis->setRangeUpper(max_marker + 20);
-    if (dif_lower > (dif_upper + 20))
-      xAxis->setRangeLower(xAxis->range().lower + dif_upper + 20);
-    xaxis_changed = true;
-  }
-
-  if (dif_lower < 0) {
-    xAxis->setRangeLower(min_marker - 20);
-    if (dif_upper < (dif_lower - 20))
-      xAxis->setRangeUpper(xAxis->range().upper + dif_lower - 20);
-    xaxis_changed = true;
-  }
-
-  if (xaxis_changed) {
-    replot();
-    plot_rezoom();
-  }
-
 }
 
 void Multi1D::mouseClicked(double x, double y, QMouseEvent* event)
@@ -346,30 +269,40 @@ void Multi1D::mouseClicked(double x, double y, QMouseEvent* event)
 
 void Multi1D::zoomOut()
 {
-  xAxis->rescale();
-  force_rezoom_ = true;
-  plot_rezoom();
+  xAxis->setRange(getDomain());
+  adjustY();
   replot();
 }
 
-void Multi1D::plot_mouse_press(QMouseEvent*)
+void Multi1D::mousePressed(QMouseEvent*)
 {
-  disconnect(this, 0, this, 0);
-  connect(this, SIGNAL(mouseRelease(QMouseEvent*)), this, SLOT(plot_mouse_release(QMouseEvent*)));
-  connect(this, SIGNAL(selectionChangedByUser()), this, SLOT(selection_changed()));
-
-  force_rezoom_ = false;
-  mouse_pressed_ = true;
+  disconnect(this, SIGNAL(beforeReplot()), this, SLOT(adjustY()));
 }
 
-void Multi1D::plot_mouse_release(QMouseEvent*)
+void Multi1D::mouseReleased(QMouseEvent*)
 {
-  connect(this, SIGNAL(beforeReplot()), this, SLOT(plot_rezoom()));
-  connect(this, SIGNAL(mousePress(QMouseEvent*)), this, SLOT(plot_mouse_press(QMouseEvent*)));
-  force_rezoom_ = true;
-  mouse_pressed_ = false;
-  plot_rezoom();
+  connect(this, SIGNAL(beforeReplot()), this, SLOT(adjustY()));
+  adjustY();
   replot();
+}
+
+void Multi1D::adjustY()
+{
+  if (aggregate_.isEmpty())
+    rescaleAxes();
+  else
+    yAxis->setRange(getRange(xAxis->range()));
+}
+
+void Multi1D::setScaleType(QString type)
+{
+  bool diff = (type != scaleType());
+  GenericPlot::setScaleType(type);
+  if (diff)
+  {
+    replotExtras();
+    replot();
+  }
 }
 
 

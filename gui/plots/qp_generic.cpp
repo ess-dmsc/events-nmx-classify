@@ -51,6 +51,11 @@ bool GenericPlot::showMarkerLabels() const
   return show_marker_labels_;
 }
 
+bool GenericPlot::showTitle() const
+{
+  return show_title_;
+}
+
 uint16_t GenericPlot::lineThickness() const
 {
   return line_thickness_;
@@ -91,7 +96,7 @@ void GenericPlot::setAntialiased(bool anti)
   for (int i=0; i < plottableCount(); ++i)
     if (QCPColorMap *colorMap = qobject_cast<QCPColorMap*>(plottable(i)))
       colorMap->setInterpolate(antialiased_);
-  rebuildOptionsMenu();
+  checkoffOptionsMenu();
 }
 
 void GenericPlot::setShowGradientLegend(bool show)
@@ -113,7 +118,7 @@ void GenericPlot::setShowGradientLegend(bool show)
   }
 
   updateGeometry();
-  rebuildOptionsMenu();
+  checkoffOptionsMenu();
 }
 
 void GenericPlot::removeGradientLegend()
@@ -154,7 +159,15 @@ void GenericPlot::setShowMarkerLabels(bool sl)
 {
   show_marker_labels_ = sl;
   this->replotExtras();
-  rebuildOptionsMenu();
+  checkoffOptionsMenu();
+  replot();
+}
+
+void GenericPlot::setShowTitle(bool st)
+{
+  show_title_ = st;
+  this->replotExtras();
+  checkoffOptionsMenu();
   replot();
 }
 
@@ -174,24 +187,23 @@ void GenericPlot::setGridStyle(QString grd)
     yAxis->grid()->setVisible(current_grid_style_ != "No grid");
     xAxis->grid()->setSubGridVisible(current_grid_style_ == "Grid + subgrid");
     yAxis->grid()->setSubGridVisible(current_grid_style_ == "Grid + subgrid");
-    rebuildOptionsMenu();
+    checkoffOptionsMenu();
   }
 }
 
-void GenericPlot::setScaleType(QString sct)
+void GenericPlot::setScaleType(QString scale_type)
 {
-  if (!scale_types_.count(sct))
+  if (!scale_types_.count(scale_type))
     return;
 
   this->setCursor(Qt::WaitCursor);
-  current_scale_type_ = sct;
 
   bool has2d {false};
   for (int i=0; i < plottableCount(); ++i)
     if (QCPColorMap *cm = qobject_cast<QCPColorMap*>(plottable(i)))
     {
       has2d = true;
-      cm->setDataScaleType(scale_types_[current_scale_type_]);
+      cm->setDataScaleType(scale_types_[scale_type]);
       //      cm->rescaleDataRange(true);
     }
 
@@ -203,18 +215,21 @@ void GenericPlot::setScaleType(QString sct)
       for (auto &q : this_layer->children())
         if (QCPColorScale *colorScale = qobject_cast<QCPColorScale*>(q))
         {
-          colorScale->axis()->setScaleType(scale_types_[current_scale_type_]);
+          colorScale->axis()->setScaleType(scale_types_[scale_type]);
           colorScale->rescaleDataRange(true);
         }
     }
-    if (current_scale_type_ != sct)
-      rescaleAxes();
+//    if (current_scale_type_ != scale_type)
+//      rescaleAxes();
   }
   else
-    yAxis->setScaleType(scale_types_[current_scale_type_]);
+  {
+    yAxis->setScaleType(scale_types_[scale_type]);
+    this->zoomOut();
+  }
 
-  current_scale_type_ = sct;
-  rebuildOptionsMenu();
+  current_scale_type_ = scale_type;
+  checkoffOptionsMenu();
   this->setCursor(Qt::ArrowCursor);
 }
 
@@ -224,7 +239,7 @@ void GenericPlot::setPlotStyle(QString stl)
   current_plot_style_ = stl;
   for (int i=0; i < graphCount(); i++)
     setGraphStyle(graph(i));
-  rebuildOptionsMenu();
+  checkoffOptionsMenu();
   //  replot();
   this->setCursor(Qt::ArrowCursor);
 }
@@ -239,7 +254,7 @@ void GenericPlot::setGradient(QString grd)
   for (int i=0; i < plottableCount(); ++i)
     if (QCPColorMap *cm = qobject_cast<QCPColorMap*>(plottable(i)))
       cm->setGradient(gradients_[current_gradient_]);
-  rebuildOptionsMenu();
+  checkoffOptionsMenu();
   this->setCursor(Qt::ArrowCursor);
 }
 
@@ -431,8 +446,8 @@ void GenericPlot::keyReleaseEvent(QKeyEvent *event)
 
 void GenericPlot::plotButtons()
 {
-  Button *overlayButton;
-  Button *newButton;
+  Button *previousButton {nullptr};
+  Button *newButton {nullptr};
 
   if (visible_options_ & ShowOptions::zoom)
   {
@@ -441,9 +456,8 @@ void GenericPlot::plotButtons()
                            "reset_scales", "Zoom out",
                            Qt::AlignBottom | Qt::AlignRight);
     newButton->setClipToAxisRect(false);
-    newButton->topLeft->setType(QCPItemPosition::ptAbsolute);
-    newButton->topLeft->setCoords(5, 5);
-    overlayButton = newButton;
+    setButtonPosition(newButton->topLeft, nullptr);
+    previousButton = newButton;
   }
 
   if (!options_menu_.isEmpty())
@@ -451,11 +465,9 @@ void GenericPlot::plotButtons()
     newButton = new Button(this, QPixmap(":/icons/oxy/22/view_statistics.png"),
                            "options", "Style options",
                            Qt::AlignBottom | Qt::AlignRight);
-
     newButton->setClipToAxisRect(false);
-    newButton->topLeft->setParentAnchor(overlayButton->bottomLeft);
-    newButton->topLeft->setCoords(0, 5);
-    overlayButton = newButton;
+    setButtonPosition(newButton->topLeft, previousButton);
+    previousButton = newButton;
   }
 
   if (visible_options_ & ShowOptions::save)
@@ -465,10 +477,24 @@ void GenericPlot::plotButtons()
                            "export", "Export plot",
                            Qt::AlignBottom | Qt::AlignRight);
     newButton->setClipToAxisRect(false);
-    newButton->topLeft->setParentAnchor(overlayButton->bottomLeft);
-    newButton->topLeft->setCoords(0, 5);
+    setButtonPosition(newButton->topLeft, previousButton);
   }
 }
+
+void GenericPlot::setButtonPosition(QCPItemPosition* pos, Button* previous)
+{
+  if (previous)
+  {
+    pos->setParentAnchor(previous->bottomLeft);
+    pos->setCoords(0, 5);
+  }
+  else
+  {
+    pos->setType(QCPItemPosition::ptAbsolute);
+    pos->setCoords(5, 5);
+  }
+}
+
 
 void GenericPlot::exportPlot(QAction* choice)
 {
@@ -616,6 +642,8 @@ void GenericPlot::optionsChanged(QAction* action)
     setGridStyle(choice);
   else if (choice == "Show marker labels")
     setShowMarkerLabels(!show_marker_labels_);
+  else if (choice == "Show title")
+    setShowTitle(!show_title_);
   else if (choice == "Antialiased")
     setAntialiased(!antialiased_);
   else if (plot_styles_.count(choice))
@@ -627,7 +655,7 @@ void GenericPlot::optionsChanged(QAction* action)
   else if ((choice == "1") || (choice == "2") || (choice == "3"))
     setLineThickness(choice.toInt());
 
-  rebuildOptionsMenu();
+  checkoffOptionsMenu();
   this->setCursor(Qt::ArrowCursor);
 }
 
@@ -645,6 +673,12 @@ void GenericPlot::rebuildOptionsMenu()
   if (visible_options_ & ShowOptions::labels)
   {
     options_menu_.addAction("Show marker labels");
+    options_menu_.addSeparator();
+  }
+
+  if (visible_options_ & ShowOptions::title)
+  {
+    options_menu_.addAction("Show title");
     options_menu_.addSeparator();
   }
 
@@ -687,6 +721,11 @@ void GenericPlot::rebuildOptionsMenu()
     options_menu_.addAction("Antialiased");
   }
 
+  checkoffOptionsMenu();
+}
+
+void GenericPlot::checkoffOptionsMenu()
+{
   for (auto &q : options_menu_.actions())
   {
     q->setCheckable(true);
@@ -696,6 +735,7 @@ void GenericPlot::rebuildOptionsMenu()
                   (q->text() == current_gradient_) ||
                   (q->text() == QString::number(line_thickness_)) ||
                   ((q->text() == "Show marker labels") && show_marker_labels_) ||
+                  ((q->text() == "Show title") && show_title_) ||
                   ((q->text() == "Show gradient scale") && show_gradient_legend_)||
                   ((q->text() == "Antialiased") && antialiased_));
   }

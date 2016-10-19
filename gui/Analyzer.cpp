@@ -27,7 +27,7 @@ Analyzer::Analyzer(QWidget *parent)
   ui->plot2D->setScaleType("Linear");
   ui->plot2D->setGradient("YlGnBu5");
   ui->plot2D->setShowGradientLegend(true);
-  connect(ui->plot2D, SIGNAL(markers_set(double, double, bool)), this, SLOT(update_box(double, double, bool)));
+  connect(ui->plot2D, SIGNAL(clickedPlot(double,double,Qt::MouseButton)), this, SLOT(update_box(double, double, Qt::MouseButton)));
 
   ui->tableBoxes->setModel(&model_);
   ui->tableBoxes->setItemDelegate(&delegate_);
@@ -254,46 +254,32 @@ void Analyzer::make_projections()
 
 void Analyzer::update_histograms()
 {
-  std::map<double, double> minima, maxima;
-
-  ui->plotHistogram->clearGraphs();
+  ui->plotHistogram->clearAll();
 
   for (int i=0; i < histograms1d_.size(); ++i)
   {
     if (!histograms1d_[i].visible)
       continue;
 
-    QVector<double> x, y;
-
+    QPlot::HistoData histo;
     for (auto &b : histograms1d_[i].data())
-    {
-      double xx = b.first;
-      double yy = b.second;
+      histo[b.first] = b.second;
 
-      x.push_back(xx);
-      y.push_back(yy);
-
-      if (!minima.count(xx) || (minima[xx] > yy))
-        minima[xx] = yy;
-      if (!maxima.count(xx) || (maxima[xx] < yy))
-        maxima[xx] = yy;
-    }
     QPlot::Appearance profile;
     profile.default_pen = QPen(palette_[i % palette_.size()], 2);
 
-    ui->plotHistogram->addGraph(x, y, profile, 8);
+    ui->plotHistogram->addGraph(histo, profile);
   }
 
   ui->plotHistogram->setAxisLabels(ui->comboWeightsZ->currentText(), "count");
-  ui->plotHistogram->setYBounds(minima, maxima);
-
   ui->plotHistogram->setTitle(ui->comboWeightsZ->currentText()
                               + "  (normalized by: " + QString::number(zz_norm) + ")");
+  ui->plotHistogram->zoomOut();
 
   plot_block();
 }
 
-void Analyzer::update_box(double x, double y, bool left_mouse)
+void Analyzer::update_box(double x, double y, Qt::MouseButton button)
 {
   auto rows = ui->tableBoxes->selectionModel()->selectedRows();
   if (rows.size())
@@ -302,12 +288,12 @@ void Analyzer::update_box(double x, double y, bool left_mouse)
 //    DBG << "change for row " << row << " " << x << " " << y;
     if ((row >= 0) && (row < histograms1d_.size()))
     {
-      if (left_mouse)
+      if (button == Qt::LeftButton)
       {
         histograms1d_[row].set_center_x(static_cast<int64_t>(x));
         histograms1d_[row].set_center_y(static_cast<int64_t>(y));
       }
-      histograms1d_[row].visible = left_mouse;
+      histograms1d_[row].visible = (button == Qt::LeftButton);
       plot_boxes();
       model_.update();
       parameters_set();

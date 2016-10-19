@@ -38,7 +38,7 @@ class Plot2D : public GenericPlot
 public:
   explicit Plot2D(QWidget *parent = 0);
 
-  void clearAll() override;
+  void clearPrimary() override;
   void clearExtras() override;
   void replotExtras() override;
 
@@ -55,7 +55,7 @@ public slots:
   void zoomOut() Q_DECL_OVERRIDE;
 
 signals:
-  void markers_set(double x, double y, bool left_mouse);
+  void clickedPlot(double x, double y, Qt::MouseButton button);
 
 protected:
   void mouseClicked(double x, double y, QMouseEvent* event) override;

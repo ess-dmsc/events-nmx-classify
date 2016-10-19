@@ -49,6 +49,11 @@ void Plot2D::setOrientation(Qt::Orientation o)
   yAxis->axisRect()->setRangeZoom(o);
 }
 
+void Plot2D::setBoxes(std::list<MarkerBox2D> boxes)
+{
+  boxes_ = boxes;
+}
+
 std::list<MarkerBox2D> Plot2D::selectedBoxes()
 {
   std::list<MarkerBox2D> selection;
@@ -64,15 +69,9 @@ std::list<MarkerBox2D> Plot2D::selectedBoxes()
 }
 
 
-void Plot2D::setBoxes(std::list<MarkerBox2D> boxes)
-{
-  boxes_ = boxes;
-}
-
-void Plot2D::clearAll()
+void Plot2D::clearPrimary()
 {
   colorMap->data()->clear();
-  clearExtras();
 }
 
 void Plot2D::clearExtras()
@@ -200,7 +199,7 @@ void Plot2D::setAxes(QString xlabel, double x1, double x2,
 
 void Plot2D::mouseClicked(double x, double y, QMouseEvent *event)
 {
-  emit markers_set(x, y, event->button() == Qt::LeftButton);
+  emit clickedPlot(x, y, event->button());
 }
 
 

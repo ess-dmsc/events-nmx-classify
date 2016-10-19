@@ -127,12 +127,8 @@ void ViewEvent::clear()
   ui->eventX->clear();
   ui->eventY->clear();
 
-  ui->plotProjection->reset_scales();
-  ui->plotProjection->clearGraphs();
-  ui->plotProjection->clearExtras();
-  ui->plotProjection->replotExtras();
-  ui->plotProjection->rescale();
-  ui->plotProjection->replot();
+  ui->plotProjection->clearAll();
+  ui->plotProjection->zoomOut();
 }
 
 void ViewEvent::on_spinEventIdx_valueChanged(int /*arg1*/)
@@ -253,36 +249,18 @@ void ViewEvent::set_indices(std::set<size_t> indices)
 
 void ViewEvent::display_projection(NMX::Event &evt)
 {
-  std::map<double, double> minima, maxima;
+  ui->plotProjection->clearAll();
 
-  ui->plotProjection->clearGraphs();
-
-  QVector<double> x, y;
-
+  QPlot::HistoData histo;
   for (auto &pts : evt.get_projection(ui->comboProjection->currentText().toStdString()))
-  {
-    double xx = pts.first;
-    double yy = pts.second;
-
-    x.push_back(xx);
-    y.push_back(yy);
-
-    if (!minima.count(xx) || (minima[xx] > yy))
-      minima[xx] = yy;
-    if (!maxima.count(xx) || (maxima[xx] < yy))
-      maxima[xx] = yy;
-  }
+    histo[pts.first] = pts.second;
 
   QPlot::Appearance profile;
   profile.default_pen = QPen(Qt::darkRed, 2);
-  ui->plotProjection->addGraph(x, y, profile, 8);
-
+  ui->plotProjection->addGraph(histo, profile);
   ui->plotProjection->setAxisLabels("position", "value");
-  ui->plotProjection->setYBounds(minima, maxima);
-
   ui->plotProjection->setTitle(ui->comboProjection->currentText());
-  ui->plotProjection->replotExtras();
-  ui->plotProjection->replot();
+  ui->plotProjection->zoomOut();
 }
 
 

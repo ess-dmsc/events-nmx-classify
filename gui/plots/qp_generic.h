@@ -34,9 +34,15 @@ public:
   explicit GenericPlot(QWidget *parent = 0);
   QSize sizeHint() const Q_DECL_OVERRIDE;
 
-  virtual void replotExtras() {}
-  virtual void clearAll() {}
+  void clearAll()
+  {
+    clearPrimary();
+    clearExtras();
+  }
+  virtual void clearPrimary() {}
   virtual void clearExtras() {}
+
+  virtual void replotExtras() { plotButtons(); }
 
   void setVisibleOptions(ShowOptions);
 
@@ -44,6 +50,7 @@ public:
   bool antialiased() const;
   bool showGradientLegend() const;
   bool showMarkerLabels() const;
+  bool showTitle() const;
   uint16_t lineThickness() const;
   QString gridStyle() const;
   QString scaleType() const;
@@ -54,9 +61,10 @@ public:
   void setAntialiased(bool);
   void setShowGradientLegend(bool);
   void setShowMarkerLabels(bool);
+  void setShowTitle(bool);
   void setLineThickness(uint16_t);
   void setGridStyle(QString);
-  void setScaleType(QString);
+  virtual void setScaleType(QString);
   void setPlotStyle(QString);
   void setGradient(QString);
 
@@ -72,15 +80,15 @@ signals:
   void shiftStateChanged(bool);
 
 protected:
+  virtual void executeButton(Button *);
+  virtual void mouseClicked(double x, double y, QMouseEvent* e) {}
+
   void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
   void mouseMoveEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
   void mouseReleaseEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
   void resizeEvent(QResizeEvent * event) Q_DECL_OVERRIDE;
   void keyPressEvent(QKeyEvent*) Q_DECL_OVERRIDE;
   void keyReleaseEvent(QKeyEvent*) Q_DECL_OVERRIDE;
-
-  virtual void executeButton(Button *);
-  virtual void mouseClicked(double x, double y, QMouseEvent* e) {}
 
   void plotButtons();
   void setGraphThickness(QCPGraph* graph);
@@ -102,6 +110,7 @@ private:
   bool antialiased_ {false};
   bool show_gradient_legend_ {false};
   bool show_marker_labels_ {true};
+  bool show_title_ {true};
   uint16_t line_thickness_ {1};
   QString current_scale_type_ {"Linear"};
   QString current_grid_style_ {"Grid"};
@@ -120,8 +129,10 @@ private:
   void rescaleEverything(int fontUpscale, int plotThicken,
                          int marginUpscale, bool buttons_visible);
   void rebuildOptionsMenu();
+  void checkoffOptionsMenu();
   void removeGradientLegend();
-  void addGradientLegend(QCPColorMap *colorMap);
+  void addGradientLegend(QCPColorMap* colorMap);
+  void setButtonPosition(QCPItemPosition*, Button* previous);
 };
 
 

@@ -53,7 +53,7 @@ private slots:
   void on_spinMaxZ_editingFinished();
 
   void on_pushAddBox_clicked();
-  void update_box(double x, double y, bool left_mouse);
+  void update_box(double x, double y, Qt::MouseButton left_mouse);
 
   void on_spinMinZ_valueChanged(int arg1);
   void on_spinMaxZ_valueChanged(int arg1);
