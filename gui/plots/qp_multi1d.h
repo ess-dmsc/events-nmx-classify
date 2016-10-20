@@ -1,5 +1,5 @@
-#ifndef WIDGET_PLOT_MULTI1D_H
-#define WIDGET_PLOT_MULTI1D_H
+#ifndef QP_MULTI1D_H
+#define QP_MULTI1D_H
 
 #include <QWidget>
 #include "qp_generic.h"

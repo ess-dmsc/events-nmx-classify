@@ -58,12 +58,12 @@ std::list<MarkerBox2D> Plot2D::selectedBoxes()
 {
   std::list<MarkerBox2D> selection;
   for (auto &q : selectedItems())
-    if (QCPItemRect *b = qobject_cast<QCPItemRect*>(q)) {
+    if (QCPItemRect *b = qobject_cast<QCPItemRect*>(q))
+    {
       MarkerBox2D box;
       box.x1 = b->property("chan_x").toDouble();
       box.y1 = b->property("chan_y").toDouble();
       selection.push_back(box);
-      //DBG << "found selected " << txt->property("true_value").toDouble() << " chan=" << txt->property("chan_value").toDouble();
     }
   return selection;
 }
@@ -82,15 +82,19 @@ void Plot2D::clearExtras()
 void Plot2D::replotExtras()
 {
   clearItems();
+  plotBoxes();
+  plotButtons();
+  replot();
+}
 
-  QCPItemRect *box;
-
+void Plot2D::plotBoxes()
+{
   int selectables = 0;
   for (auto &q : boxes_)
   {
     //    if (!q.visible)
     //      continue;
-    box = new QCPItemRect(this);
+    QCPItemRect *box = new QCPItemRect(this);
     box->setSelectable(q.selectable);
     box->setPen(q.border);
 //    box->setSelectedPen(pen);
@@ -145,15 +149,11 @@ void Plot2D::replotExtras()
     setInteraction(QCP::iSelectItems, false);
     setInteraction(QCP::iMultiSelect, false);
   }
-
-  plotButtons();
-  replot();
 }
+
 
 void Plot2D::updatePlot(uint64_t sizex, uint64_t sizey, const EntryList &spectrum_data)
 {
-//  DBG << "2d size " << sizex << "x" << sizey << " list " << spectrum_data.size();
-//  clearGraphs();
   colorMap->data()->clear();
   setAlwaysSquare(sizex == sizey);
   if (sizex == sizey)

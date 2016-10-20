@@ -1,5 +1,5 @@
-#ifndef WIDGET_PLOT2D_H
-#define WIDGET_PLOT2D_H
+#ifndef QP_PLOT2D_H
+#define QP_PLOT2D_H
 
 #include "qp_generic.h"
 #include "qp_appearance.h"
@@ -64,6 +64,7 @@ protected:
   std::list<MarkerBox2D> boxes_;
 
   void initializeGradients();
+  void plotBoxes();
 };
 
 }

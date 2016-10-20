@@ -1,28 +1,9 @@
-/*******************************************************************************
- *
- * This software was developed at the National Institute of Standards and
- * Technology (NIST) by employees of the Federal Government in the course
- * of their official duties. Pursuant to title 17 Section 105 of the
- * United States Code, this software is not subject to copyright protection
- * and is in the public domain. NIST assumes no responsibility whatsoever for
- * its use by other parties, and makes no guarantees, expressed or implied,
- * about its quality, reliability, or any other characteristic.
- *
- * Author(s):
- *      Martin Shetty (NIST)
- *
- * Description:
- *      DraggableTracer
- *
- ******************************************************************************/
-
-#include "qp_draggable_tracer.h"
-//#include "CustomLogger.h"
+#include "qp_draggable.h"
 
 namespace QPlot
 {
 
-DraggableTracer::DraggableTracer(QCustomPlot *parentPlot, QCPItemTracer *trc, int size)
+Draggable::Draggable(QCustomPlot *parentPlot, QCPItemTracer *trc, int size)
   : QCPItemLine(parentPlot)
   , center_tracer_(trc)
   , grip_delta_()
@@ -47,13 +28,13 @@ DraggableTracer::DraggableTracer(QCustomPlot *parentPlot, QCPItemTracer *trc, in
   connect(move_timer_, SIGNAL(timeout()), this, SLOT(moveToWantedPos()));
 }
 
-void DraggableTracer::set_limits(double l , double r) {
+void Draggable::set_limits(double l , double r) {
   limit_l = parentPlot()->xAxis->coordToPixel(l);
   limit_r = parentPlot()->xAxis->coordToPixel(r);
 }
 
 
-void DraggableTracer::startMoving(const QPointF &mousePos)
+void Draggable::startMoving(const QPointF &mousePos)
 {
 //  DBG << "started moving";
 
@@ -78,7 +59,7 @@ void DraggableTracer::startMoving(const QPointF &mousePos)
 //  QApplication::setOverrideCursor(Qt::ClosedHandCursor);
 }
 
-void DraggableTracer::stopMov(QMouseEvent* /*evt*/)
+void Draggable::stopMov(QMouseEvent* /*evt*/)
 {
 //  DBG << "stopped moving";
   disconnect(parentPlot(), SIGNAL(mouseMove(QMouseEvent*)),
@@ -95,7 +76,7 @@ void DraggableTracer::stopMov(QMouseEvent* /*evt*/)
   emit stoppedMoving();
 }
 
-void DraggableTracer::move(double x, double y, bool signalNeeded)
+void Draggable::move(double x, double y, bool signalNeeded)
 {
   pos_last_.setX(x);
   center_tracer_->setGraphKey(x);
@@ -107,19 +88,19 @@ void DraggableTracer::move(double x, double y, bool signalNeeded)
   }
 }
 
-void DraggableTracer::movePx(double x, double y)
+void Draggable::movePx(double x, double y)
 {
   move(parentPlot()->xAxis->pixelToCoord(x),
        parentPlot()->yAxis->pixelToCoord(y));
 }
 
-void DraggableTracer::onMouseMove(QMouseEvent *event)
+void Draggable::onMouseMove(QMouseEvent *event)
 {
   pos_current_ = QPointF(event->localPos().x() + grip_delta_.x(),
                             event->localPos().y() + grip_delta_.y());
 }
 
-void DraggableTracer::moveToWantedPos()
+void Draggable::moveToWantedPos()
 {
   if (!pos_current_.isNull()) {
     double xx = pos_current_.x();

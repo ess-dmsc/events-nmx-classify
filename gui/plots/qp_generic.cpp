@@ -28,6 +28,17 @@ void GenericPlot::setVisibleOptions(ShowOptions options)
   replot();
 }
 
+void GenericPlot::clearAll()
+{
+  this->clearPrimary();
+  this->clearExtras();
+}
+
+void GenericPlot::replotExtras()
+{
+  this->clearItems();
+  this->plotButtons();
+}
 
 //getters
 
@@ -338,7 +349,7 @@ void GenericPlot::mousePressEvent(QMouseEvent *event)
 {
   emit mousePress(event);
 
-  DraggableTracer *trc = qobject_cast<DraggableTracer*>(itemAt(event->localPos(), true));
+  Draggable *trc = qobject_cast<Draggable*>(itemAt(event->localPos(), true));
   if ((event->button() == Qt::LeftButton) && (trc != nullptr)) {
     trc->startMoving(event->localPos());
     return;
@@ -366,7 +377,7 @@ void GenericPlot::mouseMoveEvent(QMouseEvent *event)
   //emit mouseHover(co_x, co_y);
 
   if (event->buttons() == Qt::NoButton) {
-    DraggableTracer *trc = qobject_cast<DraggableTracer*>(itemAt(event->localPos(), false));
+    Draggable *trc = qobject_cast<Draggable*>(itemAt(event->localPos(), false));
     Button *button = qobject_cast<Button*>(itemAt(event->localPos(), false));
 
     if (trc && trc->visible())

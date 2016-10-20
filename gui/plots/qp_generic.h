@@ -2,7 +2,7 @@
 #define QP_GENERIC_PLOT_H
 
 #include "qcustomplot.h"
-#include "qp_draggable_tracer.h"
+#include "qp_draggable.h"
 #include "qp_button.h"
 #include <set>
 
@@ -34,15 +34,10 @@ public:
   explicit GenericPlot(QWidget *parent = 0);
   QSize sizeHint() const Q_DECL_OVERRIDE;
 
-  void clearAll()
-  {
-    clearPrimary();
-    clearExtras();
-  }
+  void clearAll();
   virtual void clearPrimary() {}
   virtual void clearExtras() {}
-
-  virtual void replotExtras() { plotButtons(); }
+  virtual void replotExtras();
 
   void setVisibleOptions(ShowOptions);
 
@@ -100,7 +95,7 @@ protected slots:
 
 private:
   mutable int previous_height_ {0};
-  DraggableTracer *under_mouse_ {nullptr};
+  Draggable *under_mouse_ {nullptr};
 
   ShowOptions visible_options_;
   QMenu options_menu_;

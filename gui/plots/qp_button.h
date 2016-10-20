@@ -1,5 +1,5 @@
-#ifndef QP_BUTTON
-#define QP_BUTTON
+#ifndef QP_BUTTON_H
+#define QP_BUTTON_H
 
 #include "qcustomplot.h"
 
