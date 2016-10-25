@@ -194,9 +194,6 @@ void Record::analyze()
   int entry_strip {-1};
   int entry_tb {-1};
   int c_ness {0};
-  int32_t integral {0};
-  int32_t integral_max {0};
-  int32_t integral_vmm {0};
   int nonempty_words {0};
   int hit_strips_max {0};
   int hit_strips_vmm {0};
@@ -208,6 +205,22 @@ void Record::analyze()
 
   std::vector<std::vector<int16_t>> sideways(time_end() + 1,
                                            std::vector<int16_t>(strip_end_ + 1, 0));
+
+  int32_t integral {0};
+  int32_t integral_max {0};
+  int32_t integral_vmm {0};
+
+  double cg_sum {0};
+  double cg_sum_max {0};
+  double cg_sum_vmm {0};
+
+  double cgt_sum {0};
+  double cgt_sum_max {0};
+  double cgt_sum_vmm {0};
+
+  double tw_sum {0};
+  double tw_sum_max {0};
+  double tw_sum_vmm {0};
 
   std::set<int> tbins;
   for (auto &s : strips_)
@@ -235,6 +248,7 @@ void Record::analyze()
     if (s.second.bin_end() > tbstop)
       tbstop = s.second.bin_end();
 
+    cg_sum += s.first * s.second.integral();
     integral += s.second.integral();
     nonempty_words += s.second.num_valid_bins();
 
@@ -243,13 +257,22 @@ void Record::analyze()
         if (s.second.value(i) != 0)
         {
           tbins.insert(i);
-          sideways[i][s.first] = s.second.value(i);
+          auto tw = i*i;
+          auto val = s.second.value(i);
+          cgt_sum += s.first * tw; // * val;
+          tw_sum += tw ; // * val;
+          sideways[i][s.first] = val;
         }
 
     VMM_count += s.second.VMM_maxima().size();
     for (auto m : s.second.VMM_maxima())
     {
-      integral_vmm += s.second.value(m);
+      auto tw = m*m;
+      auto val = s.second.value(m);
+      cg_sum_vmm += s.first * val;
+      cgt_sum_vmm += s.first * tw; // * val;
+      tw_sum_vmm += tw; // * val;
+      integral_vmm += val;
       point_lists_["VMM"].push_back(Point(s.first, m));
       if (int(m) > entry_tb)
       {
@@ -258,19 +281,23 @@ void Record::analyze()
       }
     }
 
-    if (s.second.maxima().size() >= 2)
-      c_ness++;
-
     for (auto m : s.second.maxima())
     {
+      auto tw = m*m;
+      auto val = s.second.value(m);
+      cg_sum_max += s.first * val;
+      cgt_sum_max += s.first * tw; // * val;
+      tw_sum_max += tw; // * val;
       integral_max += s.second.value(m);
       point_lists_["maxima"].push_back(Point(s.first, m));
     }
 
+    if (s.second.maxima().size() >= 2)
+      c_ness++;
+
     for (auto m : s.second.global_maxima())
       point_lists_["global_maxima"].push_back(Point(s.first, m));
   }
-
 
   metrics_["nonempty_words"] =
       Setting(Variant::from_uint(nonempty_words),
@@ -353,18 +380,20 @@ void Record::analyze()
       Setting(Variant::from_uint(VMM_count),
               "# of VMM data points in event");
 
-  metrics_strip_space(integral, strips_.size(), strip_start_, strip_end_,
+  metrics_strip_space(integral, tw_sum, cg_sum, cgt_sum, strips_.size(), strip_start_, strip_end_,
                       "", "valid ADC values");
 
-  metrics_strip_space(integral_max, hit_strips_max, start_max, end_max,
+  metrics_strip_space(integral_max, tw_sum_max, cg_sum_max, cgt_sum_max, hit_strips_max, start_max, end_max,
                       "_max", "local maxima");
 
-  metrics_strip_space(integral_vmm, hit_strips_vmm, start_vmm, end_vmm,
+  metrics_strip_space(integral_vmm, tw_sum_vmm, cg_sum_vmm, cgt_sum_vmm, hit_strips_vmm, start_vmm, end_vmm,
                       "_vmm", "VMM maxima");
 }
 
 
-void Record::metrics_strip_space(int32_t integral, size_t hit_strips,
+void Record::metrics_strip_space(int32_t integral, double tw_integral,
+                                 double cg_sum, double cgt_sum,
+                                 size_t hit_strips,
                                  int start, int end, std::string suffix,
                                  std::string description)
 {
@@ -380,7 +409,7 @@ void Record::metrics_strip_space(int32_t integral, size_t hit_strips,
       Setting(Variant::from_uint(span),
               "Span of strips with " + description);
 
-  double strip_density = 0;
+  double strip_density {0};
   if (span > 0)
     strip_density = double(hit_strips) / double(span) * 100.0;
 
@@ -392,13 +421,31 @@ void Record::metrics_strip_space(int32_t integral, size_t hit_strips,
       Setting(Variant::from_int(integral),
               "Integral of " + description);
 
-  double integral_per_hitstrips = 0;
+  double integral_per_hitstrips {0};
   if (hit_strips > 0)
+  {
     integral_per_hitstrips = double(integral) / double(hit_strips);
+  }
+
+  double center_of_gravity {-1};
+  if (integral > 0)
+    center_of_gravity = cg_sum / double(integral);
+
+  double center_of_gravity_time_weighted {-1};
+  if (tw_integral > 0)
+    center_of_gravity_time_weighted = cgt_sum / double(tw_integral);
 
   metrics_["integral_per_hitstrips" + suffix] =
       Setting(Variant::from_float(integral_per_hitstrips),
               "integral" + suffix + " / hit_strips" + suffix);
+
+  metrics_["cg" + suffix] =
+      Setting(Variant::from_float(center_of_gravity),
+              "center of gravity using " + description);
+
+  metrics_["cgt" + suffix] =
+      Setting(Variant::from_float(center_of_gravity),
+              "time-weighted center of gravity using " + description);
 
 }
 

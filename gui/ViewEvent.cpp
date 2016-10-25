@@ -27,6 +27,9 @@ ViewEvent::ViewEvent(QWidget *parent) :
   for (auto &name : rec.point_categories())
     ui->comboOverlay->addItem(QString::fromStdString(name));
   ui->comboOverlay->addItem("none");
+  for (auto &name : rec.metrics())
+    ui->comboPoint->addItem(QString::fromStdString(name.first));
+  ui->comboPoint->addItem("none");
 
   NMX::Event evt;
   evt.analyze();
@@ -41,6 +44,9 @@ ViewEvent::ViewEvent(QWidget *parent) :
 
   ui->eventX->set_overlay_type(ui->comboOverlay->currentText());
   ui->eventY->set_overlay_type(ui->comboOverlay->currentText());
+
+  ui->eventX->set_point_type(ui->comboPoint->currentText());
+  ui->eventY->set_point_type(ui->comboPoint->currentText());
 
   ui->eventX->set_show_raw(ui->checkRaw->isChecked());
   ui->eventY->set_show_raw(ui->checkRaw->isChecked());
@@ -104,6 +110,7 @@ void ViewEvent::loadSettings()
   ui->checkRaw->setChecked(settings.value("show_raw", true).toBool());
   ui->comboOverlay->setCurrentText(settings.value("overlay").toString());
   ui->comboProjection->setCurrentText(settings.value("projection").toString());
+  ui->comboPoint->setCurrentText(settings.value("point").toString());
   ui->comboPlanes->setCurrentText(settings.value("show_planes", "X & Y").toString());
 }
 
@@ -115,6 +122,7 @@ void ViewEvent::saveSettings()
   settings.setValue("current_idx", ui->spinEventIdx->value());
   settings.setValue("overlay", ui->comboOverlay->currentText());
   settings.setValue("projection", ui->comboProjection->currentText());
+  settings.setValue("point", ui->comboPoint->currentText());
   settings.setValue("show_planes", ui->comboPlanes->currentText());
 }
 
@@ -258,4 +266,10 @@ void ViewEvent::on_comboPlanes_currentIndexChanged(const QString&)
   ui->eventX->setVisible(ui->comboPlanes->currentText().contains("X"));
   ui->eventY->setVisible(ui->comboPlanes->currentText().contains("Y"));
   plot_current_event();
+}
+
+void ViewEvent::on_comboPoint_currentIndexChanged(const QString &arg1)
+{
+  ui->eventX->set_point_type(ui->comboPoint->currentText());
+  ui->eventY->set_point_type(ui->comboPoint->currentText());
 }

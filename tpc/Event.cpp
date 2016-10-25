@@ -133,6 +133,20 @@ void Event::analyze()
       Setting(Variant::from_int(VMM_count),
               "X.vmm_points + Y.vmm_points");
 
+  auto diff_integral = ax["integral"].value.as_int() - ay["integral"].value.as_int();
+  metrics_["diff_integral"] =
+      Setting(Variant::from_int(diff_integral),
+              "X.integral - Y.integral");
+
+  auto diff_integral_max = ax["integral_max"].value.as_int() - ay["integral_max"].value.as_int();
+  metrics_["diff_integral_max"] =
+      Setting(Variant::from_int(diff_integral_max),
+              "X.integral_max - Y.integral_max");
+
+  auto diff_integral_vmm = ax["integral_vmm"].value.as_int() - ay["integral_vmm"].value.as_int();
+  metrics_["diff_integral_vmm"] =
+      Setting(Variant::from_int(diff_integral_vmm),
+              "X.integral_vmm - Y.integral_vmm");
 
   auto tbx = x_.get_projection("time_integral");
   auto tby = y_.get_projection("time_integral");

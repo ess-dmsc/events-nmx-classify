@@ -80,7 +80,8 @@ private:
   Settings parameters_;
   Settings metrics_;
 
-  void metrics_strip_space(int32_t integral, size_t hit_strips,
+  void metrics_strip_space(int32_t integral, double tw_integral,
+                           double cg_sum, double cgt_sum, size_t hit_strips,
                            int start, int end, std::string suffix,
                            std::string description);
 };

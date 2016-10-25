@@ -26,6 +26,7 @@ public:
 
   void set_show_raw(bool);
   void set_overlay_type(QString);
+  void set_point_type(QString);
   void set_title(QString);
 
 private:
@@ -37,6 +38,7 @@ private:
 
   bool show_raw_{true};
   QString overlay_type_;
+  QString point_type_;
 
   void display_current_record();
 

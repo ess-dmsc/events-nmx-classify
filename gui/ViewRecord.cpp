@@ -38,6 +38,12 @@ void ViewRecord::set_overlay_type(QString overlay_type)
   display_current_record();
 }
 
+void ViewRecord::set_point_type(QString point_type)
+{
+  point_type_ = point_type;
+  display_current_record();
+}
+
 void ViewRecord::clear()
 {
   ui->plotRecord->clearAll();
@@ -82,6 +88,23 @@ void ViewRecord::display_current_record()
     box.fill = Qt::darkYellow;
     overlay.push_back(box);
   }
+
+  double strip_p = metrics[point_type_.toStdString()].value.as_float(-1);
+  if (strip_p >= 0)
+  {
+    int time_p = record_.time_end();
+
+    QPlot::MarkerBox2D box;
+    box.x1 = strip_p - 0.2;
+    box.x2 = strip_p + 0.2;
+    box.y1  = time_p - 0.2;
+    box.y2  = time_p + 0.2;
+    box.border = Qt::magenta;
+    box.fill = Qt::darkMagenta;
+    overlay.push_back(box);
+  }
+
+
   ui->plotRecord->setBoxes(overlay);
   ui->plotRecord->replotExtras();
   ui->plotRecord->zoomOut();

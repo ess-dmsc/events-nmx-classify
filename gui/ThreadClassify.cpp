@@ -63,8 +63,8 @@ void ThreadClassify::run()
     NMX::Event evt = reader_->get_event(eventID);
     evt.set_parameters(parameters_);
     evt.analyze();
-    if (eventID == 0)
-      DBG << "Event #" << eventID << "\n" << evt.debug_metrics();
+//    if (eventID == 0)
+//      DBG << "Event #" << eventID << "\n" << evt.debug_metrics();
 
     reader_->push_event_metrics(eventID, evt);
 
