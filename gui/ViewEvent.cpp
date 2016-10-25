@@ -65,7 +65,6 @@ void ViewEvent::enableIO(bool enable)
 {
   bool en = reader_ && reader_->event_count() && enable;
   ui->spinEventIdx->setEnabled(en);
-  ui->checkNoneg->setEnabled(en);
   ui->comboPlanes->setEnabled(en);
 }
 
@@ -102,7 +101,6 @@ void ViewEvent::loadSettings()
 {
   QSettings settings;
   settings.beginGroup("Program");
-  ui->checkNoneg->setChecked(settings.value("noneg", false).toBool());
   ui->checkRaw->setChecked(settings.value("show_raw", true).toBool());
   ui->comboOverlay->setCurrentText(settings.value("overlay").toString());
   ui->comboProjection->setCurrentText(settings.value("projection").toString());
@@ -113,7 +111,6 @@ void ViewEvent::saveSettings()
 {
   QSettings settings;
   settings.beginGroup("Program");
-  settings.setValue("noneg", ui->checkNoneg->isChecked());
   settings.setValue("show_raw", ui->checkRaw->isChecked());
   settings.setValue("current_idx", ui->spinEventIdx->value());
   settings.setValue("overlay", ui->comboOverlay->currentText());
@@ -144,11 +141,6 @@ void ViewEvent::on_spinEventIdx_valueChanged(int /*arg1*/)
 
   ui->labelOfTotal->setText(" of " + QString::number(indices_.size())
                             + "   [" + QString::number(evt_idx) + "]");
-  plot_current_event();
-}
-
-void ViewEvent::on_checkNoneg_clicked()
-{
   plot_current_event();
 }
 
@@ -198,9 +190,6 @@ void ViewEvent::plot_current_event()
     evt.set_parameters(params_);
     evt.analyze();
   }
-
-  ui->eventX->set_suppress_negatives(ui->checkNoneg->isChecked());
-  ui->eventY->set_suppress_negatives(ui->checkNoneg->isChecked());
 
   ui->eventX->display_record(evt.x());
   ui->eventY->display_record(evt.y());

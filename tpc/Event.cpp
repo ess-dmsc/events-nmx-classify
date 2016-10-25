@@ -5,15 +5,17 @@
 namespace NMX {
 
 Event::Event()
-{
-  collect_values();
-}
+  :Event(Record(), Record())
+{}
 
 Event::Event(Record xx, Record yy)
   : x_(xx)
   , y_(yy)
 {
   collect_values();
+  parameters_["suppress_negatives"] =
+      Setting(Variant::from_int(1),
+              "Suppress negative ADC values prior to analysis");
 }
 
 bool Event::empty() const
@@ -21,15 +23,18 @@ bool Event::empty() const
   return (x_.empty() && y_.empty());
 }
 
-Event Event::suppress_negatives() const
-{
-  return Event(x_.suppress_negatives(), y_.suppress_negatives());
-}
-
 std::string Event::debug() const
 {
   return   "X: " + x_.debug() + "\n"
          + "Y: " + y_.debug();
+}
+
+std::string Event::debug_metrics() const
+{
+  std::string ret;
+  for (auto &m : metrics_)
+    ret += m.first + " = " + m.second.value.to_string() + "\n";
+  return ret;
 }
 
 void Event::collect_values()
@@ -58,12 +63,20 @@ void Event::set_parameters(Settings vals)
 
 void Event::set_parameter(std::string id, Variant val)
 {
+  set_parameter(id, val, true);
+}
+
+void Event::set_parameter(std::string id, Variant val, bool apply)
+{
   if ((id.size() > 1) && (boost::algorithm::to_lower_copy(id.substr(0,1)) == "x"))
     x_.set_parameter(id.substr(2, id.size() - 2), val);
   else if ((id.size() > 1) && (boost::algorithm::to_lower_copy(id.substr(0,1)) == "y"))
     y_.set_parameter(id.substr(2, id.size() - 2), val);
   else if (parameters_.count(id))
     parameters_[id].value = val;
+
+  if (apply && (id == "suppress_negatives") && val.as_int())
+    suppress_negatives();
 }
 
 void Event::set_metric(std::string id, Variant val, std::string descr)
@@ -80,6 +93,14 @@ void Event::clear_metrics()
   metrics_.clear();
   x_.clear_metrics();
   y_.clear_metrics();
+}
+
+void Event::suppress_negatives()
+{
+  Event evt(x_.suppress_negatives(), y_.suppress_negatives());
+  for (auto &v : parameters_)
+    evt.set_parameter(v.first, v.second.value, false);
+  *this = evt;
 }
 
 void Event::analyze()

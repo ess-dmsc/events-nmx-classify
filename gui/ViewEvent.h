@@ -33,7 +33,6 @@ public slots:
 
 private slots:
   void on_spinEventIdx_valueChanged(int arg1);
-  void on_checkNoneg_clicked();
 
   void on_comboOverlay_currentIndexChanged(const QString &arg1);
 

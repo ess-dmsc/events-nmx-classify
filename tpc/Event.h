@@ -10,19 +10,19 @@ struct Event
 {
   Event();
   Event(Record xx, Record yy);
-  Event suppress_negatives() const;
 
   Record x() const {return x_;}
   Record y() const {return y_;}
 
   bool empty() const;
   std::string debug() const;
+  std::string debug_metrics() const;
 
   void analyze();
   void clear_metrics();
 
-  void set_parameter(std::string, Variant);
   void set_parameters(Settings);
+  void set_parameter(std::string, Variant);
   Settings parameters() const {return parameters_;}
 
   void set_metric(std::string id, Variant val, std::string descr);
@@ -40,6 +40,8 @@ private:
   std::map<std::string, ProjPointList> projections_;
 
   void collect_values();
+  void suppress_negatives();
+  void set_parameter(std::string, Variant, bool apply);
 };
 
 }

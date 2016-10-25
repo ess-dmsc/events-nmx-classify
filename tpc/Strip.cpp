@@ -113,6 +113,7 @@ void Strip::find_global_maxima()
 
 void Strip::find_VMM_maxima()
 {
+  VMM_maxima_.clear();
   bool overthreshold {false};
   int tb0 {0};
   int tb1 {0};

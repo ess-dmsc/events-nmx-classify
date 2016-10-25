@@ -182,37 +182,54 @@ std::list<std::string> Record::projection_categories() const
 
 void Record::analyze()
 {
-  metrics_["hit_strips"] =
-      Setting(Variant::from_uint(strips_.size()),
-              "Number of strips with valid ADC values");
+  for (auto pl : point_lists_)
+    pl.second.clear();
+  for (auto pj : projections_)
+    pj.second.clear();
 
-  int strip_span = 0;
-  if ((strip_start_ > -1) && (strip_end_ > strip_start_))
-    strip_span = strip_end_ - strip_start_ + 1;
-
-  metrics_["strip_span"] =
-      Setting(Variant::from_uint(strip_span),
-              "Span of strips with valid ADC values");
+  auto adc_threshold = parameters_["ADC_threshold"].value.as_int();
+  auto tb_over_threshold = parameters_["TB_over_threshold"].value.as_int();
 
   int16_t tbstart{-1}, tbstop{-1};
-
   int entry_strip {-1};
   int entry_tb {-1};
   int c_ness {0};
-  int integral {0};
+  int32_t integral {0};
+  int32_t integral_max {0};
+  int32_t integral_vmm {0};
   int nonempty_words {0};
+  int hit_strips_max {0};
+  int hit_strips_vmm {0};
+  int start_max {-1};
+  int end_max {-1};
+  int start_vmm {-1};
+  int end_vmm {-1};
+  size_t VMM_count {0};
 
   std::vector<std::vector<int16_t>> sideways(time_end() + 1,
                                            std::vector<int16_t>(strip_end_ + 1, 0));
 
   std::set<int> tbins;
-  auto adc_threshold = parameters_["ADC_threshold"].value.as_int();
-  auto tb_over_threshold = parameters_["TB_over_threshold"].value.as_int();
-  size_t VMM_count = 0;
-  int32_t integral_VMM = 0;
   for (auto &s : strips_)
   {
     s.second.analyze(adc_threshold, tb_over_threshold);
+
+    if (s.second.maxima().size())
+    {
+      hit_strips_max++;
+      end_max = s.first;
+      if (start_max < 0)
+        start_max = s.first;
+    }
+
+    if (s.second.VMM_maxima().size())
+    {
+      hit_strips_vmm++;
+      end_vmm = s.first;
+      if (start_vmm < 0)
+        start_vmm = s.first;
+    }
+
     if (s.second.nonzero() && ((tbstart == -1) || (s.second.bin_start() < tbstart)))
       tbstart = s.second.bin_start();
     if (s.second.bin_end() > tbstop)
@@ -232,7 +249,7 @@ void Record::analyze()
     VMM_count += s.second.VMM_maxima().size();
     for (auto m : s.second.VMM_maxima())
     {
-      integral_VMM += s.second.value(m);
+      integral_vmm += s.second.value(m);
       point_lists_["VMM"].push_back(Point(s.first, m));
       if (int(m) > entry_tb)
       {
@@ -245,19 +262,15 @@ void Record::analyze()
       c_ness++;
 
     for (auto m : s.second.maxima())
+    {
+      integral_max += s.second.value(m);
       point_lists_["maxima"].push_back(Point(s.first, m));
+    }
 
     for (auto m : s.second.global_maxima())
       point_lists_["global_maxima"].push_back(Point(s.first, m));
   }
 
-  metrics_["integral"] =
-      Setting(Variant::from_int(integral),
-              "Sum of all ADC values");
-
-  metrics_["integral_vmm"] =
-      Setting(Variant::from_int(integral_VMM),
-              "Sum of VMM maxima ADC values");
 
   metrics_["nonempty_words"] =
       Setting(Variant::from_uint(nonempty_words),
@@ -328,41 +341,65 @@ void Record::analyze()
       Setting(Variant::from_uint(timebin_span),
               "Span of timebins with valid ADC values");
 
-  double integral_per_hitstrips = 0;
-  if (strips_.size() > 0)
-    integral_per_hitstrips = double(integral) / double(strips_.size());
-
-  metrics_["integral_per_hitstrips"] =
-      Setting(Variant::from_float(integral_per_hitstrips),
-              "Sum of all ADC values divided by number of strips with valid ADC values");
-
-//  double integral_vmm_per_hitstrips = 0;
-//  if (strips_.size() > 0)
-//    integral_vmm_per_hitstrips = double(integral_vmm) / double(strips_.size());
-
-//  metrics_["integral_vmm_per_hitstrips"] =
-//      Setting(Variant::from_float(integral_vmm_per_hitstrips),
-//              "integral_vmm divided by number of strips with valid ADC values");
-
-  double strip_density = 0;
-  if (strip_span > 0)
-    strip_density = double(strips_.size()) / double(strip_span) * 100.0;
-
-  metrics_["strip_density"] =
-      Setting(Variant::from_float(strip_density),
-              "% of strips in strip span with valid ADC data");
-
   double time_density = 0;
   if (timebin_span > 0)
     time_density = double(tbins.size()) / double(timebin_span) * 100.0;
 
   metrics_["time_density"] =
-      Setting(Variant::from_float(strip_density),
+      Setting(Variant::from_float(time_density),
               "% of timebins in timebin span with valid ADC data");
 
   metrics_["vmm_points"] =
       Setting(Variant::from_uint(VMM_count),
               "# of VMM data points in event");
+
+  metrics_strip_space(integral, strips_.size(), strip_start_, strip_end_,
+                      "", "valid ADC values");
+
+  metrics_strip_space(integral_max, hit_strips_max, start_max, end_max,
+                      "_max", "local maxima");
+
+  metrics_strip_space(integral_vmm, hit_strips_vmm, start_vmm, end_vmm,
+                      "_vmm", "VMM maxima");
+}
+
+
+void Record::metrics_strip_space(int32_t integral, size_t hit_strips,
+                                 int start, int end, std::string suffix,
+                                 std::string description)
+{
+  metrics_["hit_strips" + suffix] =
+      Setting(Variant::from_uint(hit_strips),
+              "Number of strips with " + description);
+
+  int span {0};
+  if ((start >= 0) && (end >= start))
+    span = end - start + 1;
+
+  metrics_["strip_span" + suffix] =
+      Setting(Variant::from_uint(span),
+              "Span of strips with " + description);
+
+  double strip_density = 0;
+  if (span > 0)
+    strip_density = double(hit_strips) / double(span) * 100.0;
+
+  metrics_["strip_density" + suffix] =
+      Setting(Variant::from_float(strip_density),
+              "% of strips in strip span with " + description);
+
+  metrics_["integral" + suffix] =
+      Setting(Variant::from_int(integral),
+              "Integral of " + description);
+
+  double integral_per_hitstrips = 0;
+  if (hit_strips > 0)
+    integral_per_hitstrips = double(integral) / double(hit_strips);
+
+  metrics_["integral_per_hitstrips" + suffix] =
+      Setting(Variant::from_float(integral_per_hitstrips),
+              "integral" + suffix + " / hit_strips" + suffix);
+
 }
 
 

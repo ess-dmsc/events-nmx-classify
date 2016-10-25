@@ -103,13 +103,12 @@ Event FileHDF5::get_event_with_metrics(size_t index)
 {
   Event event = get_event(index);
 
-  event.set_parameters(analysis_params_);
-  event.analyze();
-
   if (index >= num_analyzed_)
     return event;
 
-  event.clear_metrics();
+  event.set_parameters(analysis_params_);
+  event.analyze();
+
   for (auto &m : metrics_descr_)
     if (metrics_.count(m.first) && (index < metrics_.at(m.first).size()))
       event.set_metric(m.first, metrics_.at(m.first).at(index), m.second);
@@ -193,8 +192,18 @@ bool FileHDF5::save_analysis()
 
   std::vector<double> data;
   for (auto &m : metrics_)
+  {
+    double checksum {0};
+    int index = 0;
     for (auto &d : m.second)
-      data.push_back(d.as_float());
+    {
+      auto datum = d.as_float();
+      data.push_back(datum);
+      checksum += datum;
+      index++;
+    }
+//    DBG << "Saved " << m.first << "   checksum = " << checksum;
+  }
 
   auto dataset = group.create_dataset("metrics",
                                       H5::PredType::NATIVE_DOUBLE,
@@ -214,6 +223,7 @@ bool FileHDF5::load_analysis(std::string name)
 
   auto group = file_.group("Analyses").group(name);
   num_analyzed_ = group.read_attribute("num_analyzed").as_uint(0);
+//  DBG << "Loading analysis group " << name << " with " << num_analyzed_ << " events";
 
   auto params_group = group.open_group("parameters");
   auto params_descr_group = params_group.open_group("descriptions");
@@ -221,24 +231,29 @@ bool FileHDF5::load_analysis(std::string name)
     analysis_params_[p] = Setting(params_group.read_attribute(p),
                                   params_descr_group.read_attribute(p).to_string());
 
-  std::vector<std::string> names;
   std::vector<double> data;
   auto dataset = group.open_dataset("metrics");
   dataset.read(data, H5::PredType::NATIVE_DOUBLE);
   for (auto &p : dataset.attributes())
-  {
     metrics_descr_[p] = dataset.read_attribute(p).to_string();
-    names.push_back(p);
-  }
+
+  std::vector<std::string> names;
+  for (auto n : metrics_descr_)
+    names.push_back(n.first);
 
   auto eventnum = dataset.dim(1);
   for (hsize_t i=0; i < dataset.dim(0); i++)
   {
-    DBG << "<FileHDF5> caching " << names[i];
+    double checksum {0};
     std::vector<Variant> dt(event_count_);
     for (hsize_t j=0; j < num_analyzed_; j++)
-      dt[j] = Variant::from_float(data[i*eventnum + j]);
+    {
+      auto datum = data[i*eventnum + j];
+      dt[j] = Variant::from_float(datum);
+      checksum += datum;
+    }
     metrics_[names[i]] = dt;
+    DBG << "<FileHDF5> cached " << names[i];// << "   checksum = " << checksum;
   }
 
   current_analysis_name_ = name;

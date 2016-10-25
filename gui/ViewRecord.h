@@ -21,7 +21,6 @@ public:
   ~ViewRecord();
 
   void display_record(const NMX::Record &record);
-  void set_suppress_negatives(bool noneg) { noneg_ = noneg; }
 
   void clear();
 
@@ -37,7 +36,6 @@ private:
   QPlot::Marker1D moving_;
 
   bool show_raw_{true};
-  bool noneg_{false};
   QString overlay_type_;
 
   void display_current_record();

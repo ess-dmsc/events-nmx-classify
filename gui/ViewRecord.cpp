@@ -1,7 +1,7 @@
 #include <QSettings>
 #include "ViewRecord.h"
 #include "ui_ViewRecord.h"
-
+#include "CustomLogger.h"
 
 ViewRecord::ViewRecord(QWidget *parent) :
   QWidget(parent),
@@ -91,16 +91,10 @@ QPlot::EntryList ViewRecord::make_list()
 {
   QPlot::EntryList data;
 
-  NMX::Record r;
-  if (noneg_)
-    r = record_.suppress_negatives();
-  else
-    r = record_;
-
-  for (auto &i : r.valid_strips())
+  for (auto &i : record_.valid_strips())
   {
-    auto strip = r.get_strip(i);
-    int stripi = i - r.strip_start();
+    auto strip = record_.get_strip(i);
+    int stripi = i - record_.strip_start();
     for (int tb=strip.bin_start(); tb <= strip.bin_end(); ++tb)
       if (strip.value(tb))
         data.push_back(QPlot::Entry{{stripi,tb}, strip.value(tb)});

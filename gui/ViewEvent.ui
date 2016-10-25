@@ -101,13 +101,6 @@
       <widget class="QComboBox" name="comboPlanes"/>
      </item>
      <item>
-      <widget class="QCheckBox" name="checkNoneg">
-       <property name="text">
-        <string>no negatives</string>
-       </property>
-      </widget>
-     </item>
-     <item>
       <widget class="QCheckBox" name="checkRaw">
        <property name="text">
         <string>show raw data</string>
