@@ -30,6 +30,7 @@ Record::Record()
               "Minimum strip span of timebin maxima to increment U-ness factor");
 
   point_lists_["VMM"] = PointList();
+  point_lists_["VMM_top"] = PointList();
   point_lists_["maxima"] = PointList();
   point_lists_["global_maxima"] = PointList();
   point_lists_["tb_maxima"] = PointList();
@@ -223,6 +224,8 @@ void Record::analyze()
   double tw_sum_vmm {0};
 
   std::set<int> tbins;
+  std::map<int, std::vector<int>> best_candidates;
+
   for (auto &s : strips_)
   {
     s.second.analyze(adc_threshold, tb_over_threshold);
@@ -267,6 +270,7 @@ void Record::analyze()
     VMM_count += s.second.VMM_maxima().size();
     for (auto m : s.second.VMM_maxima())
     {
+      best_candidates[m].push_back(s.first);
       auto tw = m*m;
       auto val = s.second.value(m);
       cg_sum_vmm += s.first * val;
@@ -299,6 +303,39 @@ void Record::analyze()
       point_lists_["global_maxima"].push_back(Point(s.first, m));
   }
 
+  int levels {0};
+  int candidate_wsum {0};
+  int candidate_count {0};
+  int lextremum {entry_strip};
+  int rextremum {entry_strip};
+  for (auto i = best_candidates.rbegin(); i != best_candidates.rend(); ++i)
+  {
+    if ((levels > 2) || (candidate_count > 5) || ((entry_tb - i->first) > 6))
+      break;
+
+    for (auto s : i->second)
+    {
+      point_lists_["VMM_top"].push_back(Point(s, i->first));
+      candidate_count++;
+      candidate_wsum += s;
+      if (s < lextremum)
+        lextremum = s;
+      if (s > rextremum)
+        rextremum = s;
+    }
+
+    levels++;
+  }
+
+  double entry_strip_avg{-1};
+  if (candidate_count > 0)
+    entry_strip_avg = double(candidate_wsum) / double(candidate_count);
+
+
+  int uncert {-1};
+  if (lextremum != -1)
+    uncert = rextremum - lextremum;
+
   metrics_["nonempty_words"] =
       Setting(Variant::from_uint(nonempty_words),
               "Number of non-zero bytes in record");
@@ -309,7 +346,15 @@ void Record::analyze()
 
   metrics_["entry_strip"] =
       Setting(Variant::from_int(entry_strip),
-              "Strip of latest maximum (via VMM emulation)");
+              "Strip of latest maximum (VMM)");
+
+  metrics_["entry_strip_avg"] =
+      Setting(Variant::from_float(entry_strip_avg),
+              "Average strip of best latest maxima (VMM)");
+
+  metrics_["entry_strip_uncert"] =
+      Setting(Variant::from_int(uncert),
+              "Uncertainty of entry strip = span of best latest maxima (VMM)");
 
   metrics_["entry_time"] =
       Setting(Variant::from_int(entry_tb),
@@ -380,13 +425,16 @@ void Record::analyze()
       Setting(Variant::from_uint(VMM_count),
               "# of VMM data points in event");
 
-  metrics_strip_space(integral, tw_sum, cg_sum, cgt_sum, strips_.size(), strip_start_, strip_end_,
+  metrics_strip_space(integral, tw_sum, cg_sum, cgt_sum, strips_.size(),
+                      strip_start_, strip_end_,
                       "", "valid ADC values");
 
-  metrics_strip_space(integral_max, tw_sum_max, cg_sum_max, cgt_sum_max, hit_strips_max, start_max, end_max,
+  metrics_strip_space(integral_max, tw_sum_max, cg_sum_max, cgt_sum_max, hit_strips_max,
+                      start_max, end_max,
                       "_max", "local maxima");
 
-  metrics_strip_space(integral_vmm, tw_sum_vmm, cg_sum_vmm, cgt_sum_vmm, hit_strips_vmm, start_vmm, end_vmm,
+  metrics_strip_space(integral_vmm, tw_sum_vmm, cg_sum_vmm, cgt_sum_vmm, hit_strips_vmm,
+                      start_vmm, end_vmm,
                       "_vmm", "VMM maxima");
 }
 
