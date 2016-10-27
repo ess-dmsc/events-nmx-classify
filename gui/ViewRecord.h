@@ -26,7 +26,10 @@ public:
 
   void set_show_raw(bool);
   void set_overlay_type(QString);
-  void set_point_type(QString);
+
+  void set_point_type1(QString);
+  void set_point_type2(QString);
+
   void set_title(QString);
 
 private:
@@ -38,12 +41,16 @@ private:
 
   bool show_raw_{true};
   QString overlay_type_;
-  QString point_type_;
+
+  QString point_type1_;
+  QString point_type2_;
 
   void display_current_record();
 
   QPlot::EntryList make_list();
   std::list<QPlot::MarkerBox2D> make_overlay();
+
+  QPlot::MarkerBox2D make_box(double cx, double cy, double size, QColor color);
 };
 
 #endif // FORM_CALIBRATION_H

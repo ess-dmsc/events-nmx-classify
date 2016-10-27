@@ -38,9 +38,15 @@ void ViewRecord::set_overlay_type(QString overlay_type)
   display_current_record();
 }
 
-void ViewRecord::set_point_type(QString point_type)
+void ViewRecord::set_point_type1(QString point_type)
 {
-  point_type_ = point_type;
+  point_type1_ = point_type;
+  display_current_record();
+}
+
+void ViewRecord::set_point_type2(QString point_type)
+{
+  point_type2_ = point_type;
   display_current_record();
 }
 
@@ -74,36 +80,16 @@ void ViewRecord::display_current_record()
   auto metrics = record_.metrics();
 
   auto overlay = make_overlay();
-  int stripi = metrics["entry_strip"].value.as_int(-1);
-  if (stripi >= 0)
-  {
-    int timei = metrics["entry_time"].value.as_int(-1);
 
-    QPlot::MarkerBox2D box;
-    box.x1 = stripi - 0.2;
-    box.x2 = stripi + 0.2;
-    box.y1  = timei - 0.2;
-    box.y2  = timei + 0.2;
-    box.border = Qt::yellow;
-    box.fill = Qt::darkYellow;
-    overlay.push_back(box);
-  }
+  int timei = metrics["entry_time"].value.as_int(record_.time_end());
 
-  double strip_p = metrics[point_type_.toStdString()].value.as_float(-1);
-  if (strip_p >= 0)
-  {
-    int time_p = record_.time_end();
+  int strip1 = metrics[point_type1_.toStdString()].value.as_int(-1);
+  if ((strip1 >= 0) && (strip1 >= record_.strip_start()) && (strip1 <= record_.strip_end()))
+    overlay.push_back(make_box(strip1, timei, 0.5, Qt::yellow));
 
-    QPlot::MarkerBox2D box;
-    box.x1 = strip_p - 0.2;
-    box.x2 = strip_p + 0.2;
-    box.y1  = time_p - 0.2;
-    box.y2  = time_p + 0.2;
-    box.border = Qt::magenta;
-    box.fill = Qt::darkMagenta;
-    overlay.push_back(box);
-  }
-
+  int strip2 = metrics[point_type2_.toStdString()].value.as_int(-1);
+  if ((strip2 >= 0) && (strip2 >= record_.strip_start()) && (strip2 <= record_.strip_end()))
+    overlay.push_back(make_box(strip2, timei, 0.4, Qt::magenta));
 
   ui->plotRecord->setBoxes(overlay);
   ui->plotRecord->replotExtras();
@@ -125,21 +111,29 @@ QPlot::EntryList ViewRecord::make_list()
   return data;
 }
 
+QPlot::MarkerBox2D ViewRecord::make_box(double cx, double cy, double size, QColor color)
+{
+  QPlot::MarkerBox2D box;
+  box.x1 = cx - 0.5 *size;
+  box.x2 = cx + 0.5 *size;
+  box.y1  = cy - 0.5 *size;
+  box.y2  = cy + 0.5 *size;
+  box.border = color;
+  QColor color2 = QColor::fromHsvF(color.hsvHueF(), color.hsvSaturationF(), color.valueF() * 0.50);
+  color2.setAlpha(90);
+  box.fill = color2;
+  return box;
+}
+
+
 std::list<QPlot::MarkerBox2D> ViewRecord::make_overlay()
 {
   std::list<QPlot::MarkerBox2D> ret;
 
   for (auto &i : record_.get_points(overlay_type_.toStdString()))
   {
-    int stripi = i.first;
-
-    QPlot::MarkerBox2D box;
-    box.x1 = stripi - 0.45;
-    box.x2 = stripi + 0.45;
-    box.y1 = i.second - 0.45;
-    box.y2 = i.second + 0.45;
-    box.border = Qt::red;
-    box.fill = QColor(0xFF, 0, 0, 48);
+    auto box = make_box(i.first, i.second, 0.9, Qt::red);
+    box.fill.setAlpha(48);
     ret.push_back(box);
   }
 

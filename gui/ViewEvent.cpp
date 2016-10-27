@@ -27,9 +27,14 @@ ViewEvent::ViewEvent(QWidget *parent) :
   for (auto &name : rec.point_categories())
     ui->comboOverlay->addItem(QString::fromStdString(name));
   ui->comboOverlay->addItem("none");
+
   for (auto &name : rec.metrics())
-    ui->comboPoint->addItem(QString::fromStdString(name.first));
-  ui->comboPoint->addItem("none");
+  {
+    ui->comboPoint1->addItem(QString::fromStdString(name.first));
+    ui->comboPoint2->addItem(QString::fromStdString(name.first));
+  }
+  ui->comboPoint1->addItem("none");
+  ui->comboPoint2->addItem("none");
 
   NMX::Event evt;
   evt.analyze();
@@ -45,8 +50,11 @@ ViewEvent::ViewEvent(QWidget *parent) :
   ui->eventX->set_overlay_type(ui->comboOverlay->currentText());
   ui->eventY->set_overlay_type(ui->comboOverlay->currentText());
 
-  ui->eventX->set_point_type(ui->comboPoint->currentText());
-  ui->eventY->set_point_type(ui->comboPoint->currentText());
+  ui->eventX->set_point_type1(ui->comboPoint1->currentText());
+  ui->eventY->set_point_type1(ui->comboPoint1->currentText());
+
+  ui->eventX->set_point_type2(ui->comboPoint2->currentText());
+  ui->eventY->set_point_type2(ui->comboPoint2->currentText());
 
   ui->eventX->set_show_raw(ui->checkRaw->isChecked());
   ui->eventY->set_show_raw(ui->checkRaw->isChecked());
@@ -59,6 +67,7 @@ ViewEvent::ViewEvent(QWidget *parent) :
 //                                          ShowOptions::zoom | ShowOptions::dither);
 
   on_comboPlanes_currentIndexChanged("");
+  on_comboProjection_activated("");
 }
 
 ViewEvent::~ViewEvent()
@@ -110,7 +119,8 @@ void ViewEvent::loadSettings()
   ui->checkRaw->setChecked(settings.value("show_raw", true).toBool());
   ui->comboOverlay->setCurrentText(settings.value("overlay").toString());
   ui->comboProjection->setCurrentText(settings.value("projection").toString());
-  ui->comboPoint->setCurrentText(settings.value("point").toString());
+  ui->comboPoint1->setCurrentText(settings.value("point1").toString());
+  ui->comboPoint2->setCurrentText(settings.value("point2").toString());
   ui->comboPlanes->setCurrentText(settings.value("show_planes", "X & Y").toString());
 }
 
@@ -122,13 +132,16 @@ void ViewEvent::saveSettings()
   settings.setValue("current_idx", ui->spinEventIdx->value());
   settings.setValue("overlay", ui->comboOverlay->currentText());
   settings.setValue("projection", ui->comboProjection->currentText());
-  settings.setValue("point", ui->comboPoint->currentText());
+  settings.setValue("point1", ui->comboPoint1->currentText());
+  settings.setValue("point2", ui->comboPoint2->currentText());
   settings.setValue("show_planes", ui->comboPlanes->currentText());
 }
 
 
 void ViewEvent::clear()
 {
+  event_ = NMX::Event();
+
   ui->eventX->clear();
   ui->eventY->clear();
 
@@ -161,7 +174,10 @@ void ViewEvent::on_comboOverlay_currentIndexChanged(const QString &/*arg1*/)
 
 void ViewEvent::on_comboProjection_activated(const QString &/*arg1*/)
 {
-  plot_current_event();
+  bool visible = (ui->comboProjection->currentText() != "none");
+  ui->plotProjection->setVisible(visible);
+  if (visible)
+    plot_current_event();
 }
 
 void ViewEvent::on_checkRaw_clicked()
@@ -191,22 +207,22 @@ void ViewEvent::plot_current_event()
   }
 
 
-  NMX::Event evt = reader_->get_event_with_metrics(evt_idx);
+  event_ = reader_->get_event_with_metrics(evt_idx);
 
   if (evt_idx >= reader_->num_analyzed())
   {
-    evt.set_parameters(params_);
-    evt.analyze();
+    event_.set_parameters(params_);
+    event_.analyze();
   }
 
-  ui->eventX->display_record(evt.x());
-  ui->eventY->display_record(evt.y());
+  ui->eventX->display_record(event_.x());
+  ui->eventY->display_record(event_.y());
 
-  auto metrics = evt.metrics();
+  auto metrics = event_.metrics();
   if (ui->comboPlanes->currentText() == "X")
-    metrics = evt.x().metrics();
+    metrics = event_.x().metrics();
   else if (ui->comboPlanes->currentText() == "Y")
-    metrics = evt.y().metrics();
+    metrics = event_.y().metrics();
 
   ui->tableValues->clearContents();
   ui->tableValues->setRowCount(metrics.size());
@@ -218,7 +234,11 @@ void ViewEvent::plot_current_event()
     i++;
   }
 
-  display_projection(evt);
+  display_projection(event_);
+  auto desc1 = event_.x().metrics()[ui->comboPoint1->currentText().toStdString()].description;
+  ui->labelPoint1->setText(QString::fromStdString(desc1));
+  auto desc2 = event_.x().metrics()[ui->comboPoint2->currentText().toStdString()].description;
+  ui->labelPoint2->setText(QString::fromStdString(desc2));
 }
 
 void ViewEvent::set_indices(std::set<size_t> indices)
@@ -268,8 +288,16 @@ void ViewEvent::on_comboPlanes_currentIndexChanged(const QString&)
   plot_current_event();
 }
 
-void ViewEvent::on_comboPoint_currentIndexChanged(const QString &arg1)
+void ViewEvent::on_comboPoint1_currentIndexChanged(const QString &arg1)
 {
-  ui->eventX->set_point_type(ui->comboPoint->currentText());
-  ui->eventY->set_point_type(ui->comboPoint->currentText());
+  ui->eventX->set_point_type1(ui->comboPoint1->currentText());
+  ui->eventY->set_point_type1(ui->comboPoint1->currentText());
+  plot_current_event();
+}
+
+void ViewEvent::on_comboPoint2_currentIndexChanged(const QString &arg1)
+{
+  ui->eventX->set_point_type2(ui->comboPoint2->currentText());
+  ui->eventY->set_point_type2(ui->comboPoint2->currentText());
+  plot_current_event();
 }

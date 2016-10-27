@@ -42,13 +42,15 @@ private slots:
 
   void on_comboPlanes_currentIndexChanged(const QString &arg1);
 
-  void on_comboPoint_currentIndexChanged(const QString &arg1);
+  void on_comboPoint1_currentIndexChanged(const QString &arg1);
+  void on_comboPoint2_currentIndexChanged(const QString &arg1);
 
 private:
   Ui::ViewEvent *ui;
 
   std::shared_ptr<NMX::FileHDF5> reader_;
   NMX::Settings params_;
+  NMX::Event event_;
 
   std::vector<size_t> indices_;
 
