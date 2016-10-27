@@ -36,7 +36,6 @@ public:
   std::list<size_t> VMM_maxima() const {return VMM_maxima_;}
 
 private:
-//  std::vector<int16_t> data_;
   std::map<size_t, int16_t> data_;
 
   bool    nonzero_   {false};

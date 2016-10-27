@@ -40,30 +40,75 @@ Record::Record()
   projections_["time_integral"] = ProjPointList();
 }
 
+Record::Record(const std::vector<short>& data, size_t striplength)
+  : Record()
+{
+  if (striplength < 1)
+    return;
+  size_t timelength = data.size() / striplength;
+  if ((timelength * striplength) != data.size())
+    return;
+
+  size_t i {0};
+  std::map<size_t, std::map<size_t, short>> timebins;
+  for (size_t j = 0; j < data.size(); j += striplength)
+  {
+    Strip strip(std::vector<short>(data.begin() + j, data.begin() + j + striplength));
+    add_strip(i, strip);
+    if (strip.nonzero())
+      for (int t=strip.start(); t <= strip.end(); ++t)
+        timebins[t][i] = strip.value(t);
+    i++;
+  }
+
+  for (auto t : timebins)
+  {
+    std::vector<short> tb(timelength, 0);
+    for (auto s : t.second)
+      tb[s.first] = s.second;
+    add_timebin(t.first, Strip(tb));
+  }
+}
+
+Record Record::suppress_negatives() const
+{
+  Record newrecord;
+
+  for (auto s : strips_)
+    newrecord.add_strip(s.first, s.second.suppress_negatives());
+
+  for (auto t : timebins_)
+    newrecord.add_timebin(t.first, t.second.suppress_negatives());
+
+  return newrecord;
+}
+
 void Record::add_strip(int16_t idx, const Strip &strip)
 {
-  if (idx < 0)
-  {
-    DBG << "<Record::add_strip> bad strip index " << idx;
+  if ((idx < 0) || !strip.nonzero())
     return;
-  }
 
-  if (strip.nonzero())
-  {
-    strips_[idx] = strip;
+  strips_[idx] = strip;
 
-    if (strip_start_ < 0)
-      strip_start_ = idx;
-    else
-      strip_start_ = std::min(strip_start_, idx);
-    strip_end_ = std::max(strip_end_, idx);
+  if (strip_start_ < 0)
+    strip_start_ = idx;
+  else
+    strip_start_ = std::min(strip_start_, idx);
+  strip_end_ = std::max(strip_end_, idx);
+}
 
-    if (time_start_ < 0)
-      time_start_ = strip.bin_start();
-    else
-      time_start_ = std::min(time_start_, strip.bin_start());
-    time_end_ = std::max(time_end_, strip.bin_end());
-  }
+void Record::add_timebin(int16_t idx, const Strip &timebin)
+{
+  if ((idx < 0) || !timebin.nonzero())
+    return;
+
+  timebins_[idx] = timebin;
+
+  if (time_start_ < 0)
+    time_start_ = idx;
+  else
+    time_start_ = std::min(time_start_, idx);
+  time_end_ = std::max(time_end_, idx);
 }
 
 PointList Record::get_points(std::string id) const
@@ -101,14 +146,6 @@ void Record::clear_metrics()
 bool Record::empty() const
 {
   return ((strip_start_ < 0) || (strip_end_ < strip_start_) || strips_.empty());
-}
-
-Record Record::suppress_negatives() const
-{
-  Record newrecord;
-  for (auto &s : strips_)
-    newrecord.add_strip(s.first, s.second.suppress_negatives());
-  return newrecord;
 }
 
 std::list<int16_t > Record::valid_strips() const
@@ -204,8 +241,6 @@ void Record::analyze()
   int end_vmm {-1};
   size_t VMM_count {0};
 
-  std::vector<std::vector<int16_t>> sideways(time_end() + 1,
-                                           std::vector<int16_t>(strip_end_ + 1, 0));
 
   int32_t integral {0};
   int32_t integral_max {0};
@@ -223,7 +258,6 @@ void Record::analyze()
   double tw_sum_max {0};
   double tw_sum_vmm {0};
 
-  std::set<int> tbins;
   std::map<int, std::vector<int>> best_candidates;
 
   for (auto &s : strips_)
@@ -246,25 +280,23 @@ void Record::analyze()
         start_vmm = s.first;
     }
 
-    if (s.second.nonzero() && ((tbstart == -1) || (s.second.bin_start() < tbstart)))
-      tbstart = s.second.bin_start();
-    if (s.second.bin_end() > tbstop)
-      tbstop = s.second.bin_end();
+    if (s.second.nonzero() && ((tbstart == -1) || (s.second.start() < tbstart)))
+      tbstart = s.second.start();
+    if (s.second.end() > tbstop)
+      tbstop = s.second.end();
 
     cg_sum += s.first * s.second.integral();
     integral += s.second.integral();
-    nonempty_words += s.second.num_valid_bins();
+    nonempty_words += s.second.num_valid();
 
     if (s.second.nonzero())
-      for (int i=s.second.bin_start(); i <= s.second.bin_end(); ++i)
+      for (int i=s.second.start(); i <= s.second.end(); ++i)
         if (s.second.value(i) != 0)
         {
-          tbins.insert(i);
           auto tw = i*i;
           auto val = s.second.value(i);
           cgt_sum += s.first * tw; // * val;
           tw_sum += tw ; // * val;
-          sideways[i][s.first] = val;
         }
 
     VMM_count += s.second.VMM_maxima().size();
@@ -302,6 +334,7 @@ void Record::analyze()
     for (auto m : s.second.global_maxima())
       point_lists_["global_maxima"].push_back(Point(s.first, m));
   }
+
 
   int levels {0};
   int candidate_wsum {0};
@@ -341,7 +374,7 @@ void Record::analyze()
               "Number of non-zero bytes in record");
 
   metrics_["hit_timebins"] =
-      Setting(Variant::from_uint(tbins.size()),
+      Setting(Variant::from_uint(timebins_.size()),
               "Number of timebins with valid ADC values");
 
   metrics_["entry_strip"] =
@@ -368,22 +401,21 @@ void Record::analyze()
   auto t_adc_threshold = parameters_["ADC_threshold_time"].value.as_int();
   auto t_tb_over_threshold = parameters_["TB_over_threshold_time"].value.as_int();
   auto uness_threshold = parameters_["U-ness_threshold"].value.as_int();
-  for (size_t i=0; i < sideways.size(); ++i)
+  for (auto tb : timebins_)
   {
-    Strip newstrip(sideways.at(i));
-    newstrip.analyze(t_adc_threshold, t_tb_over_threshold);
-    projections_["time_integral"].push_back(ProjectionPoint({i, newstrip.integral()}));
+    tb.second.analyze(t_adc_threshold, t_tb_over_threshold);
+    projections_["time_integral"].push_back(ProjectionPoint({tb.first, tb.second.integral()}));
 
-    auto maxima = newstrip.maxima();
+    auto maxima = tb.second.maxima();
     for (int m : maxima)
-      point_lists_["tb_maxima"].push_back(Point(m, i));
+      point_lists_["tb_maxima"].push_back(Point(m, tb.first));
 
     if ((maxima.size() >= 2) && (int(maxima.back() - maxima.front()) > uness_threshold))
       u_ness++;
 
-    auto maxima2 = newstrip.VMM_maxima();
+    auto maxima2 = tb.second.VMM_maxima();
     for (int m : maxima2)
-      point_lists_["tb_maxima2"].push_back(Point(m, i));
+      point_lists_["tb_maxima2"].push_back(Point(m, tb.first));
 
     if ((maxima2.size() >= 2) && (int(maxima2.back() - maxima2.front()) > uness_threshold))
       u_ness2++;
@@ -415,7 +447,7 @@ void Record::analyze()
 
   double time_density = 0;
   if (timebin_span > 0)
-    time_density = double(tbins.size()) / double(timebin_span) * 100.0;
+    time_density = double(timebins_.size()) / double(timebin_span) * 100.0;
 
   metrics_["time_density"] =
       Setting(Variant::from_float(time_density),
@@ -427,47 +459,46 @@ void Record::analyze()
 
   metrics_strip_space(integral, tw_sum, cg_sum, cgt_sum, strips_.size(),
                       strip_start_, strip_end_,
-                      "", "valid ADC values");
+                      "strips", "all", "valid ADC values");
 
   metrics_strip_space(integral_max, tw_sum_max, cg_sum_max, cgt_sum_max, hit_strips_max,
                       start_max, end_max,
-                      "_max", "local maxima");
+                      "strips", "max", "local maxima");
 
   metrics_strip_space(integral_vmm, tw_sum_vmm, cg_sum_vmm, cgt_sum_vmm, hit_strips_vmm,
                       start_vmm, end_vmm,
-                      "_vmm", "VMM maxima");
+                      "strips", "vmm", "VMM maxima");
 }
 
 
 void Record::metrics_strip_space(int32_t integral, double tw_integral,
                                  double cg_sum, double cgt_sum,
-                                 size_t hit_strips,
-                                 int start, int end, std::string suffix,
-                                 std::string description)
+                                 size_t hit_strips, int start, int end,
+                                 std::string space, std::string type, std::string description)
 {
-  metrics_["hit_strips" + suffix] =
+  metrics_[space + "_" + type + "_valid"] =
       Setting(Variant::from_uint(hit_strips),
-              "Number of strips with " + description);
+              "Number of " + space + " with " + description);
 
   int span {0};
   if ((start >= 0) && (end >= start))
     span = end - start + 1;
 
-  metrics_["strip_span" + suffix] =
+  metrics_[space + "_" + type + "_span"] =
       Setting(Variant::from_uint(span),
-              "Span of strips with " + description);
+              "Span of " + space + " with " + description);
 
   double strip_density {0};
   if (span > 0)
     strip_density = double(hit_strips) / double(span) * 100.0;
 
-  metrics_["strip_density" + suffix] =
+  metrics_[space + "_" + type + "_density"] =
       Setting(Variant::from_float(strip_density),
-              "% of strips in strip span with " + description);
+              "% of " + space + " in span with " + description);
 
-  metrics_["integral" + suffix] =
+  metrics_[space + "_" + type + "_integral"] =
       Setting(Variant::from_int(integral),
-              "Integral of " + description);
+              "Integral of " + space + " with " + description);
 
   double integral_per_hitstrips {0};
   if (hit_strips > 0)
@@ -483,17 +514,17 @@ void Record::metrics_strip_space(int32_t integral, double tw_integral,
   if (tw_integral > 0)
     center_of_gravity_time_weighted = cgt_sum / double(tw_integral);
 
-  metrics_["integral_per_hitstrips" + suffix] =
+  metrics_[space + "_" + type + "_integral_density"] =
       Setting(Variant::from_float(integral_per_hitstrips),
-              "integral" + suffix + " / hit_strips" + suffix);
+              space + "_" + type + "_integral / " + space + "_" + type + "_valid");
 
-  metrics_["cg" + suffix] =
+  metrics_[space + "_" + type + "_center"] =
       Setting(Variant::from_float(center_of_gravity),
-              "center of gravity using " + description);
+              space + " center of gravity using " + description);
 
-  metrics_["cgt" + suffix] =
+  metrics_[space + "_" + type + "_center2"] =
       Setting(Variant::from_float(center_of_gravity),
-              "time-weighted center of gravity using " + description);
+              space + " center of gravity using " + description + " (orthogonally weighted)");
 
 }
 

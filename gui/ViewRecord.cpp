@@ -104,7 +104,7 @@ QPlot::EntryList ViewRecord::make_list()
   {
     auto strip = record_.get_strip(i);
     int stripi = i - record_.strip_start();
-    for (int tb=strip.bin_start(); tb <= strip.bin_end(); ++tb)
+    for (int tb=strip.start(); tb <= strip.end(); ++tb)
       if (strip.value(tb))
         data.push_back(QPlot::Entry{{stripi,tb}, strip.value(tb)});
   }

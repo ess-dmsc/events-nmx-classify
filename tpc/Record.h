@@ -31,8 +31,7 @@ class Record
 {
 public:
   Record();
-
-  void add_strip(int16_t idx, const Strip &raw);
+  Record(const std::vector<short>& data, size_t striplength);
 
   bool empty() const;
   std::string debug() const;
@@ -69,6 +68,8 @@ public:
 
 private:
   std::map<int16_t , Strip> strips_;
+  std::map<int16_t , Strip> timebins_;
+
   int16_t strip_start_ {-1};
   int16_t strip_end_   {-1};
   int16_t time_start_ {-1};
@@ -81,9 +82,12 @@ private:
   Settings metrics_;
 
   void metrics_strip_space(int32_t integral, double tw_integral,
-                           double cg_sum, double cgt_sum, size_t hit_strips,
-                           int start, int end, std::string suffix,
-                           std::string description);
+                           double cg_sum, double cgt_sum,
+                           size_t hit_strips, int start, int end,
+                           std::string space, std::string type, std::string description);
+
+  void add_strip(int16_t idx, const Strip &strip);
+  void add_timebin(int16_t idx, const Strip &timebin);
 };
 
 

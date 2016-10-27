@@ -52,23 +52,12 @@ Event FileHDF5::get_event(size_t index)
 
 Record FileHDF5::read_record(size_t index, size_t plane)
 {
-  Record ret;
-
   if (index >= event_count_)
-    return ret;
+    return Record();
 
   std::vector<short> data;
   dataset_.read(data, H5::PredType::STD_I16LE, {1,1,-1,-1}, {index, plane, 0, 0});
-
-  auto striplength = dataset_.dim(3);
-  size_t i = 0;
-  for (size_t j = 0; j < data.size(); j += striplength)
-  {
-    ret.add_strip(i, std::vector<short>(data.begin() + j, data.begin() + j + striplength));
-    i++;
-  }
-
-  return ret;
+  return Record(data, dataset_.dim(3));
 }
 
 size_t FileHDF5::num_analyzed() const
