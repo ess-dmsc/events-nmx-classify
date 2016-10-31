@@ -2,49 +2,66 @@
 #define NMX_RECORD_H
 
 #include "Strip.h"
-#include "Variant.h"
-
 #include <map>
 
 namespace NMX
 {
 
-struct Setting
-{
-  Setting() {}
-  Setting(Variant v, std::string descr)
-    : description(descr), value(v) {}
-
-  std::string description;
-  Variant value;
-};
-
-using Settings = std::map<std::string, Setting>;
-
-using Point = std::pair<int, int>;
+using Point = std::pair<int16_t, int16_t>;
 using PointList = std::list<Point>;
 
-using ProjectionPoint = std::pair<int, double>;
+using ProjectionPoint = std::pair<int16_t, double>;
 using ProjPointList = std::list<ProjectionPoint>;
+
+struct PlanePerspective
+{
+  std::map<int16_t , Strip> data;
+
+  int16_t start {-1};
+  int16_t end   {-1};
+
+  int32_t integral {0};
+  double cg_sum {0};
+  double cgt_sum {0};
+  double tw_sum {0};
+  int16_t cuness {0};
+
+  void add_data(int16_t idx, const Strip &strip);
+  PlanePerspective subset(std::string name, Settings params) const;
+  static Settings default_params();
+
+  void make_metrics(std::string space, std::string type, std::string description);
+
+  size_t  span() const;
+
+  PointList points(bool flip = false) const;
+
+  Settings metrics;
+  ProjPointList projection;
+
+private:
+  PointList point_list;
+};
+
 
 class Record
 {
 public:
   Record();
-  Record(const std::vector<short>& data, size_t striplength);
+  Record(const std::vector<int16_t>& data, size_t striplength);
 
   bool empty() const;
   std::string debug() const;
 
-  int16_t strip_start() const {return strip_start_;}
-  int16_t   strip_end() const {return strip_end_;}
-  size_t  strip_span() const;
+  int16_t strip_start() const {return strips_.start;}
+  int16_t   strip_end() const {return strips_.end;}
+  size_t  strip_span() const {return strips_.span();}
 
-  int16_t time_start() const {return time_start_;}
-  int16_t   time_end() const {return time_end_;}
-  size_t  time_span() const;
+  int16_t time_start() const {return timebins_.start;}
+  int16_t   time_end() const {return timebins_.end;}
+  size_t  time_span() const {return timebins_.span();}
 
-  std::list<int16_t > valid_strips() const;
+  std::list<int16_t > valid_strips() const; //deprecate?
 
   int16_t get(int16_t  strip, int16_t  timebin) const;
   Strip get_strip(int16_t  strip) const;
@@ -67,13 +84,8 @@ public:
   ProjPointList get_projection(std::string) const;
 
 private:
-  std::map<int16_t , Strip> strips_;
-  std::map<int16_t , Strip> timebins_;
-
-  int16_t strip_start_ {-1};
-  int16_t strip_end_   {-1};
-  int16_t time_start_ {-1};
-  int16_t time_end_   {-1};
+  PlanePerspective strips_;
+  PlanePerspective timebins_;
 
   std::map<std::string, PointList> point_lists_;
   std::map<std::string, ProjPointList> projections_;
@@ -86,8 +98,6 @@ private:
                            size_t hit_strips, int start, int end,
                            std::string space, std::string type, std::string description);
 
-  void add_strip(int16_t idx, const Strip &strip);
-  void add_timebin(int16_t idx, const Strip &timebin);
 };
 
 

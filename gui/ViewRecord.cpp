@@ -81,13 +81,13 @@ void ViewRecord::display_current_record()
 
   auto overlay = make_overlay();
 
-  int timei = metrics["entry_time"].value.as_int(record_.time_end());
+  int timei = metrics.get_value("entry_time").as_int(record_.time_end());
 
-  int strip1 = metrics[point_type1_.toStdString()].value.as_int(-1);
+  int strip1 = metrics.get_value(point_type1_.toStdString()).as_int(-1);
   if ((strip1 >= 0) && (strip1 >= record_.strip_start()) && (strip1 <= record_.strip_end()))
     overlay.push_back(make_box(strip1, timei, 0.5, Qt::yellow));
 
-  int strip2 = metrics[point_type2_.toStdString()].value.as_int(-1);
+  int strip2 = metrics.get_value(point_type2_.toStdString()).as_int(-1);
   if ((strip2 >= 0) && (strip2 >= record_.strip_start()) && (strip2 <= record_.strip_end()))
     overlay.push_back(make_box(strip2, timei, 0.4, Qt::magenta));
 

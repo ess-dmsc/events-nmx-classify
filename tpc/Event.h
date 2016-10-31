@@ -16,7 +16,6 @@ struct Event
 
   bool empty() const;
   std::string debug() const;
-  std::string debug_metrics() const;
 
   void analyze();
   void clear_metrics();

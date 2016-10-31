@@ -67,7 +67,7 @@ void tpcc::collect_params()
   {
     std::string name = ui->tableParams->model()->data(ui->tableParams->model()->index(i,0)).toString().toStdString();
     double val = static_cast<QDoubleSpinBox*>(ui->tableParams->cellWidget(i, 1))->value();
-    parameters_[name].value = Variant::from_float(val);
+    parameters_.set(name, Variant::from_float(val));
   }
 }
 
@@ -75,7 +75,7 @@ void tpcc::display_params()
 {
   ui->tableParams->setRowCount(parameters_.size());
   int i = 0;
-  for (auto &param : parameters_)
+  for (auto &param : parameters_.sets_)
   {
     QTableWidgetItem * item = new QTableWidgetItem(QString::fromStdString(param.first));
     ui->tableParams->setItem(i, 0, item);
@@ -187,9 +187,7 @@ void tpcc::on_pushStart_clicked()
   collect_params();
 
   DBG << "Analyzing using params:";
-
-  for (auto &param : parameters_)
-    DBG << param.first << " (" << param.second.value.type_name() << ") = " << param.second.value.to_string();
+  DBG << parameters_.debug();
 
   thread_classify_.go(reader_, parameters_);
 }

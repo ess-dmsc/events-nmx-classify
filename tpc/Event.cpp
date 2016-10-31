@@ -13,9 +13,8 @@ Event::Event(Record xx, Record yy)
   , y_(yy)
 {
   collect_values();
-  parameters_["suppress_negatives"] =
-      Setting(Variant::from_int(1),
-              "Suppress negative ADC values prior to analysis");
+  parameters_.set("suppress_negatives",
+                  Setting(Variant::from_int(1), "Suppress negative ADC values prior to analysis"));
 }
 
 bool Event::empty() const
@@ -29,25 +28,13 @@ std::string Event::debug() const
          + "Y: " + y_.debug();
 }
 
-std::string Event::debug_metrics() const
-{
-  std::string ret;
-  for (auto &m : metrics_)
-    ret += m.first + " = " + m.second.value.to_string() + "\n";
-  return ret;
-}
-
 void Event::collect_values()
 {
-  for (auto &a : x_.parameters())
-    parameters_["x." + a.first] = a.second;
-  for (auto &a : y_.parameters())
-    parameters_["y." + a.first] = a.second;
+  parameters_.merge(x_.parameters().prepend("x."));
+  parameters_.merge(y_.parameters().prepend("y."));
 
-  for (auto &a : x_.metrics())
-    metrics_["x." + a.first] = a.second;
-  for (auto &a : y_.metrics())
-    metrics_["y." + a.first] = a.second;
+  metrics_.merge(x_.metrics().prepend("x."));
+  metrics_.merge(y_.metrics().prepend("y."));
 
   for (auto &a : x_.projection_categories())
     projections_["x." + a] = x_.get_projection(a);
@@ -57,7 +44,7 @@ void Event::collect_values()
 
 void Event::set_parameters(Settings vals)
 {
-  for (auto &v : vals)
+  for (auto &v : vals.sets_)
     set_parameter(v.first, v.second.value);
 }
 
@@ -72,8 +59,8 @@ void Event::set_parameter(std::string id, Variant val, bool apply)
     x_.set_parameter(id.substr(2, id.size() - 2), val);
   else if ((id.size() > 1) && (boost::algorithm::to_lower_copy(id.substr(0,1)) == "y"))
     y_.set_parameter(id.substr(2, id.size() - 2), val);
-  else if (parameters_.count(id))
-    parameters_[id].value = val;
+  else if (parameters_.contains(id))
+    parameters_.set(id, val);
 
   if (apply && (id == "suppress_negatives") && val.as_int())
     suppress_negatives();
@@ -81,7 +68,7 @@ void Event::set_parameter(std::string id, Variant val, bool apply)
 
 void Event::set_metric(std::string id, Variant val, std::string descr)
 {
-  metrics_[id] = Setting(val, descr);
+  metrics_.set(id, Setting(val, descr));
   if ((id.size() > 1) && (boost::algorithm::to_lower_copy(id.substr(0,1)) == "x"))
     x_.set_metric(id.substr(2, id.size() - 2), val, descr);
   else if ((id.size() > 1) && (boost::algorithm::to_lower_copy(id.substr(0,1)) == "y"))
@@ -98,7 +85,7 @@ void Event::clear_metrics()
 void Event::suppress_negatives()
 {
   Event evt(x_.suppress_negatives(), y_.suppress_negatives());
-  for (auto &v : parameters_)
+  for (auto &v : parameters_.sets_)
     evt.set_parameter(v.first, v.second.value, false);
   *this = evt;
 }
@@ -113,40 +100,40 @@ void Event::analyze()
 
   collect_values();
 
-  auto difftime = ax["entry_time"].value.as_int() - ay["entry_time"].value.as_int();
-  metrics_["diff_entry_time"] =
+  auto difftime = ax.get_value("entry_time").as_int() - ay.get_value("entry_time").as_int();
+  metrics_.set("diff_entry_time",
       Setting(Variant::from_int(difftime),
-              "X.entry_time - Y.entry_time");
+              "X.entry_time - Y.entry_time"));
 
-  auto diffspan = ax["strip_span"].value.as_int() - ay["strip_span"].value.as_int();
-  metrics_["diff_strip_span"] =
+  auto diffspan = ay.get_value("strip_span").as_int() - ay.get_value("strip_span").as_int();
+  metrics_.set("diff_strip_span",
       Setting(Variant::from_int(diffspan),
-              "X.strip_span - Y.strip_span");
+              "X.strip_span - Y.strip_span"));
 
-  auto difftspan = ax["timebin_span"].value.as_int() - ay["timebin_span"].value.as_int();
-  metrics_["diff_timebin_span"] =
+  auto difftspan = ay.get_value("timebin_span").as_int() - ay.get_value("timebin_span").as_int();
+  metrics_.set("diff_timebin_span",
       Setting(Variant::from_int(difftspan),
-              "X.timebin_span - Y.timebin_span");
+              "X.timebin_span - Y.timebin_span"));
 
-  auto VMM_count = ax["vmm_points"].value.as_int() + ay["vmm_points"].value.as_int();
-  metrics_["vmm_points"] =
+  auto VMM_count = ay.get_value("vmm_points").as_int() + ay.get_value("vmm_points").as_int();
+  metrics_.set("vmm_points",
       Setting(Variant::from_int(VMM_count),
-              "X.vmm_points + Y.vmm_points");
+              "X.vmm_points + Y.vmm_points"));
 
-  auto diff_integral = ax["integral"].value.as_int() - ay["integral"].value.as_int();
-  metrics_["diff_integral"] =
+  auto diff_integral = ay.get_value("integral").as_int() - ay.get_value("integral").as_int();
+  metrics_.set("diff_integral",
       Setting(Variant::from_int(diff_integral),
-              "X.integral - Y.integral");
+              "X.integral - Y.integral"));
 
-  auto diff_integral_max = ax["integral_max"].value.as_int() - ay["integral_max"].value.as_int();
-  metrics_["diff_integral_max"] =
+  auto diff_integral_max = ay.get_value("integral_max").as_int() - ay.get_value("integral_max").as_int();
+  metrics_.set("diff_integral_max",
       Setting(Variant::from_int(diff_integral_max),
-              "X.integral_max - Y.integral_max");
+              "X.integral_max - Y.integral_max"));
 
-  auto diff_integral_vmm = ax["integral_vmm"].value.as_int() - ay["integral_vmm"].value.as_int();
-  metrics_["diff_integral_vmm"] =
+  auto diff_integral_vmm = ay.get_value("integral_vmm").as_int() - ay.get_value("integral_vmm").as_int();
+  metrics_.set("diff_integral_vmm",
       Setting(Variant::from_int(diff_integral_vmm),
-              "X.integral_vmm - Y.integral_vmm");
+              "X.integral_vmm - Y.integral_vmm"));
 
   auto tbx = x_.get_projection("time_integral");
   auto tby = y_.get_projection("time_integral");

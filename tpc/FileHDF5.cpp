@@ -74,7 +74,7 @@ void FileHDF5::push_event_metrics(size_t index, const Event &event)
   if (analysis_params_.empty())
     analysis_params_ = event.parameters();
 
-  for (auto &a : event.metrics())
+  for (auto &a : event.metrics().sets_)
   {
     if (metrics_[a.first].empty())
     {
@@ -173,7 +173,7 @@ bool FileHDF5::save_analysis()
 
   auto params_group = group.group("parameters");
   auto params_descr_group = params_group.group("descriptions");
-  for (auto &d : analysis_params_)
+  for (auto &d : analysis_params_.sets_)
   {
     params_group.write_attribute(d.first, d.second.value);
     params_descr_group.write_attribute(d.first, Variant::from_menu(d.second.description));
@@ -217,8 +217,8 @@ bool FileHDF5::load_analysis(std::string name)
   auto params_group = group.open_group("parameters");
   auto params_descr_group = params_group.open_group("descriptions");
   for (auto &p : params_group.attributes())
-    analysis_params_[p] = Setting(params_group.read_attribute(p),
-                                  params_descr_group.read_attribute(p).to_string());
+    analysis_params_.set(p, Setting(params_group.read_attribute(p),
+                                  params_descr_group.read_attribute(p).to_string()));
 
   std::vector<double> data;
   auto dataset = group.open_dataset("metrics");

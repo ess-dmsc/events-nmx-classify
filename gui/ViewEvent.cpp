@@ -14,7 +14,7 @@ ViewEvent::ViewEvent(QWidget *parent) :
   ui->comboPlanes->addItem("Y");
   ui->comboPlanes->addItem("X & Y");
 
-  ui->tableValues->verticalHeader()->hide();
+//  ui->tableValues->verticalHeader()->hide();
   ui->tableValues->setColumnCount(2);
   ui->tableValues->setHorizontalHeaderLabels({"parameter", "value"});
   ui->tableValues->setSelectionMode(QAbstractItemView::NoSelection);
@@ -28,7 +28,7 @@ ViewEvent::ViewEvent(QWidget *parent) :
     ui->comboOverlay->addItem(QString::fromStdString(name));
   ui->comboOverlay->addItem("none");
 
-  for (auto &name : rec.metrics())
+  for (auto &name : rec.metrics().sets_)
   {
     ui->comboPoint1->addItem(QString::fromStdString(name.first));
     ui->comboPoint2->addItem(QString::fromStdString(name.first));
@@ -227,7 +227,7 @@ void ViewEvent::plot_current_event()
   ui->tableValues->clearContents();
   ui->tableValues->setRowCount(metrics.size());
   int i = 0;
-  for (auto &a : metrics)
+  for (auto &a : metrics.sets_)
   {
     add_to_table(ui->tableValues, i, 0, a.first);
     add_to_table(ui->tableValues, i, 1, a.second.value.to_string());
@@ -235,9 +235,9 @@ void ViewEvent::plot_current_event()
   }
 
   display_projection(event_);
-  auto desc1 = event_.x().metrics()[ui->comboPoint1->currentText().toStdString()].description;
+  auto desc1 = event_.x().metrics().get(ui->comboPoint1->currentText().toStdString()).description;
   ui->labelPoint1->setText(QString::fromStdString(desc1));
-  auto desc2 = event_.x().metrics()[ui->comboPoint2->currentText().toStdString()].description;
+  auto desc2 = event_.x().metrics().get(ui->comboPoint2->currentText().toStdString()).description;
   ui->labelPoint2->setText(QString::fromStdString(desc2));
 }
 
