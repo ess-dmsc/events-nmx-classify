@@ -41,6 +41,7 @@ public:
   void merge(const Settings& other);
   Settings prepend(std::string prefix) const;
   Settings only_with_prefix(std::string prefix, bool drop_prefix = true) const;
+  Settings only_with_suffix(std::string suffix, bool drop_suffix = true) const;
 
   std::string debug() const;
 };

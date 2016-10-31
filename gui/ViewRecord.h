@@ -27,8 +27,11 @@ public:
   void set_show_raw(bool);
   void set_overlay_type(QString);
 
-  void set_point_type1(QString);
-  void set_point_type2(QString);
+  void set_point_type1x(QString);
+  void set_point_type2x(QString);
+
+  void set_point_type1y(QString);
+  void set_point_type2y(QString);
 
   void set_title(QString);
 
@@ -42,8 +45,11 @@ private:
   bool show_raw_{true};
   QString overlay_type_;
 
-  QString point_type1_;
-  QString point_type2_;
+  QString point_type1x_;
+  QString point_type2x_;
+
+  QString point_type1y_;
+  QString point_type2y_;
 
   void display_current_record();
 

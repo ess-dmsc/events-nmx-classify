@@ -38,15 +38,27 @@ void ViewRecord::set_overlay_type(QString overlay_type)
   display_current_record();
 }
 
-void ViewRecord::set_point_type1(QString point_type)
+void ViewRecord::set_point_type1x(QString point_type)
 {
-  point_type1_ = point_type;
+  point_type1x_ = point_type;
   display_current_record();
 }
 
-void ViewRecord::set_point_type2(QString point_type)
+void ViewRecord::set_point_type2x(QString point_type)
 {
-  point_type2_ = point_type;
+  point_type2x_ = point_type;
+  display_current_record();
+}
+
+void ViewRecord::set_point_type1y(QString point_type)
+{
+  point_type1y_ = point_type;
+  display_current_record();
+}
+
+void ViewRecord::set_point_type2y(QString point_type)
+{
+  point_type2y_ = point_type;
   display_current_record();
 }
 
@@ -81,15 +93,17 @@ void ViewRecord::display_current_record()
 
   auto overlay = make_overlay();
 
-  int timei = metrics.get_value("entry_time").as_int(record_.time_end());
+  int strip1 = metrics.get_value(point_type1x_.toStdString()).as_int(-1);
+  int time1 = metrics.get_value(point_type1y_.toStdString()).as_int(-1);
+  if ((strip1 >= 0) && (strip1 >= record_.strip_start()) && (strip1 <= record_.strip_end())
+      && (time1 >= 0) && (time1 >= record_.time_start()) && (time1 <= record_.time_end()))
+    overlay.push_back(make_box(strip1, time1, 0.5, Qt::yellow));
 
-  int strip1 = metrics.get_value(point_type1_.toStdString()).as_int(-1);
-  if ((strip1 >= 0) && (strip1 >= record_.strip_start()) && (strip1 <= record_.strip_end()))
-    overlay.push_back(make_box(strip1, timei, 0.5, Qt::yellow));
-
-  int strip2 = metrics.get_value(point_type2_.toStdString()).as_int(-1);
-  if ((strip2 >= 0) && (strip2 >= record_.strip_start()) && (strip2 <= record_.strip_end()))
-    overlay.push_back(make_box(strip2, timei, 0.4, Qt::magenta));
+  int strip2 = metrics.get_value(point_type2x_.toStdString()).as_int(-1);
+  int time2 = metrics.get_value(point_type2y_.toStdString()).as_int(-1);
+  if ((strip2 >= 0) && (strip2 >= record_.strip_start()) && (strip2 <= record_.strip_end())
+    && (time2 >= 0) && (time2 >= record_.time_start()) && (time2 <= record_.time_end()))
+    overlay.push_back(make_box(strip2, time2, 0.4, Qt::magenta));
 
   ui->plotRecord->setBoxes(overlay);
   ui->plotRecord->replotExtras();

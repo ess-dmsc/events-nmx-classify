@@ -42,8 +42,11 @@ private slots:
 
   void on_comboPlanes_currentIndexChanged(const QString &arg1);
 
-  void on_comboPoint1_currentIndexChanged(const QString &arg1);
-  void on_comboPoint2_currentIndexChanged(const QString &arg1);
+  void on_comboPoint1x_currentIndexChanged(const QString &arg1);
+  void on_comboPoint2x_currentIndexChanged(const QString &arg1);
+
+  void on_comboPoint1y_currentIndexChanged(const QString &arg1);
+  void on_comboPoint2y_currentIndexChanged(const QString &arg1);
 
 private:
   Ui::ViewEvent *ui;

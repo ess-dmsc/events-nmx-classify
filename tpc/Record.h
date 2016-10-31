@@ -20,27 +20,32 @@ struct PlanePerspective
   int16_t start {-1};
   int16_t end   {-1};
 
-  int32_t integral {0};
-  double cg_sum {0};
-  double cgt_sum {0};
-  double tw_sum {0};
-  int16_t cuness {0};
-
   void add_data(int16_t idx, const Strip &strip);
   PlanePerspective subset(std::string name, Settings params) const;
   static Settings default_params();
 
   void make_metrics(std::string space, std::string type, std::string description);
 
+  PlanePerspective flip() const;
+
   size_t  span() const;
 
   PointList points(bool flip = false) const;
+  ProjPointList projection() const;
 
   Settings metrics;
-  ProjPointList projection;
 
 private:
+  PlanePerspective pick_best(int max_count, int max_span) const;
+
   PointList point_list;
+
+  int32_t integral {0};
+  int32_t sum_idx {0};
+  double sum_idx_val {0};
+  double sum_idx_ortho {0};
+  double sum_ortho {0};
+  int16_t cuness {0};
 };
 
 
@@ -92,11 +97,6 @@ private:
 
   Settings parameters_;
   Settings metrics_;
-
-  void metrics_strip_space(int32_t integral, double tw_integral,
-                           double cg_sum, double cgt_sum,
-                           size_t hit_strips, int start, int end,
-                           std::string space, std::string type, std::string description);
 
 };
 

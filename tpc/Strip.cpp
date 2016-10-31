@@ -72,6 +72,25 @@ Settings Settings::only_with_prefix(std::string prefix, bool drop_prefix) const
   return ret;
 }
 
+Settings Settings::only_with_suffix(std::string suffix, bool drop_suffix) const
+{
+  if (suffix.empty())
+    return *this;
+
+  Settings ret;
+  for (auto m : sets_)
+  {
+    auto id = m.first;
+    if ((id.size() > suffix.size()) && (id.substr(id.size() - suffix.size(), suffix.size()) == suffix))
+    {
+      if (drop_suffix)
+        id = id.substr(0, id.size() - suffix.size());
+      ret.set(id, m.second);
+    }
+  }
+  return ret;
+}
+
 void Settings::remove(std::initializer_list<std::string> ids)
 {
   for (auto id : ids)
