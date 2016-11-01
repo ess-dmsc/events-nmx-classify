@@ -34,11 +34,10 @@ public slots:
 private slots:
   void on_spinEventIdx_valueChanged(int arg1);
 
+  void on_comboPlot_currentIndexChanged(const QString &arg1);
   void on_comboOverlay_currentIndexChanged(const QString &arg1);
 
   void on_comboProjection_activated(const QString &arg1);
-
-  void on_checkRaw_clicked();
 
   void on_comboPlanes_currentIndexChanged(const QString &arg1);
 

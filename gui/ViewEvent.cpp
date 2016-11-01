@@ -25,8 +25,13 @@ ViewEvent::ViewEvent(QWidget *parent) :
   NMX::Record rec;
   rec.analyze();
   for (auto &name : rec.point_categories())
+  {
+    ui->comboPlot->addItem(QString::fromStdString(name));
     ui->comboOverlay->addItem(QString::fromStdString(name));
+  }
   ui->comboOverlay->addItem("none");
+  ui->comboPlot->addItem("none");
+  ui->comboPlot->addItem("everything");
 
   for (auto &name : rec.metrics().with_suffix("_c", false).with_prefix("strips", false).data())
   {
@@ -54,6 +59,9 @@ ViewEvent::ViewEvent(QWidget *parent) :
 
   loadSettings();
 
+  ui->eventX->set_plot_type(ui->comboPlot->currentText());
+  ui->eventY->set_plot_type(ui->comboPlot->currentText());
+
   ui->eventX->set_overlay_type(ui->comboOverlay->currentText());
   ui->eventY->set_overlay_type(ui->comboOverlay->currentText());
 
@@ -66,9 +74,6 @@ ViewEvent::ViewEvent(QWidget *parent) :
   ui->eventY->set_point_type2x(ui->comboPoint2x->currentText());
   ui->eventX->set_point_type2y(ui->comboPoint2y->currentText());
   ui->eventY->set_point_type2y(ui->comboPoint2y->currentText());
-
-  ui->eventX->set_show_raw(ui->checkRaw->isChecked());
-  ui->eventY->set_show_raw(ui->checkRaw->isChecked());
 
   ui->plotProjection->setScaleType("Linear");
   ui->plotProjection->setPlotStyle("Step center");
@@ -127,9 +132,9 @@ void ViewEvent::loadSettings()
 {
   QSettings settings;
   settings.beginGroup("Program");
-  ui->checkRaw->setChecked(settings.value("show_raw", true).toBool());
-  ui->comboOverlay->setCurrentText(settings.value("overlay").toString());
-  ui->comboProjection->setCurrentText(settings.value("projection").toString());
+  ui->comboPlot->setCurrentText(settings.value("plot", "everything").toString());
+  ui->comboOverlay->setCurrentText(settings.value("overlay", "maxima").toString());
+  ui->comboProjection->setCurrentText(settings.value("projection", "none").toString());
   ui->comboPoint1x->setCurrentText(settings.value("point1x").toString());
   ui->comboPoint2x->setCurrentText(settings.value("point2x").toString());
   ui->comboPoint1y->setCurrentText(settings.value("point1y").toString());
@@ -141,8 +146,8 @@ void ViewEvent::saveSettings()
 {
   QSettings settings;
   settings.beginGroup("Program");
-  settings.setValue("show_raw", ui->checkRaw->isChecked());
   settings.setValue("current_idx", ui->spinEventIdx->value());
+  settings.setValue("plot", ui->comboPlot->currentText());
   settings.setValue("overlay", ui->comboOverlay->currentText());
   settings.setValue("projection", ui->comboProjection->currentText());
   settings.setValue("point1x", ui->comboPoint1x->currentText());
@@ -180,12 +185,17 @@ void ViewEvent::on_spinEventIdx_valueChanged(int /*arg1*/)
   plot_current_event();
 }
 
+void ViewEvent::on_comboPlot_currentIndexChanged(const QString &/*arg1*/)
+{
+  ui->eventX->set_plot_type(ui->comboPlot->currentText());
+  ui->eventY->set_plot_type(ui->comboPlot->currentText());
+}
+
 void ViewEvent::on_comboOverlay_currentIndexChanged(const QString &/*arg1*/)
 {
   ui->eventX->set_overlay_type(ui->comboOverlay->currentText());
   ui->eventY->set_overlay_type(ui->comboOverlay->currentText());
 }
-
 
 void ViewEvent::on_comboProjection_activated(const QString &/*arg1*/)
 {
@@ -193,12 +203,6 @@ void ViewEvent::on_comboProjection_activated(const QString &/*arg1*/)
   ui->plotProjection->setVisible(visible);
   if (visible)
     plot_current_event();
-}
-
-void ViewEvent::on_checkRaw_clicked()
-{
-  ui->eventX->set_show_raw(ui->checkRaw->isChecked());
-  ui->eventY->set_show_raw(ui->checkRaw->isChecked());
 }
 
 void ViewEvent::set_params(NMX::Settings params)

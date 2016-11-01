@@ -26,9 +26,9 @@ void ViewRecord::set_title(QString title)
   ui->labelTitle->setText(title);
 }
 
-void ViewRecord::set_show_raw(bool show_raw)
+void ViewRecord::set_plot_type(QString plot_type)
 {
-  show_raw_ = show_raw;
+  plot_type_ = plot_type;
   display_current_record();
 }
 
@@ -84,7 +84,7 @@ void ViewRecord::display_current_record()
                           "Time bin",                          0, record_.time_end(),
                           "Charge");
 
-  if (show_raw_)
+  if (plot_type_ != "none")
     ui->plotRecord->updatePlot(record_.strip_span(), record_.time_end() + 1, make_list());
 
   auto metrics = record_.metrics();
@@ -112,7 +112,7 @@ HistList2D ViewRecord::make_list()
 {
   HistList2D data;
   auto start = record_.strip_start();
-  for (auto &p : record_.get_points())
+  for (auto &p : record_.get_points(plot_type_.toStdString()))
     data.push_back(p2d{p.x - start, p.y, p.v});
   return data;
 }
@@ -135,6 +135,9 @@ QPlot::MarkerBox2D ViewRecord::make_box(double cx, double cy, double size, QColo
 std::list<QPlot::MarkerBox2D> ViewRecord::make_overlay()
 {
   std::list<QPlot::MarkerBox2D> ret;
+
+  if (overlay_type_ == "none")
+    return ret;
 
   for (auto &i : record_.get_points(overlay_type_.toStdString()))
   {

@@ -24,7 +24,7 @@ public:
 
   void clear();
 
-  void set_show_raw(bool);
+  void set_plot_type(QString);
   void set_overlay_type(QString);
 
   void set_point_type1x(QString);
@@ -43,6 +43,8 @@ private:
   QPlot::Marker1D moving_;
 
   bool show_raw_{true};
+
+  QString plot_type_;
   QString overlay_type_;
 
   QString point_type1x_;
