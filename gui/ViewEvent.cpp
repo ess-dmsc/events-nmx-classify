@@ -255,9 +255,17 @@ void ViewEvent::plot_current_event()
 
   display_projection(event_);
   auto desc1x = event_.x().metrics().get(ui->comboPoint1x->currentText().toStdString()).description;
-  ui->labelPoint1->setText(QString::fromStdString(desc1x));
+  ui->labelPoint1x->setText(QString::fromStdString(desc1x));
+
+  auto desc1y = event_.y().metrics().get(ui->comboPoint1y->currentText().toStdString()).description;
+  ui->labelPoint1y->setText(QString::fromStdString(desc1y));
+
+
   auto desc2x = event_.x().metrics().get(ui->comboPoint2x->currentText().toStdString()).description;
-  ui->labelPoint2->setText(QString::fromStdString(desc2x));
+  ui->labelPoint2x->setText(QString::fromStdString(desc2x));
+
+  auto desc2y = event_.y().metrics().get(ui->comboPoint2y->currentText().toStdString()).description;
+  ui->labelPoint2y->setText(QString::fromStdString(desc2y));
 }
 
 void ViewEvent::set_indices(std::set<size_t> indices)

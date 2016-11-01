@@ -3,6 +3,7 @@
 #include <iomanip>
 #include <sstream>
 #include <set>
+#include "CustomLogger.h"
 
 namespace NMX {
 

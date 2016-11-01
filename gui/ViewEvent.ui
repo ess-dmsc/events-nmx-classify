@@ -301,6 +301,19 @@
       <widget class="QComboBox" name="comboPoint1x"/>
      </item>
      <item>
+      <widget class="QLabel" name="labelPoint1x">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QLabel" name="label_9">
        <property name="minimumSize">
         <size>
@@ -320,7 +333,7 @@
       <widget class="QComboBox" name="comboPoint1y"/>
      </item>
      <item>
-      <widget class="QLabel" name="labelPoint1">
+      <widget class="QLabel" name="labelPoint1y">
        <property name="sizePolicy">
         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
          <horstretch>0</horstretch>
@@ -385,6 +398,19 @@
       <widget class="QComboBox" name="comboPoint2x"/>
      </item>
      <item>
+      <widget class="QLabel" name="labelPoint2x">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QLabel" name="label_10">
        <property name="minimumSize">
         <size>
@@ -404,7 +430,7 @@
       <widget class="QComboBox" name="comboPoint2y"/>
      </item>
      <item>
-      <widget class="QLabel" name="labelPoint2">
+      <widget class="QLabel" name="labelPoint2y">
        <property name="sizePolicy">
         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
          <horstretch>0</horstretch>

@@ -4,6 +4,7 @@
 #include <sstream>
 #include <limits>
 #include <boost/algorithm/string.hpp>
+#include "CustomLogger.h"
 
 namespace NMX {
 
@@ -54,9 +55,9 @@ Settings Settings::append(std::string suffix) const
 
 Settings Settings::append_description(std::string suffix) const
 {
-  Settings ret = *this;;
+  Settings ret;
   for (auto m : data_)
-    m.second.description += suffix;
+    ret.set(m.first, Setting(m.second.value, m.second.description + suffix));
   return ret;
 }
 
@@ -137,7 +138,8 @@ std::string Settings::debug() const
   for (auto &param : data_)
     ret += param.first
         + " (" + param.second.value.type_name() + ")"
-        + " = " + param.second.value.to_string() + "\n";
+        + " = " + param.second.value.to_string()
+        + "   " + param.second.description + "\n";
   return ret;
 }
 
