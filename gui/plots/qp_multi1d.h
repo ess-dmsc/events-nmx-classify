@@ -35,7 +35,8 @@ public:
   void clearExtras() override;
   void replotExtras() override;
 
-  void addGraph(HistoData, Appearance);
+  void addGraph(const HistMap1D&, Appearance);
+  void addGraph(const HistList1D&, Appearance);
   void setAxisLabels(QString x, QString y);
   void setTitle(QString title);
 

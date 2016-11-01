@@ -152,7 +152,7 @@ void Plot2D::plotBoxes()
 }
 
 
-void Plot2D::updatePlot(uint64_t sizex, uint64_t sizey, const EntryList &spectrum_data)
+void Plot2D::updatePlot(uint64_t sizex, uint64_t sizey, const HistMap2D &spectrum_data)
 {
   colorMap->data()->clear();
   setAlwaysSquare(sizex == sizey);
@@ -165,8 +165,31 @@ void Plot2D::updatePlot(uint64_t sizex, uint64_t sizey, const EntryList &spectru
   {
     colorMap->data()->setSize(sizex, sizey);
     for (auto it : spectrum_data)
-      if ((it.first.size() > 1) && (it.first[0] >= 0) && (it.first[1] >= 0))
-        colorMap->data()->setCell(it.first[0], it.first[1], it.second);
+      if ((it.first.x >= 0) && (it.first.y >= 0))
+        colorMap->data()->setCell(it.first.x, it.first.y, it.second);
+    setScaleType(scaleType());
+    setGradient(gradient());
+    rescaleAxes();
+    updateGeometry();
+  }
+  replotExtras();
+}
+
+void Plot2D::updatePlot(uint64_t sizex, uint64_t sizey, const HistList2D &spectrum_data)
+{
+  colorMap->data()->clear();
+  setAlwaysSquare(sizex == sizey);
+  if (sizex == sizey)
+    setSizePolicy(QSizePolicy::Maximum, QSizePolicy::MinimumExpanding);
+  else
+    setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
+
+  if ((sizex > 0) && (sizey > 0) && (spectrum_data.size()))
+  {
+    colorMap->data()->setSize(sizex, sizey);
+    for (auto it : spectrum_data)
+      if ((it.x >= 0) && (it.y >= 0))
+        colorMap->data()->setCell(it.x, it.y, it.v);
     setScaleType(scaleType());
     setGradient(gradient());
     rescaleAxes();

@@ -41,14 +41,6 @@ double Histogram::avg() const
     return 0;
 }
 
-QPlot::EntryList Histogram::data_list() const
-{
-  QPlot::EntryList ret;
-  for (const auto &i : data_)
-    ret.push_back(QPlot::Entry{{i.first}, i.second});
-  return ret;
-}
-
 void Histogram::set_x(int32_t new_x1, int32_t new_x2)
 {
   x1_ = std::min(new_x1, new_x2);

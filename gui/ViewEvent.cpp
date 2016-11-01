@@ -14,10 +14,10 @@ ViewEvent::ViewEvent(QWidget *parent) :
   ui->comboPlanes->addItem("Y");
   ui->comboPlanes->addItem("X & Y");
 
-//  ui->tableValues->verticalHeader()->hide();
   ui->tableValues->setColumnCount(2);
   ui->tableValues->setHorizontalHeaderLabels({"parameter", "value"});
-  ui->tableValues->setSelectionMode(QAbstractItemView::NoSelection);
+  ui->tableValues->setSelectionMode(QAbstractItemView::MultiSelection);
+  ui->tableValues->setSelectionBehavior(QAbstractItemView::SelectRows);
   ui->tableValues->setEditTriggers(QTableView::NoEditTriggers);
   ui->tableValues->horizontalHeader()->setStretchLastSection(true);
   ui->tableValues->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
@@ -28,12 +28,12 @@ ViewEvent::ViewEvent(QWidget *parent) :
     ui->comboOverlay->addItem(QString::fromStdString(name));
   ui->comboOverlay->addItem("none");
 
-  for (auto &name : rec.metrics().only_with_suffix("_c", false).only_with_prefix("strips", false).sets_)
+  for (auto &name : rec.metrics().with_suffix("_c", false).with_prefix("strips", false).data())
   {
     ui->comboPoint1x->addItem(QString::fromStdString(name.first));
     ui->comboPoint2x->addItem(QString::fromStdString(name.first));
   }
-  for (auto &name : rec.metrics().only_with_suffix("_c", false).only_with_prefix("timebins", false).sets_)
+  for (auto &name : rec.metrics().with_suffix("_c", false).with_prefix("timebins", false).data())
   {
     ui->comboPoint1y->addItem(QString::fromStdString(name.first));
     ui->comboPoint2y->addItem(QString::fromStdString(name.first));
@@ -242,7 +242,7 @@ void ViewEvent::plot_current_event()
   ui->tableValues->clearContents();
   ui->tableValues->setRowCount(metrics.size());
   int i = 0;
-  for (auto &a : metrics.sets_)
+  for (auto &a : metrics.data())
   {
     add_to_table(ui->tableValues, i, 0, a.first);
     add_to_table(ui->tableValues, i, 1, a.second.value.to_string());
@@ -283,13 +283,9 @@ void ViewEvent::display_projection(NMX::Event &evt)
 {
   ui->plotProjection->clearAll();
 
-  QPlot::HistoData histo;
-  for (auto &pts : evt.get_projection(ui->comboProjection->currentText().toStdString()))
-    histo[pts.first] = pts.second;
-
   QPlot::Appearance profile;
   profile.default_pen = QPen(Qt::darkRed, 2);
-  ui->plotProjection->addGraph(histo, profile);
+  ui->plotProjection->addGraph(evt.get_projection(ui->comboProjection->currentText().toStdString()), profile);
   ui->plotProjection->setAxisLabels("position", "value");
   ui->plotProjection->setTitle(ui->comboProjection->currentText());
   ui->plotProjection->zoomOut();

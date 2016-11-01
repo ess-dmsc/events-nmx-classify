@@ -12,8 +12,6 @@ tpcc::tpcc(QWidget *parent) :
   QMainWindow(parent),
   ui(new Ui::tpcc)
 {
-  qRegisterMetaType<std::shared_ptr<QPlot::EntryList>>("std::shared_ptr<QPlot::EntryList>");
-
   CustomLogger::initLogger();
   ui->setupUi(this);
 
@@ -75,7 +73,7 @@ void tpcc::display_params()
 {
   ui->tableParams->setRowCount(parameters_.size());
   int i = 0;
-  for (auto &param : parameters_.sets_)
+  for (auto &param : parameters_.data())
   {
     QTableWidgetItem * item = new QTableWidgetItem(QString::fromStdString(param.first));
     ui->tableParams->setItem(i, 0, item);

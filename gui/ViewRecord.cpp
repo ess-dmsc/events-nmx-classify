@@ -86,8 +86,6 @@ void ViewRecord::display_current_record()
 
   if (show_raw_)
     ui->plotRecord->updatePlot(record_.strip_span(), record_.time_end() + 1, make_list());
-  else
-    ui->plotRecord->updatePlot(record_.strip_span(), record_.time_end() + 1, QPlot::EntryList());
 
   auto metrics = record_.metrics();
 
@@ -110,18 +108,12 @@ void ViewRecord::display_current_record()
   ui->plotRecord->zoomOut();
 }
 
-QPlot::EntryList ViewRecord::make_list()
+HistList2D ViewRecord::make_list()
 {
-  QPlot::EntryList data;
-
-  for (auto &i : record_.valid_strips())
-  {
-    auto strip = record_.get_strip(i);
-    int stripi = i - record_.strip_start();
-    for (int tb=strip.start(); tb <= strip.end(); ++tb)
-      if (strip.value(tb))
-        data.push_back(QPlot::Entry{{stripi,tb}, strip.value(tb)});
-  }
+  HistList2D data;
+  auto start = record_.strip_start();
+  for (auto &p : record_.get_points())
+    data.push_back(p2d{p.x - start, p.y, p.v});
   return data;
 }
 
@@ -146,7 +138,7 @@ std::list<QPlot::MarkerBox2D> ViewRecord::make_overlay()
 
   for (auto &i : record_.get_points(overlay_type_.toStdString()))
   {
-    auto box = make_box(i.first, i.second, 0.9, Qt::red);
+    auto box = make_box(i.x, i.y, 0.9, Qt::red);
     box.fill.setAlpha(48);
     ret.push_back(box);
   }

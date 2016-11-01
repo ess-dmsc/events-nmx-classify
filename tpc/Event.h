@@ -28,7 +28,7 @@ struct Event
   Settings metrics() const {return metrics_;}
 
   std::list<std::string> projection_categories() const;
-  ProjPointList get_projection(std::string) const;
+  HistList1D get_projection(std::string) const;
 
 private:
   Record x_, y_;
@@ -36,10 +36,9 @@ private:
   Settings parameters_;
   Settings metrics_;
 
-  std::map<std::string, ProjPointList> projections_;
+  std::map<std::string, HistList1D> projections_;
 
   void collect_values();
-  void suppress_negatives();
   void set_parameter(std::string, Variant, bool apply);
 };
 

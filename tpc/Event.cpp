@@ -13,8 +13,6 @@ Event::Event(Record xx, Record yy)
   , y_(yy)
 {
   collect_values();
-  parameters_.set("suppress_negatives",
-                  Setting(Variant::from_int(1), "Suppress negative ADC values prior to analysis"));
 }
 
 bool Event::empty() const
@@ -44,7 +42,7 @@ void Event::collect_values()
 
 void Event::set_parameters(Settings vals)
 {
-  for (auto &v : vals.sets_)
+  for (auto &v : vals.data())
     set_parameter(v.first, v.second.value);
 }
 
@@ -61,9 +59,6 @@ void Event::set_parameter(std::string id, Variant val, bool apply)
     y_.set_parameter(id.substr(2, id.size() - 2), val);
   else if (parameters_.contains(id))
     parameters_.set(id, val);
-
-  if (apply && (id == "suppress_negatives") && val.as_int())
-    suppress_negatives();
 }
 
 void Event::set_metric(std::string id, Variant val, std::string descr)
@@ -82,14 +77,6 @@ void Event::clear_metrics()
   y_.clear_metrics();
 }
 
-void Event::suppress_negatives()
-{
-  Event evt(x_.suppress_negatives(), y_.suppress_negatives());
-  for (auto &v : parameters_.sets_)
-    evt.set_parameter(v.first, v.second.value, false);
-  *this = evt;
-}
-
 void Event::analyze()
 {
   x_.analyze();
@@ -100,70 +87,30 @@ void Event::analyze()
 
   collect_values();
 
-  auto difftime = ax.get_value("entry_time").as_int() - ay.get_value("entry_time").as_int();
-  metrics_.set("diff_entry_time",
-      Setting(Variant::from_int(difftime),
-              "X.entry_time - Y.entry_time"));
-
-  auto diffspan = ay.get_value("strip_span").as_int() - ay.get_value("strip_span").as_int();
-  metrics_.set("diff_strip_span",
-      Setting(Variant::from_int(diffspan),
-              "X.strip_span - Y.strip_span"));
-
-  auto difftspan = ay.get_value("timebin_span").as_int() - ay.get_value("timebin_span").as_int();
-  metrics_.set("diff_timebin_span",
-      Setting(Variant::from_int(difftspan),
-              "X.timebin_span - Y.timebin_span"));
-
-  auto VMM_count = ay.get_value("vmm_points").as_int() + ay.get_value("vmm_points").as_int();
-  metrics_.set("vmm_points",
-      Setting(Variant::from_int(VMM_count),
-              "X.vmm_points + Y.vmm_points"));
-
-  auto diff_integral = ay.get_value("integral").as_int() - ay.get_value("integral").as_int();
-  metrics_.set("diff_integral",
-      Setting(Variant::from_int(diff_integral),
-              "X.integral - Y.integral"));
-
-  auto diff_integral_max = ay.get_value("integral_max").as_int() - ay.get_value("integral_max").as_int();
-  metrics_.set("diff_integral_max",
-      Setting(Variant::from_int(diff_integral_max),
-              "X.integral_max - Y.integral_max"));
-
-  auto diff_integral_vmm = ay.get_value("integral_vmm").as_int() - ay.get_value("integral_vmm").as_int();
-  metrics_.set("diff_integral_vmm",
-      Setting(Variant::from_int(diff_integral_vmm),
-              "X.integral_vmm - Y.integral_vmm"));
-
-  auto tbx = x_.get_projection("time_integral");
-  auto tby = y_.get_projection("time_integral");
-
-  ProjPointList tpdif;
-  if (!tbx.empty() || !tby.empty())
+  for (auto x : ax.data())
   {
-    std::map<int, double> difs;
-    for (auto &x : tbx)
-      difs[x.first] = x.second;
-    for (auto &y : tby)
-    {
-      if (difs.count(y.first))
-        difs[y.first] -= y.second;
-      else
-        difs[y.first] = 0 - y.second;
-    }
-
-    for (auto &d : difs)
-      tpdif.push_back(ProjectionPoint({d.first, d.second}));
+    double val = x.second.value.as_float(0);
+    val -= ay.get_value(x.first).as_float(0);
+    metrics_.set("diff_" + x.first,
+                 Setting(Variant::from_float(val), "x." + x.first +
+                         " - y." + x.first));
   }
-  projections_["time_projection_diff"] = tpdif;
+
+  HistMap1D difs = to_map(x_.get_projection("timebins"));
+  for (auto &y : y_.get_projection("timebins"))
+    if (difs.count(y.first))
+      difs[y.first] -= y.second;
+    else
+      difs[y.first] = 0 - y.second;
+  projections_["diff_timebins"] = to_list(difs);
 }
 
-ProjPointList Event::get_projection(std::string id) const
+HistList1D Event::get_projection(std::string id) const
 {
   if (projections_.count(id))
     return projections_.at(id);
   else
-    return ProjPointList();
+    return HistList1D();
 }
 
 std::list<std::string> Event::projection_categories() const

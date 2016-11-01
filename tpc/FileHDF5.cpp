@@ -74,7 +74,7 @@ void FileHDF5::push_event_metrics(size_t index, const Event &event)
   if (analysis_params_.empty())
     analysis_params_ = event.parameters();
 
-  for (auto &a : event.metrics().sets_)
+  for (auto &a : event.metrics().data())
   {
     if (metrics_[a.first].empty())
     {
@@ -173,7 +173,7 @@ bool FileHDF5::save_analysis()
 
   auto params_group = group.group("parameters");
   auto params_descr_group = params_group.group("descriptions");
-  for (auto &d : analysis_params_.sets_)
+  for (auto &d : analysis_params_.data())
   {
     params_group.write_attribute(d.first, d.second.value);
     params_descr_group.write_attribute(d.first, Variant::from_menu(d.second.description));

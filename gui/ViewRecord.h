@@ -53,7 +53,7 @@ private:
 
   void display_current_record();
 
-  QPlot::EntryList make_list();
+  HistList2D make_list();
   std::list<QPlot::MarkerBox2D> make_overlay();
 
   QPlot::MarkerBox2D make_box(double cx, double cy, double size, QColor color);

@@ -198,7 +198,7 @@ void Analyzer::make_projections()
   int min_z = ui->spinMinZ->value();
   int max_z = ui->spinMaxZ->value();
 
-  std::map<std::pair<int32_t,int32_t>, double> projection2d;
+  HistMap2D projection2d;
 
   int32_t xmin{std::numeric_limits<int32_t>::max()};
   int32_t xmax{std::numeric_limits<int32_t>::min()};
@@ -217,7 +217,7 @@ void Analyzer::make_projections()
           (min_y <= y) && (y <= max_y) &&
           (min_z <= z) && (z <= max_z))
       {
-        projection2d[mi.first] += mi.second.size();
+        projection2d[{mi.first.first, mi.first.second}] += mi.second.size();
         std::copy( mi.second.begin(), mi.second.end(), std::inserter( indices, indices.end() ) );
 
         xmin = std::min(xmin, x);
@@ -238,10 +238,7 @@ void Analyzer::make_projections()
   for (auto &i : histograms1d_)
     i.close_data();
 
-  QPlot::EntryList data_list;
-  for (auto &point : projection2d)
-    data_list.push_back(QPlot::Entry{{point.first.first - xmin, point.first.second - ymin}, point.second});
-  ui->plot2D->updatePlot(xmax-xmin+1, ymax-ymin+1, data_list);
+  ui->plot2D->updatePlot(xmax-xmin+1, ymax-ymin+1, projection2d);
   ui->plot2D->setAxes(ui->comboWeightsX->currentText(), xmin * xx_norm, xmax * xx_norm,
                       ui->comboWeightsY->currentText(), ymin * yy_norm, ymax * yy_norm,
                       "Count");
@@ -261,7 +258,7 @@ void Analyzer::update_histograms()
     if (!histograms1d_[i].visible)
       continue;
 
-    QPlot::HistoData histo;
+    HistMap1D histo;
     for (auto &b : histograms1d_[i].data())
       histo[b.first] = b.second;
 

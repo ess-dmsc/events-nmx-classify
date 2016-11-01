@@ -38,7 +38,6 @@ public:
   double max() const {return max_;}
   double avg() const;
   double total_count() const {return total_count_;}
-  QPlot::EntryList data_list() const;
   const std::map<int32_t, int64_t> & data() const { return data_; }
 
   bool visible {true};

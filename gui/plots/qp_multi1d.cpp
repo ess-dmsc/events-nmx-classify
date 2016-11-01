@@ -88,7 +88,27 @@ std::set<double> Multi1D::selectedMarkers()
 }
 
 
-void Multi1D::addGraph(HistoData hist, Appearance appearance)
+void Multi1D::addGraph(const HistMap1D &hist, Appearance appearance)
+{
+  if (hist.empty())
+    return;
+
+  GenericPlot::addGraph();
+  int g = graphCount() - 1;
+  auto data = graph(g)->data();
+  for (auto p :hist)
+  {
+    QCPGraphData point(p.first, p.second);
+    data->add(point);
+    aggregate_.add(point);
+  }
+
+  graph(g)->setPen(appearance.default_pen);
+  setGraphStyle(graph(g));
+  setGraphThickness(graph(g));
+}
+
+void Multi1D::addGraph(const HistList1D &hist, Appearance appearance)
 {
   if (hist.empty())
     return;
