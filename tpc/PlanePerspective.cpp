@@ -43,7 +43,7 @@ void PlanePerspective::add_data(int16_t idx, const Strip &strip)
   end_ = std::max(end_, idx);
 
   integral += strip.integral();
-  sum_idx  += idx;
+  sum_idx  += idx * strip.num_valid();
   sum_idx_val += idx * strip.integral();
   for (auto &d : strip.as_tree())
   {
@@ -185,17 +185,13 @@ Settings PlanePerspective::metrics() const
       Setting(Variant::from_float(strip_density),
               "% of " + axis1_ + "s in span with "));
 
-  metrics.set("integral",
-      Setting(Variant::from_int(integral),
-              "integral of " + axis1_ + "s with "));
-
   double integral_per_hitstrips {0};
   if (point_list.size() > 0)
-    integral_per_hitstrips = double(integral) / double(point_list.size());
+    integral_per_hitstrips = double(integral) / double(data_.size());
 
   double integral_per_point {0};
   if (data_.size() > 0)
-    integral_per_point = double(integral) / double(data_.size());
+    integral_per_point = double(integral) / double(point_list.size());
 
   double average {-1};
   if (point_list.size() > 0)
@@ -209,11 +205,15 @@ Settings PlanePerspective::metrics() const
   if (sum_ortho > 0)
     center_of_gravity_ortho = sum_idx_ortho / double(sum_ortho);
 
+  metrics.set("integral",
+      Setting(Variant::from_int(integral),
+              "integral of " + axis1_ + "s with "));
+
   metrics.set("integral_density",
       Setting(Variant::from_float(integral_per_hitstrips),
               "integral / valid for " + axis1_ + " with "));
 
-  metrics.set("average_value",
+  metrics.set("integral_norm",
       Setting(Variant::from_float(integral_per_point),
               "integral / valid_points for " + axis1_ + " with "));
 
@@ -237,9 +237,9 @@ Settings PlanePerspective::metrics() const
       Setting(Variant::from_float(center_of_gravity_ortho),
               axis2_ + "-weighted " + axis1_ + " center of gravity using "));
 
-  metrics.set("last_c",
-      Setting(Variant::from_float(end()),
-              "highest " + axis2_ + " in " + axis1_ + "s among "));
+//  metrics.set("last_c",
+//      Setting(Variant::from_float(end()),
+//              "highest " + axis2_ + " in " + axis1_ + "s among "));
 
   return metrics;
 }
