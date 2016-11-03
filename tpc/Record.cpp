@@ -113,18 +113,28 @@ void Record::analyze()
     timebins = timebins_.subset("noneg");
   }
 
-  PlanePerspective strips_maxima = strips.subset("maxima", parameters_.with_prefix("strip."));
-  PlanePerspective strips_vmm = strips.subset("vmm", parameters_.with_prefix("strip."));
-  PlanePerspective strips_best = strips_vmm.subset("best", parameters_.with_prefix("strip."));
+  auto strip_params = parameters_.with_prefix("strip.");
+  auto tb_params = parameters_.with_prefix("timebin.");
+
+  auto hard_params = strip_params;
+  hard_params.set("best_max_bincount", Variant::from_int(1));
+
+  PlanePerspective strips_maxima = strips.subset("maxima", strip_params);
+  PlanePerspective strips_vmm = strips.subset("vmm", strip_params);
+  PlanePerspective strips_best = strips_vmm.subset("best", strip_params);
+  PlanePerspective strips_hard = strips_vmm.subset("best", hard_params);
   PlanePerspective tb_best = strips_best.subset("orthogonal");
-  PlanePerspective tb_maxima = timebins.subset("maxima", parameters_.with_prefix("timebin."));
-  PlanePerspective tb_vmm = timebins.subset("vmm", parameters_.with_prefix("timebin."));
+  PlanePerspective tb_hard = strips_hard.subset("orthogonal");
+  PlanePerspective tb_maxima = timebins.subset("maxima", tb_params);
+  PlanePerspective tb_vmm = timebins.subset("vmm", tb_params);
 
   metrics_.merge(strips.metrics().prepend("strips_all_").append_description("valid ADC values"));
   metrics_.merge(strips_maxima.metrics().prepend("strips_max_").append_description("local maxima"));
   metrics_.merge(strips_vmm.metrics().prepend("strips_vmm_").append_description("VMM maxima"));
-  metrics_.merge(strips_best.metrics().prepend("strips_best_").append_description("latest VMM maxima"));
-  metrics_.merge(tb_best.metrics().prepend("timebins_best_").append_description("latest VMM maxima"));
+  metrics_.merge(strips_best.metrics().prepend("strips_best_").append_description("better VMM maxima"));
+  metrics_.merge(strips_hard.metrics().prepend("strips_hard_").append_description("best VMM maxima"));
+  metrics_.merge(tb_best.metrics().prepend("timebins_best_").append_description("better VMM maxima"));
+  metrics_.merge(tb_hard.metrics().prepend("timebins_hard_").append_description("best VMM maxima"));
   metrics_.merge(timebins.metrics().prepend("timebins_all_").append_description("valid ADC values"));
   metrics_.merge(tb_maxima.metrics().prepend("timebins_max_").append_description("local maxima"));
   metrics_.merge(tb_vmm.metrics().prepend("timebins_vmm_").append_description("VMM maxima"));
@@ -133,6 +143,7 @@ void Record::analyze()
   point_lists_["strip_maxima"] = strips_maxima.points();
   point_lists_["strip_vmm"] = strips_vmm.points();
   point_lists_["strip_best"] = strips_best.points();
+  point_lists_["strip_hard"] = strips_hard.points();
   point_lists_["tb_maxima"] = tb_maxima.points(true);
   point_lists_["tb_vmm"] = tb_vmm.points(true);
 

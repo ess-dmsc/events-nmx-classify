@@ -44,6 +44,7 @@ private:
   double sum_idx_ortho {0};
   double sum_ortho {0};
   int16_t cuness {0};
+  int16_t cuness2 {0};
 
   PlanePerspective pick_best(int max_count, int max_span) const;
   PlanePerspective suppress_negatives() const;

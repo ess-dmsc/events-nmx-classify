@@ -311,28 +311,28 @@ void ViewEvent::on_comboPlanes_currentIndexChanged(const QString&)
   plot_current_event();
 }
 
-void ViewEvent::on_comboPoint1x_currentIndexChanged(const QString &arg1)
+void ViewEvent::on_comboPoint1x_currentIndexChanged(const QString&)
 {
   ui->eventX->set_point_type1x(ui->comboPoint1x->currentText());
   ui->eventY->set_point_type1x(ui->comboPoint1x->currentText());
   plot_current_event();
 }
 
-void ViewEvent::on_comboPoint2x_currentIndexChanged(const QString &arg1)
+void ViewEvent::on_comboPoint2x_currentIndexChanged(const QString&)
 {
   ui->eventX->set_point_type2x(ui->comboPoint2x->currentText());
   ui->eventY->set_point_type2x(ui->comboPoint2x->currentText());
   plot_current_event();
 }
 
-void ViewEvent::on_comboPoint1y_currentIndexChanged(const QString &arg1)
+void ViewEvent::on_comboPoint1y_currentIndexChanged(const QString&)
 {
   ui->eventX->set_point_type1y(ui->comboPoint1y->currentText());
   ui->eventY->set_point_type1y(ui->comboPoint1y->currentText());
   plot_current_event();
 }
 
-void ViewEvent::on_comboPoint2y_currentIndexChanged(const QString &arg1)
+void ViewEvent::on_comboPoint2y_currentIndexChanged(const QString&)
 {
   ui->eventX->set_point_type2y(ui->comboPoint2y->currentText());
   ui->eventY->set_point_type2y(ui->comboPoint2y->currentText());

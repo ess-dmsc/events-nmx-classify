@@ -119,7 +119,7 @@ void GenericPlot::setShowGradientLegend(bool show)
 
   QCPColorMap *colorMap {nullptr};
   for (int i=0; i < plottableCount(); ++i)
-    if (colorMap = qobject_cast<QCPColorMap*>(plottable(i)))
+    if ((colorMap = qobject_cast<QCPColorMap*>(plottable(i))))
       break;
 
   if (show_gradient_legend_ && colorMap)
@@ -437,6 +437,13 @@ void GenericPlot::executeButton(Button *button)
   } else if (button->name() == "reset_scales") {
     this->zoomOut();
   }
+}
+
+void GenericPlot::mouseClicked(double x, double y, QMouseEvent* e)
+{
+  Q_UNUSED(x)
+  Q_UNUSED(y)
+  Q_UNUSED(e)
 }
 
 void GenericPlot::keyPressEvent(QKeyEvent *event)

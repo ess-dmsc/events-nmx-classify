@@ -281,6 +281,7 @@ void Multi1D::plotTitle()
 
 void Multi1D::mouseClicked(double x, double y, QMouseEvent* event)
 {
+  Q_UNUSED(y)
   if (event->button() == Qt::RightButton)
     emit clickedRight(x);
   else

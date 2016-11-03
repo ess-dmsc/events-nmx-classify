@@ -104,8 +104,9 @@ PlanePerspective PlanePerspective::subset(std::string name, Settings params) con
     Strip newstrip = d.second.subset(name, params);
     if (!newstrip.empty())
       ret.add_data(d.first, newstrip);
+    ret.cuness += newstrip.num_valid() - 1;
     if (int(newstrip.span()) >= cuness_min_span)
-      ret.cuness += newstrip.num_valid() - 1;
+      ret.cuness2 += newstrip.num_valid() - 1;
   }
   return ret;
 }
@@ -142,6 +143,8 @@ PlanePerspective PlanePerspective::pick_best(int max_count, int max_span) const
   int latest {-1};
   for (auto i = best_candidates.rbegin(); i != best_candidates.rend(); ++i)
   {
+    levels++;
+
     if ((levels > max_count) || ((latest - i->first) > max_span))
       break;
 
@@ -150,8 +153,6 @@ PlanePerspective PlanePerspective::pick_best(int max_count, int max_span) const
 
     for (auto s : i->second)
       best_candidates2[s][i->first] = data_.at(s).value(i->first);
-
-    levels++;
   }
 
   PlanePerspective ret(axis1_, axis2_);
@@ -165,8 +166,12 @@ Settings PlanePerspective::metrics() const
   Settings metrics;
 
   metrics.set("valid",
-      Setting(Variant::from_uint(point_list.size()),
+      Setting(Variant::from_uint(data_.size()),
               "number of " + axis1_ + "s with "));
+
+  metrics.set("valid_points",
+      Setting(Variant::from_uint(point_list.size()),
+              "number of valid points in " + axis1_ + "s with "));
 
   metrics.set("span",
       Setting(Variant::from_uint(span()),
@@ -174,7 +179,7 @@ Settings PlanePerspective::metrics() const
 
   double strip_density {0};
   if (span() > 0)
-    strip_density = double(point_list.size()) / double(span()) * 100.0;
+    strip_density = double(data_.size()) / double(span()) * 100.0;
 
   metrics.set("density",
       Setting(Variant::from_float(strip_density),
@@ -187,6 +192,10 @@ Settings PlanePerspective::metrics() const
   double integral_per_hitstrips {0};
   if (point_list.size() > 0)
     integral_per_hitstrips = double(integral) / double(point_list.size());
+
+  double integral_per_point {0};
+  if (data_.size() > 0)
+    integral_per_point = double(integral) / double(data_.size());
 
   double average {-1};
   if (point_list.size() > 0)
@@ -202,12 +211,19 @@ Settings PlanePerspective::metrics() const
 
   metrics.set("integral_density",
       Setting(Variant::from_float(integral_per_hitstrips),
-              "integral / valid for "));
+              "integral / valid for " + axis1_ + " with "));
+
+  metrics.set("average_value",
+      Setting(Variant::from_float(integral_per_point),
+              "integral / valid_points for " + axis1_ + " with "));
 
   metrics.set("cuness",
               Setting(Variant::from_int(cuness),
-              "number of points above 1 in " + axis1_ + "s with span > cuness_min_span using "));
+              "number of points above 1 in " + axis1_ + "s using "));
 
+  metrics.set("cuness2",
+              Setting(Variant::from_int(cuness2),
+              "number of points above 1 in " + axis1_ + "s with span > cuness_min_span using "));
 
   metrics.set("average_c",
       Setting(Variant::from_float(average),

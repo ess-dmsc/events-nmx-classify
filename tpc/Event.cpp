@@ -48,11 +48,6 @@ void Event::set_parameters(Settings vals)
 
 void Event::set_parameter(std::string id, Variant val)
 {
-  set_parameter(id, val, true);
-}
-
-void Event::set_parameter(std::string id, Variant val, bool apply)
-{
   if ((id.size() > 1) && (boost::algorithm::to_lower_copy(id.substr(0,1)) == "x"))
     x_.set_parameter(id.substr(2, id.size() - 2), val);
   else if ((id.size() > 1) && (boost::algorithm::to_lower_copy(id.substr(0,1)) == "y"))

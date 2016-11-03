@@ -39,7 +39,6 @@ private:
   std::map<std::string, HistList1D> projections_;
 
   void collect_values();
-  void set_parameter(std::string, Variant, bool apply);
 };
 
 }
