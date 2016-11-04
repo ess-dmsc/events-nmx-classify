@@ -15,8 +15,8 @@ Analyzer::Analyzer(QWidget *parent)
   Histogram params;
   params.visible = true;
   params.color = QColor(0,0,0,0);
-  params.set_x(0, 250);
-  params.set_y(0, 250);
+  params.set_x(0, 256);
+  params.set_y(0, 256);
   histograms1d_.push_back(params);
 
   ui->plotHistogram->setScaleType("Linear");

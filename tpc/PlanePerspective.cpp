@@ -47,7 +47,7 @@ void PlanePerspective::add_data(int16_t idx, const Strip &strip)
   sum_idx_val += idx * strip.integral();
   for (auto &d : strip.as_tree())
   {
-    point_list.push_back(p2d{idx, d.first, d.second});
+    point_list.push_back(p2d{idx, static_cast<int32_t>(d.first), static_cast<double>(d.second)});
     auto ortho = d.first*d.first;
     sum_idx_ortho += idx * ortho;
     sum_ortho += ortho ;
