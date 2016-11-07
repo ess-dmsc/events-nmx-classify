@@ -1,13 +1,7 @@
 /Makefile*
-ui/*
 debug/*
 release/*
-cmd/debug/*
-cmd/release/*
-cmd/Makefile*
-gui/debug/*
-gui/release/*
-gui/Makefile*
+ui/*
 *.user
 *.log
 *.stash
@@ -15,8 +9,6 @@ gui/Makefile*
 .DS_Store
 tpcc
 tpccd
-tpcg
-tpcgd
 
 # Compiled Object files
 *.slo
