@@ -99,7 +99,7 @@ void ViewEvent::enableIO(bool enable)
   ui->comboPlanes->setEnabled(en);
 }
 
-void ViewEvent::set_new_source(std::shared_ptr<NMX::FileHDF5> r)
+void ViewEvent::set_new_source(std::shared_ptr<NMX::FileAPV> r)
 {
   reader_ = r;
 

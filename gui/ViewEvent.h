@@ -5,7 +5,7 @@
 #include <memory>
 #include <set>
 
-#include "FileHDF5.h"
+#include "FileAPV.h"
 
 
 namespace Ui {
@@ -20,7 +20,7 @@ public:
   explicit ViewEvent(QWidget *parent = 0);
   ~ViewEvent();
 
-  void set_new_source(std::shared_ptr<NMX::FileHDF5> r);
+  void set_new_source(std::shared_ptr<NMX::FileAPV> r);
 
   void set_params(NMX::Settings);
 
@@ -50,7 +50,7 @@ private slots:
 private:
   Ui::ViewEvent *ui;
 
-  std::shared_ptr<NMX::FileHDF5> reader_;
+  std::shared_ptr<NMX::FileAPV> reader_;
   NMX::Settings params_;
   NMX::Event event_;
 

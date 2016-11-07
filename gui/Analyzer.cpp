@@ -85,7 +85,7 @@ void Analyzer::enableIO(bool enable)
   }
 }
 
-void Analyzer::set_new_source(std::shared_ptr<NMX::FileHDF5> r)
+void Analyzer::set_new_source(std::shared_ptr<NMX::FileAPV> r)
 {
   reader_ = r;
 

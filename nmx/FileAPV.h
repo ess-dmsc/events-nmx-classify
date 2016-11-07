@@ -1,5 +1,5 @@
-#ifndef NMX_READER_HDF5_H
-#define NMX_READER_HDF5_H
+#ifndef NMX_FILE_APV_H
+#define NMX_FILE_APV_H
 
 #include "H5CC_File.h"
 #include <memory>
@@ -8,10 +8,10 @@
 
 namespace NMX {
 
-class FileHDF5
+class FileAPV
 {
 public:
-  FileHDF5(std::string filename);
+  FileAPV(std::string filename);
 
   size_t event_count();
   Event get_event(size_t index);

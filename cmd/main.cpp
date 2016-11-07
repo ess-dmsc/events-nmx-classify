@@ -1,6 +1,6 @@
 #include "CustomLogger.h"
 #include "CLParser.h"
-#include "FileHDF5.h"
+#include "FileAPV.h"
 
 const std::string options_text =
     "NMX data analysis program. Available options:\n"
@@ -29,8 +29,8 @@ int main(int argc, char* argv[])
   }
 
   // Initialize the reader to read the root-file containing the events
-  std::shared_ptr<NMX::FileHDF5> reader
-      = std::make_shared<NMX::FileHDF5>(input_file);
+  std::shared_ptr<NMX::FileAPV> reader
+      = std::make_shared<NMX::FileAPV>(input_file);
   if (!reader->event_count())
   {
     INFO << "No events found. Aborting.\n";

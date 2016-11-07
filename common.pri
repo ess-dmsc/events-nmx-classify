@@ -49,17 +49,17 @@ CONFIG(debug, debug|release) {
    DEFINES += "TPCC_DBG_"
 }
 
-INCLUDEPATH += $$PWD/tpc \
+INCLUDEPATH += $$PWD/nmx \
                $$PWD/histogram \
                $$PWD/logger \
                $$PWD/h5cc
 
-SOURCES += $$files($$PWD/tpc/*.cpp) \
+SOURCES += $$files($$PWD/nmx/*.cpp) \
            $$files($$PWD/logger/*.cpp) \
            $$files($$PWD/h5cc/*.tpp) \
            $$files($$PWD/h5cc/*.cpp)
 
-HEADERS  += $$files($$PWD/tpc/*.h) \
+HEADERS  += $$files($$PWD/nmx/*.h) \
             $$files($$PWD/histogram/*.h) \
             $$files($$PWD/logger/*.h) \
             $$files($$PWD/h5cc/*.h)

@@ -1,10 +1,10 @@
-#include "FileHDF5.h"
+#include "FileAPV.h"
 #include "CustomLogger.h"
 #include <boost/algorithm/string.hpp>
 
 namespace NMX {
 
-FileHDF5::FileHDF5(std::string filename)
+FileAPV::FileAPV(std::string filename)
 {
   H5::Exception::dontPrint();
   file_ = H5CC::File(filename);
@@ -17,7 +17,7 @@ FileHDF5::FileHDF5(std::string filename)
       (dataset_.dim(3) < 1))
 
   {
-    ERR << "<FileHDF5> bad size for raw datset "
+    ERR << "<FileAPV> bad size for raw datset "
         << " rank=" << dataset_.rank() << " dims="
         << " " << dataset_.dim(0)
         << " " << dataset_.dim(1)
@@ -28,29 +28,29 @@ FileHDF5::FileHDF5(std::string filename)
 
   event_count_ = dataset_.dim(0);
 
-  DBG << "<FileHDF5> Found " << event_count_ << " items in " << filename;
+  DBG << "<FileAPV> Found " << event_count_ << " items in " << filename;
 
   read_analysis_groups();
 }
 
-void FileHDF5::read_analysis_groups()
+void FileAPV::read_analysis_groups()
 {
   analysis_groups_ = file_.open_group("Analyses").groups();
 }
 
-size_t FileHDF5::event_count()
+size_t FileAPV::event_count()
 {
   return event_count_;
 }
 
-Event FileHDF5::get_event(size_t index)
+Event FileAPV::get_event(size_t index)
 {
   return Event(read_record(index, 0),
                read_record(index, 1));
 }
 
 
-Record FileHDF5::read_record(size_t index, size_t plane)
+Record FileAPV::read_record(size_t index, size_t plane)
 {
   if (index >= event_count_)
     return Record();
@@ -60,12 +60,12 @@ Record FileHDF5::read_record(size_t index, size_t plane)
   return Record(data, dataset_.dim(3));
 }
 
-size_t FileHDF5::num_analyzed() const
+size_t FileAPV::num_analyzed() const
 {
   return num_analyzed_;
 }
 
-void FileHDF5::push_event_metrics(size_t index, const Event &event)
+void FileAPV::push_event_metrics(size_t index, const Event &event)
 {
   if (index >= event_count_)
     return;
@@ -88,7 +88,7 @@ void FileHDF5::push_event_metrics(size_t index, const Event &event)
     num_analyzed_ = index + 1;
 }
 
-Event FileHDF5::get_event_with_metrics(size_t index)
+Event FileAPV::get_event_with_metrics(size_t index)
 {
   Event event = get_event(index);
 
@@ -105,7 +105,7 @@ Event FileHDF5::get_event_with_metrics(size_t index)
   return event;
 }
 
-void FileHDF5::clear_analysis()
+void FileAPV::clear_analysis()
 {
   current_analysis_name_.clear();
   metrics_.clear();
@@ -114,14 +114,14 @@ void FileHDF5::clear_analysis()
   num_analyzed_ = 0;
 }
 
-bool FileHDF5::create_analysis(std::string name)
+bool FileAPV::create_analysis(std::string name)
 {
   file_.group("Analyses").create_group(name);
   read_analysis_groups();
   return true;
 }
 
-void FileHDF5::delete_analysis(std::string name)
+void FileAPV::delete_analysis(std::string name)
 {
   file_.group("Analyses").remove(name);
 
@@ -134,7 +134,7 @@ void FileHDF5::delete_analysis(std::string name)
   read_analysis_groups();
 }
 
-std::list<std::string> FileHDF5::metrics() const
+std::list<std::string> FileAPV::metrics() const
 {
   std::list<std::string> ret;
   for (auto &cat : metrics_descr_)
@@ -142,7 +142,7 @@ std::list<std::string> FileHDF5::metrics() const
   return ret;
 }
 
-std::vector<Variant> FileHDF5::get_metric(std::string cat)
+std::vector<Variant> FileAPV::get_metric(std::string cat)
 {
   if (metrics_.count(cat))
     return metrics_.at(cat);
@@ -150,7 +150,7 @@ std::vector<Variant> FileHDF5::get_metric(std::string cat)
     return std::vector<Variant>();
 }
 
-std::string FileHDF5::metric_description(std::string cat) const
+std::string FileAPV::metric_description(std::string cat) const
 {
   if (metrics_descr_.count(cat))
     return metrics_descr_.at(cat);
@@ -158,12 +158,12 @@ std::string FileHDF5::metric_description(std::string cat) const
     return "";
 }
 
-std::list<std::string> FileHDF5::analysis_groups() const
+std::list<std::string> FileAPV::analysis_groups() const
 {
   return analysis_groups_;
 }
 
-bool FileHDF5::save_analysis()
+bool FileAPV::save_analysis()
 {
   if (current_analysis_name_.empty())
     return false;
@@ -204,7 +204,7 @@ bool FileHDF5::save_analysis()
   return true;
 }
 
-bool FileHDF5::load_analysis(std::string name)
+bool FileAPV::load_analysis(std::string name)
 {
   clear_analysis();
   if (name.empty())
@@ -242,12 +242,12 @@ bool FileHDF5::load_analysis(std::string name)
       checksum += datum;
     }
     metrics_[names[i]] = dt;
-    DBG << "<FileHDF5> cached " << names[i];// << "   checksum = " << checksum;
+    DBG << "<FileAPV> cached " << names[i];// << "   checksum = " << checksum;
   }
 
   current_analysis_name_ = name;
 
-  DBG << "<FileHDF5> Loaded analysis '" << current_analysis_name_
+  DBG << "<FileAPV> Loaded analysis '" << current_analysis_name_
       << "' with data for " << num_analyzed_ << " events"
       << " and " << metrics_descr_.size() << " metrics.";
   return true;

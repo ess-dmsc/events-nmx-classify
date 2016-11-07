@@ -20,7 +20,7 @@ void ThreadClassify::terminate()
   wait();
 }
 
-void ThreadClassify::go(std::shared_ptr<NMX::FileHDF5> r, NMX::Settings params)
+void ThreadClassify::go(std::shared_ptr<NMX::FileAPV> r, NMX::Settings params)
 {
   if (isRunning())
   {

@@ -25,7 +25,7 @@ private:
   Ui::tpcc *ui;
 
   QString data_directory_;
-  std::shared_ptr<NMX::FileHDF5> reader_;
+  std::shared_ptr<NMX::FileAPV> reader_;
 
   ViewEvent   *event_viewer_;
   Analyzer    *analyzer_;

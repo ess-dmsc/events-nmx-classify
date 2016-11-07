@@ -121,7 +121,7 @@ bool tpcc::open_file(QString fileName)
 {
   data_directory_ = path_of_file(fileName);
 
-  reader_ = std::make_shared<NMX::FileHDF5>(fileName.toStdString());
+  reader_ = std::make_shared<NMX::FileAPV>(fileName.toStdString());
 
   event_viewer_->set_new_source(reader_);
 

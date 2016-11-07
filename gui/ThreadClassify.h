@@ -4,7 +4,7 @@
 #include <QThread>
 #include <QAtomicInt>
 
-#include "FileHDF5.h"
+#include "FileAPV.h"
 #include <memory>
 
 
@@ -17,7 +17,7 @@ public:
 
     void set_refresh_frequency(int);
 
-    void go(std::shared_ptr<NMX::FileHDF5> r, NMX::Settings params);
+    void go(std::shared_ptr<NMX::FileAPV> r, NMX::Settings params);
     void terminate();
 
 signals:
@@ -29,7 +29,7 @@ protected:
     void run();
 
 private:
-    std::shared_ptr<NMX::FileHDF5> reader_;
+    std::shared_ptr<NMX::FileAPV> reader_;
 
     NMX::Settings parameters_;
 
