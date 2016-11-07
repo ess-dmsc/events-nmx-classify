@@ -5,7 +5,7 @@
 #include <QAbstractTableModel>
 #include <QItemSelectionModel>
 
-#include "Histogram.h"
+#include "Subhist.h"
 #include "qt_util.h"
 
 

@@ -2,7 +2,7 @@
 #define NMX_PLANE_PERSPECTIVE_H
 
 #include "Strip.h"
-#include "qp_entry2d.h"
+#include "histogram.h"
 #include <map>
 
 namespace NMX
