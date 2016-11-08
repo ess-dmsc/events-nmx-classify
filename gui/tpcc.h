@@ -7,6 +7,8 @@
 #include "Analyzer.h"
 
 #include "ThreadClassify.h"
+#include "TableSettings.h"
+#include "SpecialDelegate.h"
 
 
 namespace Ui {
@@ -32,6 +34,9 @@ private:
 
   ThreadClassify thread_classify_;
 
+  TableSettings settings_model_;
+  SpecialDelegate params_delegate_;
+
 
   bool open_file(QString fileName);
 
@@ -51,7 +56,7 @@ private slots:
 
   void update_progress(double percent_done);
 
-  void table_changed(double);
+  void table_changed();
   void display_params();
 
   void on_pushStop_clicked();

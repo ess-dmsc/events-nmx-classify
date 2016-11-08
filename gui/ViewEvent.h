@@ -6,6 +6,8 @@
 #include <set>
 
 #include "FileAPV.h"
+#include "TableSettings.h"
+#include "SpecialDelegate.h"
 
 
 namespace Ui {
@@ -60,6 +62,9 @@ private:
   void plot_current_event();
 
   void display_projection(NMX::Event &evt);
+
+  TableSettings metrics_model_;
+  SpecialDelegate metrics_delegate_;
 };
 
 #endif // FORM_CALIBRATION_H

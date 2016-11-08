@@ -2,10 +2,10 @@
 #include "ViewEvent.h"
 #include "ui_ViewEvent.h"
 #include "CustomLogger.h"
-#include "qt_util.h"
 
 ViewEvent::ViewEvent(QWidget *parent) :
   QWidget(parent),
+  metrics_model_(this),
   ui(new Ui::ViewEvent)
 {
   ui->setupUi(this);
@@ -14,13 +14,13 @@ ViewEvent::ViewEvent(QWidget *parent) :
   ui->comboPlanes->addItem("Y");
   ui->comboPlanes->addItem("X & Y");
 
-  ui->tableValues->setColumnCount(2);
-  ui->tableValues->setHorizontalHeaderLabels({"parameter", "value"});
-  ui->tableValues->setSelectionMode(QAbstractItemView::MultiSelection);
-  ui->tableValues->setSelectionBehavior(QAbstractItemView::SelectRows);
-  ui->tableValues->setEditTriggers(QTableView::NoEditTriggers);
-  ui->tableValues->horizontalHeader()->setStretchLastSection(true);
-  ui->tableValues->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+  ui->tableMetrics->setModel(&metrics_model_);
+  ui->tableMetrics->setItemDelegate(&metrics_delegate_);
+  ui->tableMetrics->horizontalHeader()->setStretchLastSection(true);
+  ui->tableMetrics->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+  ui->tableMetrics->setEditTriggers(QAbstractItemView::NoEditTriggers);
+  ui->tableMetrics->setSelectionMode(QAbstractItemView::MultiSelection);
+  ui->tableMetrics->setSelectionBehavior(QAbstractItemView::SelectRows);
 
   NMX::Record rec;
   rec.analyze();
@@ -234,15 +234,7 @@ void ViewEvent::plot_current_event()
   else if (ui->comboPlanes->currentText() == "Y")
     metrics = event_.y().metrics();
 
-  ui->tableValues->clearContents();
-  ui->tableValues->setRowCount(metrics.size());
-  int i = 0;
-  for (auto &a : metrics.data())
-  {
-    add_to_table(ui->tableValues, i, 0, a.first);
-    add_to_table(ui->tableValues, i, 1, a.second.value.to_string());
-    i++;
-  }
+  metrics_model_.update(metrics);
 
   display_projection(event_);
   auto desc1x = event_.x().metrics().get(ui->comboPoint1x->currentText().toStdString()).description;

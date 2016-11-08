@@ -74,6 +74,48 @@ QWidget *SpecialDelegate::createEditor(QWidget *parent,
 {
   emit begin_editing();
 
+  if (index.data(Qt::EditRole).canConvert<Variant>())
+  {
+    Variant itemData = qvariant_cast<Variant>(index.data(Qt::EditRole));
+    if (itemData.type() == Variant::code::type_bool)
+    {
+      QComboBox *editor = new QComboBox(parent);
+      editor->addItem("True", QVariant::fromValue(true));
+      editor->addItem("False", QVariant::fromValue(false));
+      return editor;
+    }
+    else if (itemData.type() == Variant::code::type_int)
+    {
+      QSpinBox *editor = new QSpinBox(parent);
+      editor->setMinimum(std::numeric_limits<int>::min());
+      editor->setMaximum(std::numeric_limits<int>::max());
+      editor->setSingleStep(1);
+      edited_idx_ = index;
+      connect(editor, SIGNAL(valueChanged(int)), this, SLOT(intValueChanged(int)));
+      return editor;
+    }
+    else if (itemData.type() == Variant::code::type_uint)
+    {
+      QSpinBox *editor = new QSpinBox(parent);
+      editor->setMinimum(0);
+      editor->setMaximum(std::numeric_limits<int>::max());
+      editor->setSingleStep(1);
+      edited_idx_ = index;
+      connect(editor, SIGNAL(valueChanged(int)), this, SLOT(intValueChanged(int)));
+      return editor;
+    }
+    else if (itemData.type() == Variant::code::type_float)
+    {
+      QDoubleSpinBox *editor = new QDoubleSpinBox(parent);
+      editor->setMinimum(std::numeric_limits<double>::min());
+      editor->setMaximum(std::numeric_limits<double>::max());
+      editor->setSingleStep(1);
+      edited_idx_ = index;
+//      connect(editor, SIGNAL(valueChanged(int)), this, SLOT(intValueChanged(int)));
+      return editor;
+    }
+  }
+
   if (index.data().type() == QVariant::Bool)
   {
     QComboBox *editor = new QComboBox(parent);
@@ -100,7 +142,37 @@ QWidget *SpecialDelegate::createEditor(QWidget *parent,
 
 void SpecialDelegate::setEditorData ( QWidget *editor, const QModelIndex &index ) const
 {
-  if (QSpinBox *sb = qobject_cast<QSpinBox *>(editor))
+
+  if (index.data(Qt::EditRole).canConvert<Variant>())
+  {
+    Variant itemData = qvariant_cast<Variant>(index.data(Qt::EditRole));
+
+    if (itemData.type() == Variant::code::type_bool)
+    {
+      if (QComboBox *cb = qobject_cast<QComboBox *>(editor))
+      {
+        int cbIndex = cb->findData(itemData.as_bool().val());
+        if(cbIndex >= 0)
+          cb->setCurrentIndex(cbIndex);
+      }
+    }
+    else if (itemData.type() == Variant::code::type_int)
+    {
+      if (QSpinBox *sb = qobject_cast<QSpinBox *>(editor))
+        sb->setValue(itemData.as_int().val());
+    }
+    else if (itemData.type() == Variant::code::type_uint)
+    {
+      if (QSpinBox *sb = qobject_cast<QSpinBox *>(editor))
+        sb->setValue(itemData.as_uint().val());
+    }
+    else if (itemData.type() == Variant::code::type_float)
+    {
+      if (QDoubleSpinBox *sb = qobject_cast<QDoubleSpinBox *>(editor))
+        sb->setValue(itemData.as_float().val());
+    }
+  }
+  else if (QSpinBox *sb = qobject_cast<QSpinBox *>(editor))
       sb->setValue(index.data().toLongLong());
   else if (QComboBox *cb = qobject_cast<QComboBox *>(editor))
   {
@@ -112,9 +184,12 @@ void SpecialDelegate::setEditorData ( QWidget *editor, const QModelIndex &index 
     QStyledItemDelegate::setEditorData(editor, index);
 }
 
-void SpecialDelegate::setModelData ( QWidget *editor, QAbstractItemModel *model, const QModelIndex &index ) const
+void SpecialDelegate::setModelData ( QWidget *editor, QAbstractItemModel *model,
+                                     const QModelIndex &index ) const
 {
   if (QSpinBox *sb = qobject_cast<QSpinBox *>(editor))
+    model->setData(index, QVariant::fromValue(sb->value()), Qt::EditRole);
+  else if (QDoubleSpinBox *sb = qobject_cast<QDoubleSpinBox *>(editor))
     model->setData(index, QVariant::fromValue(sb->value()), Qt::EditRole);
   else if (QComboBox *cb = qobject_cast<QComboBox *>(editor))
     model->setData(index, QVariant::fromValue(cb->currentText() == "True"), Qt::EditRole);

@@ -7,6 +7,10 @@
 #include <QDoubleSpinBox>
 #include <QComboBox>
 
+#include "Variant.h"
+
+Q_DECLARE_METATYPE(Variant)
+
 class SpecialDelegate : public QStyledItemDelegate
 {
   Q_OBJECT

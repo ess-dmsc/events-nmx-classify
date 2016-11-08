@@ -13,7 +13,7 @@ Settings PlanePerspective::default_params()
   ret.merge(Strip::default_params());
 
   ret.set("suppress_negatives",
-          Setting(Variant::from_int(1), "Suppress negative ADC values prior to analysis"));
+          Setting(Variant::from_bool(true), "Suppress negative ADC values prior to analysis"));
 
   ret.set("cuness_min_span",
           Setting(Variant::from_int(2),

@@ -31,6 +31,7 @@ template <typename T> void Bounded<T>::assign(const Bounded<T> &other) {val_ = o
 
 template <typename T> Bounded<T>::operator T() const {return val_;}
 template <typename T> Bounded<T>::operator T&(){return val_;}
+template <typename T> T Bounded<T>::val() const {return val_;}
 template <typename T> T Bounded<T>::min() const {return min_;}
 template <typename T> T Bounded<T>::max() const {return max_;}
 template <typename T> T Bounded<T>::step() const {return step_;}
@@ -54,6 +55,13 @@ template <typename T>
 void Bounded<T>::set_step(T s)
 {
   step_ = s;
+}
+
+template <typename T>
+void Bounded<T>::set_val(T v)
+{
+  val_ = v;
+  enforce();
 }
 
 template <typename T>

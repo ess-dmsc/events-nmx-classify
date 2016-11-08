@@ -3,14 +3,16 @@
 #include "tpcc.h"
 #include "ui_tpcc.h"
 
-#include "qt_util.h"
 #include "CustomLogger.h"
 #include "Variant.h"
 
 tpcc::tpcc(QWidget *parent) :
   QMainWindow(parent),
+  settings_model_(this),
   ui(new Ui::tpcc)
 {
+  qRegisterMetaType<Variant>("Variant");
+
   CustomLogger::initLogger();
   ui->setupUi(this);
 
@@ -29,13 +31,12 @@ tpcc::tpcc(QWidget *parent) :
 
   connect(analyzer_, SIGNAL(select_indices(std::set<size_t>)), event_viewer_, SLOT(set_indices(std::set<size_t>)));
 
-  ui->tableParams->verticalHeader()->hide();
-  ui->tableParams->setColumnCount(2);
-  ui->tableParams->setHorizontalHeaderLabels({"name", "value"});
-  ui->tableParams->setSelectionBehavior(QAbstractItemView::SelectRows);
-  ui->tableParams->setSelectionMode(QAbstractItemView::NoSelection);
+  ui->tableParams->setModel(&settings_model_);
+  ui->tableParams->setItemDelegate(&params_delegate_);
   ui->tableParams->horizontalHeader()->setStretchLastSection(true);
   ui->tableParams->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+
+  connect(&settings_model_, SIGNAL(settings_changed()), this, SLOT(table_changed()));
 
   thread_classify_.set_refresh_frequency(5);
   ui->comboGroup->setSizeAdjustPolicy(QComboBox::AdjustToContents);
@@ -49,17 +50,9 @@ tpcc::~tpcc()
   delete ui;
 }
 
-void tpcc::table_changed(double /*v*/)
+void tpcc::table_changed()
 {
-  NMX::Settings parameters;
-
-  for (int i=0; i < ui->tableParams->rowCount(); ++i)
-  {
-    std::string name = ui->tableParams->model()->data(ui->tableParams->model()->index(i,0)).toString().toStdString();
-    double val = static_cast<QDoubleSpinBox*>(ui->tableParams->cellWidget(i, 1))->value();
-    parameters.set(name, Variant::from_float(val));
-  }
-
+  NMX::Settings parameters = settings_model_.get_settings();
   reader_->set_parameters(parameters);
   event_viewer_->refresh_event();
 }
@@ -67,23 +60,7 @@ void tpcc::table_changed(double /*v*/)
 void tpcc::display_params()
 {
   auto parameters = reader_->get_parameters();
-
-  ui->tableParams->setRowCount(parameters.size());
-  int i = 0;
-  for (auto &param : parameters.data())
-  {
-    QTableWidgetItem * item = new QTableWidgetItem(QString::fromStdString(param.first));
-    ui->tableParams->setItem(i, 0, item);
-
-    QDoubleSpinBox *spinBox = new QDoubleSpinBox(this);
-    spinBox->setMinimum(0);
-    spinBox->setMaximum(std::numeric_limits<short>::max());
-    spinBox->setValue( param.second.value.as_float() );
-    connect(spinBox, SIGNAL(valueChanged(double)), this, SLOT(table_changed(double)));
-    ui->tableParams->setCellWidget( i, 1, spinBox );
-
-    i++;
-  }
+  settings_model_.update(parameters);
 }
 
 
@@ -162,6 +139,12 @@ void tpcc::toggleIO(bool enable)
   bool en = reader_ && reader_->event_count()
       &&  (reader_->num_analyzed() < reader_->event_count()) && (names.size() > 0) && enable;
   ui->pushStart->setEnabled(en);
+
+  if (enable) {
+    ui->tableParams->setEditTriggers(QAbstractItemView::AllEditTriggers);
+  } else {
+    ui->tableParams->setEditTriggers(QAbstractItemView::NoEditTriggers);
+  }
 
   emit enableIO(enable);
 }
