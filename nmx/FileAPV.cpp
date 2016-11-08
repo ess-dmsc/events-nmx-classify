@@ -7,6 +7,8 @@ namespace NMX {
 
 FileAPV::FileAPV(std::string filename)
 {
+  INFO << "<FileAPV> Opening " << filename;
+
   H5::Exception::dontPrint();
   file_ = H5CC::File(filename);
 
@@ -29,7 +31,7 @@ FileAPV::FileAPV(std::string filename)
 
   event_count_ = dataset_.dim(0);
 
-  DBG << "<FileAPV> Found " << event_count_ << " items in " << filename;
+  INFO << "<FileAPV> Found " << event_count_ << " items in " << filename;
 
   analysis_params_ = Event().parameters();
 
