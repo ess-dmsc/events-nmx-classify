@@ -31,7 +31,7 @@ FileAPV::FileAPV(std::string filename)
 
   event_count_ = dataset_.dim(0);
 
-  INFO << "<FileAPV> Found " << event_count_ << " items in " << filename;
+  INFO << "<FileAPV> Found " << event_count_ << " events in " << filename;
 
   analysis_params_ = Event().parameters();
 

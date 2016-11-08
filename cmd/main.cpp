@@ -1,13 +1,14 @@
 #include "CustomLogger.h"
 #include "CLParser.h"
 #include "FileAPV.h"
-#include "Timer.h"
+//#include "Timer.h"
 #include <signal.h>
+#include <boost/progress.hpp>
 
 #define REFRESH_SECONDS 3
 
 volatile sig_atomic_t term_flag = 0;
-void term_key(int sig)
+void term_key(int /*sig*/)
 {
   term_flag = 1;
 }
@@ -88,20 +89,24 @@ int main(int argc, char* argv[])
   INFO << "File contains " << reader.event_count() << " events of which "
        << (nevents - numanalyzed) << " will be processed";
 
-  Timer msg_timer(REFRESH_SECONDS, true);
+  boost::progress_display prog( nevents );
+  prog += numanalyzed;
+//  Timer msg_timer(REFRESH_SECONDS, true);
   for (size_t eventID = numanalyzed; eventID < nevents; ++eventID)
   {
     reader.analyze_event(eventID);
 
-    if (verbose)
-      INFO << "Processing event # " << eventID <<  " \n" << reader.get_event(eventID).debug();
-    else if (msg_timer.timeout())
-    {
-      double percent = double(eventID +  1) / double(nevents) * 100;
-      INFO << "Processed " << std::fixed <<  std::setprecision(1) << percent << "% "
-           << "(" << eventID + 1 << " of " << nevents << ")";
-      msg_timer = Timer(REFRESH_SECONDS, true);
-    }
+//    if (verbose)
+//      INFO << "Processing event # " << eventID <<  " \n" << reader.get_event(eventID).debug();
+//    else if (msg_timer.timeout())
+//    {
+//      double percent = double(eventID +  1) / double(nevents) * 100;
+//      INFO << "Processed " << std::fixed <<  std::setprecision(1) << percent << "% "
+//           << "(" << eventID + 1 << " of " << nevents << ")";
+//      msg_timer = Timer(REFRESH_SECONDS, true);
+//    }
+
+    ++prog;
 
     if (term_flag)
       break;
