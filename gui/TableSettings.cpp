@@ -46,9 +46,9 @@ QVariant TableSettings::headerData(int section, Qt::Orientation orientation, int
   {
     if (orientation == Qt::Horizontal) {
       if (section == 0)
-        return QString("Setting name");
+        return QString("Name");
       else if (section == 1)
-        return QString("Values");
+        return QString("Value");
       else if (section == 2)
         return "Description";
     } else if (orientation == Qt::Vertical) {
