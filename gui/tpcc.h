@@ -30,8 +30,6 @@ private:
   ViewEvent   *event_viewer_;
   Analyzer    *analyzer_;
 
-  NMX::Settings parameters_;
-
   ThreadClassify thread_classify_;
 
 
@@ -54,7 +52,6 @@ private slots:
   void update_progress(double percent_done);
 
   void table_changed(double);
-  void collect_params();
   void display_params();
 
   void on_pushStop_clicked();

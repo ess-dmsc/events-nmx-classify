@@ -17,7 +17,7 @@ unix {
   LIBPATH += /usr/local/lib
   LIBS += -lm -ldl -lz \
           -lboost_system -lboost_thread -lboost_log \
-          -lboost_log_setup -lhdf5_cpp
+          -lboost_log_setup -lboost_timer -lhdf5_cpp
 
   target.path = /usr/local/bin/
       

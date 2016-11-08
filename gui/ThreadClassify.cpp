@@ -20,7 +20,7 @@ void ThreadClassify::terminate()
   wait();
 }
 
-void ThreadClassify::go(std::shared_ptr<NMX::FileAPV> r, NMX::Settings params)
+void ThreadClassify::go(std::shared_ptr<NMX::FileAPV> r)
 {
   if (isRunning())
   {
@@ -30,7 +30,6 @@ void ThreadClassify::go(std::shared_ptr<NMX::FileAPV> r, NMX::Settings params)
 
   terminating_ = false;
   reader_ = r;
-  parameters_ = params;
 
   if (!isRunning())
     start(HighPriority);
@@ -60,13 +59,10 @@ void ThreadClassify::run()
     if (terminating_ > 0)
       break;
 
-    NMX::Event evt = reader_->get_event(eventID);
-    evt.set_parameters(parameters_);
-    evt.analyze();
-//    if (eventID == 0)
-//      DBG << "Event #" << eventID << "\n" << evt.debug_metrics();
+    reader_->analyze_event(eventID);
 
-    reader_->push_event_metrics(eventID, evt);
+    //    if (eventID == 0)
+    //      DBG << "Event #" << eventID << "\n" << evt.debug_metrics();
 
     percent = double(eventID+1) / double(evt_count) * 100;
 

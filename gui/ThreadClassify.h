@@ -17,7 +17,7 @@ public:
 
     void set_refresh_frequency(int);
 
-    void go(std::shared_ptr<NMX::FileAPV> r, NMX::Settings params);
+    void go(std::shared_ptr<NMX::FileAPV> r);
     void terminate();
 
 signals:
@@ -31,7 +31,6 @@ protected:
 private:
     std::shared_ptr<NMX::FileAPV> reader_;
 
-    NMX::Settings parameters_;
 
     QAtomicInt terminating_;
     QAtomicInt refresh_frequency_;

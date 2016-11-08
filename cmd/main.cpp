@@ -1,30 +1,42 @@
 #include "CustomLogger.h"
 #include "CLParser.h"
 #include "FileAPV.h"
+#include "Timer.h"
+#include <signal.h>
+
+volatile sig_atomic_t term_flag = 0;
+void term_key(int sig)
+{
+  term_flag = 1;
+}
 
 const std::string options_text =
     "NMX data analysis program. Available options:\n"
     "    -f [path/filename.h5] Must be specified\n"
-    "    -s [int] Number of event to start with   - default 0\n"
-    "    -n [int] Number of event to be processed - default all\n"
+    "    -a [analysis_group] Must be specified. Will be created if does not exist in file.\n"
     "    -v verbose - default false\n"
-    "    --help/-h prints this list of options\n"
-    "\n";
+    "    --help/-h prints this list of options\n";
 
 int main(int argc, char* argv[])
 {
+  signal(SIGINT, term_key);
+
   // Parse the command line aguments
   CLParser cmd_line(argc, argv);
 
   // Input file
-  std::string input_file = cmd_line.get_value("-f");
+  std::string input_file     = cmd_line.get_value("-f");
+  std::string analysis_group = cmd_line.get_value("-a");
 
   // Exit if not enough params
   if (input_file.empty())
-    INFO << "Error: Please specify an input file!\n\n";
-  if (input_file.empty() || cmd_line.has_switch("-h") || cmd_line.has_switch("--help"))
+    INFO << "Error: Please specify an input file!";
+  if (analysis_group.empty())
+    INFO << "Error: Please specify an analysis group!";
+  if (input_file.empty() || analysis_group.empty() ||
+      cmd_line.has_switch("-h") || cmd_line.has_switch("--help"))
   {
-    INFO << options_text;
+    std::cout << options_text;
     return 1;
   }
 
@@ -33,55 +45,51 @@ int main(int argc, char* argv[])
       = std::make_shared<NMX::FileAPV>(input_file);
   if (!reader->event_count())
   {
-    INFO << "No events found. Aborting.\n";
+    INFO << "No events found. Aborting.";
     return 1;
   }
+
+  reader->load_analysis(analysis_group);
+  DBG << "Analysis parameters:\n" << reader->get_parameters().debug();
 
   // Other options
   bool verbose = cmd_line.has_switch("-v");
 
-  size_t total = reader->event_count();
-  size_t start = 0;
-  if (cmd_line.has_value("-s"))
-    start = stoi(cmd_line.get_value("-s"));
-  if (start >= total)
-    start = 0;
-
   size_t nevents = reader->event_count(); // default - analyses all
-  if (cmd_line.has_value("-n"))
-    nevents = std::min(stoi(cmd_line.get_value("-n")), static_cast<int>(total - start));
+  size_t numanalyzed = reader->num_analyzed();
+
+  if (numanalyzed >= nevents)
+  {
+    INFO << "Data already analyzed in " << analysis_group << ". Nothing to do.";
+    return 0;
+  }
 
   INFO << input_file << " contains " << reader->event_count() << " events of which "
-       << nevents << " will be processed";
+       << (nevents - numanalyzed) << " will be processed";
 
-  if (!nevents)
-    return 1;
-
-  double percent_done = 0;
-
-  for (size_t eventID = start; eventID < (start + nevents); ++eventID)
+  Timer msg_timer(3, true);
+  for (size_t eventID = numanalyzed; eventID < nevents; ++eventID)
   {
     // Construct event and perform analysis
 
-    NMX::Event event = reader->get_event(eventID);
+    reader->analyze_event(eventID);
 
     if (verbose)
+      INFO << "Processing event # " << eventID <<  " \n" << reader->get_event_with_metrics(eventID).debug();
+    else if (msg_timer.timeout())
     {
-      INFO << "\nProcessing event # " << eventID << "\n";
-      INFO << event.debug() << "\n";
+      double percent = double(eventID) / double(nevents) * 100;
+      INFO << "Processed " << std::setprecision(2) << percent << "% (" << eventID + 1 << " of " << nevents << ")";
+      msg_timer = Timer(3, true);
     }
-    else
-    {
-      double percent_now = double(eventID - start + 1) / double(nevents) * 100;
-      if ((percent_now - percent_done) > 1)
-      {
-        percent_done = percent_now;
-        INFO << "Processed " << int(percent_done) << "% (" << eventID - start + 1 << " of " << nevents << ")";
-      }
-    }
+
+    if (term_flag)
+      break;
   }
 
-  INFO << "Finished processing " << input_file << "\n";
+  INFO << "Saving " << analysis_group << " to file " << input_file << ".";
+
+  reader->save_analysis();
 
   return 0;
 }

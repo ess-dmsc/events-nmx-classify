@@ -12,15 +12,16 @@ class FileAPV
 {
 public:
   FileAPV(std::string filename);
+  ~FileAPV() { save_analysis(); }
 
   size_t event_count();
-  Event get_event(size_t index);
   Event get_event_with_metrics(size_t index);
+  void analyze_event(size_t index);
 
   void clear_analysis();
-  void push_event_metrics(size_t index, const Event& event);
   size_t num_analyzed() const;
 
+  void set_parameters(const Settings&);
   Settings get_parameters() const {return analysis_params_;}
   std::list<std::string> metrics() const;
   std::vector<Variant> get_metric(std::string cat); //const?
@@ -48,6 +49,9 @@ private:
   Record read_record(size_t index, size_t plane);
   void read_analysis_groups();
 
+
+  Event get_event(size_t index);
+  void push_event_metrics(size_t index, const Event& event);
 };
 
 }

@@ -30,6 +30,8 @@ FileAPV::FileAPV(std::string filename)
 
   DBG << "<FileAPV> Found " << event_count_ << " items in " << filename;
 
+  analysis_params_ = Event().parameters();
+
   read_analysis_groups();
 }
 
@@ -47,6 +49,20 @@ Event FileAPV::get_event(size_t index)
 {
   return Event(read_record(index, 0),
                read_record(index, 1));
+}
+
+Event FileAPV::get_event_with_metrics(size_t index)
+{
+  Event event = get_event(index);
+
+  event.set_parameters(analysis_params_);
+  event.analyze();
+
+  for (auto &m : metrics_descr_)
+    if (metrics_.count(m.first) && (index < metrics_.at(m.first).size()))
+      event.set_metric(m.first, metrics_.at(m.first).at(index), m.second);
+
+  return event;
 }
 
 
@@ -86,23 +102,6 @@ void FileAPV::push_event_metrics(size_t index, const Event &event)
 
   if (index >= num_analyzed_)
     num_analyzed_ = index + 1;
-}
-
-Event FileAPV::get_event_with_metrics(size_t index)
-{
-  Event event = get_event(index);
-
-  if (index >= num_analyzed_)
-    return event;
-
-  event.set_parameters(analysis_params_);
-  event.analyze();
-
-  for (auto &m : metrics_descr_)
-    if (metrics_.count(m.first) && (index < metrics_.at(m.first).size()))
-      event.set_metric(m.first, metrics_.at(m.first).at(index), m.second);
-
-  return event;
 }
 
 void FileAPV::clear_analysis()
@@ -204,9 +203,32 @@ bool FileAPV::save_analysis()
   return true;
 }
 
+void FileAPV::set_parameters(const Settings& params)
+{
+  if (!current_analysis_name_.empty() && (num_analyzed_ > 0))
+    return;
+
+  analysis_params_ = params;
+}
+
+void FileAPV::analyze_event(size_t index)
+{
+  if (index > event_count_)
+    return;
+
+  NMX::Event evt = get_event(index);
+  evt.set_parameters(analysis_params_);
+  evt.analyze();
+  push_event_metrics(index, evt);
+}
+
 bool FileAPV::load_analysis(std::string name)
 {
+  save_analysis();
+
   clear_analysis();
+  analysis_params_ = Event().parameters();
+
   if (name.empty())
     return false;
 

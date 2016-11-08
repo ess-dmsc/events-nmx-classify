@@ -7,7 +7,6 @@
 #include "CustomLogger.h"
 #include "Variant.h"
 
-
 tpcc::tpcc(QWidget *parent) :
   QMainWindow(parent),
   ui(new Ui::tpcc)
@@ -38,9 +37,6 @@ tpcc::tpcc(QWidget *parent) :
   ui->tableParams->horizontalHeader()->setStretchLastSection(true);
   ui->tableParams->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
 
-  parameters_ = NMX::Event().parameters();
-  display_params();
-
   thread_classify_.set_refresh_frequency(5);
   ui->comboGroup->setSizeAdjustPolicy(QComboBox::AdjustToContents);
 
@@ -55,25 +51,26 @@ tpcc::~tpcc()
 
 void tpcc::table_changed(double /*v*/)
 {
-  collect_params();
-  event_viewer_->set_params(parameters_);
-}
+  NMX::Settings parameters;
 
-void tpcc::collect_params()
-{
   for (int i=0; i < ui->tableParams->rowCount(); ++i)
   {
     std::string name = ui->tableParams->model()->data(ui->tableParams->model()->index(i,0)).toString().toStdString();
     double val = static_cast<QDoubleSpinBox*>(ui->tableParams->cellWidget(i, 1))->value();
-    parameters_.set(name, Variant::from_float(val));
+    parameters.set(name, Variant::from_float(val));
   }
+
+  reader_->set_parameters(parameters);
+  event_viewer_->refresh_event();
 }
 
 void tpcc::display_params()
 {
-  ui->tableParams->setRowCount(parameters_.size());
+  auto parameters = reader_->get_parameters();
+
+  ui->tableParams->setRowCount(parameters.size());
   int i = 0;
-  for (auto &param : parameters_.data())
+  for (auto &param : parameters.data())
   {
     QTableWidgetItem * item = new QTableWidgetItem(QString::fromStdString(param.first));
     ui->tableParams->setItem(i, 0, item);
@@ -133,7 +130,7 @@ bool tpcc::open_file(QString fileName)
   {
     ui->pushOpen->setText("  " + fileName);
     settings.setValue("recent_file", fileName);
-    event_viewer_->set_params(parameters_);
+    event_viewer_->refresh_event();
   }
   else
   {
@@ -180,14 +177,9 @@ void tpcc::on_pushStart_clicked()
     return;
 
   ui->pushStop->setEnabled(true);
-
   toggleIO(false);
-  collect_params();
 
-  DBG << "Analyzing using params:";
-  DBG << parameters_.debug();
-
-  thread_classify_.go(reader_, parameters_);
+  thread_classify_.go(reader_);
 }
 
 void tpcc::update_progress(double percent_done)
@@ -212,9 +204,6 @@ void tpcc::on_comboGroup_activated(const QString& /*arg1*/)
 
   double percent = double(reader_->num_analyzed()+1) / double(reader_->event_count()) * 100;
 
-  parameters_ = reader_->get_parameters();
-  if (parameters_.empty())
-    parameters_ = NMX::Event().parameters();
 
   display_params();
 

@@ -205,12 +205,10 @@ void ViewEvent::on_comboProjection_activated(const QString &/*arg1*/)
     plot_current_event();
 }
 
-void ViewEvent::set_params(NMX::Settings params)
+void ViewEvent::refresh_event()
 {
-  params_ = params;
   plot_current_event();
 }
-
 
 void ViewEvent::plot_current_event()
 {
@@ -227,12 +225,6 @@ void ViewEvent::plot_current_event()
 
 
   event_ = reader_->get_event_with_metrics(evt_idx);
-
-  if (evt_idx >= reader_->num_analyzed())
-  {
-    event_.set_parameters(params_);
-    event_.analyze();
-  }
 
   ui->eventX->display_record(event_.x());
   ui->eventY->display_record(event_.y());

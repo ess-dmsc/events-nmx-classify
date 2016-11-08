@@ -22,7 +22,7 @@ public:
 
   void set_new_source(std::shared_ptr<NMX::FileAPV> r);
 
-  void set_params(NMX::Settings);
+  void refresh_event();
 
   void clear();
 
@@ -51,7 +51,6 @@ private:
   Ui::ViewEvent *ui;
 
   std::shared_ptr<NMX::FileAPV> reader_;
-  NMX::Settings params_;
   NMX::Event event_;
 
   std::vector<size_t> indices_;
