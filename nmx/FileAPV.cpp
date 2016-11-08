@@ -1,6 +1,7 @@
 #include "FileAPV.h"
 #include "CustomLogger.h"
 #include <boost/algorithm/string.hpp>
+#include <boost/progress.hpp>
 
 namespace NMX {
 
@@ -45,22 +46,21 @@ size_t FileAPV::event_count()
   return event_count_;
 }
 
+
 Event FileAPV::get_event(size_t index)
 {
-  return Event(read_record(index, 0),
-               read_record(index, 1));
-}
-
-Event FileAPV::get_event_with_metrics(size_t index)
-{
-  Event event = get_event(index);
+  Event event(read_record(index, 0),
+              read_record(index, 1));
 
   event.set_parameters(analysis_params_);
   event.analyze();
 
-  for (auto &m : metrics_descr_)
-    if (metrics_.count(m.first) && (index < metrics_.at(m.first).size()))
-      event.set_metric(m.first, metrics_.at(m.first).at(index), m.second);
+  if (index < num_analyzed_)
+  {
+    for (auto &m : metrics_descr_)
+      if (metrics_.count(m.first) && (index < metrics_.at(m.first).size()))
+        event.set_metric(m.first, metrics_.at(m.first).at(index), m.second);
+  }
 
   return event;
 }
@@ -79,6 +79,19 @@ Record FileAPV::read_record(size_t index, size_t plane)
 size_t FileAPV::num_analyzed() const
 {
   return num_analyzed_;
+}
+
+void FileAPV::analyze_event(size_t index)
+{
+  if (index > event_count_)
+    return;
+
+  Event evt(read_record(index, 0),
+            read_record(index, 1));
+
+  evt.set_parameters(analysis_params_);
+  evt.analyze();
+  push_event_metrics(index, evt);
 }
 
 void FileAPV::push_event_metrics(size_t index, const Event &event)
@@ -211,17 +224,6 @@ void FileAPV::set_parameters(const Settings& params)
   analysis_params_ = params;
 }
 
-void FileAPV::analyze_event(size_t index)
-{
-  if (index > event_count_)
-    return;
-
-  NMX::Event evt = get_event(index);
-  evt.set_parameters(analysis_params_);
-  evt.analyze();
-  push_event_metrics(index, evt);
-}
-
 bool FileAPV::load_analysis(std::string name)
 {
   save_analysis();
@@ -253,18 +255,19 @@ bool FileAPV::load_analysis(std::string name)
     names.push_back(n.first);
 
   auto eventnum = dataset.dim(1);
-  for (hsize_t i=0; i < dataset.dim(0); i++)
+  auto metricnum = dataset.dim(0);
+  DBG << "<FileAPV> loading " << metricnum << " metrics for " << name;
+  boost::progress_display prog( metricnum );
+  for (hsize_t i=0; i < metricnum; i++)
   {
-    double checksum {0};
     std::vector<Variant> dt(event_count_);
     for (hsize_t j=0; j < num_analyzed_; j++)
     {
       auto datum = data[i*eventnum + j];
       dt[j] = Variant::from_float(datum);
-      checksum += datum;
     }
     metrics_[names[i]] = dt;
-    DBG << "<FileAPV> cached " << names[i];// << "   checksum = " << checksum;
+    ++prog;
   }
 
   current_analysis_name_ = name;

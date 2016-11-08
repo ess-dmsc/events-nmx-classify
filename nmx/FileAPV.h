@@ -15,7 +15,7 @@ public:
   ~FileAPV() { save_analysis(); }
 
   size_t event_count();
-  Event get_event_with_metrics(size_t index);
+  Event get_event(size_t index);
   void analyze_event(size_t index);
 
   void clear_analysis();
@@ -49,8 +49,6 @@ private:
   Record read_record(size_t index, size_t plane);
   void read_analysis_groups();
 
-
-  Event get_event(size_t index);
   void push_event_metrics(size_t index, const Event& event);
 };
 

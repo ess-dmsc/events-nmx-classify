@@ -223,8 +223,7 @@ void ViewEvent::plot_current_event()
     return;
   }
 
-
-  event_ = reader_->get_event_with_metrics(evt_idx);
+  event_ = reader_->get_event(evt_idx);
 
   ui->eventX->display_record(event_.x());
   ui->eventY->display_record(event_.y());

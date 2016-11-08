@@ -24,13 +24,11 @@ signals:
     void run_complete();
     void data_ready(double percent);
 
-
 protected:
     void run();
 
 private:
     std::shared_ptr<NMX::FileAPV> reader_;
-
 
     QAtomicInt terminating_;
     QAtomicInt refresh_frequency_;
