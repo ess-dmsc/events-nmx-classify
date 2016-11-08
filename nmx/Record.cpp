@@ -107,7 +107,7 @@ void Record::analyze()
   auto strips = strips_;
   auto timebins = timebins_;
 
-  if (parameters_.get_value("suppress_negatives").as_int())
+  if (parameters_.get_value("suppress_negatives").as_bool())
   {
     strips = strips_noneg;
     timebins = timebins_.subset("noneg");

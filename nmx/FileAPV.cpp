@@ -252,14 +252,21 @@ bool FileAPV::load_analysis(std::string name)
   for (auto &p : dataset.attributes())
     metrics_descr_[p] = dataset.read_attribute(p).to_string();
 
+  auto eventnum = dataset.dim(1);
+  auto metricnum = dataset.dim(0);
+
+  DBG << "<FileAPV> loading '" << name << "' with "
+      << metricnum << " metrics "
+      << " for " << num_analyzed_ << " events";
+
   std::vector<std::string> names;
   for (auto n : metrics_descr_)
     names.push_back(n.first);
 
-  auto eventnum = dataset.dim(1);
-  auto metricnum = dataset.dim(0);
-  DBG << "<FileAPV> loading " << metricnum << " metrics for " << name;
-  boost::progress_display prog( metricnum );
+  boost::progress_display prog( metricnum, std::cout,
+                                "Loading metrics  ",
+                                "                 ",
+                                "                 ");
   for (hsize_t i=0; i < metricnum; i++)
   {
     std::vector<Variant> dt(event_count_);

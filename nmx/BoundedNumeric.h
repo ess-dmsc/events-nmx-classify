@@ -33,7 +33,7 @@ public:
   void set_bounds(T b1, T b2, T s);
   void set_bounds(T b1, T b2);
   void set_step(T s);
-  void set_val(T s);
+  void set_val(T v);
 
   void enforce();
 

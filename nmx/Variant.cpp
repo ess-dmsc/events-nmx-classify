@@ -92,11 +92,16 @@ Variant Variant::infer(std::string str)
 
 Variant::bool_t Variant::as_bool(Variant::bool_t default_val) const
 {
-  try {
+  if (type() == code::type_bool)
     return boost::get<bool_t>(var_);
-  } catch (const boost::bad_get&) {
+  else if (type() == code::type_int)
+    return (boost::get<int_t>(var_) != 0);
+  else if (type() == code::type_uint)
+    return (boost::get<uint_t>(var_) != 0);
+  else if (type() == code::type_float)
+    return (boost::get<floating_t>(var_) != 0.0);
+  else
     return default_val;
-  }
 }
 
 Variant::int_t Variant::as_int(Variant::int_t default_val) const

@@ -1,6 +1,7 @@
 #include "BoundedNumeric.h"
 #include <boost/lexical_cast.hpp>
-//#include <iomanip>
+#include <iomanip>
+#include "CustomLogger.h"
 
 template <typename T>
 Bounded<T> Bounded<T>::from_string(std::string str)
@@ -13,10 +14,9 @@ Bounded<T> Bounded<T>::from_string(std::string str)
 template <typename T>
 std::string Bounded<T>::to_string() const
 {
-//    std::stringstream ss;
-//    ss << std::setprecision(std::numeric_limits<T>::max_digits10) << val_;
-//    return ss.str();
-  return boost::lexical_cast<std::string>(val_);
+  std::stringstream ss;
+  ss << val_;
+  return ss.str();
 }
 
 template <typename T>
