@@ -65,9 +65,9 @@ public:
   }
 
 private:
-  static constexpr double secs = pow(10, 9);
-  static constexpr double msecs = pow(10, 6);
-  static constexpr double usecs = pow(10, 3);
+  static constexpr double secs  = 1000000000;
+  static constexpr double msecs = 1000000;
+  static constexpr double usecs = 1000;
   uint64_t timeout_limit;
 
 
