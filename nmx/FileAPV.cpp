@@ -236,6 +236,8 @@ bool FileAPV::load_analysis(std::string name)
   if (name.empty())
     return false;
 
+  INFO << "<FileAPV> loading analysis '" << name << "'";
+
   auto group = file_.group("Analyses").group(name);
   num_analyzed_ = group.read_attribute("num_analyzed").as_uint(0);
 //  DBG << "Loading analysis group " << name << " with " << num_analyzed_ << " events";
@@ -255,7 +257,7 @@ bool FileAPV::load_analysis(std::string name)
   auto eventnum = dataset.dim(1);
   auto metricnum = dataset.dim(0);
 
-  DBG << "<FileAPV> loading '" << name << "' with "
+  DBG << "<FileAPV> "
       << metricnum << " metrics "
       << " for " << num_analyzed_ << " events";
 
@@ -264,8 +266,8 @@ bool FileAPV::load_analysis(std::string name)
     names.push_back(n.first);
 
   boost::progress_display prog( metricnum, std::cout,
-                                "Loading metrics  ",
                                 "                 ",
+                                "Loading metrics  ",
                                 "                 ");
   for (hsize_t i=0; i < metricnum; i++)
   {

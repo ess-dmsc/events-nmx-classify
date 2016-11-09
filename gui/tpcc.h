@@ -67,6 +67,7 @@ private slots:
   void on_pushDeleteGroup_clicked();
   void populate_combo();
   void on_pushOpen_clicked();
+  void on_pushShowParams_clicked();
 };
 
 #endif // tpcc_H

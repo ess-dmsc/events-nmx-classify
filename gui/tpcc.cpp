@@ -182,18 +182,34 @@ void tpcc::run_complete()
 
 void tpcc::on_comboGroup_activated(const QString& /*arg1*/)
 {
-  std::string name = ui->comboGroup->currentText().toStdString();
-  reader_->load_analysis(name);
+  auto name = ui->comboGroup->currentText();
 
-  double percent = double(reader_->num_analyzed()+1) / double(reader_->event_count()) * 100;
+  QProgressDialog* progress = new QProgressDialog("Loading analysis '" + name + "'",
+                                                  "Abort Copy",
+                                                  0, 100, this);
+  progress->setWindowModality(Qt::WindowModal);
+  progress->show();
+  progress->setValue(0);
 
+//  for (int i = 0; i < numFiles; i++)
+//  {
+//    progress.setValue(i);
+//    if (progress.wasCanceled())
+//      break;
+//    //... copy one file
+//  }
+
+  reader_->load_analysis(name.toStdString());
+  progress->setValue(100);
+
+  double percent = double(reader_->num_analyzed()) / double(reader_->event_count()) * 100;
 
   display_params();
+  ui->pushShowParams->setChecked(reader_->num_analyzed() == 0);
+  on_pushShowParams_clicked();
 
   ui->progressBar->setValue(percent);
-
   analyzer_->set_new_source(reader_);
-
   toggleIO(true);
 }
 
@@ -201,8 +217,8 @@ void tpcc::on_pushNewGroup_clicked()
 {
   bool ok = false;
   QString text = QInputDialog::getText(this, "New analysis group",
-                                           "Group name:", QLineEdit::Normal,
-                                           "", &ok);
+                                       "Group name:", QLineEdit::Normal,
+                                       "", &ok);
   if (!ok)
     return;
 
@@ -245,4 +261,9 @@ void tpcc::on_pushOpen_clicked()
     return;
 
   open_file(fileName);
+}
+
+void tpcc::on_pushShowParams_clicked()
+{
+  ui->widgetParams->setVisible(ui->pushShowParams->isChecked());
 }
