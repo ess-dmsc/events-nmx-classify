@@ -6,6 +6,7 @@
 namespace NMX {
 
 FileAPV::FileAPV(std::string filename)
+  : progress_(std::make_shared<std::atomic<double>>())
 {
   INFO << "<FileAPV> Opening " << filename;
 
@@ -30,12 +31,12 @@ FileAPV::FileAPV(std::string filename)
   }
 
   event_count_ = dataset_.dim(0);
-
-  INFO << "<FileAPV> Found " << event_count_ << " events in " << filename;
-
   analysis_params_ = Event().parameters();
-
   read_analysis_groups();
+
+  INFO << "<FileAPV> Opened " << filename
+       << " with " << event_count_
+       << " events and " << analysis_groups_.size() << " analyses";
 }
 
 void FileAPV::read_analysis_groups()
@@ -228,13 +229,17 @@ void FileAPV::set_parameters(const Settings& params)
 
 bool FileAPV::load_analysis(std::string name)
 {
+  progress_->store(0);
   save_analysis();
 
   clear_analysis();
   analysis_params_ = Event().parameters();
 
   if (name.empty())
+  {
+    progress_->store(100);
     return false;
+  }
 
   INFO << "<FileAPV> loading analysis '" << name << "'";
 
@@ -259,7 +264,7 @@ bool FileAPV::load_analysis(std::string name)
 
   DBG << "<FileAPV> "
       << metricnum << " metrics "
-      << " for " << num_analyzed_ << " events";
+      << "for " << num_analyzed_ << " events";
 
   std::vector<std::string> names;
   for (auto n : metrics_descr_)
@@ -279,6 +284,7 @@ bool FileAPV::load_analysis(std::string name)
     }
     metrics_[names[i]] = dt;
     ++prog;
+    progress_->store(double(i) / double(metricnum) * 100.0);
   }
 
   current_analysis_name_ = name;
@@ -286,6 +292,7 @@ bool FileAPV::load_analysis(std::string name)
   DBG << "<FileAPV> Loaded analysis '" << current_analysis_name_
       << "' with data for " << num_analyzed_ << " events"
       << " and " << metrics_descr_.size() << " metrics.";
+  progress_->store(100);
   return true;
 }
 

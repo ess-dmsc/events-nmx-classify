@@ -4,6 +4,7 @@
 #include "H5CC_File.h"
 #include <memory>
 #include <map>
+#include <atomic>
 #include "Event.h"
 
 namespace NMX {
@@ -33,6 +34,8 @@ public:
   bool load_analysis(std::string name);
   bool save_analysis();
 
+  std::shared_ptr<std::atomic<double>> progress() { return progress_; }
+
 private:
   H5CC::File file_;
   size_t event_count_ {0};
@@ -50,6 +53,8 @@ private:
   void read_analysis_groups();
 
   void push_event_metrics(size_t index, const Event& event);
+
+  std::shared_ptr<std::atomic<double>> progress_;
 };
 
 }

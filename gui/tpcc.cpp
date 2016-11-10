@@ -182,24 +182,28 @@ void tpcc::run_complete()
 
 void tpcc::on_comboGroup_activated(const QString& /*arg1*/)
 {
+  toggleIO(false);
   auto name = ui->comboGroup->currentText();
 
   QProgressDialog* progress = new QProgressDialog("Loading analysis '" + name + "'",
-                                                  "Abort Copy",
+                                                  "",
                                                   0, 100, this);
   progress->setWindowModality(Qt::WindowModal);
   progress->show();
   progress->setValue(0);
 
-//  for (int i = 0; i < numFiles; i++)
-//  {
-//    progress.setValue(i);
-//    if (progress.wasCanceled())
-//      break;
-//    //... copy one file
-//  }
+  auto pro = reader_->progress();
 
-  reader_->load_analysis(name.toStdString());
+  thread_classify_.load(reader_, name);
+
+  double p = 0;
+  while (p != 100)
+  {
+    sleep(3);
+    p = pro->load();
+    progress->setValue(p);
+  }
+
   progress->setValue(100);
 
   double percent = double(reader_->num_analyzed()) / double(reader_->event_count()) * 100;
