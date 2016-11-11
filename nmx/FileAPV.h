@@ -25,7 +25,7 @@ public:
   void set_parameters(const Settings&);
   Settings get_parameters() const {return analysis_params_;}
   std::list<std::string> metrics() const;
-  std::vector<Variant> get_metric(std::string cat); //const?
+  std::vector<double> get_metric(std::string cat); //const?
   std::string metric_description(std::string cat) const;
 
   std::list<std::string> analysis_groups() const;
@@ -45,7 +45,7 @@ private:
   std::list<std::string> analysis_groups_;
   std::string current_analysis_name_;
   Settings analysis_params_;
-  std::map<std::string, std::vector<Variant>> metrics_;
+  std::map<std::string, std::vector<double>> metrics_;
   std::map<std::string, std::string> metrics_descr_;
   size_t num_analyzed_ {0};
 

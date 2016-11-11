@@ -56,13 +56,13 @@ void Event::set_parameter(std::string id, Variant val)
     parameters_.set(id, val);
 }
 
-void Event::set_metric(std::string id, Variant val, std::string descr)
+void Event::set_metric(std::string id, double val, std::string descr)
 {
-  metrics_.set(id, Setting(val, descr));
+  metrics_.set(id, Setting(Variant::from_float(val), descr));
   if ((id.size() > 1) && (boost::algorithm::to_lower_copy(id.substr(0,1)) == "x"))
-    x_.set_metric(id.substr(2, id.size() - 2), val, descr);
+    x_.set_metric(id.substr(2, id.size() - 2), Variant::from_float(val), descr);
   else if ((id.size() > 1) && (boost::algorithm::to_lower_copy(id.substr(0,1)) == "y"))
-    y_.set_metric(id.substr(2, id.size() - 2), val, descr);
+    y_.set_metric(id.substr(2, id.size() - 2), Variant::from_float(val), descr);
 }
 
 void Event::clear_metrics()

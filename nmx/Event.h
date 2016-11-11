@@ -24,7 +24,7 @@ struct Event
   void set_parameter(std::string, Variant);
   Settings parameters() const {return parameters_;}
 
-  void set_metric(std::string id, Variant val, std::string descr);
+  void set_metric(std::string id, double val, std::string descr);
   Settings metrics() const {return metrics_;}
 
   std::list<std::string> projection_categories() const;

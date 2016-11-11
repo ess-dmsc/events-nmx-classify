@@ -174,9 +174,9 @@ void Analyzer::rebuild_data()
     if ((eventID >= xx.size()) || (eventID >= yy.size()) || (eventID >= zz.size()))
       continue;
 
-    data_[int(zz.at(eventID).as_float() / zz_norm)]
-         [std::pair<int,int>({int(xx.at(eventID).as_float() / xx_norm),
-                              int(yy.at(eventID).as_float() / yy_norm)})].push_back(eventID);
+    data_[int(zz.at(eventID) / zz_norm)]
+         [std::pair<int,int>({int(xx.at(eventID) / xx_norm),
+                              int(yy.at(eventID) / yy_norm)})].push_back(eventID);
   }
 
   for (auto &i : histograms1d_)
@@ -432,20 +432,14 @@ void Analyzer::plot_block()
   ui->plotHistogram->replot();
 }
 
-double Analyzer::normalizer(const std::vector<Variant> &data)
+double Analyzer::normalizer(const std::vector<double> &data)
 {
   double minimum{std::numeric_limits<double>::max()};
   double maximum{std::numeric_limits<double>::min()};
   for (auto &d : data)
   {
-    if ((d.type() == Variant::code::type_null) ||
-        (d.type() == Variant::code::type_menu))
-      continue;
-
-    double val = d.as_float();
-
-    minimum = std::min(val, minimum);
-    maximum = std::max(val, maximum);
+    minimum = std::min(d, minimum);
+    maximum = std::max(d, maximum);
   }
 
   if (minimum >= maximum)

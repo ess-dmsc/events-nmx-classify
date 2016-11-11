@@ -113,7 +113,7 @@ void FileAPV::push_event_metrics(size_t index, const Event &event)
       metrics_[a.first].resize(event_count_);
       metrics_descr_[a.first] = a.second.description;
     }
-    metrics_[a.first][index] = a.second.value;
+    metrics_[a.first][index] = a.second.value.as_float();
   }
 
   if (index >= num_analyzed_)
@@ -157,12 +157,12 @@ std::list<std::string> FileAPV::metrics() const
   return ret;
 }
 
-std::vector<Variant> FileAPV::get_metric(std::string cat)
+std::vector<double> FileAPV::get_metric(std::string cat)
 {
   if (metrics_.count(cat))
     return metrics_.at(cat);
   else
-    return std::vector<Variant>();
+    return std::vector<double>();
 }
 
 std::string FileAPV::metric_description(std::string cat) const
@@ -201,7 +201,7 @@ bool FileAPV::save_analysis()
     int index = 0;
     for (auto &d : m.second)
     {
-      auto datum = d.as_float();
+      auto datum = d;
       data.push_back(datum);
       checksum += datum;
       index++;
@@ -244,8 +244,8 @@ bool FileAPV::load_analysis(std::string name)
   INFO << "<FileAPV> loading analysis '" << name << "'";
 
   auto group = file_.group("Analyses").group(name);
-  num_analyzed_ = group.read_attribute("num_analyzed").as_uint(0);
-//  DBG << "Loading analysis group " << name << " with " << num_analyzed_ << " events";
+  auto num_analyzed = group.read_attribute("num_analyzed").as_uint(0);
+//  DBG << "Loading analysis group " << name << " with " << num_analyzed << " events";
 
   auto params_group = group.open_group("parameters");
   auto params_descr_group = params_group.open_group("descriptions");
@@ -253,41 +253,45 @@ bool FileAPV::load_analysis(std::string name)
     analysis_params_.set(p, Setting(params_group.read_attribute(p),
                                   params_descr_group.read_attribute(p).to_string()));
 
-  std::vector<double> data;
   auto dataset = group.open_dataset("metrics");
-  dataset.read(data, H5::PredType::NATIVE_DOUBLE);
   for (auto &p : dataset.attributes())
     metrics_descr_[p] = dataset.read_attribute(p).to_string();
 
   auto eventnum = dataset.dim(1);
   auto metricnum = dataset.dim(0);
 
-  DBG << "<FileAPV> "
-      << metricnum << " metrics "
-      << "for " << num_analyzed_ << " events";
-
   std::vector<std::string> names;
   for (auto n : metrics_descr_)
     names.push_back(n.first);
+
+  if (names.size() != metricnum)
+  {
+    ERR << "Metric count != description count. Aborting.";
+    progress_->store(100);
+    return false;
+  }
+
+  INFO << "<FileAPV> "
+       << metricnum << " metrics "
+       << "for " << num_analyzed << " events";
 
   boost::progress_display prog( metricnum, std::cout,
                                 "                 ",
                                 "Loading metrics  ",
                                 "                 ");
+
+  std::vector<double> data;
+  dataset.read(data, H5::PredType::NATIVE_DOUBLE);
   for (hsize_t i=0; i < metricnum; i++)
   {
-    std::vector<Variant> dt(event_count_);
-    for (hsize_t j=0; j < num_analyzed_; j++)
-    {
-      auto datum = data[i*eventnum + j];
-      dt[j] = Variant::from_float(datum);
-    }
-    metrics_[names[i]] = dt;
+    metrics_[names[i]] =
+        std::vector<double>(data.begin() + eventnum * i, data.begin() + eventnum * (i+1));
     ++prog;
     progress_->store(double(i) / double(metricnum) * 100.0);
   }
 
   current_analysis_name_ = name;
+  num_analyzed_ = num_analyzed;
 
   DBG << "<FileAPV> Loaded analysis '" << current_analysis_name_
       << "' with data for " << num_analyzed_ << " events"
