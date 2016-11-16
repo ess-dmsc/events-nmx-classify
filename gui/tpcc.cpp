@@ -185,26 +185,7 @@ void tpcc::on_comboGroup_activated(const QString& /*arg1*/)
   toggleIO(false);
   auto name = ui->comboGroup->currentText();
 
-  QProgressDialog* progress = new QProgressDialog("Loading analysis '" + name + "'",
-                                                  "",
-                                                  0, 100, this);
-  progress->setWindowModality(Qt::WindowModal);
-  progress->show();
-  progress->setValue(0);
-
-  auto pro = reader_->progress();
-
-  thread_classify_.load(reader_, name);
-
-  double p = 0;
-  while (p != 100)
-  {
-    sleep(3);
-    p = pro->load();
-    progress->setValue(p);
-  }
-
-  progress->setValue(100);
+  reader_->load_analysis(name.toStdString());
 
   double percent = double(reader_->num_analyzed()) / double(reader_->event_count()) * 100;
 
@@ -253,9 +234,16 @@ void tpcc::populate_combo()
 
 void tpcc::on_pushDeleteGroup_clicked()
 {
-  reader_->delete_analysis(ui->comboGroup->currentText().toStdString());
-  populate_combo();
-  on_comboGroup_activated("");
+  QMessageBox::StandardButton reply;
+  reply = QMessageBox::question(this, "Delete analysis?",
+                                "Delete analysis '" + ui->comboGroup->currentText() + "'?",
+                                QMessageBox::Yes|QMessageBox::No);
+  if (reply == QMessageBox::Yes)
+  {
+    reader_->delete_analysis(ui->comboGroup->currentText().toStdString());
+    populate_combo();
+    on_comboGroup_activated("");
+  }
 }
 
 void tpcc::on_pushOpen_clicked()

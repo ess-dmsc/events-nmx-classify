@@ -28,31 +28,12 @@ void ThreadClassify::go(std::shared_ptr<NMX::FileAPV> r)
     return;
   }
 
-  analyze_ = true;
   reader_ = r;
   terminating_ = false;
 
   if (!isRunning())
     start(HighPriority);
 }
-
-void ThreadClassify::load(std::shared_ptr<NMX::FileAPV> r, QString name)
-{
-  if (isRunning())
-  {
-    WARN << "Runner busy";
-    return;
-  }
-
-  analyze_ = false;
-  reader_ = r;
-  name_ = name;
-  terminating_ = false;
-
-  if (!isRunning())
-    start(HighPriority);
-}
-
 
 void ThreadClassify::set_refresh_frequency(int secs)
 {
@@ -66,15 +47,13 @@ void ThreadClassify::run()
   if (!reader_|| !reader_->event_count())
     return;
 
-  if (analyze_)
-    run_analyze();
-  else
-    run_load();
+  run_analyze();
 }
 
 void ThreadClassify::run_analyze()
 {
   int evt_count = reader_->event_count();
+  double percent {0};
 
   QTimer timer;
   timer.setSingleShot(true);
@@ -102,10 +81,4 @@ void ThreadClassify::run_analyze()
 
   emit data_ready(percent);
   emit run_complete();
-}
-
-void ThreadClassify::run_load()
-{
-  reader_->load_analysis(name_.toStdString());
-//  emit run_complete();
 }

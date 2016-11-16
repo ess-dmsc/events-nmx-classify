@@ -231,7 +231,7 @@
          </size>
         </property>
         <property name="toolTip">
-         <string>Start</string>
+         <string>Delete analysis</string>
         </property>
         <property name="text">
          <string/>
@@ -275,7 +275,7 @@
          </size>
         </property>
         <property name="toolTip">
-         <string>Start</string>
+         <string>New analysis</string>
         </property>
         <property name="text">
          <string/>

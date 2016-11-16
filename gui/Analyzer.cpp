@@ -155,28 +155,28 @@ void Analyzer::rebuild_data()
   auto yy = reader_->get_metric(weight_y);
   auto zz = reader_->get_metric(weight_z);
 
-  ui->labelX->setText("   " + QString::fromStdString(reader_->metric_description(weight_x)));
-  ui->labelY->setText("   " + QString::fromStdString(reader_->metric_description(weight_y)));
-  ui->labelZ->setText("   " + QString::fromStdString(reader_->metric_description(weight_z)));
+  ui->labelX->setText("   " + QString::fromStdString(xx.description));
+  ui->labelY->setText("   " + QString::fromStdString(yy.description));
+  ui->labelZ->setText("   " + QString::fromStdString(zz.description));
 
-  if (xx.size() != yy.size())
+  if (xx.data.size() != yy.data.size())
   {
     make_projections();
     return;
   }
 
-  xx_norm = normalizer(xx);
-  yy_norm = normalizer(yy);
-  zz_norm = normalizer(zz);
+  xx_norm = normalizer(xx.data);
+  yy_norm = normalizer(yy.data);
+  zz_norm = normalizer(zz.data);
 
   for (size_t eventID = 0; eventID < reader_->num_analyzed(); ++eventID)
   {
-    if ((eventID >= xx.size()) || (eventID >= yy.size()) || (eventID >= zz.size()))
+    if ((eventID >= xx.data.size()) || (eventID >= yy.data.size()) || (eventID >= zz.data.size()))
       continue;
 
-    data_[int(zz.at(eventID) / zz_norm)]
-         [std::pair<int,int>({int(xx.at(eventID) / xx_norm),
-                              int(yy.at(eventID) / yy_norm)})].push_back(eventID);
+    data_[int(zz.data.at(eventID) / zz_norm)]
+         [std::pair<int,int>({int(xx.data.at(eventID) / xx_norm),
+                              int(yy.data.at(eventID) / yy_norm)})].push_back(eventID);
   }
 
   for (auto &i : histograms1d_)

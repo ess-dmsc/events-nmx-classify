@@ -6,7 +6,6 @@
 namespace NMX {
 
 FileAPV::FileAPV(std::string filename)
-  : progress_(std::make_shared<std::atomic<double>>())
 {
   INFO << "<FileAPV> Opening " << filename;
 
@@ -60,9 +59,9 @@ Event FileAPV::get_event(size_t index)
 
   if (index < num_analyzed_)
   {
-    for (auto &m : metrics_descr_)
-      if (metrics_.count(m.first) && (index < metrics_.at(m.first).size()))
-        event.set_metric(m.first, metrics_.at(m.first).at(index), m.second);
+    for (auto &m : metrics_)
+      if (index < m.second.data.size())
+        event.set_metric(m.first, m.second.data.at(index), m.second.description);
   }
 
   return event;
@@ -106,15 +105,12 @@ void FileAPV::push_event_metrics(size_t index, const Event &event)
   if (analysis_params_.empty())
     analysis_params_ = event.parameters();
 
+  if (metrics_.empty())
+    for (auto &a : event.metrics().data())
+      metrics_[a.first] = Metrics(event_count_, a.second.description);
+
   for (auto &a : event.metrics().data())
-  {
-    if (metrics_[a.first].empty())
-    {
-      metrics_[a.first].resize(event_count_);
-      metrics_descr_[a.first] = a.second.description;
-    }
-    metrics_[a.first][index] = a.second.value.as_float();
-  }
+    metrics_[a.first].add(index, a.second.value.as_float());
 
   if (index >= num_analyzed_)
     num_analyzed_ = index + 1;
@@ -124,7 +120,8 @@ void FileAPV::clear_analysis()
 {
   current_analysis_name_.clear();
   metrics_.clear();
-  metrics_descr_.clear();
+//  metrics_descr_.clear();
+//  metrics_idx_.clear();
   analysis_params_.clear();
   num_analyzed_ = 0;
 }
@@ -152,26 +149,34 @@ void FileAPV::delete_analysis(std::string name)
 std::list<std::string> FileAPV::metrics() const
 {
   std::list<std::string> ret;
-  for (auto &cat : metrics_descr_)
+  for (auto &cat : metrics_)
     ret.push_back(cat.first);
   return ret;
 }
 
-std::vector<double> FileAPV::get_metric(std::string cat)
+Metrics FileAPV::get_metric(std::string cat)
 {
+//  if (!metrics_descr_.count(cat))
+//    return std::vector<double>();
+
+//  auto dataset = group.open_dataset("metrics");
+//  auto metricnum = dataset.dim(0);
+//  auto eventnum = dataset.dim(1);
+//  std::vector<double> data(eventnum, 0.0);
+
   if (metrics_.count(cat))
     return metrics_.at(cat);
   else
-    return std::vector<double>();
+    return Metrics();
 }
 
-std::string FileAPV::metric_description(std::string cat) const
-{
-  if (metrics_descr_.count(cat))
-    return metrics_descr_.at(cat);
-  else
-    return "";
-}
+//std::string FileAPV::metric_description(std::string cat) const
+//{
+//  if (metrics_descr_.count(cat))
+//    return metrics_descr_.at(cat);
+//  else
+//    return "";
+//}
 
 std::list<std::string> FileAPV::analysis_groups() const
 {
@@ -196,25 +201,14 @@ bool FileAPV::save_analysis()
 
   std::vector<double> data;
   for (auto &m : metrics_)
-  {
-    double checksum {0};
-    int index = 0;
-    for (auto &d : m.second)
-    {
-      auto datum = d;
-      data.push_back(datum);
-      checksum += datum;
-      index++;
-    }
-//    DBG << "Saved " << m.first << "   checksum = " << checksum;
-  }
+    data.insert(std::end(data), std::begin(m.second.data), std::end(m.second.data));
 
   auto dataset = group.create_dataset("metrics",
                                       H5::PredType::NATIVE_DOUBLE,
                                       {metrics_.size(), event_count_});
   dataset.write(data, H5::PredType::NATIVE_DOUBLE);
-  for (auto &d : metrics_)
-    dataset.write_attribute(d.first, Variant::from_menu(metrics_descr_[d.first]));
+  for (auto &m : metrics_)
+    dataset.write_attribute(m.first, Variant::from_menu(m.second.description));
 
   return true;
 }
@@ -229,17 +223,13 @@ void FileAPV::set_parameters(const Settings& params)
 
 bool FileAPV::load_analysis(std::string name)
 {
-  progress_->store(0);
   save_analysis();
 
   clear_analysis();
   analysis_params_ = Event().parameters();
 
   if (name.empty())
-  {
-    progress_->store(100);
     return false;
-  }
 
   INFO << "<FileAPV> loading analysis '" << name << "'";
 
@@ -255,39 +245,37 @@ bool FileAPV::load_analysis(std::string name)
 
   auto dataset = group.open_dataset("metrics");
   for (auto &p : dataset.attributes())
-    metrics_descr_[p] = dataset.read_attribute(p).to_string();
+    metrics_[p] = Metrics(event_count_, dataset.read_attribute(p).to_string());
 
-  auto eventnum = dataset.dim(1);
   auto metricnum = dataset.dim(0);
+  auto eventnum = dataset.dim(1);
 
   std::vector<std::string> names;
-  for (auto n : metrics_descr_)
+  for (auto n : metrics_)
     names.push_back(n.first);
 
   if (names.size() != metricnum)
   {
     ERR << "Metric count != description count. Aborting.";
-    progress_->store(100);
     return false;
   }
 
-  INFO << "<FileAPV> "
+  if (eventnum > event_count_)
+  {
+    ERR << "Analyzed event count > total event count. Aborting.";
+    return false;
+  }
+
+
+  INFO << "<FileAPV> loading "
        << metricnum << " metrics "
        << "for " << num_analyzed << " events";
 
-  boost::progress_display prog( metricnum, std::cout,
-                                "                 ",
-                                "Loading metrics  ",
-                                "                 ");
-
-  std::vector<double> data;
-  dataset.read(data, H5::PredType::NATIVE_DOUBLE);
   for (hsize_t i=0; i < metricnum; i++)
   {
-    metrics_[names[i]] =
-        std::vector<double>(data.begin() + eventnum * i, data.begin() + eventnum * (i+1));
-    ++prog;
-    progress_->store(double(i) / double(metricnum) * 100.0);
+//    metrics_[names[i]] = std::vector<double>(event_count_, 0.0);
+    dataset.read(metrics_[names[i]].data, H5::PredType::NATIVE_DOUBLE,
+                 {1, -1}, {i, 0});
   }
 
   current_analysis_name_ = name;
@@ -295,8 +283,7 @@ bool FileAPV::load_analysis(std::string name)
 
   DBG << "<FileAPV> Loaded analysis '" << current_analysis_name_
       << "' with data for " << num_analyzed_ << " events"
-      << " and " << metrics_descr_.size() << " metrics.";
-  progress_->store(100);
+      << " and " << metrics_.size() << " metrics.";
   return true;
 }
 

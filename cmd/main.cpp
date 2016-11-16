@@ -1,7 +1,6 @@
 #include "CustomLogger.h"
 #include "CLParser.h"
 #include "FileAPV.h"
-//#include "Timer.h"
 #include <signal.h>
 #include <boost/progress.hpp>
 
@@ -19,7 +18,6 @@ const std::string options_text =
     "    -a [input_group] Must be specified. Will be created if does not exist in file.\n"
     "    -pf [path/filename.h5] Copy analysis parameters from file\n"
     "    -pa [analysis_gorup] Copy parameters from group\n"
-    "    -v verbose - default false\n"
     "    --help/-h prints this list of options\n";
 
 int main(int argc, char* argv[])
@@ -28,8 +26,6 @@ int main(int argc, char* argv[])
 
   // Parse the command line aguments
   CLParser cmd_line(argc, argv);
-
-  bool verbose = cmd_line.has_switch("-v");
 
   // Input file
   std::string input_file  = cmd_line.get_value("-f");
@@ -91,28 +87,15 @@ int main(int argc, char* argv[])
 
   boost::progress_display prog( nevents );
   prog += numanalyzed;
-//  Timer msg_timer(REFRESH_SECONDS, true);
   for (size_t eventID = numanalyzed; eventID < nevents; ++eventID)
   {
     reader.analyze_event(eventID);
-
-//    if (verbose)
-//      INFO << "Processing event # " << eventID <<  " \n" << reader.get_event(eventID).debug();
-//    else if (msg_timer.timeout())
-//    {
-//      double percent = double(eventID +  1) / double(nevents) * 100;
-//      INFO << "Processed " << std::fixed <<  std::setprecision(1) << percent << "% "
-//           << "(" << eventID + 1 << " of " << nevents << ")";
-//      msg_timer = Timer(REFRESH_SECONDS, true);
-//    }
-
     ++prog;
-
     if (term_flag)
       break;
   }
 
-  INFO << "Saving " << input_group << " to file " << input_file << ".";
+  INFO << "\nSaving " << input_group << " to file " << input_file << ".";
   reader.save_analysis();
 
   return 0;
