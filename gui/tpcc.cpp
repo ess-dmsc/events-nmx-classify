@@ -176,7 +176,7 @@ void tpcc::run_complete()
   toggleIO(true);
   ui->pushStop->setEnabled(false);
 
-  reader_->save_analysis();
+//  reader_->save_analysis();
   analyzer_->set_new_source(reader_);
 }
 

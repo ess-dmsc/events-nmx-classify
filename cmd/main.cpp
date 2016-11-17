@@ -96,7 +96,7 @@ int main(int argc, char* argv[])
   }
 
   INFO << "\nSaving " << input_group << " to file " << input_file << ".";
-  reader.save_analysis();
+//  reader.save_analysis();
 
   return 0;
 }

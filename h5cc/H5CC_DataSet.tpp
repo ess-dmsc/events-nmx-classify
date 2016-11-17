@@ -45,7 +45,7 @@ void DataSet::write(const std::vector<T>& data, H5::PredType h5type, Space slab,
     return;
   try
   {
-    Location<H5::DataSet>::location_.write(data.data(), h5type, space_.space());
+    Location<H5::DataSet>::location_.write(data.data(), h5type, slab.space(), space.space());
   }
   catch (...) {}
 }
