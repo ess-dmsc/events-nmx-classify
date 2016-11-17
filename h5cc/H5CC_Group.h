@@ -27,7 +27,7 @@ public:
   bool has_group(std::string name) const { return has_member(name, H5O_TYPE_GROUP); }
   std::list<std::string> groups() const { return members(H5O_TYPE_GROUP); }
   Groupoid<H5::Group> group(std::string name);
-  Groupoid<H5::Group> open_group(std::string name);
+  Groupoid<H5::Group> open_group(std::string name) const;
   Groupoid<H5::Group> create_group(std::string name);
 };
 

@@ -121,7 +121,7 @@ Groupoid<H5::Group> Groupoid<T>::group(std::string name)
 }
 
 template<typename T>
-Groupoid<H5::Group> Groupoid<T>::open_group(std::string name)
+Groupoid<H5::Group> Groupoid<T>::open_group(std::string name) const
 {
   Groupoid<H5::Group> ret;
   try

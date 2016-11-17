@@ -13,7 +13,7 @@ public:
   DataSet();
   DataSet(H5::DataSet ds);
 
-  template<typename T> void write(std::vector<T>& data, H5::PredType h5type);
+  template<typename T> void write(const std::vector<T>& data, H5::PredType h5type);
 
   template<typename T> void read(std::vector<T>& data,
                                  H5::PredType h5type) const;

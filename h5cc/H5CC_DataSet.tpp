@@ -1,7 +1,7 @@
 namespace H5CC {
 
 template<typename T>
-void DataSet::write(std::vector<T>& data, H5::PredType h5type)
+void DataSet::write(const std::vector<T>& data, H5::PredType h5type)
 {
   if (data.size() != space_.data_size())
     return;

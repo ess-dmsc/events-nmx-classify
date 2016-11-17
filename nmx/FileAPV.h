@@ -24,7 +24,11 @@ struct Metrics
     data[idx] = val;
     min = std::min(min, val);
     max = std::max(max, val);
+    sum += val;
   }
+
+  void write_H5(H5CC::Group group, std::string name) const;
+  void read_H5(const H5CC::Group &group, std::string name);
 
   std::vector<double> data;
   std::string description;
@@ -44,14 +48,12 @@ public:
   Event get_event(size_t index);
   void analyze_event(size_t index);
 
-  void clear_analysis();
   size_t num_analyzed() const;
 
   void set_parameters(const Settings&);
   Settings get_parameters() const {return analysis_params_;}
   std::list<std::string> metrics() const;
   Metrics get_metric(std::string cat); //const?
-//  std::string metric_description(std::string cat) const;
 
   std::list<std::string> analysis_groups() const;
   bool create_analysis(std::string name);
@@ -66,11 +68,10 @@ private:
   H5CC::DataSet  dataset_;
 
   std::list<std::string> analysis_groups_;
+
   std::string current_analysis_name_;
   Settings analysis_params_;
   std::map<std::string, Metrics> metrics_;
-//  std::map<std::string, std::string> metrics_descr_;
-//  std::map<std::string, size_t> metrics_idx_;
   size_t num_analyzed_ {0};
 
   Record read_record(size_t index, size_t plane);
@@ -78,7 +79,7 @@ private:
 
   void push_event_metrics(size_t index, const Event& event);
 
-  void get_all_metrics();
+  void clear_analysis();
 };
 
 }

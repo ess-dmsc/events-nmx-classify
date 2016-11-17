@@ -5,6 +5,34 @@
 
 namespace NMX {
 
+void Metrics::write_H5(H5CC::Group group, std::string name) const
+{
+  if (data.empty())
+    return;
+
+  auto dataset = group.create_dataset(name, H5::PredType::NATIVE_DOUBLE, {1, data.size()});
+  dataset.write(data, H5::PredType::NATIVE_DOUBLE);
+  dataset.write_attribute("description", Variant::from_menu(description));
+  dataset.write_attribute("min", Variant::from_float(min));
+  dataset.write_attribute("max", Variant::from_float(max));
+  dataset.write_attribute("sum", Variant::from_float(sum));
+}
+
+void Metrics::read_H5(const H5CC::Group &group, std::string name)
+{
+  auto dataset = group.open_dataset(name);
+  auto eventnum = dataset.dim(1);
+  if (eventnum < 1)
+    return;
+  data.resize(eventnum, 0.0);
+  dataset.read(data, H5::PredType::NATIVE_DOUBLE);
+  description = dataset.read_attribute("description").to_string();
+  min = dataset.read_attribute("min").as_float();
+  max = dataset.read_attribute("max").as_float();
+  sum = dataset.read_attribute("sum").as_float();
+}
+
+
 FileAPV::FileAPV(std::string filename)
 {
   INFO << "<FileAPV> Opening " << filename;
@@ -120,9 +148,7 @@ void FileAPV::clear_analysis()
 {
   current_analysis_name_.clear();
   metrics_.clear();
-//  metrics_descr_.clear();
-//  metrics_idx_.clear();
-  analysis_params_.clear();
+  analysis_params_ = Event().parameters();
   num_analyzed_ = 0;
 }
 
@@ -156,27 +182,11 @@ std::list<std::string> FileAPV::metrics() const
 
 Metrics FileAPV::get_metric(std::string cat)
 {
-//  if (!metrics_descr_.count(cat))
-//    return std::vector<double>();
-
-//  auto dataset = group.open_dataset("metrics");
-//  auto metricnum = dataset.dim(0);
-//  auto eventnum = dataset.dim(1);
-//  std::vector<double> data(eventnum, 0.0);
-
   if (metrics_.count(cat))
     return metrics_.at(cat);
   else
     return Metrics();
 }
-
-//std::string FileAPV::metric_description(std::string cat) const
-//{
-//  if (metrics_descr_.count(cat))
-//    return metrics_descr_.at(cat);
-//  else
-//    return "";
-//}
 
 std::list<std::string> FileAPV::analysis_groups() const
 {
@@ -191,24 +201,10 @@ bool FileAPV::save_analysis()
   auto group = file_.group("Analyses").group(current_analysis_name_);
   group.write_attribute("num_analyzed", Variant::from_int(num_analyzed_));
 
-  auto params_group = group.group("parameters");
-  auto params_descr_group = params_group.group("descriptions");
-  for (auto &d : analysis_params_.data())
-  {
-    params_group.write_attribute(d.first, d.second.value);
-    params_descr_group.write_attribute(d.first, Variant::from_menu(d.second.description));
-  }
+  analysis_params_.write_H5(group, "parameters");
 
-  std::vector<double> data;
   for (auto &m : metrics_)
-    data.insert(std::end(data), std::begin(m.second.data), std::end(m.second.data));
-
-  auto dataset = group.create_dataset("metrics",
-                                      H5::PredType::NATIVE_DOUBLE,
-                                      {metrics_.size(), event_count_});
-  dataset.write(data, H5::PredType::NATIVE_DOUBLE);
-  for (auto &m : metrics_)
-    dataset.write_attribute(m.first, Variant::from_menu(m.second.description));
+    m.second.write_H5(group, m.first);
 
   return true;
 }
@@ -224,59 +220,23 @@ void FileAPV::set_parameters(const Settings& params)
 bool FileAPV::load_analysis(std::string name)
 {
   save_analysis();
-
   clear_analysis();
-  analysis_params_ = Event().parameters();
 
   if (name.empty())
     return false;
 
-  INFO << "<FileAPV> loading analysis '" << name << "'";
-
   auto group = file_.group("Analyses").group(name);
   auto num_analyzed = group.read_attribute("num_analyzed").as_uint(0);
-//  DBG << "Loading analysis group " << name << " with " << num_analyzed << " events";
 
-  auto params_group = group.open_group("parameters");
-  auto params_descr_group = params_group.open_group("descriptions");
-  for (auto &p : params_group.attributes())
-    analysis_params_.set(p, Setting(params_group.read_attribute(p),
-                                  params_descr_group.read_attribute(p).to_string()));
-
-  auto dataset = group.open_dataset("metrics");
-  for (auto &p : dataset.attributes())
-    metrics_[p] = Metrics(event_count_, dataset.read_attribute(p).to_string());
-
-  auto metricnum = dataset.dim(0);
-  auto eventnum = dataset.dim(1);
-
-  std::vector<std::string> names;
-  for (auto n : metrics_)
-    names.push_back(n.first);
-
-  if (names.size() != metricnum)
-  {
-    ERR << "Metric count != description count. Aborting.";
-    return false;
-  }
-
-  if (eventnum > event_count_)
-  {
-    ERR << "Analyzed event count > total event count. Aborting.";
-    return false;
-  }
-
+  if (group.has_group("parameters"))
+    analysis_params_.read_H5(group, "parameters");
 
   INFO << "<FileAPV> loading "
-       << metricnum << " metrics "
+       << group.datasets().size() << " metrics "
        << "for " << num_analyzed << " events";
 
-  for (hsize_t i=0; i < metricnum; i++)
-  {
-//    metrics_[names[i]] = std::vector<double>(event_count_, 0.0);
-    dataset.read(metrics_[names[i]].data, H5::PredType::NATIVE_DOUBLE,
-                 {1, -1}, {i, 0});
-  }
+  for (auto &d : group.datasets())
+    metrics_[d].read_H5(group, d);
 
   current_analysis_name_ = name;
   num_analyzed_ = num_analyzed;

@@ -8,6 +8,25 @@
 
 namespace NMX {
 
+
+
+void Setting::write_H5(H5CC::Group group, std::string name) const
+{
+  auto s_group = group.group(name);
+  s_group.write_attribute("value", value);
+  s_group.write_attribute("description", Variant::from_menu(description));
+}
+
+void Setting::read_H5(const H5CC::Group &group, std::string name)
+{
+  if (!group.has_group(name))
+    return;
+  auto s_group = group.open_group(name);
+  value = s_group.read_attribute("value");
+  description = s_group.read_attribute("description").to_string();
+}
+
+
 void Settings::set(std::string name, Setting s)
 {
   data_[name] = s;
@@ -141,6 +160,26 @@ std::string Settings::debug() const
         + " = " + param.second.value.to_string()
         + "   " + param.second.description + "\n";
   return ret;
+}
+
+void Settings::write_H5(H5CC::Group group, std::string name) const
+{
+  if (data_.empty())
+    return;
+
+  auto params_group = group.group(name);
+  for (auto d : data_)
+    d.second.write_H5(params_group, d.first);
+}
+
+void Settings::read_H5(const H5CC::Group &group, std::string name)
+{
+  data_.clear();
+  if (!group.has_group(name))
+    return;
+  auto params_group = group.open_group(name);
+  for (auto g : params_group.groups())
+    data_[g].read_H5(params_group, g);
 }
 
 

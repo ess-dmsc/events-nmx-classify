@@ -5,6 +5,7 @@
 #include <map>
 #include <string>
 #include "Variant.h"
+#include "H5CC_Group.h"
 
 namespace NMX
 {
@@ -17,6 +18,9 @@ struct Setting
 
   std::string description;
   Variant value;
+
+  void write_H5(H5CC::Group group, std::string name) const;
+  void read_H5(const H5CC::Group &group, std::string name);
 };
 
 class Settings
@@ -48,6 +52,9 @@ public:
   Settings if_contains(std::string substring) const;
 
   std::string debug() const;
+
+  void write_H5(H5CC::Group group, std::string name) const;
+  void read_H5(const H5CC::Group &group, std::string name);
 
 private:
   std::map<std::string, Setting> data_;
