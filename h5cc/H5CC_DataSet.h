@@ -13,7 +13,12 @@ public:
   DataSet();
   DataSet(H5::DataSet ds);
 
-  template<typename T> void write(const std::vector<T>& data, H5::PredType h5type);
+  template<typename T> void write(const std::vector<T>& data,
+                                  H5::PredType h5type);
+  template<typename T> void write(const std::vector<T>& data,
+                                  H5::PredType h5type,
+                                  std::initializer_list<int> slab_size,
+                                  std::initializer_list<hsize_t> index);
 
   template<typename T> void read(std::vector<T>& data,
                                  H5::PredType h5type) const;
@@ -28,10 +33,17 @@ public:
 private:
   Space space_;
 
+  template<typename T> void write(const std::vector<T>& data,
+                                  H5::PredType h5type,
+                                  Space slab,
+                                  std::initializer_list<hsize_t> index);
+
   template<typename T> void read(std::vector<T>& data,
                                  H5::PredType h5type,
                                  Space slab,
                                  std::initializer_list<hsize_t> index) const;
+
+
 
   Space slab_space(std::initializer_list<int> list) const;
 };

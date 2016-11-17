@@ -38,10 +38,31 @@ void DataSet::read(std::vector<T>& data, H5::PredType h5type, Space slab, std::i
 }
 
 template<typename T>
+void DataSet::write(const std::vector<T>& data, H5::PredType h5type, Space slab, std::initializer_list<hsize_t> index)
+{
+  auto space = space_;
+  if (!space.select_slab(slab, index))
+    return;
+  try
+  {
+    Location<H5::DataSet>::location_.write(data.data(), h5type, space_.space());
+  }
+  catch (...) {}
+}
+
+template<typename T>
 void DataSet::read(std::vector<T>& data, H5::PredType h5type,
                 std::initializer_list<int> slab_size, std::initializer_list<hsize_t> index) const
 {
   read(data, h5type, space_.slab_space(slab_size), index);
 }
+
+template<typename T>
+void DataSet::write(const std::vector<T>& data, H5::PredType h5type,
+                    std::initializer_list<int> slab_size, std::initializer_list<hsize_t> index)
+{
+  write(data, h5type, space_.slab_space(slab_size), index);
+}
+
 
 }

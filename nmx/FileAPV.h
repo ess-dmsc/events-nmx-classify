@@ -8,33 +8,47 @@
 
 namespace NMX {
 
-struct Metrics
+struct Metric
 {
-  Metrics() {}
-  Metrics(size_t size, std::string descr)
+  Metric() {}
+  Metric(size_t size, std::string descr)
     : description(descr)
   {
     data.resize(size, 0);
   }
 
-  void add(size_t idx, double val)
-  {
-    if (idx >= data.size())
-      return;
-    data[idx] = val;
-    min = std::min(min, val);
-    max = std::max(max, val);
-    sum += val;
-  }
-
+  void add(size_t idx, double val);
   void write_H5(H5CC::Group group, std::string name) const;
-  void read_H5(const H5CC::Group &group, std::string name);
+  void read_H5(const H5CC::Group &group, std::string name, bool withdata = true);
 
   std::vector<double> data;
   std::string description;
   double min{std::numeric_limits<double>::max()};
   double max{std::numeric_limits<double>::min()};
   double sum{0};
+};
+
+struct Analysis
+{
+  Analysis() {}
+
+  void open(H5CC::Group group, std::string name, size_t eventnum);
+  void save();
+  void clear();
+
+  Metric metric(std::string name);
+  void set_parameters(const Settings&);
+
+  void analyze_event(size_t index, Event event);
+
+
+  std::string name_;
+  Settings params_ { Event().parameters() };
+  size_t num_analyzed_ {0};
+  size_t max_num_ {0};
+//  std::list<std::string> metric_names_; //vector?
+  std::map<std::string, Metric> metrics_;
+  H5CC::Group group_;
 };
 
 
@@ -53,7 +67,7 @@ public:
   void set_parameters(const Settings&);
   Settings get_parameters() const {return analysis_params_;}
   std::list<std::string> metrics() const;
-  Metrics get_metric(std::string cat); //const?
+  Metric get_metric(std::string cat); //const?
 
   std::list<std::string> analysis_groups() const;
   bool create_analysis(std::string name);
@@ -71,7 +85,7 @@ private:
 
   std::string current_analysis_name_;
   Settings analysis_params_;
-  std::map<std::string, Metrics> metrics_;
+  std::map<std::string, Metric> metrics_;
   size_t num_analyzed_ {0};
 
   Record read_record(size_t index, size_t plane);
