@@ -155,28 +155,28 @@ void Analyzer::rebuild_data()
   auto yy = reader_->get_metric(weight_y);
   auto zz = reader_->get_metric(weight_z);
 
-  ui->labelX->setText("   " + QString::fromStdString(xx.description));
-  ui->labelY->setText("   " + QString::fromStdString(yy.description));
-  ui->labelZ->setText("   " + QString::fromStdString(zz.description));
+  ui->labelX->setText("   " + QString::fromStdString(xx.description()));
+  ui->labelY->setText("   " + QString::fromStdString(yy.description()));
+  ui->labelZ->setText("   " + QString::fromStdString(zz.description()));
 
-  if (xx.data.size() != yy.data.size())
+  if (xx.data().size() != yy.data().size())
   {
     make_projections();
     return;
   }
 
-  xx_norm = normalizer(xx.data);
-  yy_norm = normalizer(yy.data);
-  zz_norm = normalizer(zz.data);
+  xx_norm = xx.normalizer();
+  yy_norm = yy.normalizer();
+  zz_norm = zz.normalizer();
 
   for (size_t eventID = 0; eventID < reader_->num_analyzed(); ++eventID)
   {
-    if ((eventID >= xx.data.size()) || (eventID >= yy.data.size()) || (eventID >= zz.data.size()))
+    if ((eventID >= xx.data().size()) || (eventID >= yy.data().size()) || (eventID >= zz.data().size()))
       continue;
 
-    data_[int(zz.data.at(eventID) / zz_norm)]
-         [std::pair<int,int>({int(xx.data.at(eventID) / xx_norm),
-                              int(yy.data.at(eventID) / yy_norm)})].push_back(eventID);
+    data_[int(zz.data().at(eventID) / zz_norm)]
+         [std::pair<int,int>({int(xx.data().at(eventID) / xx_norm),
+                              int(yy.data().at(eventID) / yy_norm)})].push_back(eventID);
   }
 
   for (auto &i : histograms1d_)
@@ -432,30 +432,4 @@ void Analyzer::plot_block()
   ui->plotHistogram->replot();
 }
 
-double Analyzer::normalizer(const std::vector<double> &data)
-{
-  double minimum{std::numeric_limits<double>::max()};
-  double maximum{std::numeric_limits<double>::min()};
-  for (auto &d : data)
-  {
-    minimum = std::min(d, minimum);
-    maximum = std::max(d, maximum);
-  }
-
-  if (minimum >= maximum)
-    return 1;
-
-  double diff = maximum - minimum;
-
-  if (diff <= 1.0)
-    return 0.01;
-
-  if (diff > 10000.0)
-  {
-    int order_of = std::floor(std::log10(std::abs(diff)));
-    return pow(10, order_of - 2);
-  }
-
-  return 1;
-}
 

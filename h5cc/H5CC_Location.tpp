@@ -7,9 +7,16 @@ Location<T>::Location()
 {}
 
 template<typename T>
-Location<T>::Location(T t)
+Location<T>::Location(T t, std::string name)
   : location_(t)
+  , name_ (name)
 {}
+
+template<typename T>
+std::string Location<T>::name() const
+{
+  return name_;
+}
 
 template<typename T>
 std::list<std::string> Location<T>::attributes() const

@@ -10,7 +10,7 @@ class Groupoid : public Location<T>
 {
 public:
   Groupoid() : Location<T>() {}
-  Groupoid(T t) : Location<T>(t) {}
+  Groupoid(T t, std::string name) : Location<T>(t, name) {}
 
   bool empty() const;
   std::list<std::string> members() const;

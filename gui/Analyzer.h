@@ -87,8 +87,6 @@ private:
   double yy_norm {1};
   double zz_norm {1};
 
-  double normalizer(const std::vector<double> &data);
-
   QVector<QColor> palette_ {Qt::black, Qt::darkRed, Qt::darkGreen,
                             Qt::darkYellow, Qt::darkMagenta,
                             Qt::red, Qt::blue,

@@ -92,7 +92,7 @@ DataSet Groupoid<T>::create_dataset(std::string name, H5::PredType h5type, std::
   try
   {
     H5::DataSet data = Location<T>::location_.createDataSet(name, h5type, Space(dims).space());
-    ret = DataSet(data);
+    ret = DataSet(data, name);
   }
   catch (...) {}
   return ret;
@@ -105,7 +105,7 @@ DataSet Groupoid<T>::open_dataset(std::string name) const
   try
   {
     H5::DataSet data = Location<T>::location_.openDataSet(name);
-    ret = DataSet(data);
+    ret = DataSet(data, name);
   }
   catch (...) {}
   return ret;
@@ -126,7 +126,7 @@ Groupoid<H5::Group> Groupoid<T>::open_group(std::string name) const
   Groupoid<H5::Group> ret;
   try
   {
-    ret = Groupoid<H5::Group>(Location<T>::location_.openGroup(name));
+    ret = Groupoid<H5::Group>(Location<T>::location_.openGroup(name), name);
   }
   catch (...)
   {
@@ -140,7 +140,7 @@ Groupoid<H5::Group> Groupoid<T>::create_group(std::string name)
   Groupoid<H5::Group> ret;
   try
   {
-    ret = Groupoid<H5::Group>(Location<T>::location_.createGroup(name));
+    ret = Groupoid<H5::Group>(Location<T>::location_.createGroup(name), name);
   }
   catch (...)
   {

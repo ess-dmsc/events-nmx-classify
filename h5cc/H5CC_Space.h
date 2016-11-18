@@ -21,6 +21,7 @@ public:
   bool contains(const std::vector<hsize_t>& index) const;
   bool contains(const Space& other, const std::vector<hsize_t>& index) const;
   bool select_slab(const Space& slabspace, std::initializer_list<hsize_t> index);
+  bool select_element(std::initializer_list<hsize_t> index);
 
   size_t rank() const;
   hsize_t dim(size_t) const;

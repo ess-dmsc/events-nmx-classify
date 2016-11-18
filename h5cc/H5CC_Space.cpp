@@ -1,4 +1,5 @@
 #include "H5CC_Space.h"
+#include "CustomLogger.h"
 
 namespace H5CC {
 
@@ -126,6 +127,22 @@ bool Space::select_slab(const Space& slabspace, std::initializer_list<hsize_t> i
   try
   {
     space_.selectHyperslab(H5S_SELECT_SET, slabspace.dims_.data(), choice.data());
+  }
+  catch (...)
+  {
+    return false;
+  }
+  return true;
+}
+
+bool Space::select_element(std::initializer_list<hsize_t> index)
+{
+  std::vector<hsize_t> choice(index.begin(), index.end());
+  if (!contains(choice))
+    return false;
+  try
+  {
+    space_.selectElements(H5S_SELECT_SET, 1, choice.data());
   }
   catch (...)
   {

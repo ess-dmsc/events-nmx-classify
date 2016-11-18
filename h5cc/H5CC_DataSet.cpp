@@ -4,11 +4,12 @@ namespace H5CC {
 
 DataSet::DataSet() {}
 
-DataSet::DataSet(H5::DataSet ds) : Location<H5::DataSet>(ds)
+DataSet::DataSet(H5::DataSet ds, std::string name) : Location<H5::DataSet>(ds, name)
 {
   try
   {
     space_ = Space(ds.getSpace());
+    type_ = ds.getDataType();
   }
   catch (...) {}
 }

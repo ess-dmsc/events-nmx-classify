@@ -52,7 +52,7 @@ int main(int argc, char* argv[])
 
   NMX::FileAPV reader(params_file);
   reader.load_analysis(params_group);
-  auto parameters = reader.get_parameters();
+  auto parameters = reader.parameters();
 
   if (params_file != input_file)
     reader = NMX::FileAPV(input_file);
@@ -81,7 +81,7 @@ int main(int argc, char* argv[])
 
   INFO << "Dataset from:    " << input_file << ":" << input_group;
   INFO << "Parameters from: " << params_file << ":" << params_group;
-  INFO << "Parameters:\n" << reader.get_parameters().debug();
+  INFO << "Parameters:\n" << reader.parameters().debug();
   INFO << "File contains " << reader.event_count() << " events of which "
        << (nevents - numanalyzed) << " will be processed";
 

@@ -59,10 +59,8 @@ void tpcc::table_changed()
 
 void tpcc::display_params()
 {
-  auto parameters = reader_->get_parameters();
-  settings_model_.update(parameters);
+  settings_model_.update(reader_->parameters());
 }
-
 
 void tpcc::closeEvent(QCloseEvent *event)
 {
@@ -117,8 +115,8 @@ bool tpcc::open_file(QString fileName)
 
   populate_combo();
 
-  if (!reader_->analysis_groups().empty())
-    ui->comboGroup->setCurrentText(QString::fromStdString(reader_->analysis_groups().front()));
+  if (!reader_->analyses().empty())
+    ui->comboGroup->setCurrentText(QString::fromStdString(reader_->analyses().front()));
   on_comboGroup_activated("");
 
   return (evt_count > 0);
@@ -126,7 +124,7 @@ bool tpcc::open_file(QString fileName)
 
 void tpcc::toggleIO(bool enable)
 {
-  auto names = reader_->analysis_groups();
+  auto names = reader_->analyses();
 
   ui->pushOpen->setEnabled(enable);
   ui->tableParams->setEnabled(enable && reader_ && !reader_->num_analyzed());
@@ -213,7 +211,7 @@ void tpcc::on_pushNewGroup_clicked()
   //must not have slashes!
 
   //must not already exist
-  for (auto &name : reader_->analysis_groups())
+  for (auto &name : reader_->analyses())
     if (name == text.toStdString())
       return;
 
@@ -227,7 +225,7 @@ void tpcc::on_pushNewGroup_clicked()
 void tpcc::populate_combo()
 {
   ui->comboGroup->clear();
-  for (auto &name : reader_->analysis_groups())
+  for (auto &name : reader_->analyses())
     ui->comboGroup->addItem(QString::fromStdString(name));
   toggleIO(true);
 }

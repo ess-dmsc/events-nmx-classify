@@ -12,7 +12,8 @@ class Location
 {
 public:
   Location();
-  Location(T t);
+  Location(T t, std::string name);
+  std::string name() const;
 
   std::list<std::string> attributes() const;
   bool has_attribute(std::string name) const;
@@ -22,6 +23,7 @@ public:
 
 protected:
   T location_;
+  std::string name_;
 };
 
 }
