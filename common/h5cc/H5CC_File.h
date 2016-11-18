@@ -10,6 +10,10 @@ class File : public Groupoid<H5::H5File>
 public:
   File();
   File(std::string filename);
+
+private:
+  bool openExisting(std::string filename);
+  bool openNew(std::string filename);
 };
 
 }

@@ -5,8 +5,7 @@
 #include <boost/progress.hpp>
 #include "Filesystem.h"
 #include <memory>
-
-#define REFRESH_SECONDS 3
+#include "histogram_h5.h"
 
 volatile sig_atomic_t term_flag = 0;
 void term_key(int /*sig*/)
@@ -17,29 +16,30 @@ void term_key(int /*sig*/)
 namespace fs = boost::filesystem;
 
 const std::string options_text =
-    "NMX data analysis program. Available options:\n"
-    "    -p [path] Defaults to current path\n"
-    "    -clone [path/filename.h5] Clone analysis parameters from file\n"
+    "NMX metrics histogram generation tool. Available options:\n"
+    "    -p [path] Path to analyzed data files. Defaults to current path\n"
+    "    -o [path/file.h5] Output file\n"
     "    --help/-h prints this list of options\n";
 
 int main(int argc, char* argv[])
 {
   signal(SIGINT, term_key);
+  H5::Exception::dontPrint();
 
   // Parse the command line aguments
   CLParser cmd_line(argc, argv);
 
   // Input file
-  std::string target_path  = cmd_line.get_value("-p");
-  std::string clone_params_file = cmd_line.get_value("-clone");
+  std::string input_path  = cmd_line.get_value("-p");
+  std::string output_file = cmd_line.get_value("-o");
 
   std::set<boost::filesystem::path> files;
 
-  if (!target_path.empty())
+  if (!input_path.empty())
   {
-    files = files_in(target_path, ".h5");
+    files = files_in(input_path, ".h5");
     if (files.empty())
-      WARN << "No *.h5 files found in " << target_path;
+      WARN << "No *.h5 files found in " << input_path;
   }
 
   if (files.empty())
@@ -51,42 +51,23 @@ int main(int argc, char* argv[])
   }
 
   // Exit if not enough params
-  if (files.empty() || clone_params_file.empty() ||
+  if (files.empty() || output_file.empty() ||
       cmd_line.has_switch("-h") || cmd_line.has_switch("--help"))
   {
     std::cout << options_text;
     return 1;
   }
 
-  std::map<std::string, NMX::Settings> to_clone;
-
-  std::shared_ptr<NMX::FileAPV> reader
-      = std::make_shared<NMX::FileAPV>(clone_params_file);
-  for (auto a : reader->analyses())
-  {
-    reader->load_analysis(a);
-    auto params = reader->parameters();
-    if (!params.empty() && (a != "a1_empty"))
-      to_clone[a] = params;
-  }
-
-  if (to_clone.empty())
-  {
-    ERR << "No analysis groups to clone";
-    return 1;
-  }
+  H5CC::File outfile(fs::path(output_file).string());
 
   INFO << "Will analyse the following files:";
   for (auto p : files)
     INFO << "   " << p;
 
-  INFO << "Will perform the following analyses:";
-  for (auto g : to_clone)
-    INFO << "\n\"" << g.first << "\"\n" << g.second.debug();
-
   for (auto filename : files)
   {
-    reader = std::make_shared<NMX::FileAPV>(filename.string());
+    std::shared_ptr<NMX::FileAPV> reader
+        = std::make_shared<NMX::FileAPV>(filename.string());
 
     if (!reader->event_count())
     {
@@ -94,33 +75,30 @@ int main(int argc, char* argv[])
       continue;
     }
 
-    reader->create_analysis("a1_empty");
-
-    for (auto group : to_clone)
+    for (auto group : reader->analyses())
     {
-      reader->create_analysis(group.first);
-      reader->load_analysis(group.first);
-
-      size_t nevents = reader->event_count();
+      reader->load_analysis(group);
       size_t numanalyzed = reader->num_analyzed();
+      auto metrics = reader->metrics();
 
-      if (numanalyzed >= nevents)
+      if (!numanalyzed || metrics.empty())
       {
-        INFO << "Data already analyzed in " << group.first << ". Nothing to do.";
+        INFO << "No analyzed data in " << group;
         continue;
       }
 
-      reader->set_parameters(group.second);
+      INFO << "Histograming  " << filename.string() << ":" << group
+           << "  with " << metrics.size() << " metrics for " << reader->event_count()
+           << " events";
 
-      INFO << "Analyzing  " << filename.string() << ":" << group.first
-           << "  " << (nevents - numanalyzed) << "/" << reader->event_count()
-           << " remaining";
-
-      boost::progress_display prog( nevents, std::cout, " ",  " ",  " ");
-      prog += numanalyzed;
-      for (size_t eventID = numanalyzed; eventID < nevents; ++eventID)
+      boost::progress_display prog( metrics.size(), std::cout, " ",  " ",  " ");
+      for (auto &m : metrics)
       {
-        reader->analyze_event(eventID);
+        auto metric = reader->get_metric(m);
+        auto hist = metric.make_histogram();
+
+        write(outfile.group(group).group(m), filename.stem().string(), hist);
+
         ++prog;
         if (term_flag)
           return 0;

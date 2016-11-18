@@ -4,7 +4,7 @@
 #include "H5CC_Group.h"
 #include "histogram.h"
 
-bool write(H5CC::Group& group, std::string name, const HistMap1D& hist)
+bool write(H5CC::Group group, std::string name, const HistMap1D& hist)
 {
   if (hist.empty() ||
       group.name().empty() ||

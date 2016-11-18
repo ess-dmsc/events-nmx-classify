@@ -65,9 +65,7 @@ int main(int argc, char* argv[])
   for (auto a : reader->analyses())
   {
     reader->load_analysis(a);
-    auto params = reader->parameters();
-    if (!params.empty() && (a != "a1_empty"))
-      to_clone[a] = params;
+    to_clone[a] = reader->parameters();
   }
 
   if (to_clone.empty())
@@ -93,8 +91,6 @@ int main(int argc, char* argv[])
       INFO << "No events found in " << filename;
       continue;
     }
-
-    reader->create_analysis("a1_empty");
 
     for (auto group : to_clone)
     {
