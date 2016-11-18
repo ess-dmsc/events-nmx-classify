@@ -25,6 +25,7 @@ const std::string options_text =
 int main(int argc, char* argv[])
 {
   signal(SIGINT, term_key);
+  CustomLogger::initLogger();
 
   // Parse the command line aguments
   CLParser cmd_line(argc, argv);
@@ -70,7 +71,7 @@ int main(int argc, char* argv[])
 
   if (to_clone.empty())
   {
-    ERR << "No analysis groups to clone";
+    ERR << "No analyses to clone";
     return 1;
   }
 
@@ -82,15 +83,16 @@ int main(int argc, char* argv[])
   for (auto g : to_clone)
     INFO << "\n\"" << g.first << "\"\n" << g.second.debug();
 
+  size_t fnum {0};
   for (auto filename : files)
   {
     reader = std::make_shared<NMX::FileAPV>(filename.string());
 
     if (!reader->event_count())
-    {
-      INFO << "No events found in " << filename;
       continue;
-    }
+
+    INFO << "Processing file " << filename.string()
+         << " (" << fnum+1 << "/" << files.size() << ")";
 
     for (auto group : to_clone)
     {
@@ -101,18 +103,15 @@ int main(int argc, char* argv[])
       size_t numanalyzed = reader->num_analyzed();
 
       if (numanalyzed >= nevents)
-      {
-        INFO << "Data already analyzed in " << group.first << ". Nothing to do.";
         continue;
-      }
 
       reader->set_parameters(group.second);
 
-      INFO << "Analyzing  " << filename.string() << ":" << group.first
-           << "  " << (nevents - numanalyzed) << "/" << reader->event_count()
-           << " remaining";
+      std::string gname = "  Analyzing '" + group.first + "'  ";
+      std::string blanks (gname.size(), ' ');
 
-      boost::progress_display prog( nevents, std::cout, " ",  " ",  " ");
+      boost::progress_display prog( nevents, std::cout,
+                                    blanks,  gname,  blanks);
       prog += numanalyzed;
       for (size_t eventID = numanalyzed; eventID < nevents; ++eventID)
       {
@@ -122,6 +121,7 @@ int main(int argc, char* argv[])
           return 0;
       }
     }
+    ++fnum;
   }
 
   return 0;

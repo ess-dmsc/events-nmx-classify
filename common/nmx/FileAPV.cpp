@@ -5,8 +5,6 @@ namespace NMX {
 
 FileAPV::FileAPV(std::string filename)
 {
-  INFO << "<FileAPV> Opening " << filename;
-
   H5::Exception::dontPrint();
   file_ = H5CC::File(filename);
 
@@ -18,7 +16,7 @@ FileAPV::FileAPV(std::string filename)
       (dataset_.dim(3) < 1))
 
   {
-    ERR << "<FileAPV> bad size for raw datset "
+    ERR << "<NMX::FileAPV> bad size for raw datset "
         << " rank=" << dataset_.rank() << " dims="
         << " " << dataset_.dim(0)
         << " " << dataset_.dim(1)
@@ -26,10 +24,6 @@ FileAPV::FileAPV(std::string filename)
         << " " << dataset_.dim(3);
     return;
   }
-
-
-  INFO << "<FileAPV> Opened " << filename
-       << " with " << event_count() << " events";
 }
 
 size_t FileAPV::event_count() const

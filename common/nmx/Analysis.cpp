@@ -32,10 +32,6 @@ Analysis::Analysis(H5CC::Group group, size_t eventnum)
       metrics_[a.first] = Metric(a.second.description);
     }
   }
-
-  INFO << "<NMX::Analysis> Opened analysis '" << group_.name()
-       << "' with data for " << num_analyzed_ << " events"
-       << " and " << metrics_.size() << " metrics.";
 }
 
 void Analysis::save()

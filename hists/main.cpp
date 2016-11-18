@@ -19,12 +19,14 @@ const std::string options_text =
     "NMX metrics histogram generation tool. Available options:\n"
     "    -p [path] Path to analyzed data files. Defaults to current path\n"
     "    -o [path/file.h5] Output file\n"
+    "    -dma [] Dataset-metric-analysis hierarchy, otherwise Analysis-metric-dataset\n"
     "    --help/-h prints this list of options\n";
 
 int main(int argc, char* argv[])
 {
   signal(SIGINT, term_key);
   H5::Exception::dontPrint();
+  CustomLogger::initLogger();
 
   // Parse the command line aguments
   CLParser cmd_line(argc, argv);
@@ -32,6 +34,7 @@ int main(int argc, char* argv[])
   // Input file
   std::string input_path  = cmd_line.get_value("-p");
   std::string output_file = cmd_line.get_value("-o");
+  bool dma = cmd_line.has_switch("-dma");
 
   std::set<boost::filesystem::path> files;
 
@@ -64,47 +67,92 @@ int main(int argc, char* argv[])
   for (auto p : files)
     INFO << "   " << p;
 
+  std::set<std::string> all_metrics;
+
+  size_t fnum {0};
   for (auto filename : files)
   {
     std::shared_ptr<NMX::FileAPV> reader
         = std::make_shared<NMX::FileAPV>(filename.string());
 
-    if (!reader->event_count())
-    {
-      INFO << "No events found in " << filename;
-      continue;
-    }
+    std::string dataset = filename.stem().string();
 
-    for (auto group : reader->analyses())
-    {
-      reader->load_analysis(group);
-      size_t numanalyzed = reader->num_analyzed();
-      auto metrics = reader->metrics();
+    INFO << "Processing file " << filename.string()
+         << " (" << fnum+1 << "/" << files.size() << ")";
 
-      if (!numanalyzed || metrics.empty())
-      {
-        INFO << "No analyzed data in " << group;
+    for (auto analysis : reader->analyses())
+    {
+      reader->load_analysis(analysis);
+
+      if (!reader->num_analyzed())
         continue;
-      }
 
-      INFO << "Histograming  " << filename.string() << ":" << group
-           << "  with " << metrics.size() << " metrics for " << reader->event_count()
-           << " events";
+      std::string gname = "  Analyzing '" + analysis + "'  ";
+      std::string blanks (gname.size(), ' ');
 
-      boost::progress_display prog( metrics.size(), std::cout, " ",  " ",  " ");
-      for (auto &m : metrics)
+      boost::progress_display prog( reader->metrics().size(), std::cout,
+                                    blanks,  gname,  blanks);
+
+      for (auto &metric : reader->metrics())
       {
-        auto metric = reader->get_metric(m);
-        auto hist = metric.make_histogram();
+        all_metrics.insert(metric);
 
-        write(outfile.group(group).group(m), filename.stem().string(), hist);
+        auto hist = reader->get_metric(metric).make_histogram();
+
+        if (dma)
+          write(outfile.group(dataset).group(metric), analysis, hist);
+        else
+          write(outfile.group(analysis).group(metric), dataset, hist);
 
         ++prog;
         if (term_flag)
           return 0;
       }
     }
+    ++fnum;
   }
+
+  if (all_metrics.empty())
+    return 0;
+
+  boost::progress_display prog( all_metrics.size(), std::cout,
+                                "\n                       ",
+                                "  Aggregating metrics  ",
+                                "                       ");
+  for (auto metric : all_metrics)
+  {
+    std::map<std::string, NMX::Metric> aggregates;
+
+    for (auto filename : files)
+    {
+      std::shared_ptr<NMX::FileAPV> reader
+          = std::make_shared<NMX::FileAPV>(filename.string());
+
+      std::string dataset = filename.stem().string();
+
+      for (auto analysis : reader->analyses())
+      {
+        reader->load_analysis(analysis);
+
+        if (!reader->num_analyzed())
+          continue;
+
+        if (dma)
+          aggregates[dataset].merge(reader->get_metric(metric));
+        else
+          aggregates[analysis].merge(reader->get_metric(metric));
+
+        if (term_flag)
+          return 0;
+      }
+    }
+
+    for (auto a : aggregates)
+      write(outfile.group(a.first).group(metric), "aggregate", a.second.make_histogram());
+
+    ++prog;
+  }
+
 
   return 0;
 }
