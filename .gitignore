@@ -1,20 +1,22 @@
 /Makefile*
-cmd/debug/*
-cmd/release/*
-cmd/Makefile*
-gui/ui/*
-gui/debug/*
-gui/release/*
-gui/Makefile*
+analyze/debug/*
+analyze/release/*
+analyze/Makefile*
+hists/debug/*
+hists/release/*
+hists/Makefile*
+browse/debug/*
+browse/release/*
+browse/Makefile*
+browse/ui/*
 *.user
 *.log
 *.stash
 *~
 .DS_Store
-tpcc
-tpccd
-tpcg
-tpcgd
+nmx_analyze*
+nmx_browse*
+nmx_hists*
 
 # Compiled Object files
 *.slo

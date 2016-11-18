@@ -50,17 +50,15 @@ CONFIG(debug, debug|release) {
 }
 
 INCLUDEPATH += $$PWD/nmx \
-               $$PWD/histogram \
-               $$PWD/logger \
-               $$PWD/h5cc
+               $$PWD/h5cc \
+               $$PWD
 
 SOURCES += $$files($$PWD/nmx/*.cpp) \
-           $$files($$PWD/logger/*.cpp) \
            $$files($$PWD/h5cc/*.tpp) \
-           $$files($$PWD/h5cc/*.cpp)
+           $$files($$PWD/h5cc/*.cpp) \
+           $$files($$PWD/*.cpp)
 
 HEADERS  += $$files($$PWD/nmx/*.h) \
-            $$files($$PWD/histogram/*.h) \
-            $$files($$PWD/logger/*.h) \
-            $$files($$PWD/h5cc/*.h)
+            $$files($$PWD/h5cc/*.h) \
+            $$files($$PWD/*.h)
 

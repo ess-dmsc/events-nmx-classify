@@ -2,14 +2,24 @@
 
 namespace NMX {
 
-void Metric::add(size_t idx, double val)
+void Metric::merge(const Metric& other)
+{
+  for (auto d : other.data_)
+    add_and_calc(d);
+}
+
+void Metric::calc(double val)
 {
   min_ = std::min(min_, val);
   max_ = std::max(max_, val);
   sum_ += val;
-//  if (idx >= data.size())
-//    return;
-//  data[idx] = val;
+}
+
+
+void Metric::add_and_calc(double val)
+{
+  calc(val);
+  data_.push_back(val);
 }
 
 void Metric::write_H5(H5CC::DataSet dataset) const
@@ -52,5 +62,15 @@ double Metric::normalizer() const
 
   return 1;
 }
+
+std::map<double, double> Metric::make_histogram() const
+{
+  std::map<double, double> ret;
+  double norm = normalizer();
+  for (auto d : data_)
+    ret[int32_t(d / norm) * norm]++;
+  return ret;
+}
+
 
 }

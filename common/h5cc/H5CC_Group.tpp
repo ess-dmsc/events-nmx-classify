@@ -83,6 +83,13 @@ void Groupoid<T>::remove(std::string name)
 }
 
 template<typename T>
+void Groupoid<T>::clear()
+{
+  for (auto m : this->members())
+    this->remove(m);
+}
+
+template<typename T>
 DataSet Groupoid<T>::create_dataset(std::string name, H5::PredType h5type, std::initializer_list<hsize_t> dims)
 {
   if (has_dataset(name))

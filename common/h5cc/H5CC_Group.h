@@ -18,6 +18,7 @@ public:
   bool has_member(std::string name) const;
   bool has_member(std::string name, H5O_type_t t) const;
   void remove(std::string name);
+  void clear();
 
   bool has_dataset(std::string name) const { return has_member(name, H5O_TYPE_DATASET); }
   std::list<std::string> datasets() const { return members(H5O_TYPE_DATASET); }

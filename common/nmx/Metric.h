@@ -14,7 +14,10 @@ public:
     : description_(descr)
   {}
 
-  void add(size_t idx, double val);
+  void merge(const Metric& other);
+
+  void add_and_calc(double val);
+  void calc(double val);
   void write_H5(H5CC::DataSet dataset) const;
   void read_H5(const H5CC::DataSet &dataset);
   void read_H5_data(const H5CC::DataSet &dataset);
@@ -26,6 +29,7 @@ public:
   double sum() const { return sum_; }
 
   double normalizer() const;
+  std::map<double, double> make_histogram() const;
 
 private:
   std::vector<double> data_;

@@ -88,7 +88,7 @@ void Analysis::analyze_event(size_t index, Event event)
   for (auto &a : event.metrics().data())
   {
     double d = a.second.value.as_float();
-    metrics_[a.first].add(index, d);
+    metrics_[a.first].calc(d);
     datasets_[a.first].write(d, {index});
   }
 

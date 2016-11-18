@@ -1,10 +1,10 @@
 CONFIG += debug_and_release
 
-!include( $$PWD/../common.pri ) {
+!include( $$PWD/../common/common.pri ) {
   error( "Couldn't find the common.pri file!" )
 }
 
-TARGET   = $$PWD/../tpcg
+TARGET   = $$PWD/../nmx_browse
 TEMPLATE = app
 
 UI_DIR = $$PWD/ui

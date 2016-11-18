@@ -1,6 +1,6 @@
 TEMPLATE = subdirs
 
-SUBDIRS = gui cmd
+SUBDIRS = browse analyze hists
 
 CONFIG += ordered \
           debug_and_release

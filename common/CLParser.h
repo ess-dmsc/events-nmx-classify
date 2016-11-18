@@ -7,8 +7,6 @@
 #include <string>
 #include <algorithm>
 
-/** \class CLParser 
-    \brief Parses arguments given on the command line */
 
 class CLParser
 {

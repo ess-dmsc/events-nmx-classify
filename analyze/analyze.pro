@@ -1,11 +1,13 @@
 CONFIG += debug_and_release
 
-!include( $$PWD/../common.pri ) {
+!include( $$PWD/../common/common.pri ) {
   error( "Couldn't find the common.pri file!" )
 }
 
-TARGET   = $$PWD/../tpcc
+TARGET   = $$PWD/../nmx_analyze
 TEMPLATE = app
+
+LIBS += -lboost_filesystem
 
 CONFIG(debug, debug|release) {
   TARGET = $$join(TARGET,,,d)
