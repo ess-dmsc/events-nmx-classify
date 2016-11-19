@@ -104,9 +104,12 @@ PlanePerspective PlanePerspective::subset(std::string name, Settings params) con
     Strip newstrip = d.second.subset(name, params);
     if (!newstrip.empty())
       ret.add_data(d.first, newstrip);
-    ret.cuness += newstrip.num_valid() - 1;
+    int cu = newstrip.num_valid() - 1;
+    if (cu < 0)
+      cu = 0;
+    ret.cuness += cu;
     if (int(newstrip.span()) >= cuness_min_span)
-      ret.cuness2 += newstrip.num_valid() - 1;
+      ret.cuness2 += cu;
   }
   return ret;
 }

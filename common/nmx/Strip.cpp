@@ -139,36 +139,47 @@ Strip Strip::find_maxima(int16_t adc_threshold) const
 
 Strip Strip::find_vmm_maxima(int16_t adc_threshold, int16_t over_threshold) const
 {
+  std::vector<size_t> start;
+  std::vector<size_t> end;
   bool overthreshold {false};
-  int tb0 {0};
-  int tb1 {0};
-  int maxBin {0};
-  int16_t maxADC {std::numeric_limits<int16_t>::min()};
-
-  Strip vmm;
   auto data = as_vector();
   for (size_t timebin=0; timebin < data.size(); ++timebin)
   {
-    const auto &adc = data[timebin];
+    const auto &adc = data.at(timebin);
     if (!overthreshold && (adc >= adc_threshold))
     {
       overthreshold = true;
-      tb0 = timebin;
+      start.push_back(timebin);
     }
 
-    if (overthreshold && (adc > maxADC))
-    {
-      maxADC = adc;
-      maxBin = timebin;
-    }
-
-    if (overthreshold && ((adc < adc_threshold) || (timebin == data.size() - 1))) //BIG DEAL!!
+    if (overthreshold && (adc < adc_threshold))
     {
       overthreshold = false;
-      tb1 = timebin;
-      if (tb1 - tb0 > over_threshold - 1)
-        vmm.add_value(maxBin, data.at(maxBin));
+      end.push_back(timebin-1);
     }
+  }
+
+  if (overthreshold)
+    end.push_back(data.size() - 1);
+
+  Strip vmm;
+  for (size_t i=0; i < start.size(); ++i)
+  {
+    if ((int(end.at(i)) - int(start.at(i)) + 1) < over_threshold)
+      continue;
+
+    size_t maxBin {start.at(i)};
+    int16_t maxADC {data.at(start.at(i))};
+    for (size_t timebin=start.at(i); timebin <= end.at(i); ++timebin)
+    {
+      const auto &adc = data.at(timebin);
+      if (adc >= maxADC)
+      {
+        maxADC = adc;
+        maxBin = timebin;
+      }
+    }
+    vmm.add_value(maxBin, maxADC);
   }
   return vmm;
 }

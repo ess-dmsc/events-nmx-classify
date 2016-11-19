@@ -26,6 +26,7 @@ signals:
 private slots:
 
   void on_lineFilter_textChanged(const QString &arg1);
+  void listSelectionChanged();
 
 private:
   Ui::SearchBox *ui;

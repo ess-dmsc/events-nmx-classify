@@ -67,9 +67,17 @@ void AggregateReview::render_selection()
     int i=0;
     for (auto f : final)
     {
+      double sum = 0;
+      for (auto d : f)
+        sum += d.second;
+
+      HistMap1D f2;
+      for (auto d : f)
+        f2[d.first] = d.second / sum;
+
       QPlot::Appearance ap;
       ap.default_pen = palette_[i % palette_.size()];
-      ui->plotHistogram->addGraph(f, ap);
+      ui->plotHistogram->addGraph(f2, ap);
       ++i;
     }
   }
@@ -83,6 +91,7 @@ void AggregateReview::on_pushOpen_clicked()
 {
   ui->pushOpen->setText("");
   QSettings settings;
+  settings.beginGroup("Program");
   QString data_directory = settings.value("data_directory", "").toString();
 
   QString fileName = QFileDialog::getOpenFileName(this, "Load TPC data", data_directory, "HDF5 (*.h5)");
