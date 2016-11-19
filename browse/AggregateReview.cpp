@@ -16,6 +16,8 @@ AggregateReview::AggregateReview(QWidget *parent)
 
   ui->plotHistogram->setScaleType("Linear");
   ui->plotHistogram->setPlotStyle("Step center");
+  ui->plotHistogram->legend->setVisible(true);
+  ui->plotHistogram->legend->setFont(QFont("Helvetica",9));
   //  ui->plotHistogram->set_visible_options(ShowOptions::zoom | ShowOptions::thickness | ShowOptions::scale | ShowOptions::grid | ShowOptions::save);
 
   connect(ui->searchBox1, SIGNAL(selectionChanged()), this, SLOT(render_selection()));
@@ -93,7 +95,7 @@ void AggregateReview::render_selection()
 
       QPlot::Appearance ap;
       ap.default_pen = palette_[i % palette_.size()];
-      ui->plotHistogram->addGraph(f2, ap);
+      ui->plotHistogram->addGraph(f2, ap, f.first);
       ++i;
     }
   }
