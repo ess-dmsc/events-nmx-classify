@@ -1,5 +1,5 @@
-#ifndef tpcc_H
-#define tpcc_H
+#ifndef Browser_H
+#define Browser_H
 
 #include <QMainWindow>
 
@@ -13,19 +13,19 @@
 
 
 namespace Ui {
-class tpcc;
+class Browser;
 }
 
-class tpcc : public QMainWindow
+class Browser : public QMainWindow
 {
   Q_OBJECT
 
 public:
-  explicit tpcc(QWidget *parent = 0);
-  ~tpcc();
+  explicit Browser(QWidget *parent = 0);
+  ~Browser();
 
 private:
-  Ui::tpcc *ui;
+  Ui::Browser *ui;
 
   QString data_directory_;
   std::shared_ptr<NMX::FileAPV> reader_;
@@ -72,4 +72,4 @@ private slots:
   void on_pushShowParams_clicked();
 };
 
-#endif // tpcc_H
+#endif // Browser_H

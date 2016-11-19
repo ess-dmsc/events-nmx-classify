@@ -1,15 +1,15 @@
 #include <QSettings>
 
-#include "tpcc.h"
-#include "ui_tpcc.h"
+#include "Browser.h"
+#include "ui_Browser.h"
 
 #include "CustomLogger.h"
 #include "Variant.h"
 
-tpcc::tpcc(QWidget *parent) :
+Browser::Browser(QWidget *parent) :
   QMainWindow(parent),
   settings_model_(this),
-  ui(new Ui::tpcc)
+  ui(new Ui::Browser)
 {
   qRegisterMetaType<Variant>("Variant");
 
@@ -47,31 +47,31 @@ tpcc::tpcc(QWidget *parent) :
   QTimer::singleShot(1000, this, SLOT(loadSettings()));
 }
 
-tpcc::~tpcc()
+Browser::~Browser()
 {
   CustomLogger::closeLogger();
   delete ui;
 }
 
-void tpcc::table_changed()
+void Browser::table_changed()
 {
   NMX::Settings parameters = settings_model_.get_settings();
   reader_->set_parameters(parameters);
   event_viewer_->refresh_event();
 }
 
-void tpcc::display_params()
+void Browser::display_params()
 {
   settings_model_.update(reader_->parameters());
 }
 
-void tpcc::closeEvent(QCloseEvent *event)
+void Browser::closeEvent(QCloseEvent *event)
 {
   saveSettings();
   event->accept();
 }
 
-void tpcc::loadSettings()
+void Browser::loadSettings()
 {
   QSettings settings;
   settings.beginGroup("Program");
@@ -84,7 +84,7 @@ void tpcc::loadSettings()
   open_file(fileName);
 }
 
-void tpcc::saveSettings()
+void Browser::saveSettings()
 {
   QSettings settings;
   settings.beginGroup("Program");
@@ -92,7 +92,7 @@ void tpcc::saveSettings()
   settings.setValue("data_directory", data_directory_);
 }
 
-bool tpcc::open_file(QString fileName)
+bool Browser::open_file(QString fileName)
 {
   data_directory_ = path_of_file(fileName);
 
@@ -125,7 +125,7 @@ bool tpcc::open_file(QString fileName)
   return (evt_count > 0);
 }
 
-void tpcc::toggleIO(bool enable)
+void Browser::toggleIO(bool enable)
 {
   auto names = reader_->analyses();
 
@@ -150,12 +150,12 @@ void tpcc::toggleIO(bool enable)
   emit enableIO(enable);
 }
 
-void tpcc::on_pushStop_clicked()
+void Browser::on_pushStop_clicked()
 {
   thread_classify_.terminate();
 }
 
-void tpcc::on_pushStart_clicked()
+void Browser::on_pushStart_clicked()
 {
   if (!reader_|| !reader_->event_count())
     return;
@@ -166,13 +166,13 @@ void tpcc::on_pushStart_clicked()
   thread_classify_.go(reader_);
 }
 
-void tpcc::update_progress(double percent_done)
+void Browser::update_progress(double percent_done)
 {
   ui->progressBar->setValue(percent_done);
 }
 
 
-void tpcc::run_complete()
+void Browser::run_complete()
 {
   toggleIO(true);
   ui->pushStop->setEnabled(false);
@@ -181,7 +181,7 @@ void tpcc::run_complete()
   analyzer_->set_new_source(reader_);
 }
 
-void tpcc::on_comboGroup_activated(const QString& /*arg1*/)
+void Browser::on_comboGroup_activated(const QString& /*arg1*/)
 {
   toggleIO(false);
   auto name = ui->comboGroup->currentText();
@@ -199,7 +199,7 @@ void tpcc::on_comboGroup_activated(const QString& /*arg1*/)
   toggleIO(true);
 }
 
-void tpcc::on_pushNewGroup_clicked()
+void Browser::on_pushNewGroup_clicked()
 {
   bool ok = false;
   QString text = QInputDialog::getText(this, "New analysis group",
@@ -225,7 +225,7 @@ void tpcc::on_pushNewGroup_clicked()
   on_comboGroup_activated(text);
 }
 
-void tpcc::populate_combo()
+void Browser::populate_combo()
 {
   ui->comboGroup->clear();
   for (auto &name : reader_->analyses())
@@ -233,7 +233,7 @@ void tpcc::populate_combo()
   toggleIO(true);
 }
 
-void tpcc::on_pushDeleteGroup_clicked()
+void Browser::on_pushDeleteGroup_clicked()
 {
   QMessageBox::StandardButton reply;
   reply = QMessageBox::question(this, "Delete analysis?",
@@ -247,7 +247,7 @@ void tpcc::on_pushDeleteGroup_clicked()
   }
 }
 
-void tpcc::on_pushOpen_clicked()
+void Browser::on_pushOpen_clicked()
 {
   QString fileName = QFileDialog::getOpenFileName(this, "Load TPC data", data_directory_, "HDF5 (*.h5)");
   if (!validateFile(this, fileName, false))
@@ -256,7 +256,7 @@ void tpcc::on_pushOpen_clicked()
   open_file(fileName);
 }
 
-void tpcc::on_pushShowParams_clicked()
+void Browser::on_pushShowParams_clicked()
 {
   ui->widgetParams->setVisible(ui->pushShowParams->isChecked());
 }

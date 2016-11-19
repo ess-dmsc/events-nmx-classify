@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>tpcc</class>
- <widget class="QMainWindow" name="tpcc">
+ <class>Browser</class>
+ <widget class="QMainWindow" name="Browser">
   <property name="geometry">
    <rect>
     <x>0</x>
