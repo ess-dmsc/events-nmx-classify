@@ -14,9 +14,9 @@ browse/ui/*
 *.stash
 *~
 .DS_Store
-nmx_analyze*
-nmx_browse*
-nmx_hists*
+/nmx_analyze*
+/nmx_browse*
+/nmx_hists*
 
 # Compiled Object files
 *.slo
