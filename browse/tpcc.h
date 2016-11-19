@@ -5,6 +5,7 @@
 
 #include "ViewEvent.h"
 #include "Analyzer.h"
+#include "AggregateReview.h"
 
 #include "ThreadClassify.h"
 #include "TableSettings.h"
@@ -31,6 +32,7 @@ private:
 
   ViewEvent   *event_viewer_;
   Analyzer    *analyzer_;
+  AggregateReview *review_;
 
   ThreadClassify thread_classify_;
 

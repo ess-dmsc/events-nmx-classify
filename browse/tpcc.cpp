@@ -25,6 +25,9 @@ tpcc::tpcc(QWidget *parent) :
   connect(analyzer_, SIGNAL(toggleIO(bool)), this, SLOT(toggleIO(bool)));
   connect(this, SIGNAL(enableIO(bool)), analyzer_, SLOT(enableIO(bool)));
 
+  review_ = new AggregateReview();
+  ui->tabWidget->addTab(review_, "Review");
+
   connect(&thread_classify_, SIGNAL(data_ready(double)),
           this, SLOT(update_progress(double)));
   connect(&thread_classify_, SIGNAL(run_complete()), this, SLOT(run_complete()));

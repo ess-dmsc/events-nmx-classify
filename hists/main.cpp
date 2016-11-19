@@ -109,6 +109,7 @@ int main(int argc, char* argv[])
           return 0;
       }
     }
+    reader.reset();
     ++fnum;
   }
 
@@ -128,6 +129,9 @@ int main(int argc, char* argv[])
       std::shared_ptr<NMX::FileAPV> reader
           = std::make_shared<NMX::FileAPV>(filename.string());
 
+      if (!reader->event_count())
+        ERR << "Bad file " << filename.string();
+
       std::string dataset = filename.stem().string();
 
       for (auto analysis : reader->analyses())
@@ -145,6 +149,7 @@ int main(int argc, char* argv[])
         if (term_flag)
           return 0;
       }
+      reader.reset();
     }
 
     for (auto a : aggregates)
