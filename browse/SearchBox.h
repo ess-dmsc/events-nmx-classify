@@ -8,7 +8,6 @@ namespace Ui {
 class SearchBox;
 }
 
-
 class SearchBox : public QWidget
 {
   Q_OBJECT
@@ -19,6 +18,10 @@ public:
 
   void setList(QStringList lst);
   QStringList selection() const;
+
+  QString filter() const;
+
+  void setFilter(QString filter);
 
 signals:
   void selectionChanged();
@@ -34,6 +37,8 @@ private:
   QStringList set_;
   QStringList selected_set_;
 
+  QStringList clever_search(const QStringList& list, QStringList queries);
+  bool clever_test(const QString& string, const QString& query);
 };
 
 #endif

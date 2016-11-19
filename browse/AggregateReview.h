@@ -13,9 +13,6 @@ namespace Ui {
 class AggregateReview;
 }
 
-
-
-
 class AggregateReview : public QWidget
 {
   Q_OBJECT

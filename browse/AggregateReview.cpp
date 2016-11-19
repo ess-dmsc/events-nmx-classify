@@ -21,6 +21,8 @@ AggregateReview::AggregateReview(QWidget *parent)
   connect(ui->searchBox1, SIGNAL(selectionChanged()), this, SLOT(render_selection()));
   connect(ui->searchBox2, SIGNAL(selectionChanged()), this, SLOT(render_selection()));
   connect(ui->searchBox3, SIGNAL(selectionChanged()), this, SLOT(render_selection()));
+
+  loadSettings();
 }
 
 AggregateReview::~AggregateReview()
@@ -35,23 +37,37 @@ void AggregateReview::enableIO(bool enable)
 
 void AggregateReview::loadSettings()
 {
+  QSettings settings;
+  settings.beginGroup("Program");
+  settings.beginGroup("Review");
 
+  ui->spinMaxHists->setValue(settings.value("max_hists", 10).toInt());
+  ui->searchBox1->setFilter(settings.value("filter1", "").toString());
+  ui->searchBox2->setFilter(settings.value("filter2", "").toString());
+  ui->searchBox3->setFilter(settings.value("filter3", "").toString());
 }
 
 void AggregateReview::saveSettings()
 {
+  QSettings settings;
+  settings.beginGroup("Program");
+  settings.beginGroup("Review");
 
+  settings.setValue("max_hists", ui->spinMaxHists->value());
+  settings.setValue("filter1", ui->searchBox1->filter());
+  settings.setValue("filter2", ui->searchBox2->filter());
+  settings.setValue("filter3", ui->searchBox3->filter());
 }
 
 void AggregateReview::render_selection()
 {
 
-  std::list<HistMap1D> final;
+  std::map<QString, HistMap1D> final;
 
   for (auto l1 : ui->searchBox1->selection())
     for (auto l2 : ui->searchBox2->selection())
       for (auto l3 : ui->searchBox3->selection())
-        final.push_back(data_[l1.toStdString()][l2.toStdString()][l3.toStdString()]);
+        final[l1+"/"+l2+"/"+l3] = data_[l1.toStdString()][l2.toStdString()][l3.toStdString()];
 
 
   ui->plotHistogram->clearAll();
@@ -68,11 +84,11 @@ void AggregateReview::render_selection()
     for (auto f : final)
     {
       double sum = 0;
-      for (auto d : f)
+      for (auto d : f.second)
         sum += d.second;
 
       HistMap1D f2;
-      for (auto d : f)
+      for (auto d : f.second)
         f2[d.first] = d.second / sum;
 
       QPlot::Appearance ap;
