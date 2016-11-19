@@ -87,7 +87,7 @@ int main(int argc, char* argv[])
       if (!reader->num_analyzed())
         continue;
 
-      std::string gname = "  Analyzing '" + analysis + "'  ";
+      std::string gname = "  Processing '" + analysis + "'  ";
       std::string blanks (gname.size(), ' ');
 
       boost::progress_display prog( reader->metrics().size(), std::cout,
@@ -158,6 +158,7 @@ int main(int argc, char* argv[])
     ++prog;
   }
 
+  INFO << "Building hists finished";
 
   return 0;
 }

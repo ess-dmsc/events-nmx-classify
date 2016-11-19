@@ -124,5 +124,7 @@ int main(int argc, char* argv[])
     ++fnum;
   }
 
+  INFO << "Analysis finished";
+
   return 0;
 }
