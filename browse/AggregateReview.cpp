@@ -94,7 +94,7 @@ void AggregateReview::render_selection()
         f2[d.first] = d.second / sum;
 
       QPlot::Appearance ap;
-      ap.default_pen = palette_[i % palette_.size()];
+      ap.default_pen = QPen(generateColor());
       ui->plotHistogram->addGraph(f2, ap, f.first);
       ++i;
     }

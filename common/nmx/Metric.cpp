@@ -54,7 +54,7 @@ double Metric::normalizer() const
   if (diff <= 1.0)
     return 0.01;
 
-  if (diff > 10000.0)
+  if (diff > 16384)
   {
     int order_of = std::floor(std::log10(std::abs(diff)));
     return pow(10, order_of - 2);

@@ -9,8 +9,6 @@ SearchBox::SearchBox(QWidget *parent)
   , ui(new Ui::SearchBox)
 {
   ui->setupUi(this);
-  ui->listSubset->setSelectionMode(QAbstractItemView::ExtendedSelection);
-  connect(ui->listSubset, SIGNAL(itemSelectionChanged()), this, SLOT(listSelectionChanged()));
 }
 
 SearchBox::~SearchBox()
@@ -37,13 +35,7 @@ QString SearchBox::filter() const
 
 QStringList SearchBox::selection() const
 {
-  if (ui->listSubset->selectedItems().isEmpty())
-    return selected_set_;
-
-  QStringList ret;
-  for (auto i : ui->listSubset->selectedItems())
-    ret.push_back(i->text());
-  return ret;
+  return selected_set_;
 }
 
 void SearchBox::listSelectionChanged()
@@ -55,9 +47,6 @@ void SearchBox::on_lineFilter_textChanged(const QString &arg1)
 {
   selected_set_ = clever_search(set_, arg1.split(" "));
   selected_set_.sort(Qt::CaseInsensitive);
-  ui->listSubset->clear();
-  ui->listSubset->addItems(selected_set_);
-
   emit selectionChanged();
 }
 
