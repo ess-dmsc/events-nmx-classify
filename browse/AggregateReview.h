@@ -49,14 +49,15 @@ private:
   void loadSettings();
   void saveSettings();
 
-  QVector<QColor> palette_ {Qt::black, Qt::darkRed, Qt::darkGreen,
-                            Qt::darkYellow, Qt::darkMagenta,
-                            Qt::red, Qt::blue,
-                            Qt::darkCyan, Qt::darkBlue};
+  QVector<QPen> palette_;
 
 
   std::map<std::string, std::map<std::string, std::map<std::string, HistMap1D>>> data_;
 
+
+  void openFile(QString fileName);
+
+  void make_palette();
 
 };
 

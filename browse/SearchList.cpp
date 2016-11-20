@@ -52,10 +52,12 @@ void SearchList::listSelectionChanged()
 {
   if (ui->listSubset->selectedItems().isEmpty())
     selected_set_ = ui->searchBox->selection();
-
-  selected_set_.clear();
-  for (auto i : ui->listSubset->selectedItems())
-    selected_set_.push_back(i->text());
+  else
+  {
+    selected_set_.clear();
+    for (auto i : ui->listSubset->selectedItems())
+      selected_set_.push_back(i->text());
+  }
 
   emit selectionChanged();
 }

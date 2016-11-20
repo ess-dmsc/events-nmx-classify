@@ -29,6 +29,8 @@ AggregateReview::AggregateReview(QWidget *parent)
   connect(ui->searchBox2, SIGNAL(selectionChanged()), this, SLOT(render_selection()));
   connect(ui->searchBox3, SIGNAL(selectionChanged()), this, SLOT(render_selection()));
 
+  make_palette();
+
   loadSettings();
 }
 
@@ -36,6 +38,25 @@ AggregateReview::~AggregateReview()
 {
   saveSettings();
   delete ui;
+}
+
+void AggregateReview::make_palette()
+{
+
+  QVector<QColor> cols {Qt::darkRed, Qt::darkGreen, Qt::darkYellow, Qt::darkMagenta,
+        Qt::red, Qt::blue, Qt::darkCyan, Qt::darkBlue, Qt::green, Qt::magenta};
+
+  QVector<Qt::PenStyle> styles {Qt::SolidLine, Qt::DashLine,
+        Qt::DotLine, Qt::DashDotDotLine, Qt::DashLine};
+
+  //  for (auto s : styles)
+  //    for (int i=0; i < 6; ++i)
+  //      palette_.push_back(QPen(generateColor(), 1, s));
+
+  for (auto s : styles)
+    for (auto c : cols)
+      palette_.push_back(QPen(c, 1, s));
+
 }
 
 void AggregateReview::enableIO(bool enable)
@@ -52,6 +73,9 @@ void AggregateReview::loadSettings()
   ui->searchBox2->setFilter(settings.value("filter2", "").toString());
   ui->searchBox3->setFilter(settings.value("filter3", "").toString());
   ui->pushNormalize->setChecked(settings.value("normalize").toBool());
+
+  QString fileName = settings.value("recent_file").toString();
+  openFile(fileName);
 }
 
 void AggregateReview::saveSettings()
@@ -106,11 +130,16 @@ void AggregateReview::render_selection()
 
 
       QPlot::Appearance ap;
-      ap.default_pen = QPen(generateColor());
+      ap.default_pen = palette_.at(i % palette_.size());
       ui->plotHistogram->addGraph(f2, ap, f.first);
       ++i;
     }
   }
+
+  ui->pushDigDown->setEnabled(
+        (ui->searchBox1->selection().size() == 1) &&
+        (ui->searchBox2->selection().size() == 1) &&
+        (ui->searchBox3->selection().size() == 1));
 
   ui->plotHistogram->update();
   ui->plotHistogram->zoomOut();
@@ -128,8 +157,12 @@ void AggregateReview::on_pushOpen_clicked()
   if (!validateFile(this, fileName, false))
     return;
 
+  openFile(fileName);
+}
+
+void AggregateReview::openFile(QString fileName)
+{
   H5CC::File file(fileName.toStdString());
-  ui->pushOpen->setText(fileName);
 
   QSet<QString> list1, list2, list3;
 
@@ -153,6 +186,22 @@ void AggregateReview::on_pushOpen_clicked()
   ui->searchBox1->setList(list1.toList());
   ui->searchBox2->setList(list2.toList());
   ui->searchBox3->setList(list3.toList());
+
+  QSettings settings;
+  settings.beginGroup("Program");
+  settings.beginGroup("Review");
+
+  if (!data_.empty())
+  {
+    ui->pushOpen->setText("  " + fileName);
+    settings.setValue("recent_file", fileName);
+  }
+  else
+  {
+    ui->pushOpen->setText("");
+    settings.setValue("recent_file", QVariant());
+  }
+
 }
 
 void AggregateReview::on_spinMaxHists_editingFinished()
