@@ -13,6 +13,13 @@ void term_key(int /*sig*/)
   term_flag = 1;
 }
 
+std::shared_ptr<boost::progress_display> make_prog(size_t size, std::string text)
+{
+  std::string blanks (text.size(), ' ');
+  return std::make_shared<boost::progress_display>(size, std::cout,
+                                                   blanks, text, blanks);
+}
+
 namespace fs = boost::filesystem;
 
 const std::string options_text =
@@ -47,7 +54,6 @@ int main(int argc, char* argv[])
 
   if (files.empty())
   {
-    INFO << "Searching crurent directory";
     files = files_in(fs::current_path(), ".h5");
     if (files.empty())
       ERR << "No *.h5 files found in " << fs::current_path();
@@ -63,63 +69,42 @@ int main(int argc, char* argv[])
 
   H5CC::File outfile(fs::path(output_file).string());
 
-  INFO << "Will analyse the following files:";
-  for (auto p : files)
-    INFO << "   " << p;
-
   std::set<std::string> all_metrics;
 
-  size_t fnum {0};
+  auto prog1 = make_prog(files.size(), "  Indexing metrics  ");
   for (auto filename : files)
   {
     std::shared_ptr<NMX::FileAPV> reader
         = std::make_shared<NMX::FileAPV>(filename.string());
 
-    std::string dataset = filename.stem().string();
-
-    INFO << "Processing file " << filename.string()
-         << " (" << fnum+1 << "/" << files.size() << ")";
-
     for (auto analysis : reader->analyses())
     {
       reader->load_analysis(analysis);
-
       if (!reader->num_analyzed())
         continue;
-
-      std::string gname = "  Processing '" + analysis + "'  ";
-      std::string blanks (gname.size(), ' ');
-
-      boost::progress_display prog( reader->metrics().size(), std::cout,
-                                    blanks,  gname,  blanks);
-
       for (auto &metric : reader->metrics())
-      {
         all_metrics.insert(metric);
-
-        auto hist = reader->get_metric(metric).make_histogram();
-
-        if (dma)
-          write(outfile.group(dataset).group(metric), analysis, hist);
-        else
-          write(outfile.group(analysis).group(metric), dataset, hist);
-
-        ++prog;
-        if (term_flag)
-          return 0;
-      }
     }
+
+    ++(*prog1);
+    if (term_flag)
+      return 0;
+
     reader.reset();
-    ++fnum;
   }
+  prog1.reset();
+
 
   if (all_metrics.empty())
+  {
+    INFO << "No metrics found.";
     return 0;
+  }
 
-  boost::progress_display prog( all_metrics.size(), std::cout,
-                                "\n                       ",
-                                "  Aggregating metrics  ",
-                                "                       ");
+  std::map<std::string, double> minima;
+  std::map<std::string, double> maxima;
+
+  auto prog2 = make_prog(all_metrics.size(), "  Aggregating metrics  ");
   for (auto metric : all_metrics)
   {
     std::map<std::string, NMX::Metric> aggregates;
@@ -130,7 +115,7 @@ int main(int argc, char* argv[])
           = std::make_shared<NMX::FileAPV>(filename.string());
 
       if (!reader->event_count())
-        ERR << "Bad file " << filename.string();
+        continue;
 
       std::string dataset = filename.stem().string();
 
@@ -153,9 +138,63 @@ int main(int argc, char* argv[])
     }
 
     for (auto a : aggregates)
-      write(outfile.group(a.first).group(metric), "aggregate", a.second.make_histogram());
+    {
+      write(outfile.group(a.first).group(metric), "aggregate", a.second.make_histogram(a.second.normalizer()));
+      if (minima.count(metric))
+        minima[metric] = std::min(minima.at(metric), a.second.min());
+      else
+        minima[metric] = a.second.min();
 
-    ++prog;
+      if (maxima.count(metric))
+        maxima[metric] = std::max(maxima.at(metric), a.second.max());
+      else
+        maxima[metric] = a.second.max();
+    }
+    ++(*prog2);
+  }
+  prog2.reset();
+
+
+
+  size_t fnum {0};
+  for (auto filename : files)
+  {
+    std::shared_ptr<NMX::FileAPV> reader
+        = std::make_shared<NMX::FileAPV>(filename.string());
+
+    std::string dataset = filename.stem().string();
+
+    INFO << "Processing file " << filename.string()
+         << " (" << fnum+1 << "/" << files.size() << ")";
+
+    for (auto analysis : reader->analyses())
+    {
+      reader->load_analysis(analysis);
+
+      if (!reader->num_analyzed())
+        continue;
+
+      auto prog = make_prog(reader->metrics().size(), "  Processing '" + analysis + "'  ");
+
+      for (auto &metric : reader->metrics())
+      {
+        all_metrics.insert(metric);
+
+        double norm = NMX::Metric::normalizer(minima.at(metric), maxima.at(metric));
+        auto hist = reader->get_metric(metric).make_histogram(norm);
+
+        if (dma)
+          write(outfile.group(dataset).group(metric), analysis, hist);
+        else
+          write(outfile.group(analysis).group(metric), dataset, hist);
+
+        ++(*prog);
+        if (term_flag)
+          return 0;
+      }
+    }
+    reader.reset();
+    ++fnum;
   }
 
   INFO << "Building hists finished";

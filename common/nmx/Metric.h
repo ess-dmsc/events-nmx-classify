@@ -29,7 +29,8 @@ public:
   double sum() const { return sum_; }
 
   double normalizer() const;
-  std::map<double, double> make_histogram() const;
+  static double normalizer(double minimum, double maximum);
+  std::map<double, double> make_histogram(double norm) const;
 
 private:
   std::vector<double> data_;

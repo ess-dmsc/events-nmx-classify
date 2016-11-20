@@ -46,10 +46,15 @@ void Metric::read_H5_data(const H5CC::DataSet &dataset)
 
 double Metric::normalizer() const
 {
-  if (min_ >= max_)
+  return normalizer(min_, max_);
+}
+
+double Metric::normalizer(double minimum, double maximum)
+{
+  if (minimum >= maximum)
     return 1;
 
-  double diff = max_ - min_;
+  double diff = maximum - minimum;
 
   if (diff <= 1.0)
     return 0.01;
@@ -63,10 +68,10 @@ double Metric::normalizer() const
   return 1;
 }
 
-std::map<double, double> Metric::make_histogram() const
+
+std::map<double, double> Metric::make_histogram(double norm) const
 {
   std::map<double, double> ret;
-  double norm = normalizer();
   for (auto d : data_)
     ret[int32_t(d / norm) * norm]++;
   return ret;
