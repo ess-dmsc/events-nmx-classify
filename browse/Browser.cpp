@@ -27,6 +27,8 @@ Browser::Browser(QWidget *parent) :
 
   review_ = new AggregateReview();
   ui->tabWidget->addTab(review_, "Review");
+  connect(review_, SIGNAL(digDownTown(QString,QString,QString)),
+          this, SLOT(digDownTown(QString,QString,QString)));
 
   connect(&thread_classify_, SIGNAL(data_ready(double)),
           this, SLOT(update_progress(double)));
@@ -260,3 +262,17 @@ void Browser::on_pushShowParams_clicked()
 {
   ui->widgetParams->setVisible(ui->pushShowParams->isChecked());
 }
+
+void Browser::digDownTown(QString dset, QString metric, QString file)
+{
+  if (!ui->pushOpen->text().contains(file))
+    open_file(data_directory_+"/"+file+".h5");
+  if (ui->comboGroup->currentText() != dset)
+  {
+    ui->comboGroup->setCurrentText(dset);
+    on_comboGroup_activated("");
+  }
+  analyzer_->set_metric_z(metric);
+  ui->tabWidget->setCurrentWidget(analyzer_);
+}
+

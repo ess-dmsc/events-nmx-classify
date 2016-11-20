@@ -70,6 +70,8 @@ private slots:
   void populate_combo();
   void on_pushOpen_clicked();
   void on_pushShowParams_clicked();
+
+  void digDownTown(QString dset, QString metric, QString file);
 };
 
 #endif // Browser_H

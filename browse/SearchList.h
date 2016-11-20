@@ -22,6 +22,8 @@ public:
   QString filter() const;
   void setFilter(QString filter);
 
+  void Select(QString sel);
+
 signals:
   void selectionChanged();
 

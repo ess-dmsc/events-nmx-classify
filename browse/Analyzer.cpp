@@ -89,15 +89,12 @@ void Analyzer::set_new_source(std::shared_ptr<NMX::FileAPV> r)
 {
   reader_ = r;
 
-  auto weight_x = ui->comboWeightsX->currentText();
-  auto weight_y = ui->comboWeightsY->currentText();
-  auto weight_z = ui->comboWeightsZ->currentText();
+  if (ui->comboWeightsX->count())
+    saveSettings();
 
   populate_combos();
 
-  ui->comboWeightsX->setCurrentText(weight_x);
-  ui->comboWeightsY->setCurrentText(weight_y);
-  ui->comboWeightsZ->setCurrentText(weight_z);
+  loadSettings();
 
   rebuild_data();
   plot_block();
@@ -430,6 +427,12 @@ void Analyzer::plot_block()
 
   ui->plotHistogram->replotExtras();
   ui->plotHistogram->replot();
+}
+
+void Analyzer::set_metric_z(QString str)
+{
+  ui->comboWeightsZ->setCurrentText(str);
+  rebuild_data();
 }
 
 

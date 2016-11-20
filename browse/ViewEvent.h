@@ -49,6 +49,8 @@ private slots:
   void on_comboPoint1y_currentIndexChanged(const QString &arg1);
   void on_comboPoint2y_currentIndexChanged(const QString &arg1);
 
+  void metrics_selected();
+
 private:
   Ui::ViewEvent *ui;
 
@@ -65,6 +67,7 @@ private:
 
   TableSettings metrics_model_;
   SpecialDelegate metrics_delegate_;
+
 };
 
 #endif // FORM_CALIBRATION_H

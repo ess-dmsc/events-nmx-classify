@@ -27,12 +27,21 @@ public slots:
 signals:
   void toggleIO(bool);
 
+  void digDownTown(QString, QString, QString);
+
 private slots:
   void on_pushOpen_clicked();
 
   void render_selection();
 
   void on_spinMaxHists_editingFinished();
+
+  void on_pushNormalize_clicked();
+
+  void legendDoubleClick(QCPLegend*,QCPAbstractLegendItem*);
+
+
+  void on_pushDigDown_clicked();
 
 private:
   Ui::AggregateReview *ui;

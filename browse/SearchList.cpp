@@ -59,3 +59,19 @@ void SearchList::listSelectionChanged()
 
   emit selectionChanged();
 }
+
+void SearchList::Select(QString sel)
+{
+  for (int i=0; i < ui->listSubset->count(); i++)
+  {
+    if (ui->listSubset->item(i)->text() == sel)
+    {
+      ui->listSubset->clearSelection();
+      ui->listSubset->item(i)->setSelected(true);
+      ui->listSubset->setCurrentRow(i);
+      return;
+    }
+  }
+  emit selectionChanged();
+}
+

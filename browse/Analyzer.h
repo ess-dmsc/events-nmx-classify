@@ -26,6 +26,7 @@ public:
   ~Analyzer();
 
   void set_new_source(std::shared_ptr<NMX::FileAPV> r);
+  void set_metric_z(QString);
 
 public slots:
   void enableIO(bool);

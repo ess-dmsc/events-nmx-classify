@@ -10,6 +10,8 @@ ViewEvent::ViewEvent(QWidget *parent) :
 {
   ui->setupUi(this);
 
+  connect(ui->searchBoxMetrics, SIGNAL(selectionChanged()), this, SLOT(metrics_selected()));
+
   ui->comboPlanes->addItem("X");
   ui->comboPlanes->addItem("Y");
   ui->comboPlanes->addItem("X & Y");
@@ -132,6 +134,7 @@ void ViewEvent::loadSettings()
 {
   QSettings settings;
   settings.beginGroup("Program");
+  settings.beginGroup("Event");
   ui->comboPlot->setCurrentText(settings.value("plot", "everything").toString());
   ui->comboOverlay->setCurrentText(settings.value("overlay", "maxima").toString());
   ui->comboProjection->setCurrentText(settings.value("projection", "none").toString());
@@ -140,12 +143,14 @@ void ViewEvent::loadSettings()
   ui->comboPoint1y->setCurrentText(settings.value("point1y").toString());
   ui->comboPoint2y->setCurrentText(settings.value("point2y").toString());
   ui->comboPlanes->setCurrentText(settings.value("show_planes", "X & Y").toString());
+  ui->searchBoxMetrics->setFilter(settings.value("filter").toString());
 }
 
 void ViewEvent::saveSettings()
 {
   QSettings settings;
   settings.beginGroup("Program");
+  settings.beginGroup("Event");
   settings.setValue("current_idx", ui->spinEventIdx->value());
   settings.setValue("plot", ui->comboPlot->currentText());
   settings.setValue("overlay", ui->comboOverlay->currentText());
@@ -155,6 +160,7 @@ void ViewEvent::saveSettings()
   settings.setValue("point1y", ui->comboPoint1y->currentText());
   settings.setValue("point2y", ui->comboPoint2y->currentText());
   settings.setValue("show_planes", ui->comboPlanes->currentText());
+  settings.setValue("filter", ui->searchBoxMetrics->filter());
 }
 
 
@@ -234,7 +240,13 @@ void ViewEvent::plot_current_event()
   else if (ui->comboPlanes->currentText() == "Y")
     metrics = event_.y().metrics();
 
-  metrics_model_.update(metrics);
+  QStringList list;
+  for (auto a : metrics.data())
+    list.push_back(QString::fromStdString(a.first));
+
+  ui->searchBoxMetrics->setList(list);
+
+//  metrics_model_.update(metrics);
 
   display_projection(event_);
   auto desc1x = event_.x().metrics().get(ui->comboPoint1x->currentText().toStdString()).description;
@@ -320,4 +332,21 @@ void ViewEvent::on_comboPoint2y_currentIndexChanged(const QString&)
   ui->eventX->set_point_type2y(ui->comboPoint2y->currentText());
   ui->eventY->set_point_type2y(ui->comboPoint2y->currentText());
   plot_current_event();
+}
+
+void ViewEvent::metrics_selected()
+{
+  NMX::Settings metrics;
+  if (ui->comboPlanes->currentText() == "X")
+    metrics = event_.x().metrics();
+  else if (ui->comboPlanes->currentText() == "Y")
+    metrics = event_.y().metrics();
+  else
+    metrics = event_.metrics();
+
+  NMX::Settings final;
+  for (auto name : ui->searchBoxMetrics->selection())
+    final.set(name.toStdString(), metrics.get(name.toStdString()));
+
+  metrics_model_.update(final);
 }
