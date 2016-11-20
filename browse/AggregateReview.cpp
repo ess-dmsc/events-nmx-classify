@@ -42,19 +42,38 @@ AggregateReview::~AggregateReview()
 
 void AggregateReview::make_palette()
 {
+  palette_.clear();
 
-  QVector<QColor> cols {Qt::darkRed, Qt::darkGreen, Qt::darkYellow, Qt::darkMagenta,
-        Qt::red, Qt::blue, Qt::darkCyan, Qt::darkBlue, Qt::green, Qt::magenta};
+//  QVector<QColor> cols {Qt::red, Qt::blue, Qt::green, Qt::cyan, Qt::magenta};
+//  QVector<QColor> cols2 {Qt::darkRed, Qt::darkGreen, Qt::darkBlue,
+//                         Qt::darkCyan, Qt::darkMagenta, Qt::darkYellow};
+
+  QVector<QColor> cols;
+  for (int i=0; i < 4; ++i)
+    cols.push_back(generateColor());
+
+
+  QVector<QColor> cols2;
+  for (int i=0; i < 4; ++i)
+    cols2.push_back(generateColor());
+
+
+//  for (auto c : cols)
+//    c.setAlpha(128);
+
+//  for (auto c : cols2)
+//    c.setAlpha(128);
 
   QVector<Qt::PenStyle> styles {Qt::SolidLine, Qt::DashLine,
-        Qt::DotLine, Qt::DashDotDotLine, Qt::DashLine};
-
-  //  for (auto s : styles)
-  //    for (int i=0; i < 6; ++i)
-  //      palette_.push_back(QPen(generateColor(), 1, s));
+        Qt::DotLine, Qt::DashDotDotLine, Qt::DashDotLine};
 
   for (auto s : styles)
     for (auto c : cols)
+      palette_.push_back(QPen(c, 1, s));
+
+
+  for (auto s : styles)
+    for (auto c : cols2)
       palette_.push_back(QPen(c, 1, s));
 
 }
@@ -242,4 +261,10 @@ void AggregateReview::on_pushDigDown_clicked()
   emit digDownTown(ui->searchBox1->selection().front(),
                    ui->searchBox2->selection().front(),
                    ui->searchBox3->selection().front());
+}
+
+void AggregateReview::on_pushButton_clicked()
+{
+  make_palette();
+  render_selection();
 }

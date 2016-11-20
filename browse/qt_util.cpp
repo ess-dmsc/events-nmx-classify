@@ -92,7 +92,7 @@ QColor generateColor() {
   int S = rand() % 64 + 191;
   int V = rand() % 54 + 181;
   int A = 128;
-  return QColor::fromHsv(H, S, V, A);
+  return QColor::fromHsv(H, 255, V, A);
 }
 
 QString catExtensions(std::list<std::string> exts) {

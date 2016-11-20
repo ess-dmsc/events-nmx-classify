@@ -43,6 +43,8 @@ private slots:
 
   void on_pushDigDown_clicked();
 
+  void on_pushButton_clicked();
+
 private:
   Ui::AggregateReview *ui;
 
