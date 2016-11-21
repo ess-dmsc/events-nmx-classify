@@ -8,23 +8,12 @@
 #include "Subhist.h"
 #include "qt_util.h"
 
-struct MetricTest
-{
-  bool validate(double val) const { return (min <= val) && (val <= max); }
-
-  bool enabled {false};
-  std::string metric;
-  double min {std::numeric_limits<double>::min()};
-  double max {std::numeric_limits<double>::max()};
-};
-
-
 class TestsModel : public QAbstractTableModel
 {
   Q_OBJECT
 
 private:
-  QVector<MetricTest> &tests_;
+  MetricFilter tests_;
   std::list<std::string> available_metrics_;
 
 signals:
@@ -32,7 +21,7 @@ signals:
   void editing_finished();
 
 public:
-  TestsModel(QVector<MetricTest> &, QObject *parent = 0);
+  TestsModel(QObject *parent = 0);
   int rowCount(const QModelIndex &parent = QModelIndex()) const;
   int columnCount(const QModelIndex &parent = QModelIndex()) const;
   QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
@@ -42,6 +31,10 @@ public:
   bool setData(const QModelIndex & index, const QVariant & value, int role = Qt::EditRole);
 
   void set_available_metrics(std::list<std::string> list) { available_metrics_ = list; }
+
+  void set_tests(MetricFilter tests) { tests_ = tests; update(); }
+
+  MetricFilter tests() const { return tests_; }
 
 public slots:
   bool setDataQuietly(const QModelIndex & index, const QVariant & value, int role = Qt::EditRole);

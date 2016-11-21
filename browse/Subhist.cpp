@@ -4,33 +4,19 @@
 
 void Histogram::add_to_hist(int32_t x, int32_t y, int32_t bin, int64_t increment)
 {
-  if (done_
-      || (x < x1_) || (x > x2_)
-      || (y < y1_) || (y > y2_)
-      || (bin < bin_min_) || (bin > bin_max_))
+  if ((x < x1_) || (x > x2_)
+      || (y < y1_) || (y > y2_))
     return;
 
-  data_[bin] += increment;
   weighted_sum_ += bin*increment;
   total_count_ += increment;
-  min_ = std::min(min_, static_cast<double>(bin));
-  max_ = std::max(max_, static_cast<double>(bin));
 }
 
 
 void Histogram::reset_data()
 {
-  min_ = std::numeric_limits<double>::max();
-  max_ = std::numeric_limits<double>::min();
   weighted_sum_ = 0;
   total_count_ = 0;
-  done_ = false;
-  data_.clear();
-}
-
-void Histogram::close_data()
-{
-  done_ = true;
 }
 
 double Histogram::avg() const
@@ -52,13 +38,6 @@ void Histogram::set_y(int32_t new_y1, int32_t new_y2)
 {
   y1_ = std::min(new_y1, new_y2);
   y2_ = std::max(new_y1, new_y2);
-  reset_data();
-}
-
-void Histogram::set_bin_bounds(int32_t new1, int32_t new2)
-{
-  bin_min_ = std::min(new1, new2);
-  bin_max_ = std::max(new1, new2);
   reset_data();
 }
 

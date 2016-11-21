@@ -2,19 +2,18 @@
 #include "Analyzer.h"
 #include "ui_Analyzer.h"
 #include "CustomLogger.h"
-
+#include "doFit.h"
 
 Analyzer::Analyzer(QWidget *parent)
   : QWidget(parent)
   , ui(new Ui::Analyzer)
   , histograms1d_(QVector<Histogram>())
   , boxes_model_(histograms1d_)
-  , tests_model_(tests_.tests)
+//  , tests_model_(tests_.tests)
 {
   ui->setupUi(this);
 
   Histogram params;
-  params.visible = true;
   params.color = QColor(0,0,0,0);
   params.set_x(0, 256);
   params.set_y(0, 256);
@@ -59,6 +58,11 @@ Analyzer::Analyzer(QWidget *parent)
   connect(&tests_delegate_, SIGNAL(edit_integer(QModelIndex,QVariant,int)),
           &tests_model_, SLOT(setDataQuietly(QModelIndex,QVariant,int)));
 
+
+  ui->comboFit->addItem("none");
+  ui->comboFit->addItem("left");
+  ui->comboFit->addItem("right");
+  ui->comboFit->addItem("double");
 
   loadSettings();
 }
@@ -129,6 +133,7 @@ void Analyzer::loadSettings()
   ui->comboWeightsX->setCurrentText(settings.value("weight_type_x", "X_entry_strip").toString());
   ui->comboWeightsY->setCurrentText(settings.value("weight_type_y", "Y_entry_strip").toString());
   ui->comboWeightsZ->setCurrentText(settings.value("weight_type_z").toString());
+  ui->comboFit->setCurrentText(settings.value("fit").toString());
 }
 
 void Analyzer::saveSettings()
@@ -138,6 +143,7 @@ void Analyzer::saveSettings()
   settings.setValue("weight_type_x", ui->comboWeightsX->currentText());
   settings.setValue("weight_type_y", ui->comboWeightsY->currentText());
   settings.setValue("weight_type_z", ui->comboWeightsZ->currentText());
+  settings.setValue("fit", ui->comboFit->currentText());
 }
 
 void Analyzer::rebuild_data()
@@ -157,7 +163,7 @@ void Analyzer::rebuild_data()
   auto yy = reader_->get_metric(weight_y);
   auto zz = reader_->get_metric(weight_z);
 
-  auto tests = tests_;
+  auto tests = tests_model_.tests();
   MetricTest t;
   t.enabled = true;
   t.metric = weight_x;
@@ -214,9 +220,11 @@ void Analyzer::rebuild_data()
   ui->plotHistogram->clearAll();
 
   QPlot::Appearance profile;
-  profile.default_pen = QPen(palette_[0], 2);
 
+  profile.default_pen = QPen(palette_[0], 2);
   ui->plotHistogram->addGraph(histo, profile);
+  profile.default_pen = QPen(palette_[1], 2);
+  ui->plotHistogram->addGraph(doFit(histo, ui->comboFit->currentText().toStdString()), profile);
 
   ui->plotHistogram->setAxisLabels(ui->comboWeightsZ->currentText(), "count");
   ui->plotHistogram->setTitle(ui->comboWeightsZ->currentText());
@@ -232,17 +240,10 @@ void Analyzer::update_histograms()
 
   for (int i=0; i < histograms1d_.size(); ++i)
   {
-    if (!histograms1d_[i].visible)
-      continue;
-
-    HistMap1D histo;
-    for (auto &b : histograms1d_[i].data())
-      histo[b.first] = b.second;
-
     QPlot::Appearance profile;
     profile.default_pen = QPen(palette_[i % palette_.size()], 2);
 
-    ui->plotHistogram->addGraph(histo, profile);
+    ui->plotHistogram->addGraph(histograms1d_[i].hist1d, profile);
   }
 
   ui->plotHistogram->setAxisLabels(ui->comboWeightsZ->currentText(), "count");
@@ -267,7 +268,6 @@ void Analyzer::update_box(double x, double y, Qt::MouseButton button)
         histograms1d_[row].set_center_x(static_cast<int64_t>(x));
         histograms1d_[row].set_center_y(static_cast<int64_t>(y));
       }
-      histograms1d_[row].visible = (button == Qt::LeftButton);
       plot_boxes();
       boxes_model_.update();
       parameters_set();
@@ -298,8 +298,6 @@ void Analyzer::plot_boxes()
   for (int i=0; i < histograms1d_.size(); ++i)
   {
     const auto &p = histograms1d_[i];
-    if (!p.visible)
-      continue;
 
     QPlot::MarkerBox2D box;
     box.x1 = p.x1();
@@ -343,7 +341,6 @@ void Analyzer::on_pushAddBox_clicked()
 {
   Histogram params;
 
-  params.visible = true;
   params.color = palette_[histograms1d_.size() % palette_.size()];
   params.set_x(0, 250);
   params.set_y(0, 250);
@@ -379,20 +376,27 @@ void Analyzer::set_metric_z(QString str)
 
 void Analyzer::on_pushAddTest_clicked()
 {
-  tests_.tests.push_back(MetricTest());
-  tests_model_.update();
+  auto filter = tests_model_.tests();
+  filter.tests.push_back(MetricTest());
+  tests_model_.set_tests(filter);
 }
 
 void Analyzer::on_pushRemoveTest_clicked()
 {
+  auto filter = tests_model_.tests();
   auto rows = ui->tableTests->selectionModel()->selectedRows();
   if (rows.size())
   {
     int row = rows.front().row();
     if ((row >= 0) && (row < histograms1d_.size()))
     {
-      tests_.tests.remove(row);
-      tests_model_.update();
+      filter.tests.remove(row);
     }
   }
+  tests_model_.set_tests(filter);
+}
+
+void Analyzer::on_comboFit_currentTextChanged(const QString &arg1)
+{
+  rebuild_data(); //wrong
 }

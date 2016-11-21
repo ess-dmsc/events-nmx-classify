@@ -8,15 +8,14 @@
 #include "SpecialDelegate.h"
 
 
-TestsModel::TestsModel(QVector<MetricTest> &tests, QObject *parent)
+TestsModel::TestsModel(QObject *parent)
   : QAbstractTableModel(parent)
-  , tests_(tests)
 {
 }
 
 int TestsModel::rowCount(const QModelIndex & /*parent*/) const
 {
-  return tests_.size();
+  return tests_.tests.size();
 }
 
 int TestsModel::columnCount(const QModelIndex & /*parent*/) const
@@ -39,20 +38,20 @@ QVariant TestsModel::data(const QModelIndex &index, int role) const
   else if ((role == Qt::EditRole) && (col == 1))
   {
     MultipleChoice m(available_metrics_);
-    m.choose(tests_.at(row).metric);
+    m.choose(tests_.tests.at(row).metric);
     return QVariant::fromValue(Variant::from_menu(m));
   }
   else if (role == Qt::DisplayRole)
   {
     switch (col) {
     case 0:
-      return QVariant::fromValue(tests_.at(row).enabled);
+      return QVariant::fromValue(tests_.tests.at(row).enabled);
     case 1:
-      return QString::fromStdString(tests_.at(row).metric);
+      return QString::fromStdString(tests_.tests.at(row).metric);
     case 2:
-      return QVariant::fromValue(tests_.at(row).min);
+      return QVariant::fromValue(tests_.tests.at(row).min);
     case 3:
-      return QVariant::fromValue(tests_.at(row).max);
+      return QVariant::fromValue(tests_.tests.at(row).max);
     }
   }
   return QVariant();
@@ -98,18 +97,18 @@ bool TestsModel::setDataQuietly(const QModelIndex & index, const QVariant & valu
       && (col >= 0) && (col < columnCount()))
   {
     if ((col == 0) && value.canConvert(QVariant::Bool))
-      tests_[row].enabled = value.toBool();
+      tests_.tests[row].enabled = value.toBool();
     else if ((col == 1) && value.canConvert(QVariant::String))
     {
-      tests_[row].metric = value.toString().toStdString();
+      tests_.tests[row].metric = value.toString().toStdString();
       update();
     }
     else if (value.canConvert(QMetaType::LongLong))
     {
       if (col == 2)
-        tests_[row].min = value.toLongLong();
+        tests_.tests[row].min = value.toLongLong();
       else if (col == 3)
-        tests_[row].max = value.toLongLong();
+        tests_.tests[row].max = value.toLongLong();
       else
         return false;
     }
@@ -124,7 +123,7 @@ bool TestsModel::setDataQuietly(const QModelIndex & index, const QVariant & valu
 void TestsModel::update()
 {
   QModelIndex start_ix = createIndex( 0, 0 );
-  QModelIndex end_ix = createIndex(tests_.size(), columnCount());
+  QModelIndex end_ix = createIndex(tests_.tests.size(), columnCount());
   emit dataChanged( start_ix, end_ix );
   emit layoutChanged();
 }
@@ -155,7 +154,7 @@ int BoxesModel::rowCount(const QModelIndex & /*parent*/) const
 
 int BoxesModel::columnCount(const QModelIndex & /*parent*/) const
 {
-  return 13;
+  return 3;
 }
 
 QVariant BoxesModel::data(const QModelIndex &index, int role) const
@@ -176,28 +175,8 @@ QVariant BoxesModel::data(const QModelIndex &index, int role) const
     case 0:
       return QVariant::fromValue(slabs_.at(row).color);
     case 1:
-      return QVariant::fromValue(slabs_[row].visible);
-    case 2:
-      return QVariant::fromValue(slabs_.at(row).center_x());
-    case 3:
-      return QVariant::fromValue(slabs_.at(row).center_y());
-    case 4:
-      return QVariant::fromValue(slabs_.at(row).width());
-    case 5:
-      return QVariant::fromValue(slabs_.at(row).height());
-
-    case 6:
-      return QVariant::fromValue(slabs_.at(row).bin_min());
-    case 7:
-      return QVariant::fromValue(slabs_.at(row).bin_max());
-
-    case 8:
-      return QVariant::fromValue(slabs_.at(row).min());
-    case 9:
-      return QVariant::fromValue(slabs_.at(row).max());
-    case 10:
       return QVariant::fromValue(slabs_.at(row).avg());
-    case 11:
+    case 2:
       return QVariant::fromValue(slabs_.at(row).total_count());
 
     }
@@ -215,29 +194,8 @@ QVariant BoxesModel::headerData(int section, Qt::Orientation orientation, int ro
       case 0:
         return QString("Color");
       case 1:
-        return QString("Visible");
-      case 2:
-        return QString("x center");
-      case 3:
-        return QString("y center");
-      case 4:
-        return QString("width");
-      case 5:
-        return QString("height");
-
-      case 6:
-        return QString("bin_min");
-      case 7:
-        return QString("bin_max");
-
-
-      case 8:
-        return QString("minimum");
-      case 9:
-        return QString("maximum");
-      case 10:
         return QString("weighted avg");
-      case 11:
+      case 2:
         return QString("total count");
 
 
@@ -270,26 +228,6 @@ bool BoxesModel::setDataQuietly(const QModelIndex & index, const QVariant & valu
       DBG << "model changing color " << value.toString().toStdString();
       slabs_[row].color = QColor(value.toString());
     }
-    else if ((col == 1) && value.canConvert(QVariant::Bool))
-      slabs_[row].visible = value.toBool();
-    else if (value.canConvert(QMetaType::LongLong))
-    {
-      if (col == 2)
-        slabs_[row].set_center_x(value.toLongLong());
-      else if (col == 3)
-        slabs_[row].set_center_y(value.toLongLong());
-      else if (col == 4)
-        slabs_[row].set_width(value.toLongLong());
-      else if (col == 5)
-        slabs_[row].set_height(value.toLongLong());
-      else if (col == 6)
-        slabs_[row].set_bin_bounds(value.toLongLong(), slabs_[row].bin_max());
-      else if (col == 7)
-        slabs_[row].set_bin_bounds(slabs_[row].bin_min(), value.toLongLong());
-      else
-        return false;
-    }
-
 
     emit data_changed();
     return true;
@@ -309,7 +247,7 @@ void BoxesModel::update()
 Qt::ItemFlags BoxesModel::flags(const QModelIndex &index) const
 {
   Qt::ItemFlags myflags = Qt::ItemIsEnabled | Qt::ItemIsSelectable | QAbstractTableModel::flags(index);
-  if ((index.column() > 0) && (index.column() < 8))
-    myflags |= Qt::ItemIsEditable;
+//  if ((index.column() > 0) && (index.column() < 8))
+//    myflags |= Qt::ItemIsEditable;
   return myflags;
 }

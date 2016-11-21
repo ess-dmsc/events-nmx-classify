@@ -3,6 +3,50 @@
 
 #include <QColor>
 #include "histogram.h"
+#include "Metric.h"
+#include <set>
+#include <QVector>
+
+struct MetricTest
+{
+  bool validate(double val) const { return (min <= val) && (val <= max); }
+
+  bool enabled {false};
+  std::string metric;
+  double min {std::numeric_limits<double>::min()};
+  double max {std::numeric_limits<double>::max()};
+};
+
+struct MetricFilter
+{
+  bool validate(const std::map<std::string, NMX::Metric>& metrics, size_t index) const
+  {
+    for (auto f : tests)
+    {
+      if (!f.enabled)
+        continue;
+      if (!metrics.count(f.metric))
+        return false;
+      const auto& metric = metrics.at(f.metric);
+      if (index >= metric.const_data().size())
+        return false;
+      if (!f.validate(metric.const_data().at(index)))
+        return false;
+    }
+    return true;
+  }
+
+  std::list<std::string> required_metrics() const
+  {
+    std::list<std::string> ret;
+    for (auto t : tests)
+      if (t.enabled)
+        ret.push_back(t.metric);
+    return ret;
+  }
+
+  QVector<MetricTest> tests;
+};
 
 class Histogram
 {
@@ -17,8 +61,6 @@ public:
   int32_t x2() const { return x2_; }
   int32_t y1() const { return y1_; }
   int32_t y2() const { return y2_; }
-  int32_t bin_min() const { return bin_min_; }
-  int32_t bin_max() const { return bin_max_; }
 
   int64_t width() const { return int64_t(x2_) - int64_t(x1_); }
   int64_t height() const { return int64_t(y2_) - int64_t(y1_); }
@@ -27,22 +69,21 @@ public:
 
   void set_x(int32_t new_x1, int32_t new_x2);
   void set_y(int32_t new_y1, int32_t new_y2);
-  void set_bin_bounds(int32_t new1, int32_t new2);
 
   void set_width(int64_t w);
   void set_height(int64_t h);
   void set_center_x(int64_t x);
   void set_center_y(int64_t y);
 
-  double min() const {return min_;}
-  double max() const {return max_;}
   double avg() const;
   double total_count() const {return total_count_;}
-  const std::map<int32_t, int64_t> & data() const { return data_; }
 
-  bool visible {true};
   QColor color {Qt::black};
+  HistMap1D hist1d;
+  HistMap2D hist2d;
+  std::set<size_t> indices;
 
+  MetricFilter filter;
 
 private:
   int32_t x1_{std::numeric_limits<int32_t>::min()};
@@ -50,16 +91,8 @@ private:
   int32_t y1_{std::numeric_limits<int32_t>::min()};
   int32_t y2_{std::numeric_limits<int32_t>::max()};
 
-  int32_t bin_min_{std::numeric_limits<int32_t>::min()};
-  int32_t bin_max_{std::numeric_limits<int32_t>::max()};
-
-  double min_{std::numeric_limits<double>::max()};
-  double max_{std::numeric_limits<double>::min()};
   double weighted_sum_{0};
   double total_count_{0};
-  std::map<int32_t, int64_t> data_;
-
-  bool done_ {false};
 };
 
 #endif

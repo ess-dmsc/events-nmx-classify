@@ -13,41 +13,11 @@
 #include "qp_2d.h"
 #include "qp_multi1d.h"
 
+#include "doFit.h"
+
 namespace Ui {
 class Analyzer;
 }
-
-struct MetricFilter
-{
-  bool validate(const std::map<std::string, NMX::Metric>& metrics, size_t index) const
-  {
-    for (auto f : tests)
-    {
-      if (!f.enabled)
-        continue;
-      if (!metrics.count(f.metric))
-        return false;
-      const auto& metric = metrics.at(f.metric);
-      if (index >= metric.const_data().size())
-        return false;
-      if (!f.validate(metric.const_data().at(index)))
-        return false;
-    }
-    return true;
-  }
-
-  std::list<std::string> required_metrics() const
-  {
-    std::list<std::string> ret;
-    for (auto t : tests)
-      if (t.enabled)
-        ret.push_back(t.metric);
-    return ret;
-  }
-
-  QVector<MetricTest> tests;
-};
-
 
 class Analyzer : public QWidget
 {
@@ -86,6 +56,8 @@ private slots:
 
   void rebuild_data();
 
+  void on_comboFit_currentTextChanged(const QString &arg1);
+
 private:
   Ui::Analyzer *ui;
 
@@ -95,7 +67,7 @@ private:
   BoxesModel boxes_model_;
   SpecialDelegate boxes_delegate_;
 
-  MetricFilter tests_;
+//  MetricFilter tests_;
   TestsModel tests_model_;
   SpecialDelegate tests_delegate_;
 

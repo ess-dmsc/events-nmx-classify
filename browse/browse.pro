@@ -39,4 +39,8 @@ HEADERS  += $$files($$PWD/*.h) \
 FORMS   += $$files($$PWD/*.ui) \
            $$files($$PWD/plots/*.ui)
 
+#Root
+LIBS += $$system(root-config --glibs)
+INCLUDEPATH += $$system(root-config --incdir)
+
 RESOURCES += $$files($$PWD/resources/*.qrc)
