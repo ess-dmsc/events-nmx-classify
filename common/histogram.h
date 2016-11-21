@@ -6,9 +6,9 @@
 
 struct c2d
 {
-  c2d(int32_t xx, int32_t yy)
+  c2d(uint32_t xx, uint32_t yy)
     : x(xx), y(yy) {}
-  int32_t x, y;
+  uint32_t x, y;
 };
 
 inline bool operator<(const c2d& a, const c2d& b)
@@ -19,11 +19,11 @@ inline bool operator<(const c2d& a, const c2d& b)
 
 struct p2d
 {
-  p2d(int32_t xx, int32_t yy, double vv)
+  p2d(uint32_t xx, uint32_t yy, double vv)
     : x(xx), y(yy), v(vv) {}
   p2d(c2d c, double vv)
     : x(c.x), y(c.y), v(vv) {}
-  int32_t x, y;
+  uint32_t x, y;
   double v;
 };
 

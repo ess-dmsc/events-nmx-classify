@@ -17,6 +17,38 @@ namespace Ui {
 class Analyzer;
 }
 
+struct MetricFilter
+{
+  bool validate(const std::map<std::string, NMX::Metric>& metrics, size_t index) const
+  {
+    for (auto f : tests)
+    {
+      if (!f.enabled)
+        continue;
+      if (!metrics.count(f.metric))
+        return false;
+      const auto& metric = metrics.at(f.metric);
+      if (index >= metric.const_data().size())
+        return false;
+      if (!f.validate(metric.const_data().at(index)))
+        return false;
+    }
+    return true;
+  }
+
+  std::list<std::string> required_metrics() const
+  {
+    std::list<std::string> ret;
+    for (auto t : tests)
+      if (t.enabled)
+        ret.push_back(t.metric);
+    return ret;
+  }
+
+  QVector<MetricTest> tests;
+};
+
+
 class Analyzer : public QWidget
 {
   Q_OBJECT
@@ -44,41 +76,32 @@ private slots:
   void on_comboWeightsY_currentIndexChanged(const QString &arg1);
   void on_comboWeightsZ_currentIndexChanged(const QString &arg1);
 
-  void on_spinMinX_editingFinished();
-  void on_spinMaxX_editingFinished();
-
-  void on_spinMinY_editingFinished();
-  void on_spinMaxY_editingFinished();
-
-  void on_spinMinZ_editingFinished();
-  void on_spinMaxZ_editingFinished();
-
   void on_pushAddBox_clicked();
+  void on_pushRemoveBox_clicked();
   void update_box(double x, double y, Qt::MouseButton left_mouse);
 
-  void on_spinMinZ_valueChanged(int arg1);
-  void on_spinMaxZ_valueChanged(int arg1);
+  void on_pushAddTest_clicked();
 
-  void on_pushRemoveBox_clicked();
+  void on_pushRemoveTest_clicked();
+
+  void rebuild_data();
 
 private:
   Ui::Analyzer *ui;
 
   std::shared_ptr<NMX::FileAPV> reader_;
 
-
   QVector<Histogram> histograms1d_;
-  BoxesModel model_;
-  SpecialDelegate delegate_;
+  BoxesModel boxes_model_;
+  SpecialDelegate boxes_delegate_;
 
-  std::map<int,std::map<std::pair<int32_t,int32_t>, std::list<size_t>>> data_;
+  MetricFilter tests_;
+  TestsModel tests_model_;
+  SpecialDelegate tests_delegate_;
 
   void loadSettings();
   void saveSettings();
 
-  void rebuild_data();
-
-  void make_projections();
   void update_histograms();
   void plot_block();
 

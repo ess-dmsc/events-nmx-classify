@@ -23,6 +23,7 @@ public:
   void read_H5_data(const H5CC::DataSet &dataset);
 
   std::vector<double>& data() { return data_; }
+  const std::vector<double>& const_data() const { return data_; }
   std::string description() const { return description_; }
   double min() const { return min_; }
   double max() const { return max_; }

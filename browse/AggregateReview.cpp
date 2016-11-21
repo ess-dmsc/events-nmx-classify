@@ -80,6 +80,8 @@ void AggregateReview::make_palette()
 
 void AggregateReview::enableIO(bool enable)
 {
+  Q_UNUSED(enable);
+
 }
 
 void AggregateReview::loadSettings()
@@ -154,6 +156,11 @@ void AggregateReview::render_selection()
       ++i;
     }
   }
+
+  if (ui->pushNormalize->isChecked())
+    ui->plotHistogram->setAxisLabels("", "% events");
+  else
+    ui->plotHistogram->setAxisLabels("", "event counts");
 
   ui->pushDigDown->setEnabled(
         (ui->searchBox1->selection().size() == 1) &&

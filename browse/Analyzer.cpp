@@ -8,7 +8,8 @@ Analyzer::Analyzer(QWidget *parent)
   : QWidget(parent)
   , ui(new Ui::Analyzer)
   , histograms1d_(QVector<Histogram>())
-  , model_(histograms1d_)
+  , boxes_model_(histograms1d_)
+  , tests_model_(tests_.tests)
 {
   ui->setupUi(this);
 
@@ -21,7 +22,7 @@ Analyzer::Analyzer(QWidget *parent)
 
   ui->plotHistogram->setScaleType("Linear");
   ui->plotHistogram->setPlotStyle("Step center");
-//  ui->plotHistogram->set_visible_options(ShowOptions::zoom | ShowOptions::thickness | ShowOptions::scale | ShowOptions::grid | ShowOptions::save);
+  //  ui->plotHistogram->set_visible_options(ShowOptions::zoom | ShowOptions::thickness | ShowOptions::scale | ShowOptions::grid | ShowOptions::save);
 
   ui->plot2D->setAntialiased(false);
   ui->plot2D->setScaleType("Linear");
@@ -29,8 +30,8 @@ Analyzer::Analyzer(QWidget *parent)
   ui->plot2D->setShowGradientLegend(true);
   connect(ui->plot2D, SIGNAL(clickedPlot(double,double,Qt::MouseButton)), this, SLOT(update_box(double, double, Qt::MouseButton)));
 
-  ui->tableBoxes->setModel(&model_);
-  ui->tableBoxes->setItemDelegate(&delegate_);
+  ui->tableBoxes->setModel(&boxes_model_);
+  ui->tableBoxes->setItemDelegate(&boxes_delegate_);
   ui->tableBoxes->horizontalHeader()->setStretchLastSection(true);
   ui->tableBoxes->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
   ui->tableBoxes->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
@@ -38,10 +39,26 @@ Analyzer::Analyzer(QWidget *parent)
   ui->tableBoxes->setSelectionMode(QAbstractItemView::ExtendedSelection);
   ui->tableBoxes->show();
 
-  connect(&model_, SIGNAL(data_changed()), this, SLOT(plot_boxes()));
-  connect(&model_, SIGNAL(editing_finished()), this, SLOT(parameters_set()));
-  connect(&delegate_, SIGNAL(edit_integer(QModelIndex,QVariant,int)),
-          &model_, SLOT(setDataQuietly(QModelIndex,QVariant,int)));
+  connect(&boxes_model_, SIGNAL(data_changed()), this, SLOT(plot_boxes()));
+  connect(&boxes_model_, SIGNAL(editing_finished()), this, SLOT(parameters_set()));
+  connect(&boxes_delegate_, SIGNAL(edit_integer(QModelIndex,QVariant,int)),
+          &boxes_model_, SLOT(setDataQuietly(QModelIndex,QVariant,int)));
+
+
+  ui->tableTests->setModel(&tests_model_);
+  ui->tableTests->setItemDelegate(&tests_delegate_);
+  ui->tableTests->horizontalHeader()->setStretchLastSection(true);
+  ui->tableTests->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+  ui->tableTests->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+  ui->tableTests->setSelectionBehavior(QAbstractItemView::SelectRows);
+  ui->tableTests->setSelectionMode(QAbstractItemView::ExtendedSelection);
+  ui->tableTests->show();
+
+  //  connect(&tests_model_, SIGNAL(data_changed()), this, SLOT(plot_boxes()));
+  connect(&tests_model_, SIGNAL(editing_finished()), this, SLOT(rebuild_data()));
+  connect(&tests_delegate_, SIGNAL(edit_integer(QModelIndex,QVariant,int)),
+          &tests_model_, SLOT(setDataQuietly(QModelIndex,QVariant,int)));
+
 
   loadSettings();
 }
@@ -63,6 +80,8 @@ void Analyzer::populate_combos()
     ui->comboWeightsY->addItem(QString::fromStdString(c));
     ui->comboWeightsZ->addItem(QString::fromStdString(c));
   }
+
+  tests_model_.set_available_metrics(reader_->metrics());
 }
 
 Analyzer::~Analyzer()
@@ -80,8 +99,10 @@ void Analyzer::enableIO(bool enable)
 
   if (enable) {
     ui->tableBoxes->setEditTriggers(QAbstractItemView::AllEditTriggers);
+    ui->tableTests->setEditTriggers(QAbstractItemView::AllEditTriggers);
   } else {
     ui->tableBoxes->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    ui->tableTests->setEditTriggers(QAbstractItemView::NoEditTriggers);
   }
 }
 
@@ -108,15 +129,6 @@ void Analyzer::loadSettings()
   ui->comboWeightsX->setCurrentText(settings.value("weight_type_x", "X_entry_strip").toString());
   ui->comboWeightsY->setCurrentText(settings.value("weight_type_y", "Y_entry_strip").toString());
   ui->comboWeightsZ->setCurrentText(settings.value("weight_type_z").toString());
-
-  ui->spinMinX->setValue(settings.value("min_x", 0).toInt());
-  ui->spinMaxX->setValue(settings.value("max_x", 1000000).toInt());
-
-  ui->spinMinY->setValue(settings.value("min_y", 0).toInt());
-  ui->spinMaxY->setValue(settings.value("max_y", 1000000).toInt());
-
-  ui->spinMinZ->setValue(settings.value("min_z", 0).toInt());
-  ui->spinMaxZ->setValue(settings.value("max_z", 1000000).toInt());
 }
 
 void Analyzer::saveSettings()
@@ -126,15 +138,6 @@ void Analyzer::saveSettings()
   settings.setValue("weight_type_x", ui->comboWeightsX->currentText());
   settings.setValue("weight_type_y", ui->comboWeightsY->currentText());
   settings.setValue("weight_type_z", ui->comboWeightsZ->currentText());
-
-  settings.setValue("min_x", ui->spinMinX->value());
-  settings.setValue("max_x", ui->spinMaxX->value());
-
-  settings.setValue("min_y", ui->spinMinY->value());
-  settings.setValue("max_y", ui->spinMaxY->value());
-
-  settings.setValue("min_z", ui->spinMinZ->value());
-  settings.setValue("max_z", ui->spinMaxZ->value());
 }
 
 void Analyzer::rebuild_data()
@@ -142,7 +145,9 @@ void Analyzer::rebuild_data()
   if (!reader_|| !reader_->event_count())
     return;
 
-  data_.clear();
+  HistMap2D projection2d;
+  HistMap1D histo;
+  std::set<size_t> indices;
 
   auto weight_x = ui->comboWeightsX->currentText().toStdString();
   auto weight_y = ui->comboWeightsY->currentText().toStdString();
@@ -152,15 +157,34 @@ void Analyzer::rebuild_data()
   auto yy = reader_->get_metric(weight_y);
   auto zz = reader_->get_metric(weight_z);
 
+  auto tests = tests_;
+  MetricTest t;
+  t.enabled = true;
+  t.metric = weight_x;
+  t.min = xx.min();
+  t.max = xx.max();
+  tests.tests.push_back(t);
+  t.metric = weight_y;
+  t.min = yy.min();
+  t.max = yy.max();
+  tests.tests.push_back(t);
+  t.metric = weight_z;
+  t.min = zz.min();
+  t.max = zz.max();
+  tests.tests.push_back(t);
+
+  auto needed_metrics = tests.required_metrics();
+  needed_metrics.push_back(weight_x);
+  needed_metrics.push_back(weight_y);
+  needed_metrics.push_back(weight_z);
+
+  std::map<std::string, NMX::Metric> metrics;
+  for (auto m : needed_metrics)
+    metrics[m] = reader_->get_metric(m);
+
   ui->labelX->setText("   " + QString::fromStdString(xx.description()));
   ui->labelY->setText("   " + QString::fromStdString(yy.description()));
   ui->labelZ->setText("   " + QString::fromStdString(zz.description()));
-
-  if (xx.data().size() != yy.data().size())
-  {
-    make_projections();
-    return;
-  }
 
   xx_norm = xx.normalizer();
   yy_norm = yy.normalizer();
@@ -168,82 +192,38 @@ void Analyzer::rebuild_data()
 
   for (size_t eventID = 0; eventID < reader_->num_analyzed(); ++eventID)
   {
-    if ((eventID >= xx.data().size()) || (eventID >= yy.data().size()) || (eventID >= zz.data().size()))
+    if (!tests.validate(metrics, eventID))
       continue;
 
-    data_[int(zz.data().at(eventID) / zz_norm)]
-         [std::pair<int,int>({int(xx.data().at(eventID) / xx_norm),
-                              int(yy.data().at(eventID) / yy_norm)})].push_back(eventID);
+    projection2d[c2d(int32_t( (xx.data().at(eventID) - xx.min()) / xx_norm),
+                     int32_t( (yy.data().at(eventID) - yy.min()) / yy_norm))] ++;
+
+    histo[int( zz.data().at(eventID) / zz_norm) * zz_norm]++;
+
+    indices.insert(eventID);
   }
 
-  for (auto &i : histograms1d_)
-    i.reset_data();
 
-  make_projections();
-}
-
-void Analyzer::make_projections()
-{
-  std::set<size_t> indices;
-
-  int min_x = ui->spinMinX->value();
-  int max_x = ui->spinMaxX->value();
-
-  int min_y = ui->spinMinY->value();
-  int max_y = ui->spinMaxY->value();
-
-  int min_z = ui->spinMinZ->value();
-  int max_z = ui->spinMaxZ->value();
-
-  HistMap2D projection2d;
-
-  int32_t xmin{std::numeric_limits<int32_t>::max()};
-  int32_t xmax{std::numeric_limits<int32_t>::min()};
-  int32_t ymin{std::numeric_limits<int32_t>::max()};
-  int32_t ymax{std::numeric_limits<int32_t>::min()};
-
-  for (auto &ms : data_)
-  {
-    auto &z = ms.first;
-    for (auto &mi : ms.second)
-    {
-      int x = mi.first.first;
-      int y = mi.first.second;
-
-      if ((min_x <= x) && (x <= max_x) &&
-          (min_y <= y) && (y <= max_y) &&
-          (min_z <= z) && (z <= max_z))
-      {
-        projection2d[{mi.first.first, mi.first.second}] += mi.second.size();
-        std::copy( mi.second.begin(), mi.second.end(), std::inserter( indices, indices.end() ) );
-
-        xmin = std::min(xmin, x);
-        xmax = std::max(xmax, x);
-
-        ymin = std::min(ymin, y);
-        ymax = std::max(ymax, y);
-      }
-
-      for (auto &i : histograms1d_)
-        i.add_to_hist(x, y, z, mi.second.size());
-    }
-  }
-
-//  DBG << "x " << xmin << " - " << xmax;
-//  DBG << "y " << ymin << " - " << ymax;
-
-  for (auto &i : histograms1d_)
-    i.close_data();
-
-  ui->plot2D->updatePlot(xmax-xmin+1, ymax-ymin+1, projection2d);
-  ui->plot2D->setAxes(ui->comboWeightsX->currentText(), xmin * xx_norm, xmax * xx_norm,
-                      ui->comboWeightsY->currentText(), ymin * yy_norm, ymax * yy_norm,
+  ui->plot2D->updatePlot((xx.max()-xx.min()) / xx_norm + 1,
+                         (yy.max()-yy.min()) / yy_norm + 1, projection2d);
+  ui->plot2D->setAxes(ui->comboWeightsX->currentText(), xx.min(), xx.max(),
+                      ui->comboWeightsY->currentText(), yy.min(), yy.max(),
                       "Count");
   ui->plot2D->replot();
 
-  update_histograms();
+  ui->plotHistogram->clearAll();
 
-  emit select_indices(indices);
+  QPlot::Appearance profile;
+  profile.default_pen = QPen(palette_[0], 2);
+
+  ui->plotHistogram->addGraph(histo, profile);
+
+  ui->plotHistogram->setAxisLabels(ui->comboWeightsZ->currentText(), "count");
+  ui->plotHistogram->setTitle(ui->comboWeightsZ->currentText());
+  ui->plotHistogram->zoomOut();
+
+//  make_projections();
+    emit select_indices(indices);
 }
 
 void Analyzer::update_histograms()
@@ -279,7 +259,7 @@ void Analyzer::update_box(double x, double y, Qt::MouseButton button)
   if (rows.size())
   {
     int row = rows.front().row();
-//    DBG << "change for row " << row << " " << x << " " << y;
+    //    DBG << "change for row " << row << " " << x << " " << y;
     if ((row >= 0) && (row < histograms1d_.size()))
     {
       if (button == Qt::LeftButton)
@@ -289,7 +269,7 @@ void Analyzer::update_box(double x, double y, Qt::MouseButton button)
       }
       histograms1d_[row].visible = (button == Qt::LeftButton);
       plot_boxes();
-      model_.update();
+      boxes_model_.update();
       parameters_set();
     }
   }
@@ -305,7 +285,7 @@ void Analyzer::on_pushRemoveBox_clicked()
     {
       histograms1d_.remove(row);
       plot_boxes();
-      model_.update();
+      boxes_model_.update();
       parameters_set();
     }
   }
@@ -327,7 +307,7 @@ void Analyzer::plot_boxes()
     box.y1 = p.y1();
     box.y2 = p.y2();
     box.selectable = false;
-//    box.selected = true;
+    //    box.selected = true;
     box.fill = box.border = p.color;
     box.fill.setAlpha(box.fill.alpha() * 0.15);
     box.label = QString::number(i);
@@ -341,7 +321,7 @@ void Analyzer::plot_boxes()
 
 void Analyzer::parameters_set()
 {
-  make_projections();
+//  make_projections();
 }
 
 void Analyzer::on_comboWeightsX_currentIndexChanged(const QString& /*arg1*/)
@@ -371,48 +351,8 @@ void Analyzer::on_pushAddBox_clicked()
   histograms1d_.push_back(params);
 
   plot_boxes();
-  model_.update();
+  boxes_model_.update();
   parameters_set();
-}
-
-void Analyzer::on_spinMinX_editingFinished()
-{
-  make_projections();
-}
-
-void Analyzer::on_spinMaxX_editingFinished()
-{
-  make_projections();
-}
-
-void Analyzer::on_spinMinY_editingFinished()
-{
-  make_projections();
-}
-
-void Analyzer::on_spinMaxY_editingFinished()
-{
-  make_projections();
-}
-
-void Analyzer::on_spinMinZ_editingFinished()
-{
-  make_projections();
-}
-
-void Analyzer::on_spinMaxZ_editingFinished()
-{
-  make_projections();
-}
-
-void Analyzer::on_spinMinZ_valueChanged(int /*arg1*/)
-{
-  plot_block();
-}
-
-void Analyzer::on_spinMaxZ_valueChanged(int /*arg1*/)
-{
-  plot_block();
 }
 
 void Analyzer::plot_block()
@@ -422,8 +362,8 @@ void Analyzer::plot_block()
   cc.setAlpha(64);
   app.default_pen = QPen(cc, 2);
 
-  ui->plotHistogram->setHighlight(QPlot::Marker1D(ui->spinMinZ->value(), app),
-                                  QPlot::Marker1D(ui->spinMaxZ->value(), app));
+  //  ui->plotHistogram->setHighlight(QPlot::Marker1D(ui->spinMinZ->value(), app),
+  //                                  QPlot::Marker1D(ui->spinMaxZ->value(), app));
 
   ui->plotHistogram->replotExtras();
   ui->plotHistogram->replot();
@@ -436,3 +376,23 @@ void Analyzer::set_metric_z(QString str)
 }
 
 
+
+void Analyzer::on_pushAddTest_clicked()
+{
+  tests_.tests.push_back(MetricTest());
+  tests_model_.update();
+}
+
+void Analyzer::on_pushRemoveTest_clicked()
+{
+  auto rows = ui->tableTests->selectionModel()->selectedRows();
+  if (rows.size())
+  {
+    int row = rows.front().row();
+    if ((row >= 0) && (row < histograms1d_.size()))
+    {
+      tests_.tests.remove(row);
+      tests_model_.update();
+    }
+  }
+}

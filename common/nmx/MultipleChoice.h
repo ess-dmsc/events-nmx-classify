@@ -18,6 +18,8 @@ public:
 
   std::string choice() const;
 
+  std::list<std::string> options() const { return options_; }
+
   void choose(std::string choice);
 
   void add_option(std::string option);

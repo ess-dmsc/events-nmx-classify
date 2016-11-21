@@ -165,8 +165,7 @@ void Plot2D::updatePlot(uint64_t sizex, uint64_t sizey, const HistMap2D &spectru
   {
     colorMap->data()->setSize(sizex, sizey);
     for (auto it : spectrum_data)
-      if ((it.first.x >= 0) && (it.first.y >= 0))
-        colorMap->data()->setCell(it.first.x, it.first.y, it.second);
+      colorMap->data()->setCell(it.first.x, it.first.y, it.second);
     setScaleType(scaleType());
     setGradient(gradient());
     rescaleAxes();
@@ -188,8 +187,7 @@ void Plot2D::updatePlot(uint64_t sizex, uint64_t sizey, const HistList2D &spectr
   {
     colorMap->data()->setSize(sizex, sizey);
     for (auto it : spectrum_data)
-      if ((it.x >= 0) && (it.y >= 0))
-        colorMap->data()->setCell(it.x, it.y, it.v);
+      colorMap->data()->setCell(it.x, it.y, it.v);
     setScaleType(scaleType());
     setGradient(gradient());
     rescaleAxes();

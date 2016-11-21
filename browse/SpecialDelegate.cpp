@@ -114,6 +114,14 @@ QWidget *SpecialDelegate::createEditor(QWidget *parent,
 //      connect(editor, SIGNAL(valueChanged(int)), this, SLOT(intValueChanged(int)));
       return editor;
     }
+    else if (itemData.type() == Variant::code::type_menu)
+    {
+      auto menu = itemData.as_menu();
+      QComboBox *editor = new QComboBox(parent);
+      for (auto m : menu.options())
+        editor->addItem(QString::fromStdString(m));
+      return editor;
+    }
   }
 
   if (index.data().type() == QVariant::Bool)
@@ -171,6 +179,11 @@ void SpecialDelegate::setEditorData ( QWidget *editor, const QModelIndex &index 
       if (QDoubleSpinBox *sb = qobject_cast<QDoubleSpinBox *>(editor))
         sb->setValue(itemData.as_float().val());
     }
+    else if (itemData.type() == Variant::code::type_menu)
+    {
+      if (QComboBox *cb = qobject_cast<QComboBox *>(editor))
+        cb->setCurrentText(QString::fromStdString(itemData.as_menu().choice()));
+    }
   }
   else if (QSpinBox *sb = qobject_cast<QSpinBox *>(editor))
       sb->setValue(index.data().toLongLong());
@@ -192,7 +205,14 @@ void SpecialDelegate::setModelData ( QWidget *editor, QAbstractItemModel *model,
   else if (QDoubleSpinBox *sb = qobject_cast<QDoubleSpinBox *>(editor))
     model->setData(index, QVariant::fromValue(sb->value()), Qt::EditRole);
   else if (QComboBox *cb = qobject_cast<QComboBox *>(editor))
-    model->setData(index, QVariant::fromValue(cb->currentText() == "True"), Qt::EditRole);
+  {
+    if (index.data(Qt::EditRole).canConvert<Variant>())
+    {
+      model->setData(index, cb->currentText(), Qt::EditRole);
+    }
+    else
+      model->setData(index, QVariant::fromValue(cb->currentText() == "True"), Qt::EditRole);
+  }
   else
     QStyledItemDelegate::setModelData(editor, model, index);
 }
