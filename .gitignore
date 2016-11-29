@@ -1,22 +1,11 @@
-/Makefile*
-analyze/debug/*
-analyze/release/*
-analyze/Makefile*
-hists/debug/*
-hists/release/*
-hists/Makefile*
-browse/debug/*
-browse/release/*
-browse/Makefile*
-browse/ui/*
+/build
+.DS_Store
+.tags
+
 *.user
 *.log
 *.stash
 *~
-.DS_Store
-/nmx_analyze*
-/nmx_browse*
-/nmx_hists*
 
 # Compiled Object files
 *.slo
