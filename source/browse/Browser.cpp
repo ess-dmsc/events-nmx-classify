@@ -106,7 +106,7 @@ bool Browser::open_file(QString fileName)
   catch (...)
   {
     printException();
-    return;
+    return false;
   }
 
   if (reader_->has_raw())
