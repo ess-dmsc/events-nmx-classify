@@ -28,17 +28,15 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBOOST_LOG_DYN_LINK")
 
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-return-type")
-
 add_definitions(-DQCUSTOMPLOT_USE_OPENGL)
 
 include_directories(${CMAKE_SOURCE_DIR}
-                    common
-                    common/h5cc
-                    common/nmx
-                    browse
-                    browse/plots
-                    browse/plots/qcustomplot
+                    ${CMAKE_SOURCE_DIR}/common
+                    ${CMAKE_SOURCE_DIR}/common/h5cc
+                    ${CMAKE_SOURCE_DIR}/common/nmx
+                    ${CMAKE_SOURCE_DIR}/browse
+                    ${CMAKE_SOURCE_DIR}/browse/plots
+                    ${CMAKE_SOURCE_DIR}/browse/plots/qcustomplot
                     ${HDF5_INCLUDE_DIR}
                     ${Boost_INCLUDE_DIR}
                     ${ROOT_INCLUDE_DIR}
@@ -49,61 +47,49 @@ include_directories(${CMAKE_SOURCE_DIR}
 # Make sure the compiler can find the pre-processed files from qt5_wrap_ui
 include_directories("${CMAKE_BINARY_DIR}")
 
-file(GLOB common_SRC
-  "common/*.cpp"
-  "common/*.h"
+file(GLOB sources_H5CC common/h5cc/*.cpp common/h5cc/*.h common/h5cc/*.tpp)
+file(GLOB sources_NMX common/nmx/*.cpp common/nmx/*.h)
+file(GLOB sources_common_r common/*.cpp common/*.h)
 
-  "common/h5cc/*.cpp"
-  "common/h5cc/*.h"
-  "common/h5cc/*.tpp"
+set(
+  sources_common
 
-  "common/nmx/*.cpp"
-  "common/nmx/*.h"
-)
-
-file(GLOB browse_SRC
-     "browse/*.cpp"
-     "browse/*.h"
-
-     "browse/plots/*.cpp"
-     "browse/plots/*.h"
-
-     "browse/plots/qcustomplot/*.cpp"
-     "browse/plots/qcustomplot/*.h"
-)
-
-add_executable(nmx_analyze
-               analyze/main.cpp
-               ${common_SRC}
-)
-
-add_executable(nmx_hists
-               hists/main.cpp
-               ${common_SRC}
-)
-
-add_executable(nmx_browse
-               ${browse_SRC}
-               ${common_SRC}
-               browse/resources/tpccres.qrc
-#              ${GENERATED_SOURCES}
+  ${sources_common_r}
+  ${sources_H5CC}
+  ${sources_NMX}
 )
 
 
+add_executable(nmx_analyze analyze/main.cpp ${sources_common})
 target_link_libraries(
   nmx_analyze
+
   ${HDF5_LIBRARIES}
   ${Boost_LIBRARIES}
 )
 
+add_executable(nmx_hists hists/main.cpp ${sources_common})
 target_link_libraries(
   nmx_hists
+
   ${HDF5_LIBRARIES}
   ${Boost_LIBRARIES}
+)
+
+
+file(GLOB_RECURSE sources_browse browse/*.cpp browse/*.h)
+
+add_executable(
+  nmx_browse
+
+  ${sources_browse}
+  ${sources_common}
+  browse/resources/tpccres.qrc
 )
 
 target_link_libraries(
   nmx_browse
+
   ${HDF5_LIBRARIES}
   ${Boost_LIBRARIES}
   ${ROOT_LIBRARIES}
@@ -111,3 +97,13 @@ target_link_libraries(
 )
 
 qt5_use_modules(nmx_browse Widgets PrintSupport)
+
+
+if(UNIX)
+  install(TARGETS nmx_analyze DESTINATION bin)
+  install(TARGETS nmx_hists DESTINATION bin)
+  install(TARGETS nmx_browse DESTINATION bin)
+endif()
+
+#HACK!! Until H5CC is made better
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-return-type")
