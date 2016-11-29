@@ -51,14 +51,16 @@ Record FileAPV::read_record(size_t index, size_t plane) const
     return Record();
 
   return Record(dataset_.read<int16_t>({1,1,-1,-1}, {index, plane, 0, 0}),
-		        dataset_.dim(3));
+            dataset_.dim(3));
 }
 
 void FileAPV::write_record(size_t index, size_t plane, const Record& record)
 {
-  std::vector<short> buffer(dataset_.dim(2) * dataset_.dim(3), 0);
+  auto strips = dataset_.dim(2);
+  auto timebins = dataset_.dim(3);
+  std::vector<short> buffer(strips * timebins, 0);
   for (auto p : record.get_points())
-    buffer[p.x * dataset_.dim(3) + p.y] = p.v;
+    buffer[p.x * timebins + p.y] = p.v;
 
   dataset_.write(buffer, {1,1,-1,-1}, {index, plane, 0, 0});
 }

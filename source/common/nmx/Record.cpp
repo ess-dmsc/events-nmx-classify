@@ -9,7 +9,6 @@ namespace NMX {
 
 Record::Record()
   : strips_("strip", "timebin")
-  , timebins_("timebin", "strip")
 {
   auto strip_par = PlanePerspective::default_params();
   parameters_.merge(strip_par.prepend("strip."));
@@ -17,23 +16,38 @@ Record::Record()
   analyze();
 }
 
-Record::Record(const std::vector<int16_t>& data, size_t striplength)
+Record::Record(const std::vector<int16_t>& data, uint16_t timebins)
   : Record()
 {
-  if (striplength < 1)
+  if (timebins < 1)
     return;
-  size_t timelength = data.size() / striplength;
-  if ((timelength * striplength) != data.size())
+  uint16_t strips = data.size() / timebins;
+  if ((strips * timebins) != data.size())
     return;
 
-  size_t i {0};
-  for (size_t j = 0; j < data.size(); j += striplength)
-	  add_strip(i++, std::vector<int16_t>(data.begin() + j, data.begin() + j + striplength));
+  uint16_t i {0};
+  for (uint16_t j = 0; j < data.size(); j += timebins)
+    add_strip(i++, std::vector<int16_t>(data.begin() + j, data.begin() + j + timebins));
 }
 
-void Record::add_strip(size_t i, const Strip& strip)
+void Record::add_strip(uint16_t i, const Strip& strip)
 {
-    strips_.add_data(i, strip);
+  strips_.add_data(i, strip);
+  if (strip.empty())
+    return;
+  if (timebins_start_ < 0)
+    timebins_start_ = strip.start();
+  else
+    timebins_start_ = std::min(timebins_start_, strip.start());
+  timebins_end_ = std::max(timebins_end_, strip.end());
+}
+
+uint16_t  Record::time_span() const
+{
+  if (timebins_start_ < 0)
+    return 0;
+  else
+    return timebins_end_ - timebins_start_ + 1;
 }
 
 HistList2D Record::get_points(std::string id) const
@@ -70,7 +84,7 @@ void Record::clear_metrics()
 
 bool Record::empty() const
 {
-  return (strips_.empty() && timebins_.empty());
+  return (strips_.empty());
 }
 
 std::string Record::debug() const
@@ -102,16 +116,19 @@ void Record::analyze()
   for (auto pj : projections_)
     pj.second.clear();
 
+  PlanePerspective strips("strip", "timebin");
+  PlanePerspective timebins("timebin", "strip");
 
-  timebins_ = strips_.subset("orthogonal");
   PlanePerspective strips_noneg = strips_.subset("noneg");
-  auto strips = strips_;
-  auto timebins = timebins_;
-
   if (parameters_.get_value("suppress_negatives").as_bool())
   {
     strips = strips_noneg;
-    timebins = timebins_.subset("noneg");
+    timebins = strips_noneg.subset("orthogonal");
+  }
+  else
+  {
+    strips = strips_;
+    timebins = strips_.subset("orthogonal");
   }
 
   auto strip_params = parameters_.with_prefix("strip.");
@@ -149,7 +166,7 @@ void Record::analyze()
   point_lists_["tb_vmm"] = tb_vmm.points(true);
 
   projections_["strips"] = strips_.projection();
-  projections_["timebins"] = timebins_.projection();
+  projections_["timebins"] = timebins.projection();
 }
 
 

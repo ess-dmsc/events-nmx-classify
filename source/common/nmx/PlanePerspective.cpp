@@ -48,15 +48,15 @@ void PlanePerspective::add_data(int16_t idx, const Strip &strip)
   for (auto &d : strip.as_tree())
   {
     point_list.push_back(p2d{static_cast<uint32_t>(idx),
-    	                     static_cast<uint32_t>(d.first),
-							 static_cast<double>(d.second)});
+                             static_cast<uint32_t>(d.first),
+                             static_cast<double>(d.second)});
     auto ortho = d.first*d.first;
     sum_idx_ortho += idx * ortho;
     sum_ortho += ortho ;
   }
 }
 
-size_t PlanePerspective::span() const
+uint16_t PlanePerspective::span() const
 {
   if (start_ < 0)
     return 0;
@@ -127,7 +127,7 @@ PlanePerspective PlanePerspective::suppress_negatives() const
 
 PlanePerspective PlanePerspective::orthogonal() const
 {
-  std::map<int16_t, std::map<size_t, int16_t>> sideways;
+  std::map<int16_t, std::map<uint16_t, int16_t>> sideways;
   for (auto p : points())
     sideways[p.y][p.x] = p.v;
 
@@ -143,7 +143,7 @@ PlanePerspective PlanePerspective::pick_best(int max_count, int max_span) const
   for (auto p : point_list)
     best_candidates[p.y].push_back(p.x);
 
-  std::map<int, std::map<size_t, int16_t>> best_candidates2;
+  std::map<int, std::map<uint16_t, int16_t>> best_candidates2;
   int levels {0};
   int latest {-1};
   for (auto i = best_candidates.rbegin(); i != best_candidates.rend(); ++i)

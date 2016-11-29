@@ -34,7 +34,7 @@ void Strip::add_value(int16_t idx, int16_t val)
     end_ = idx;
 }
 
-size_t Strip::span() const
+uint16_t Strip::span() const
 {
   if ((start_ < 0) || (end_ < start_))
     return 0;
@@ -76,11 +76,11 @@ std::string Strip::debug() const
 Strip::Strip(const std::vector<int16_t> &data)
   : Strip()
 {
-  for (size_t i=0; i < data.size(); ++i)
+  for (uint16_t i=0; i < data.size(); ++i)
     add_value(i, data.at(i));
 }
 
-Strip::Strip(const std::map<size_t, int16_t> &data)
+Strip::Strip(const std::map<uint16_t, int16_t> &data)
   : Strip()
 {
   for (auto d : data)
@@ -89,7 +89,7 @@ Strip::Strip(const std::map<size_t, int16_t> &data)
 
 Strip Strip::suppress_negatives() const
 {
-  std::map<size_t, int16_t> data;
+  std::map<uint16_t, int16_t> data;
   for (auto d : data_)
     if (d.second > 0)
       data[d.first] = d.second;
@@ -123,7 +123,7 @@ Strip Strip::find_maxima(int16_t adc_threshold) const
 
   //everywhere else
   bool ascended = false;      //ascending move
-  for (size_t i = 0; i < (data.size() - 1); i++)
+  for (uint16_t i = 0; i < (data.size() - 1); i++)
   {
     long firstDiff = data[i+ 1] - data[i];
     if ( firstDiff > 0 ) { ascended  = true;  }
@@ -139,11 +139,11 @@ Strip Strip::find_maxima(int16_t adc_threshold) const
 
 Strip Strip::find_vmm_maxima(int16_t adc_threshold, int16_t over_threshold) const
 {
-  std::vector<size_t> start;
-  std::vector<size_t> end;
+  std::vector<uint16_t> start;
+  std::vector<uint16_t> end;
   bool overthreshold {false};
   auto data = as_vector();
-  for (size_t timebin=0; timebin < data.size(); ++timebin)
+  for (uint16_t timebin=0; timebin < data.size(); ++timebin)
   {
     const auto &adc = data.at(timebin);
     if (!overthreshold && (adc >= adc_threshold))
@@ -163,14 +163,14 @@ Strip Strip::find_vmm_maxima(int16_t adc_threshold, int16_t over_threshold) cons
     end.push_back(data.size() - 1);
 
   Strip vmm;
-  for (size_t i=0; i < start.size(); ++i)
+  for (uint16_t i=0; i < start.size(); ++i)
   {
     if ((int(end.at(i)) - int(start.at(i)) + 1) < over_threshold)
       continue;
 
-    size_t maxBin {start.at(i)};
+    uint16_t maxBin {start.at(i)};
     int16_t maxADC {data.at(start.at(i))};
-    for (size_t timebin=start.at(i); timebin <= end.at(i); ++timebin)
+    for (uint16_t timebin=start.at(i); timebin <= end.at(i); ++timebin)
     {
       const auto &adc = data.at(timebin);
       if (adc >= maxADC)

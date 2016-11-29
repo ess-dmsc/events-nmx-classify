@@ -20,7 +20,7 @@ struct PlanePerspective
   bool empty() const { return data_.empty(); }
   int16_t start() const { return start_; }
   int16_t end() const { return end_; }
-  size_t  span() const;
+  uint16_t  span() const;
 
   Settings metrics() const;
   HistList2D points(bool flip = false) const;

@@ -14,7 +14,7 @@ class Strip
 public:
   Strip() {}
   Strip(const std::vector<int16_t> &data);
-  Strip(const std::map<size_t, int16_t> &data);
+  Strip(const std::map<uint16_t, int16_t> &data);
   Strip suppress_negatives() const;
   Strip subset(std::string name, Settings params) const;
 
@@ -22,20 +22,20 @@ public:
 
   int16_t value(int16_t idx) const;
   std::vector<int16_t>  as_vector() const;
-  std::map<size_t, int16_t> as_tree() const {return data_;}
+  std::map<uint16_t, int16_t> as_tree() const {return data_;}
 
   //return analytical values
   bool empty() const {return data_.empty();}
   int16_t num_valid() const {return data_.size();}
   int16_t start() const {return start_;}
   int16_t end() const {return end_;}
-  size_t span() const;
+  uint16_t span() const;
   int64_t integral() const {return integral_;}
 
   std::string debug() const;
 
 private:
-  std::map<size_t, int16_t> data_;
+  std::map<uint16_t, int16_t> data_;
 
   int16_t start_     {-1};
   int16_t end_       {-1};

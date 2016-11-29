@@ -13,19 +13,19 @@ class Record
 {
 public:
   Record();
-  Record(const std::vector<int16_t>& data, size_t striplength);
-  void add_strip(size_t, const Strip&);
+  Record(const std::vector<int16_t>& data, uint16_t timebins);
+  void add_strip(uint16_t, const Strip&);
 
   bool empty() const;
   std::string debug() const;
 
   int16_t strip_start() const {return strips_.start();}
   int16_t   strip_end() const {return strips_.end();}
-  size_t  strip_span() const {return strips_.span();}
+  uint16_t strip_span() const {return strips_.span();}
 
-  int16_t time_start() const {return timebins_.start();}
-  int16_t   time_end() const {return timebins_.end();}
-  size_t  time_span() const {return timebins_.span();}
+  int16_t time_start() const {return timebins_start_;}
+  int16_t   time_end() const {return timebins_end_;}
+  uint16_t time_span() const;
 
   void analyze();
   void clear_metrics();
@@ -44,7 +44,8 @@ public:
 
 protected:
   PlanePerspective strips_;
-  PlanePerspective timebins_;
+  int16_t timebins_start_ {-1};
+  int16_t timebins_end_ {-1};
 
   std::map<std::string, HistList2D> point_lists_;
   std::map<std::string, HistList1D> projections_;
