@@ -42,6 +42,15 @@ void Record::add_strip(uint16_t i, const Strip& strip)
   timebins_end_ = std::max(timebins_end_, strip.end());
 }
 
+std::vector<int16_t> Record::to_buffer(uint16_t max_strips, uint16_t max_timebins) const
+{
+  std::vector<int16_t> buffer(max_strips * max_timebins, 0);
+  for (auto p : get_points())
+    if ((p.x < max_strips) && (p.y < max_timebins))
+      buffer[p.x * max_timebins + p.y] = p.v;
+  return buffer;
+}
+
 uint16_t  Record::time_span() const
 {
   if (timebins_start_ < 0)

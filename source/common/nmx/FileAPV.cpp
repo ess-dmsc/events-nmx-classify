@@ -50,19 +50,16 @@ Record FileAPV::read_record(size_t index, size_t plane) const
   if (index >= event_count())
     return Record();
 
-  return Record(dataset_.read<int16_t>({1,1,-1,-1}, {index, plane, 0, 0}),
-            dataset_.dim(3));
+  auto timebins = dataset_.dim(3);
+  return Record(dataset_.read<int16_t>({1,1,-1,-1}, {index, plane, 0, 0}), timebins);
 }
 
 void FileAPV::write_record(size_t index, size_t plane, const Record& record)
 {
   auto strips = dataset_.dim(2);
   auto timebins = dataset_.dim(3);
-  std::vector<short> buffer(strips * timebins, 0);
-  for (auto p : record.get_points())
-    buffer[p.x * timebins + p.y] = p.v;
-
-  dataset_.write(buffer, {1,1,-1,-1}, {index, plane, 0, 0});
+  dataset_.write(record.to_buffer(strips, timebins),
+                 {1,1,-1,-1}, {index, plane, 0, 0});
 }
 
 
