@@ -104,7 +104,7 @@ Event Analysis::gather_metrics(uint32_t index, Event event) const
   for (auto m : metrics_)
   {
     double d {0.0};
-    datasets_.at(m.first).read<double>({index});
+    d = datasets_.at(m.first).read<double>({index});
     event.set_metric(m.first, d, m.second.description());
   }
 

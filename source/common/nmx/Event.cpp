@@ -91,6 +91,15 @@ void Event::analyze()
                          " - y." + x.first));
   }
 
+  int not_gamma_x = metrics_.get_value("x.not_gamma").as_int();
+  int not_gamma_y = metrics_.get_value("y.not_gamma").as_int();
+
+  int not_gamma = not_gamma_x + not_gamma_y;
+
+  metrics_.set("not_gamma",
+               Setting(Variant::from_int(not_gamma),
+                       "higher numbers indicate event less likely to be a gamma"));
+
   HistMap1D difs = to_map(x_.get_projection("timebins"));
   for (auto &y : y_.get_projection("timebins"))
     if (difs.count(y.first))

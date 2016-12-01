@@ -81,7 +81,9 @@ void FileAPV::create_analysis(std::string name)
 {
   if (file_.require_group("Analyses").has_group(name))
     return;
-  file_.require_group("Analyses").create_group(name);
+  file_.open_group("Analyses").create_group(name);
+  file_.open_group("Analyses").open_group(name).write_attribute("num_analyzed", 0);
+  DBG << "Created " << name;
 }
 
 void FileAPV::delete_analysis(std::string name)

@@ -13,6 +13,14 @@ Record::Record()
   auto strip_par = PlanePerspective::default_params();
   parameters_.merge(strip_par.prepend("strip."));
   parameters_.merge(strip_par.prepend("timebin."));
+
+  parameters_.set("gamma_max_width",
+                  Setting(Variant::from_int(6),
+                          "Maximum width for gamma event"));
+
+  parameters_.set("gamma_max_height",
+                  Setting(Variant::from_int(11),
+                          "Maximum height for gamma event"));
   analyze();
 }
 
@@ -154,6 +162,8 @@ void Record::analyze()
   PlanePerspective tb_best = strips_best.subset("orthogonal");
   PlanePerspective tb_maxima = timebins.subset("maxima", tb_params);
   PlanePerspective tb_vmm = timebins.subset("vmm", tb_params);
+  PlanePerspective strips_maxima_tb = strips_maxima.subset("orthogonal");
+  PlanePerspective strips_vmm_tb = strips_vmm.subset("orthogonal");
 
   metrics_.merge(strips.metrics().prepend("strips_all_").append_description("valid ADC values"));
   metrics_.merge(strips_maxima.metrics().prepend("strips_max_").append_description("local maxima"));
@@ -165,6 +175,8 @@ void Record::analyze()
   metrics_.merge(timebins.metrics().prepend("timebins_all_").append_description("valid ADC values"));
   metrics_.merge(tb_maxima.metrics().prepend("timebins_max_").append_description("local maxima"));
   metrics_.merge(tb_vmm.metrics().prepend("timebins_vmm_").append_description("VMM maxima"));
+  metrics_.merge(strips_maxima_tb.metrics().prepend("tb_strips_max_").append_description("local maxima in strip space"));
+  metrics_.merge(strips_vmm_tb.metrics().prepend("tb_strips_vmm_").append_description("VMM maxima in strip space"));
 
   point_lists_["noneg"] = strips_noneg.points();
   point_lists_["strip_maxima"] = strips_maxima.points();
@@ -174,8 +186,29 @@ void Record::analyze()
   point_lists_["tb_maxima"] = tb_maxima.points(true);
   point_lists_["tb_vmm"] = tb_vmm.points(true);
 
+  point_lists_["strip_maxima_tb"] = strips_maxima_tb.points(true);
+  point_lists_["strip_vmm_tb"] = strips_vmm_tb.points(true);
+
   projections_["strips"] = strips_.projection();
   projections_["timebins"] = timebins.projection();
+
+  int width  = metrics_.get_value("strips_max_span").as_int();
+  int height =  metrics_.get_value("tb_strips_max_span").as_int();
+  int max_width = parameters_.get_value("gamma_max_width").as_int();
+  int max_height = parameters_.get_value("gamma_max_height").as_int();
+
+  int width_gamma = width - max_width;
+  if (width_gamma < 0)
+    width_gamma = 0;
+  int height_gamma = height - max_height;
+  if (height_gamma < 0)
+    height_gamma = 0;
+  int not_gamma = width_gamma + height_gamma;
+
+  metrics_.set("not_gamma",
+               Setting(Variant::from_int(not_gamma),
+               "higher numbers indicate event less likely to be a gamma"));
+
 }
 
 

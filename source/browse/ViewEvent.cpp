@@ -187,7 +187,7 @@ void ViewEvent::on_spinEventIdx_valueChanged(int /*arg1*/)
     evt_idx = indices_[idx-1];
 
   ui->labelOfTotal->setText(" of " + QString::number(indices_.size())
-                            + "   [" + QString::number(evt_idx) + "]");
+                            + "   [" + QString::number(evt_idx) + "/" + QString::number(evt_count) + "]");
   plot_current_event();
 }
 

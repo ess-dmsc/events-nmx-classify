@@ -242,10 +242,6 @@ Settings PlanePerspective::metrics() const
       Setting(Variant::from_float(center_of_gravity_ortho),
               axis2_ + "-weighted " + axis1_ + " center of gravity using "));
 
-//  metrics.set("last_c",
-//      Setting(Variant::from_float(end()),
-//              "highest " + axis2_ + " in " + axis1_ + "s among "));
-
   return metrics;
 }
 

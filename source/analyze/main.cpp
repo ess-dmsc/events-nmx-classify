@@ -5,6 +5,7 @@
 #include <boost/progress.hpp>
 #include "Filesystem.h"
 #include <memory>
+#include "ExceptionUtil.h"
 
 #define REFRESH_SECONDS 3
 
@@ -61,8 +62,19 @@ int main(int argc, char* argv[])
 
   std::map<std::string, NMX::Settings> to_clone;
 
-  std::shared_ptr<NMX::FileAPV> reader
-      = std::make_shared<NMX::FileAPV>(clone_params_file);
+  std::shared_ptr<NMX::FileAPV> reader;
+
+  try
+  {
+    reader = std::make_shared<NMX::FileAPV>(clone_params_file);
+  }
+  catch (...)
+  {
+    printException();
+    DBG << "Bad parameters template file";
+    return 1;
+  }
+
   for (auto a : reader->analyses())
   {
     reader->load_analysis(a);
@@ -83,17 +95,26 @@ int main(int argc, char* argv[])
   for (auto g : to_clone)
     INFO << "\n\"" << g.first << "\"\n" << g.second.debug();
 
-  size_t fnum {0};
+  size_t fnum {1};
   for (auto filename : files)
   {
-    reader = std::make_shared<NMX::FileAPV>(filename.string());
-    reader->open_raw();
+    try
+    {
+      reader = std::make_shared<NMX::FileAPV>(filename.string());
+      reader->open_raw();
+    }
+    catch (...)
+    {
+      printException();
+      ERR << "Could not open file";
+      continue;
+    }
 
     if (!reader->event_count())
       continue;
 
     INFO << "Processing file " << filename.string()
-         << " (" << fnum+1 << "/" << files.size() << ")";
+         << " (" << fnum << "/" << files.size() << ")";
 
     for (auto group : to_clone)
     {
