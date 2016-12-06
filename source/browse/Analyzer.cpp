@@ -7,17 +7,9 @@
 Analyzer::Analyzer(QWidget *parent)
   : QWidget(parent)
   , ui(new Ui::Analyzer)
-  , histograms1d_(QVector<Histogram>())
-  , boxes_model_(histograms1d_)
 //  , tests_model_(tests_.tests)
 {
   ui->setupUi(this);
-
-  Histogram params;
-  params.color = QColor(0,0,0,0);
-  params.set_x(0, 256);
-  params.set_y(0, 256);
-  histograms1d_.push_back(params);
 
   ui->plotHistogram->setScaleType("Linear");
   ui->plotHistogram->setPlotStyle("Step center");
@@ -27,22 +19,6 @@ Analyzer::Analyzer(QWidget *parent)
   ui->plot2D->setScaleType("Linear");
   ui->plot2D->setGradient("YlGnBu5");
   ui->plot2D->setShowGradientLegend(true);
-  connect(ui->plot2D, SIGNAL(clickedPlot(double,double,Qt::MouseButton)), this, SLOT(update_box(double, double, Qt::MouseButton)));
-
-  ui->tableBoxes->setModel(&boxes_model_);
-  ui->tableBoxes->setItemDelegate(&boxes_delegate_);
-  ui->tableBoxes->horizontalHeader()->setStretchLastSection(true);
-  ui->tableBoxes->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-  ui->tableBoxes->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-  ui->tableBoxes->setSelectionBehavior(QAbstractItemView::SelectRows);
-  ui->tableBoxes->setSelectionMode(QAbstractItemView::ExtendedSelection);
-  ui->tableBoxes->show();
-
-  connect(&boxes_model_, SIGNAL(data_changed()), this, SLOT(plot_boxes()));
-  connect(&boxes_model_, SIGNAL(editing_finished()), this, SLOT(parameters_set()));
-  connect(&boxes_delegate_, SIGNAL(edit_integer(QModelIndex,QVariant,int)),
-          &boxes_model_, SLOT(setDataQuietly(QModelIndex,QVariant,int)));
-
 
   ui->tableTests->setModel(&tests_model_);
   ui->tableTests->setItemDelegate(&tests_delegate_);
@@ -53,7 +29,6 @@ Analyzer::Analyzer(QWidget *parent)
   ui->tableTests->setSelectionMode(QAbstractItemView::ExtendedSelection);
   ui->tableTests->show();
 
-  //  connect(&tests_model_, SIGNAL(data_changed()), this, SLOT(plot_boxes()));
   connect(&tests_model_, SIGNAL(editing_finished()), this, SLOT(rebuild_data()));
   connect(&tests_delegate_, SIGNAL(edit_integer(QModelIndex,QVariant,int)),
           &tests_model_, SLOT(setDataQuietly(QModelIndex,QVariant,int)));
@@ -102,10 +77,8 @@ void Analyzer::enableIO(bool enable)
   ui->comboWeightsZ->setEnabled(en);
 
   if (enable) {
-    ui->tableBoxes->setEditTriggers(QAbstractItemView::AllEditTriggers);
     ui->tableTests->setEditTriggers(QAbstractItemView::AllEditTriggers);
   } else {
-    ui->tableBoxes->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ui->tableTests->setEditTriggers(QAbstractItemView::NoEditTriggers);
   }
 }
@@ -164,28 +137,12 @@ void Analyzer::rebuild_data()
   auto zz = reader_->get_metric(weight_z);
 
   auto tests = tests_model_.tests();
-  MetricTest t;
-  t.enabled = true;
-  t.metric = weight_x;
-  t.min = xx.min();
-  t.max = xx.max();
-  tests.tests.push_back(t);
-  t.metric = weight_y;
-  t.min = yy.min();
-  t.max = yy.max();
-  tests.tests.push_back(t);
-  t.metric = weight_z;
-  t.min = zz.min();
-  t.max = zz.max();
-  tests.tests.push_back(t);
-
-  auto needed_metrics = tests.required_metrics();
-  needed_metrics.push_back(weight_x);
-  needed_metrics.push_back(weight_y);
-  needed_metrics.push_back(weight_z);
+  tests.tests.push_back(MetricTest(weight_x, xx));
+  tests.tests.push_back(MetricTest(weight_y, yy));
+  tests.tests.push_back(MetricTest(weight_z, zz));
 
   std::map<std::string, NMX::Metric> metrics;
-  for (auto m : needed_metrics)
+  for (auto m : tests.required_metrics())
     metrics[m] = reader_->get_metric(m);
 
   ui->labelX->setText("   " + QString::fromStdString(xx.description()));
@@ -223,103 +180,45 @@ void Analyzer::rebuild_data()
 
   profile.default_pen = QPen(palette_[0], 2);
   ui->plotHistogram->addGraph(histo, profile);
+
+  EdgeFitter fitter(histo);
+  fitter.analyze(ui->comboFit->currentText().toStdString());
+  ui->labelFit->setText(QString::fromStdString(fitter.info(400)));
+
   profile.default_pen = QPen(palette_[1], 2);
-  ui->plotHistogram->addGraph(doFit(histo, ui->comboFit->currentText().toStdString()), profile);
+  ui->plotHistogram->addGraph(fitter.get_fit_hist(4), profile);
 
   ui->plotHistogram->setAxisLabels(ui->comboWeightsZ->currentText(), "count");
   ui->plotHistogram->setTitle(ui->comboWeightsZ->currentText());
   ui->plotHistogram->zoomOut();
 
-//  make_projections();
-    emit select_indices(indices);
-}
-
-void Analyzer::update_histograms()
-{
-  ui->plotHistogram->clearAll();
-
-  for (int i=0; i < histograms1d_.size(); ++i)
-  {
-    QPlot::Appearance profile;
-    profile.default_pen = QPen(palette_[i % palette_.size()], 2);
-
-    ui->plotHistogram->addGraph(histograms1d_[i].hist1d, profile);
-  }
-
-  ui->plotHistogram->setAxisLabels(ui->comboWeightsZ->currentText(), "count");
-  ui->plotHistogram->setTitle(ui->comboWeightsZ->currentText()
-                              + "  (normalized by: " + QString::number(zz_norm) + ")");
-  ui->plotHistogram->zoomOut();
-
-  plot_block();
-}
-
-void Analyzer::update_box(double x, double y, Qt::MouseButton button)
-{
-  auto rows = ui->tableBoxes->selectionModel()->selectedRows();
-  if (rows.size())
-  {
-    int row = rows.front().row();
-    //    DBG << "change for row " << row << " " << x << " " << y;
-    if ((row >= 0) && (row < histograms1d_.size()))
-    {
-      if (button == Qt::LeftButton)
-      {
-        histograms1d_[row].set_center_x(static_cast<int64_t>(x));
-        histograms1d_[row].set_center_y(static_cast<int64_t>(y));
-      }
-      plot_boxes();
-      boxes_model_.update();
-      parameters_set();
-    }
-  }
-}
-
-void Analyzer::on_pushRemoveBox_clicked()
-{
-  auto rows = ui->tableBoxes->selectionModel()->selectedRows();
-  if (rows.size())
-  {
-    int row = rows.front().row();
-    if ((row >= 0) && (row < histograms1d_.size()))
-    {
-      histograms1d_.remove(row);
-      plot_boxes();
-      boxes_model_.update();
-      parameters_set();
-    }
-  }
+  emit select_indices(indices);
 }
 
 void Analyzer::plot_boxes()
 {
   std::list<QPlot::MarkerBox2D> boxes;
 
-  for (int i=0; i < histograms1d_.size(); ++i)
-  {
-    const auto &p = histograms1d_[i];
+//  for (int i=0; i < histograms1d_.size(); ++i)
+//  {
+//    const auto &p = histograms1d_[i];
 
-    QPlot::MarkerBox2D box;
-    box.x1 = p.x1();
-    box.x2 = p.x2();
-    box.y1 = p.y1();
-    box.y2 = p.y2();
-    box.selectable = false;
-    //    box.selected = true;
-    box.fill = box.border = p.color;
-    box.fill.setAlpha(box.fill.alpha() * 0.15);
-    box.label = QString::number(i);
+//    QPlot::MarkerBox2D box;
+//    box.x1 = p.x1();
+//    box.x2 = p.x2();
+//    box.y1 = p.y1();
+//    box.y2 = p.y2();
+//    box.selectable = false;
+//    //    box.selected = true;
+//    box.fill = box.border = p.color;
+//    box.fill.setAlpha(box.fill.alpha() * 0.15);
+//    box.label = QString::number(i);
 
-    boxes.push_back(box);
-  }
+//    boxes.push_back(box);
+//  }
 
   ui->plot2D->setBoxes(boxes);
   ui->plot2D->replotExtras();
-}
-
-void Analyzer::parameters_set()
-{
-//  make_projections();
 }
 
 void Analyzer::on_comboWeightsX_currentIndexChanged(const QString& /*arg1*/)
@@ -335,21 +234,6 @@ void Analyzer::on_comboWeightsY_currentIndexChanged(const QString& /*arg1*/)
 void Analyzer::on_comboWeightsZ_currentIndexChanged(const QString& /*arg1*/)
 {
   rebuild_data();
-}
-
-void Analyzer::on_pushAddBox_clicked()
-{
-  Histogram params;
-
-  params.color = palette_[histograms1d_.size() % palette_.size()];
-  params.set_x(0, 250);
-  params.set_y(0, 250);
-
-  histograms1d_.push_back(params);
-
-  plot_boxes();
-  boxes_model_.update();
-  parameters_set();
 }
 
 void Analyzer::plot_block()
@@ -388,7 +272,7 @@ void Analyzer::on_pushRemoveTest_clicked()
   if (rows.size())
   {
     int row = rows.front().row();
-    if ((row >= 0) && (row < histograms1d_.size()))
+    if ((row >= 0) && (row < filter.tests.size()))
     {
       filter.tests.remove(row);
     }

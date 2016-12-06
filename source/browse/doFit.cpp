@@ -1,86 +1,129 @@
 #include "doFit.h"
-#include "TF1.h"
 #include "TH1D.h"
 #include "TMath.h"
 
 #include "CustomLogger.h"
 
-HistMap1D doFit(HistMap1D hist, std::string edge)
+#include <sstream>
+
+EdgeFitter::EdgeFitter(HistMap1D data)
 {
-  HistMap1D ret;
-  if (hist.empty() ||
-      (edge != "left" && edge != "right" && edge != "double"))
-    return ret;
+  data_ = data;
+}
 
-  int fits = hist.begin()->first;
-  int fite = hist.rbegin()->first;
+void EdgeFitter::clear_params()
+{
+  y_offset = 0;
+  y_offset_err = 0;
+  height = 0;
+  height_err = 0;
+  x_offset1 = 0;
+  x_offset1_err = 0;
+  slope = 1;
+  slope_err = 0;
+  x_offset2 = 0;
+  x_offset2_err = 0;
+}
 
-  TH1D* h1 = new TH1D("h1", "h1", hist.size(), fits, fite);
+void EdgeFitter::get_params(TF1* f)
+{
+  y_offset     = f->GetParameter(0);
+  y_offset_err = f->GetParError(0);
+
+  height     = f->GetParameter(1);
+  height_err = f->GetParError(1);
+
+  x_offset1     = f->GetParameter(2);
+  x_offset1_err = f->GetParError(2);
+
+  slope     = f->GetParameter(3);
+  slope_err = f->GetParError(3);
+
+  x_offset2     = f->GetParameter(4);
+  x_offset2_err = f->GetParError(4);
+}
+
+
+
+void EdgeFitter::analyze(std::string edge)
+{
+  edge_ = edge;
+  clear_params();
+
+  if (data_.empty() ||
+      (edge_ != "left" && edge_ != "right" && edge_ != "double"))
+    return;
+
+  fits = data_.begin()->first;
+  fite = data_.rbegin()->first;
+
+  TH1D* h1 = new TH1D("h1", "h1", data_.size(), fits, fite);
   int i=1;
-  for (auto h :hist)
+  for (auto h :data_)
   {
     h1->SetBinContent(i, h.second);
     i++;
   }
 
-	Double_t max1 = h1->GetMaximum();
-	Double_t min1 = h1->GetMinimum();
+  Double_t max1 = h1->GetMaximum();
+  Double_t min1 = h1->GetMinimum();
 
-	TF1 * f1;
-	if (edge == "double")
-		f1 = new TF1("f1", "[0]+[1]*(TMath::Erfc(-(x-[2])/[3])*TMath::Erfc((x-[4])/[3]))");
-	else if (edge == "right")
-		f1 = new TF1("f1", "[0]+[1]*TMath::Erfc(-(x-[2])/[3])");
-  else if (edge == "left")
-		f1 = new TF1("f1", "[0]+[1]*TMath::Erfc((x-[2])/[3])");
-
+  TF1 * f1;
   if (edge == "double")
-  {
-/*
-    f1->SetParameters(min1, 0.5 * max1, 70, 2,90);
-*/
-    f1->SetParameters(min1, 0.5 * max1, 175, 2,195);
-  }
+    f1 = new TF1("f1", "[0]+[1]*(TMath::Erfc(-(x-[2])/[3])*TMath::Erfc((x-[4])/[3]))");
+  else if (edge == "right")
+    f1 = new TF1("f1", "[0]+[1]*TMath::Erfc(-(x-[2])/[3])");
+  else if (edge == "left")
+    f1 = new TF1("f1", "[0]+[1]*TMath::Erfc((x-[2])/[3])");
+
+  if (edge_ == "double")
+    f1->SetParameters(min1, 0.5 * max1, (fits + fite) * 1.0 / 4.0,
+                      2, (fits + fite) * 3.0 / 4.0);
   else
-		f1->SetParameters(min1, 0.5 * max1, (fits + fite) / 2, 2);
+    f1->SetParameters(min1, 0.5 * max1, (fits + fite) / 2.0, 2);
 
   h1->Fit("f1", "same");
+  get_params(f1);
+}
 
-  double par0 = f1->GetParameter(0);
-  double par1 = f1->GetParameter(1);
-  double par2 = f1->GetParameter(2);
-  double par3 = f1->GetParameter(3);
-  double par4 = f1->GetParameter(4);
+HistMap1D EdgeFitter::get_fit_hist(double granularity) const
+{
+  HistMap1D ret;
 
-  double resolution = par3 * 400 / sqrt(2);
-  double resolution_error = f1->GetParError(3) * 400 / sqrt(2);
-
-  double background = par0;
-  double signal = par1 * 2;
-  double snr = signal / background;
-
-  INFO << "Resolution=" << resolution << "+-" << resolution_error
-       << " (" << resolution_error/resolution * 100 << "%)"
-       << "  Signal=" << signal << "  Noise=" << background
-       << "  NSR=" << snr;
-
-//  INFO << "Parameter 0: " << par0 << " " << f1->GetParError(0);
-//  INFO << "Parameter 1: " << par1 << " " << f1->GetParError(1);
-//  INFO << "Parameter 2: " << par2 << " " << f1->GetParError(2);
-//  INFO << "Parameter 3: " << par3 << " " << f1->GetParError(3);
-//  INFO << "Parameter 4: " << par4 << " " << f1->GetParError(4);
-
-  double step = double(fite - fits) / (4.0 * hist.size());
-  if (edge == "double")
+  double step = 1.0 / granularity;  //double(fite - fits) / (4.0 * hist.size());
+  if (edge_ == "double")
     for (double x = fits; x <= fite; x+= step)
-      ret[x] = par0+par1*(TMath::Erfc(-(x-par2)/par3)*TMath::Erfc((x-par4)/par3));
-  else if (edge == "right")
+      ret[x] = y_offset + height*TMath::Erfc(-(x-x_offset1)/slope)
+                              *TMath::Erfc((x-x_offset2)/slope);
+  else if (edge_ == "right")
     for (double x = fits; x <= fite; x+= step)
-      ret[x] = par0+par1*TMath::Erfc(-(x-par2)/par3);
-  else if (edge == "left")
+      ret[x] = y_offset + height*TMath::Erfc(-(x-x_offset1)/slope);
+  else if (edge_ == "left")
     for (double x = fits; x <= fite; x+= step)
-      ret[x] = par0+par1*TMath::Erfc((x-par2)/par3);
-
+      ret[x] = y_offset + height*TMath::Erfc((x-x_offset1)/slope);
 
   return ret;
 }
+
+
+std::string EdgeFitter::info(double units) const
+{
+  double resolution = slope * units / sqrt(2);
+  double resolution_error = slope_err * units / sqrt(2);
+
+  double background = y_offset;
+  double signal = height * 2;
+  double snr = signal / background;
+
+  std::stringstream ss;
+
+  ss << "Resolution=" << resolution << "+-" << resolution_error
+     << " (" << resolution_error/resolution * 100 << "%)"
+     << "  Signal=" << signal << "  Noise=" << background
+     << "  SNR=" << snr;
+
+  return ss.str();
+}
+
+
+

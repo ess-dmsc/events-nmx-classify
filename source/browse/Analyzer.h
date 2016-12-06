@@ -40,18 +40,12 @@ signals:
 private slots:
 
   void plot_boxes();
-  void parameters_set();
 
   void on_comboWeightsX_currentIndexChanged(const QString &arg1);
   void on_comboWeightsY_currentIndexChanged(const QString &arg1);
   void on_comboWeightsZ_currentIndexChanged(const QString &arg1);
 
-  void on_pushAddBox_clicked();
-  void on_pushRemoveBox_clicked();
-  void update_box(double x, double y, Qt::MouseButton left_mouse);
-
   void on_pushAddTest_clicked();
-
   void on_pushRemoveTest_clicked();
 
   void rebuild_data();
@@ -63,10 +57,6 @@ private:
 
   std::shared_ptr<NMX::FileAPV> reader_;
 
-  QVector<Histogram> histograms1d_;
-  BoxesModel boxes_model_;
-  SpecialDelegate boxes_delegate_;
-
 //  MetricFilter tests_;
   TestsModel tests_model_;
   SpecialDelegate tests_delegate_;
@@ -74,7 +64,6 @@ private:
   void loadSettings();
   void saveSettings();
 
-  void update_histograms();
   void plot_block();
 
   void populate_combos();

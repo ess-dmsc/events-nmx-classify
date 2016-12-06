@@ -77,7 +77,7 @@ target_link_libraries(
 )
 
 
-file(GLOB_RECURSE sources_browse browse/*.cpp browse/*.h)
+file(GLOB_RECURSE sources_browse browse/*.cpp browse/*.h browse/*.ui)
 
 add_executable(
   nmx_browse
