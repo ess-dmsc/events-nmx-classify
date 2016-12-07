@@ -1,5 +1,6 @@
 #include "H5CC_Space.h"
 #include "H5CC_Exception.h"
+#include <sstream>
 
 namespace H5CC {
 
@@ -148,6 +149,16 @@ void Space::select_element(std::initializer_list<hsize_t> index)
   {
     Exception::rethrow();
   }
+}
+
+std::string Space::debug() const
+{
+  std::stringstream ss;
+  if (dims_.size())
+    ss << dims_.at(0);
+  for (size_t i=1; i < dims_.size(); ++i)
+    ss << "x" << dims_.at(i);
+  return ss.str();
 }
 
 }

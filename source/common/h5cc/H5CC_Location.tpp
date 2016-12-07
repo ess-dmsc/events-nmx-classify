@@ -21,32 +21,34 @@ TT std::string Location<T>::name() const
 
 TT std::list<std::string> Location<T>::attributes() const
 {
+  std::list<std::string> ret;
   try
   {
-    std::list<std::string> ret;
     for (int i=0; i < location_.getNumAttrs(); ++i)
     {
       H5::Attribute attr = location_.openAttribute(i);
       ret.push_back(attr.getName());
     }
-    return ret;
   }
   catch (...)
   {
     Exception::rethrow();
   }
+  return ret;
 }
 
 TT bool Location<T>::has_attribute(std::string name) const
 {
+  bool ret {false};
   try
   {
-    return location_.attrExists(name);
+    ret = location_.attrExists(name);
   }
   catch (...)
   {
     Exception::rethrow();
   }
+  return ret;
 }
 
 TT void Location<T>::remove_attribute(std::string name)
@@ -67,8 +69,8 @@ TT TDT void Location<T>::write_attribute(std::string name, DT val)
     remove_attribute(name);
   try
   {
-    H5::Attribute attribute = location_.createAttribute(name, get_pred_type(DT()), H5::DataSpace (H5S_SCALAR));
-    attribute.write(get_pred_type(DT()), &val );
+    auto attribute = location_.createAttribute(name, type_of(val), H5::DataSpace(H5S_SCALAR));
+    attr_write(attribute, val);
   }
   catch (...)
   {
@@ -78,17 +80,71 @@ TT TDT void Location<T>::write_attribute(std::string name, DT val)
 
 TT TDT DT Location<T>::read_attribute(std::string name) const
 {
+  DT ret;
   try
   {
-    DT ret;
-    H5::Attribute attribute = location_.openAttribute(name);
-    attribute.read( get_pred_type(DT()), &ret );
-    return ret;
+    auto attribute = location_.openAttribute(name);
+    attr_read(attribute, ret);
   }
   catch (...)
   {
     Exception::rethrow();
   }
+  return ret;
+}
+
+TT void Location<T>::write_variant(std::string name, const VariantType& val)
+{
+  if (has_attribute(name))
+    remove_attribute(name);
+  try
+  {
+    auto type = val.h5_type();
+//    if (!VariantFactory::getInstance().has(type))
+//      VariantFactory::getInstance().register_type(val.type_name(), val.h5_type(), )
+    auto attribute = location_.createAttribute(name, type, H5::DataSpace(H5S_SCALAR));
+    val.write(attribute);
+  }
+  catch (...)
+  {
+    Exception::rethrow();
+  }
+}
+
+TT VariantPtr Location<T>::read_variant(std::string name) const
+{
+  VariantPtr ret;
+  try
+  {
+    auto attribute = location_.openAttribute(name);
+    ret = VariantFactory::getInstance().create(attribute.getDataType());
+    ret->read(attribute);
+  }
+  catch (...)
+  {
+    Exception::rethrow();
+  }
+  return ret;
+}
+
+TT TDT void Location<T>::attr_write(H5::Attribute& attr, DT val)
+{
+  attr.write(type_of(val), &val );
+}
+
+TT void Location<T>::attr_write(H5::Attribute& attr, std::string val)
+{
+  attr.write(type_of(val), val );
+}
+
+TT TDT void Location<T>::attr_read(const H5::Attribute& attr, DT& val) const
+{
+  attr.read(type_of(val), &val );
+}
+
+TT void Location<T>::attr_read(const H5::Attribute& attr, std::string& val) const
+{
+  attr.read(type_of(val), val );
 }
 
 

@@ -3,6 +3,8 @@
 
 #include <H5Cpp.h>
 #include <list>
+#include "H5CC_Types.h"
+#include "H5CC_Variant.h"
 
 namespace H5CC {
 
@@ -21,9 +23,21 @@ public:
   template <typename DT> void write_attribute(std::string name, DT val);
   template <typename DT> DT read_attribute(std::string name) const;
 
+  void write_variant(std::string name, const VariantType& val);
+  VariantPtr read_variant(std::string name) const;
+
+
 protected:
   T location_;
   std::string name_;
+
+  template<typename DT>
+  void attr_write(H5::Attribute& attr, DT val);
+  void attr_write(H5::Attribute& attr, std::string val);
+
+  template<typename DT>
+  void attr_read(const H5::Attribute& attr, DT& val) const;
+  void attr_read(const H5::Attribute& attr, std::string& val) const;
 };
 
 }

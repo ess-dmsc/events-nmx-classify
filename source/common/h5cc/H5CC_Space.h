@@ -28,6 +28,8 @@ public:
   std::vector<hsize_t> dims() const { return dims_; }
   H5::DataSpace space() const { return space_; }
 
+  std::string debug() const;
+
 private:
   H5::DataSpace space_;
   std::vector<hsize_t> dims_;

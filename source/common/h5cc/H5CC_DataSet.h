@@ -35,6 +35,8 @@ public:
   size_t rank() const;
   hsize_t dim(size_t d) const;
 
+  std::string debug() const;
+
 private:
   TT void write(const std::vector<T>& data, Space slab, std::initializer_list<hsize_t> index);
   TT std::vector<T> read(Space slab, std::initializer_list<hsize_t> index) const;

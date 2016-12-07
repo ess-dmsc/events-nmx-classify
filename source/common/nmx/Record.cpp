@@ -21,6 +21,11 @@ Record::Record()
   parameters_.set("gamma_max_height",
                   Setting(Variant::from_int(11),
                           "Maximum height for gamma event"));
+
+  parameters_.set("analysis_reduced",
+                  Setting(Variant::from_int(0),
+                          "Fewer metrics"));
+
   analyze();
 }
 
@@ -133,6 +138,14 @@ void Record::analyze()
   for (auto pj : projections_)
     pj.second.clear();
 
+//  if (parameters_.get_value("analysis_reduced").as_int() > 0)
+    analyze_reduced();
+//  else
+//    analyze_all();
+}
+
+void Record::analyze_all()
+{
   PlanePerspective strips("strip", "timebin");
   PlanePerspective timebins("timebin", "strip");
 
@@ -194,6 +207,76 @@ void Record::analyze()
 
   int width  = metrics_.get_value("strips_max_span").as_int();
   int height =  metrics_.get_value("tb_strips_max_span").as_int();
+  int max_width = parameters_.get_value("gamma_max_width").as_int();
+  int max_height = parameters_.get_value("gamma_max_height").as_int();
+
+  int width_gamma = width - max_width;
+  if (width_gamma < 0)
+    width_gamma = 0;
+  int height_gamma = height - max_height;
+  if (height_gamma < 0)
+    height_gamma = 0;
+  int not_gamma = width_gamma + height_gamma;
+
+  metrics_.set("not_gamma",
+               Setting(Variant::from_int(not_gamma),
+               "higher numbers indicate event less likely to be a gamma"));
+
+}
+
+
+void Record::analyze_reduced()
+{
+  PlanePerspective strips("strip", "timebin");
+  PlanePerspective timebins("timebin", "strip");
+
+  PlanePerspective strips_noneg = strips_.subset("noneg");
+  if (parameters_.get_value("suppress_negatives").as_bool())
+  {
+    strips = strips_noneg;
+    timebins = strips_noneg.subset("orthogonal");
+  }
+  else
+  {
+    strips = strips_;
+    timebins = strips_.subset("orthogonal");
+  }
+
+  auto strip_params = parameters_.with_prefix("strip.");
+  auto tb_params = parameters_.with_prefix("timebin.");
+
+  auto best_params = strip_params;
+  best_params.set("best_max_bincount", Variant::from_int(1));
+
+  PlanePerspective strips_vmm = strips.subset("vmm", strip_params);
+  PlanePerspective strips_better = strips_vmm.subset("best", strip_params);
+  PlanePerspective strips_best = strips_vmm.subset("best", best_params);
+  PlanePerspective tb_vmm = timebins.subset("vmm", tb_params);
+
+  metrics_.merge(strips.metrics().prepend("strips_all_").append_description("valid ADC values"));
+  metrics_.merge(strips_vmm.metrics().prepend("strips_vmm_").append_description("VMM maxima"));
+  metrics_.merge(strips_better.metrics().prepend("strips_better_").append_description("better VMM maxima"));
+  metrics_.merge(strips_best.metrics().prepend("strips_best_").append_description("best VMM maxima"));
+  metrics_.merge(timebins.metrics().prepend("timebins_all_").append_description("valid ADC values"));
+  metrics_.merge(tb_vmm.metrics().prepend("timebins_vmm_").append_description("VMM maxima"));
+
+  auto tb_better = strips_better.subset("orthogonal").metrics().append_description("better VMM maxima");
+  metrics_.set("uncert_upper", tb_better.get_value("span"));
+
+  auto tb_best = strips_best.subset("orthogonal").metrics().append_description("best VMM maxima");
+  metrics_.set("uncert_lower", tb_best.get_value("span"));
+  metrics_.set("timebins_entry_c", tb_best.get_value("average_c"));
+
+  point_lists_["noneg"] = strips_noneg.points();
+  point_lists_["strip_vmm"] = strips_vmm.points();
+  point_lists_["strip_better"] = strips_better.points();
+  point_lists_["strip_best"] = strips_best.points();
+  point_lists_["tb_vmm"] = tb_vmm.points(true);
+
+  projections_["timebins"] = timebins.projection();
+
+  int width  = metrics_.get_value("strips_vmm_span").as_int();
+  int height =  strips_vmm.subset("orthogonal").metrics().get_value("span").as_int();
   int max_width = parameters_.get_value("gamma_max_width").as_int();
   int max_height = parameters_.get_value("gamma_max_height").as_int();
 

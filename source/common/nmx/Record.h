@@ -54,6 +54,10 @@ protected:
   Settings parameters_;
   Settings metrics_;
 
+
+  void analyze_all();
+  void analyze_reduced();
+
 };
 
 

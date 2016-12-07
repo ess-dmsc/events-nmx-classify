@@ -1,5 +1,6 @@
 #include "H5CC_Exception.h"
 #include "H5CC_Types.h"
+#include <iostream>
 
 #define TT template<typename T>
 #define TDT template<typename DT>
@@ -97,34 +98,38 @@ TT TDT DataSet Groupoid<T>::create_dataset(std::string name,
                             std::initializer_list<hsize_t> dims,
                             std::initializer_list<hsize_t> chunkdims)
 {
+  DataSet ret;
   try
   {
     Space filespace(dims);
     Space chunkspace(chunkdims);
+
+//    std::cout << VariantFactory::getInstance().name_of(pred_type_of(DT())) << "\n";
     
     if (!chunkspace.rank())
         return DataSet(Location<T>::location_.createDataSet(name,
-                       get_pred_type(DT()), Space(dims).space()),
+                       pred_type_of(DT()), Space(dims).space()),
                        name);
                    
     if (!filespace.contains(chunkspace))
         return DataSet(Location<T>::location_.createDataSet(name,
-                       get_pred_type(DT()), Space(dims).space()),
+                       pred_type_of(DT()), Space(dims).space()),
                        name); //throw instead
     
     H5::DSetCreatPropList  plist;
     plist.setChunk(chunkspace.rank(), chunkspace.dims().data());
-    plist.setFillValue(get_pred_type(DT()), 0);
+    plist.setFillValue(pred_type_of(DT()), 0);
     plist.setDeflate(1);
     
-    return DataSet(Location<T>::location_.createDataSet(name,
-                   get_pred_type(DT()), Space(dims).space(), plist),
-                   name); 
+    ret = DataSet(Location<T>::location_.createDataSet(name,
+                  pred_type_of(DT()), Space(dims).space(), plist),
+                  name);
   }
   catch (...)
   {
     Exception::rethrow();
   }
+  return ret;
 }
 
 TT TDT DataSet Groupoid<T>::require_dataset(std::string name, 
@@ -158,26 +163,30 @@ TT Groupoid<H5::Group> Groupoid<T>::require_group(std::string name)
 
 TT Groupoid<H5::Group> Groupoid<T>::open_group(std::string name) const
 {
+  Groupoid<H5::Group> ret;
   try
   {
-    return Groupoid<H5::Group>(Location<T>::location_.openGroup(name), name);
+    ret = Groupoid<H5::Group>(Location<T>::location_.openGroup(name), name);
   }
   catch (...)
   {
      Exception::rethrow();
   }
+  return ret;
 }
 
 TT Groupoid<H5::Group> Groupoid<T>::create_group(std::string name)
 {
+  Groupoid<H5::Group> ret;
   try
   {
-    return Groupoid<H5::Group>(Location<T>::location_.createGroup(name), name);
+    ret = Groupoid<H5::Group>(Location<T>::location_.createGroup(name), name);
   }
   catch (...)
   {
     Exception::rethrow();
   }
+  return ret;
 }
 
 #undef TT
