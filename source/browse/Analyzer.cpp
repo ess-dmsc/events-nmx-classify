@@ -189,7 +189,7 @@ void Analyzer::rebuild_data()
   ui->plotHistogram->addGraph(fitter.get_fit_hist(4), profile);
 
   ui->plotHistogram->setAxisLabels(ui->comboWeightsZ->currentText(), "count");
-  ui->plotHistogram->setTitle(ui->comboWeightsZ->currentText());
+//  ui->plotHistogram->setTitle(ui->comboWeightsZ->currentText());
   ui->plotHistogram->zoomOut();
 
   emit select_indices(indices);
