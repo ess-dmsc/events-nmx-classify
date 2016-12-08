@@ -11,8 +11,8 @@ Record::Record()
   : strips_("strip", "timebin")
 {
   auto strip_par = PlanePerspective::default_params();
-  parameters_.merge(strip_par.prepend("strip."));
-  parameters_.merge(strip_par.prepend("timebin."));
+  parameters_.merge(strip_par, "strip.");
+  parameters_.merge(strip_par, "timebin.");
 
   parameters_.set("gamma_max_width",
                   Setting(Variant::from_int(6),
@@ -94,9 +94,9 @@ void Record::set_parameter(std::string id, Variant val)
     parameters_.set(id, val);
 }
 
-void Record::set_metric(std::string id, Variant val, std::string descr)
+void Record::set_metric(std::string id, double val, std::string descr)
 {
-  metrics_.set(id, Setting(val, descr));
+  metrics_.set(id, MetricVal(val, descr));
 }
 
 void Record::clear_metrics()
@@ -178,18 +178,18 @@ void Record::analyze_all()
   PlanePerspective strips_maxima_tb = strips_maxima.subset("orthogonal");
   PlanePerspective strips_vmm_tb = strips_vmm.subset("orthogonal");
 
-  metrics_.merge(strips.metrics().prepend("strips_all_").append_description("valid ADC values"));
-  metrics_.merge(strips_maxima.metrics().prepend("strips_max_").append_description("local maxima"));
-  metrics_.merge(strips_vmm.metrics().prepend("strips_vmm_").append_description("VMM maxima"));
-  metrics_.merge(strips_better.metrics().prepend("strips_better_").append_description("better VMM maxima"));
-  metrics_.merge(strips_best.metrics().prepend("strips_best_").append_description("best VMM maxima"));
-  metrics_.merge(tb_better.metrics().prepend("timebins_better_").append_description("better VMM maxima"));
-  metrics_.merge(tb_best.metrics().prepend("timebins_best_").append_description("best VMM maxima"));
-  metrics_.merge(timebins.metrics().prepend("timebins_all_").append_description("valid ADC values"));
-  metrics_.merge(tb_maxima.metrics().prepend("timebins_max_").append_description("local maxima"));
-  metrics_.merge(tb_vmm.metrics().prepend("timebins_vmm_").append_description("VMM maxima"));
-  metrics_.merge(strips_maxima_tb.metrics().prepend("tb_strips_max_").append_description("local maxima in strip space"));
-  metrics_.merge(strips_vmm_tb.metrics().prepend("tb_strips_vmm_").append_description("VMM maxima in strip space"));
+  metrics_.merge(strips.metrics(), "strips_all_", "valid ADC values");
+  metrics_.merge(strips_maxima.metrics(), "strips_max_", "local maxima");
+  metrics_.merge(strips_vmm.metrics(), "strips_vmm_", "VMM maxima");
+  metrics_.merge(strips_better.metrics(), "strips_better_", "better VMM maxima");
+  metrics_.merge(strips_best.metrics(), "strips_best_", "best VMM maxima");
+  metrics_.merge(tb_better.metrics(), "timebins_better_", "better VMM maxima");
+  metrics_.merge(tb_best.metrics(), "timebins_best_", "best VMM maxima");
+  metrics_.merge(timebins.metrics(), "timebins_all_", "valid ADC values");
+  metrics_.merge(tb_maxima.metrics(), "timebins_max_", "local maxima");
+  metrics_.merge(tb_vmm.metrics(), "timebins_vmm_", "VMM maxima");
+  metrics_.merge(strips_maxima_tb.metrics(), "tb_strips_max_", "local maxima in strip space");
+  metrics_.merge(strips_vmm_tb.metrics(), "tb_strips_vmm_", "VMM maxima in strip space");
 
   point_lists_["noneg"] = strips_noneg.points();
   point_lists_["strip_maxima"] = strips_maxima.points();
@@ -205,8 +205,8 @@ void Record::analyze_all()
   projections_["strips"] = strips_.projection();
   projections_["timebins"] = timebins.projection();
 
-  int width  = metrics_.get_value("strips_max_span").as_int();
-  int height =  metrics_.get_value("tb_strips_max_span").as_int();
+  auto width  = metrics_.get_value("strips_max_span");
+  auto height =  metrics_.get_value("tb_strips_max_span");
   int max_width = parameters_.get_value("gamma_max_width").as_int();
   int max_height = parameters_.get_value("gamma_max_height").as_int();
 
@@ -219,7 +219,7 @@ void Record::analyze_all()
   int not_gamma = width_gamma + height_gamma;
 
   metrics_.set("not_gamma",
-               Setting(Variant::from_int(not_gamma),
+               MetricVal(not_gamma,
                "higher numbers indicate event less likely to be a gamma"));
 
 }
@@ -253,19 +253,22 @@ void Record::analyze_reduced()
   PlanePerspective strips_best = strips_vmm.subset("best", best_params);
   PlanePerspective tb_vmm = timebins.subset("vmm", tb_params);
 
-  metrics_.merge(strips.metrics().prepend("strips_all_").append_description("valid ADC values"));
-  metrics_.merge(strips_vmm.metrics().prepend("strips_vmm_").append_description("VMM maxima"));
-  metrics_.merge(strips_better.metrics().prepend("strips_better_").append_description("better VMM maxima"));
-  metrics_.merge(strips_best.metrics().prepend("strips_best_").append_description("best VMM maxima"));
-  metrics_.merge(timebins.metrics().prepend("timebins_all_").append_description("valid ADC values"));
-  metrics_.merge(tb_vmm.metrics().prepend("timebins_vmm_").append_description("VMM maxima"));
+  metrics_.merge(strips.metrics(), "strips_all_", "valid ADC values");
+  metrics_.merge(strips_vmm.metrics(), "strips_vmm_", "VMM maxima");
+  metrics_.merge(strips_better.metrics(), "strips_better_", "better VMM maxima");
+  metrics_.merge(strips_best.metrics(), "strips_best_", "best VMM maxima");
+  metrics_.merge(timebins.metrics(), "timebins_all_", "valid ADC values");
+  metrics_.merge(tb_vmm.metrics(), "timebins_vmm_", "VMM maxima");
 
-  auto tb_better = strips_better.subset("orthogonal").metrics().append_description("better VMM maxima");
-  metrics_.set("uncert_upper", tb_better.get_value("span"));
+  auto tb_better_span = strips_better.subset("orthogonal").metrics().get("span");
+  tb_better_span.description += "better VMM maxima";
+  metrics_.set("uncert_upper", tb_better_span);
 
-  auto tb_best = strips_best.subset("orthogonal").metrics().append_description("best VMM maxima");
-  metrics_.set("uncert_lower", tb_best.get_value("span"));
-  metrics_.set("timebins_entry_c", tb_best.get_value("average_c"));
+  auto tb_best = strips_best.subset("orthogonal").metrics();
+  auto lower_uncert = tb_best.get("span"); lower_uncert.description += "best VMM maxima";
+  auto tb_entry_c = tb_best.get("average_c"); tb_entry_c.description += "best VMM maxima";
+  metrics_.set("uncert_lower", lower_uncert);
+  metrics_.set("timebins_entry_c", tb_entry_c);
 
   point_lists_["noneg"] = strips_noneg.points();
   point_lists_["strip_vmm"] = strips_vmm.points();
@@ -275,8 +278,8 @@ void Record::analyze_reduced()
 
   projections_["timebins"] = timebins.projection();
 
-  int width  = metrics_.get_value("strips_vmm_span").as_int();
-  int height =  strips_vmm.subset("orthogonal").metrics().get_value("span").as_int();
+  auto width  = metrics_.get_value("strips_vmm_span");
+  auto height =  strips_vmm.subset("orthogonal").metrics().get_value("span");
   int max_width = parameters_.get_value("gamma_max_width").as_int();
   int max_height = parameters_.get_value("gamma_max_height").as_int();
 
@@ -289,7 +292,7 @@ void Record::analyze_reduced()
   int not_gamma = width_gamma + height_gamma;
 
   metrics_.set("not_gamma",
-               Setting(Variant::from_int(not_gamma),
+               MetricVal(not_gamma,
                "higher numbers indicate event less likely to be a gamma"));
 
 }

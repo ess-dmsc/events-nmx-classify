@@ -1,5 +1,5 @@
-#ifndef NMX_SETTINGS_H
-#define NMX_SETTINGS_H
+#ifndef NMX_MetricSet_H
+#define NMX_MetricSet_H
 
 #include <vector>
 #include <map>
@@ -9,6 +9,44 @@
 
 namespace NMX
 {
+
+struct MetricVal
+{
+  MetricVal() {}
+  MetricVal(double v, std::string descr)
+    : description(descr), value(v) {}
+
+  double value;
+  std::string description;
+};
+
+
+class MetricSet
+{
+public:
+  std::map<std::string, MetricVal> data() const { return data_; }
+  size_t size() const { return data_.size(); }
+
+  MetricVal get(std::string name) const;
+  double get_value(std::string name) const;
+
+  void set(std::string name, MetricVal s);
+  void set(std::string name, double v);
+  void describe(std::string name, std::string descr);
+
+  void clear() { data_.clear(); }
+
+  void merge(const MetricSet& other,
+             std::string prepend = "",
+             std::string append_description = "");
+  MetricSet with_prefix(std::string prefix, bool drop_prefix = true) const;
+  MetricSet with_suffix(std::string suffix, bool drop_suffix = true) const;
+
+private:
+  std::map<std::string, MetricVal> data_;
+};
+
+
 
 struct Setting
 {
@@ -23,6 +61,7 @@ struct Setting
   void read_H5(const H5CC::Group &group, std::string name);
 };
 
+
 class Settings
 {
 public:
@@ -36,20 +75,14 @@ public:
 
   void set(std::string name, Setting s);
   void set(std::string name, Variant v);
-  void describe(std::string name, std::string descr);
 
   void clear() { data_.clear(); }
-  void remove(std::initializer_list<std::string> ids);
-  void remove(std::string id);
 
 
-  void merge(const Settings& other);
-  Settings append_description(std::string suffix) const;
-  Settings append(std::string suffix) const;
-  Settings prepend(std::string prefix) const;
+  void merge(const Settings& other,
+             std::string prepend = "");
+//  Settings prepend(std::string prefix) const;
   Settings with_prefix(std::string prefix, bool drop_prefix = true) const;
-  Settings with_suffix(std::string suffix, bool drop_suffix = true) const;
-  Settings if_contains(std::string substring) const;
 
   std::string debug() const;
 
@@ -59,6 +92,8 @@ public:
 private:
   std::map<std::string, Setting> data_;
 };
+
+
 
 }
 

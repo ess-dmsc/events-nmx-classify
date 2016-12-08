@@ -34,8 +34,8 @@ public:
   void set_parameter(std::string, Variant);
   Settings parameters() const {return parameters_;}
 
-  void set_metric(std::string id, Variant val, std::string descr);
-  Settings metrics() const {return metrics_;}
+  void set_metric(std::string id, double val, std::string descr);
+  MetricSet metrics() const {return metrics_;}
 
   std::list<std::string> point_categories() const;
   HistList2D get_points(std::string = "") const;
@@ -52,7 +52,7 @@ protected:
   std::map<std::string, HistList1D> projections_;
 
   Settings parameters_;
-  Settings metrics_;
+  MetricSet metrics_;
 
 
   void analyze_all();

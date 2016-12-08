@@ -39,8 +39,11 @@ void EdgeFitter::get_params(TF1* f)
   slope     = f->GetParameter(3);
   slope_err = f->GetParError(3);
 
-  x_offset2     = f->GetParameter(4);
-  x_offset2_err = f->GetParError(4);
+  if (edge_ == "double")
+  {
+    x_offset2     = f->GetParameter(4);
+    x_offset2_err = f->GetParError(4);
+  }
 }
 
 
@@ -69,11 +72,11 @@ void EdgeFitter::analyze(std::string edge)
   Double_t min1 = h1->GetMinimum();
 
   TF1 * f1;
-  if (edge == "double")
+  if (edge_ == "double")
     f1 = new TF1("f1", "[0]+[1]*(TMath::Erfc(-(x-[2])/[3])*TMath::Erfc((x-[4])/[3]))");
-  else if (edge == "right")
+  else if (edge_ == "right")
     f1 = new TF1("f1", "[0]+[1]*TMath::Erfc(-(x-[2])/[3])");
-  else if (edge == "left")
+  else if (edge_ == "left")
     f1 = new TF1("f1", "[0]+[1]*TMath::Erfc((x-[2])/[3])");
 
   if (edge_ == "double")
@@ -84,6 +87,9 @@ void EdgeFitter::analyze(std::string edge)
 
   h1->Fit("f1", "same");
   get_params(f1);
+
+  f1->Delete();
+  h1->Delete();
 }
 
 HistMap1D EdgeFitter::get_fit_hist(double granularity) const

@@ -22,7 +22,7 @@ struct PlanePerspective
   int16_t end() const { return end_; }
   uint16_t  span() const;
 
-  Settings metrics() const;
+  MetricSet metrics() const;
   HistList2D points(bool flip = false) const;
   HistList1D projection() const;
 

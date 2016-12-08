@@ -65,9 +65,6 @@ private:
 
   void display_projection(NMX::Event &evt);
 
-  TableSettings metrics_model_;
-  SpecialDelegate metrics_delegate_;
-
 };
 
 #endif // FORM_CALIBRATION_H

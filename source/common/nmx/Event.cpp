@@ -28,11 +28,11 @@ std::string Event::debug() const
 
 void Event::collect_values()
 {
-  parameters_.merge(x_.parameters().prepend("x."));
-  parameters_.merge(y_.parameters().prepend("y."));
+  parameters_.merge(x_.parameters(), "x.");
+  parameters_.merge(y_.parameters(), "y.");
 
-  metrics_.merge(x_.metrics().prepend("x."));
-  metrics_.merge(y_.metrics().prepend("y."));
+  metrics_.merge(x_.metrics(), "x.");
+  metrics_.merge(y_.metrics(), "y.");
 
   for (auto &a : x_.projection_categories())
     projections_["x." + a] = x_.get_projection(a);
@@ -58,11 +58,11 @@ void Event::set_parameter(std::string id, Variant val)
 
 void Event::set_metric(std::string id, double val, std::string descr)
 {
-  metrics_.set(id, Setting(Variant::from_float(val), descr));
+  metrics_.set(id, MetricVal(val, descr));
   if ((id.size() > 1) && (boost::algorithm::to_lower_copy(id.substr(0,1)) == "x"))
-    x_.set_metric(id.substr(2, id.size() - 2), Variant::from_float(val), descr);
+    x_.set_metric(id.substr(2, id.size() - 2), val, descr);
   else if ((id.size() > 1) && (boost::algorithm::to_lower_copy(id.substr(0,1)) == "y"))
-    y_.set_metric(id.substr(2, id.size() - 2), Variant::from_float(val), descr);
+    y_.set_metric(id.substr(2, id.size() - 2), val, descr);
 }
 
 void Event::clear_metrics()
@@ -84,20 +84,20 @@ void Event::analyze()
 
   for (auto x : ax.data())
   {
-    double val = x.second.value.as_float(0);
-    val -= ay.get_value(x.first).as_float(0);
+    double val = x.second.value;
+    val -= ay.get_value(x.first);
     metrics_.set("diff_" + x.first,
-                 Setting(Variant::from_float(val), "x." + x.first +
+                 MetricVal(val, "x." + x.first +
                          " - y." + x.first));
   }
 
-  int not_gamma_x = metrics_.get_value("x.not_gamma").as_int();
-  int not_gamma_y = metrics_.get_value("y.not_gamma").as_int();
+  auto not_gamma_x = metrics_.get_value("x.not_gamma");
+  auto not_gamma_y = metrics_.get_value("y.not_gamma");
 
   int not_gamma = not_gamma_x + not_gamma_y;
 
   metrics_.set("not_gamma",
-               Setting(Variant::from_int(not_gamma),
+               MetricVal(not_gamma,
                        "higher numbers indicate event less likely to be a gamma"));
 
   HistMap1D difs = to_map(x_.get_projection("timebins"));

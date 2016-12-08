@@ -2,10 +2,10 @@
 #include "ViewEvent.h"
 #include "ui_ViewEvent.h"
 #include "CustomLogger.h"
+#include <QTableWidgetItem>
 
 ViewEvent::ViewEvent(QWidget *parent) :
   QWidget(parent),
-  metrics_model_(this),
   ui(new Ui::ViewEvent)
 {
   ui->setupUi(this);
@@ -16,8 +16,11 @@ ViewEvent::ViewEvent(QWidget *parent) :
   ui->comboPlanes->addItem("Y");
   ui->comboPlanes->addItem("X & Y");
 
-  ui->tableMetrics->setModel(&metrics_model_);
-  ui->tableMetrics->setItemDelegate(&metrics_delegate_);
+  ui->tableMetrics->setColumnCount(2);
+  QTableWidgetItem *newItem = new QTableWidgetItem("Mertic");
+  ui->tableMetrics->setHorizontalHeaderItem(0, newItem);
+  QTableWidgetItem *newItem2 = new QTableWidgetItem("Value");
+  ui->tableMetrics->setHorizontalHeaderItem(1, newItem2);
   ui->tableMetrics->horizontalHeader()->setStretchLastSection(true);
   ui->tableMetrics->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
   ui->tableMetrics->setEditTriggers(QAbstractItemView::NoEditTriggers);
@@ -246,8 +249,6 @@ void ViewEvent::plot_current_event()
 
   ui->searchBoxMetrics->setList(list);
 
-//  metrics_model_.update(metrics);
-
   display_projection(event_);
   auto desc1x = event_.x().metrics().get(ui->comboPoint1x->currentText().toStdString()).description;
   ui->labelPoint1x->setText(QString::fromStdString(desc1x));
@@ -336,7 +337,7 @@ void ViewEvent::on_comboPoint2y_currentIndexChanged(const QString&)
 
 void ViewEvent::metrics_selected()
 {
-  NMX::Settings metrics;
+  NMX::MetricSet metrics;
   if (ui->comboPlanes->currentText() == "X")
     metrics = event_.x().metrics();
   else if (ui->comboPlanes->currentText() == "Y")
@@ -344,9 +345,19 @@ void ViewEvent::metrics_selected()
   else
     metrics = event_.metrics();
 
-  NMX::Settings final;
+  NMX::MetricSet final;
   for (auto name : ui->searchBoxMetrics->selection())
     final.set(name.toStdString(), metrics.get(name.toStdString()));
 
-  metrics_model_.update(final);
+  ui->tableMetrics->setRowCount(final.size());
+
+  int i = 0;
+  for (auto m : final.data())
+  {
+    QTableWidgetItem *newItem = new QTableWidgetItem(QString::fromStdString(m.first));
+    ui->tableMetrics->setItem(i, 0, newItem);
+    QTableWidgetItem *newItem2 = new QTableWidgetItem(QString::number(m.second.value));
+    ui->tableMetrics->setItem(i, 1, newItem2);
+    i++;
+  }
 }

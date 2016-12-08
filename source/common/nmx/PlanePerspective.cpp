@@ -166,20 +166,20 @@ PlanePerspective PlanePerspective::pick_best(int max_count, int max_span) const
   return ret;
 }
 
-Settings PlanePerspective::metrics() const
+MetricSet PlanePerspective::metrics() const
 {
-  Settings metrics;
+  MetricSet metrics;
 
   metrics.set("valid",
-      Setting(Variant::from_uint(data_.size()),
+      MetricVal(data_.size(),
               "number of " + axis1_ + "s with "));
 
   metrics.set("valid_points",
-      Setting(Variant::from_uint(point_list.size()),
+      MetricVal(point_list.size(),
               "number of valid points in " + axis1_ + "s with "));
 
   metrics.set("span",
-      Setting(Variant::from_uint(span()),
+      MetricVal(span(),
               "span of " + axis1_ + "s with "));
 
   double strip_density {0};
@@ -187,7 +187,7 @@ Settings PlanePerspective::metrics() const
     strip_density = double(data_.size()) / double(span()) * 100.0;
 
   metrics.set("density",
-      Setting(Variant::from_float(strip_density),
+      MetricVal(strip_density,
               "% of " + axis1_ + "s in span with "));
 
   double integral_per_hitstrips {0};
@@ -211,35 +211,35 @@ Settings PlanePerspective::metrics() const
     center_of_gravity_ortho = sum_idx_ortho / double(sum_ortho);
 
   metrics.set("integral",
-      Setting(Variant::from_int(integral),
+      MetricVal(integral,
               "integral of " + axis1_ + "s with "));
 
   metrics.set("integral_density",
-      Setting(Variant::from_float(integral_per_hitstrips),
+      MetricVal(integral_per_hitstrips,
               "integral / valid for " + axis1_ + " with "));
 
   metrics.set("integral_norm",
-      Setting(Variant::from_float(integral_per_point),
+      MetricVal(integral_per_point,
               "integral / valid_points for " + axis1_ + " with "));
 
   metrics.set("cuness",
-              Setting(Variant::from_int(cuness),
+              MetricVal(cuness,
               "number of points above 1 in " + axis1_ + "s using "));
 
   metrics.set("cuness2",
-              Setting(Variant::from_int(cuness2),
+              MetricVal(cuness2,
               "number of points above 1 in " + axis1_ + "s with span > cuness_min_span using "));
 
   metrics.set("average_c",
-      Setting(Variant::from_float(average),
+      MetricVal(average,
               axis1_ + " average (no weights) using "));
 
   metrics.set("center_c",
-      Setting(Variant::from_float(center_of_gravity),
+      MetricVal(center_of_gravity,
               axis1_ + " center of gravity using "));
 
   metrics.set("center_ortho_c",
-      Setting(Variant::from_float(center_of_gravity_ortho),
+      MetricVal(center_of_gravity_ortho,
               axis2_ + "-weighted " + axis1_ + " center of gravity using "));
 
   return metrics;

@@ -25,7 +25,7 @@ struct Event
   Settings parameters() const {return parameters_;}
 
   void set_metric(std::string id, double val, std::string descr);
-  Settings metrics() const {return metrics_;}
+  MetricSet metrics() const {return metrics_;}
 
   std::list<std::string> projection_categories() const;
   HistList1D get_projection(std::string) const;
@@ -34,7 +34,7 @@ private:
   Record x_, y_;
 
   Settings parameters_;
-  Settings metrics_;
+  MetricSet metrics_;
 
   std::map<std::string, HistList1D> projections_;
 

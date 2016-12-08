@@ -91,14 +91,14 @@ void ViewRecord::display_current_record()
 
   auto overlay = make_overlay();
 
-  double strip1 = metrics.get_value(point_type1x_.toStdString()).as_float(-1);
-  double time1 = metrics.get_value(point_type1y_.toStdString()).as_float(-1);
+  double strip1 = metrics.get_value(point_type1x_.toStdString());
+  double time1 = metrics.get_value(point_type1y_.toStdString());
   if ((strip1 >= 0.0) && (strip1 >= record_.strip_start()) && (strip1 <= record_.strip_end())
       && (time1 >= 0.0) && (time1 >= record_.time_start()) && (time1 <= record_.time_end()))
     overlay.push_back(make_box(strip1, time1, 0.5, Qt::yellow));
 
-  double strip2 = metrics.get_value(point_type2x_.toStdString()).as_float(-1);
-  double time2 = metrics.get_value(point_type2y_.toStdString()).as_float(-1);
+  double strip2 = metrics.get_value(point_type2x_.toStdString());
+  double time2 = metrics.get_value(point_type2y_.toStdString());
   if ((strip2 >= 0.0) && (strip2 >= record_.strip_start()) && (strip2 <= record_.strip_end())
     && (time2 >= 0.0) && (time2 >= record_.time_start()) && (time2 <= record_.time_end()))
     overlay.push_back(make_box(strip2, time2, 0.4, Qt::magenta));
