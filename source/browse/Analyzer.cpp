@@ -107,6 +107,7 @@ void Analyzer::loadSettings()
   ui->comboWeightsY->setCurrentText(settings.value("weight_type_y", "Y_entry_strip").toString());
   ui->comboWeightsZ->setCurrentText(settings.value("weight_type_z").toString());
   ui->comboFit->setCurrentText(settings.value("fit").toString());
+  ui->doubleUnits->setValue(settings.value("units", 400).toDouble());
 }
 
 void Analyzer::saveSettings()
@@ -117,6 +118,7 @@ void Analyzer::saveSettings()
   settings.setValue("weight_type_y", ui->comboWeightsY->currentText());
   settings.setValue("weight_type_z", ui->comboWeightsZ->currentText());
   settings.setValue("fit", ui->comboFit->currentText());
+  settings.setValue("units", ui->doubleUnits->value());
 }
 
 void Analyzer::rebuild_data()
@@ -183,7 +185,7 @@ void Analyzer::rebuild_data()
 
   EdgeFitter fitter(histo);
   fitter.analyze(ui->comboFit->currentText().toStdString());
-  ui->labelFit->setText(QString::fromStdString(fitter.info(400)));
+  ui->labelFit->setText(QString::fromStdString(fitter.info(ui->doubleUnits->value())));
 
   profile.default_pen = QPen(palette_[1], 2);
   ui->plotHistogram->addGraph(fitter.get_fit_hist(4), profile);
@@ -281,6 +283,11 @@ void Analyzer::on_pushRemoveTest_clicked()
 }
 
 void Analyzer::on_comboFit_currentTextChanged(const QString &arg1)
+{
+  rebuild_data(); //wrong
+}
+
+void Analyzer::on_doubleUnits_editingFinished()
 {
   rebuild_data(); //wrong
 }

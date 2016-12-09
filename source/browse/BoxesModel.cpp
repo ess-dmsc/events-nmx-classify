@@ -7,7 +7,6 @@
 #include "Variant.h"
 #include "SpecialDelegate.h"
 
-
 TestsModel::TestsModel(QObject *parent)
   : QAbstractTableModel(parent)
 {
@@ -131,8 +130,82 @@ void TestsModel::update()
 Qt::ItemFlags TestsModel::flags(const QModelIndex &index) const
 {
   Qt::ItemFlags myflags = Qt::ItemIsEnabled | Qt::ItemIsSelectable | QAbstractTableModel::flags(index);
-  if ((index.column() >= 0) && (index.column() < 8))
+  if ((index.column() >= 0) && (index.column() < 4))
     myflags |= Qt::ItemIsEditable;
   return myflags;
+}
+
+
+
+
+MetricsModel::MetricsModel(QObject *parent)
+  : QAbstractTableModel(parent)
+{
+}
+
+void MetricsModel::set_metrics(NMX::MetricSet metrics)
+{
+  names_.clear();
+  values_.clear();
+  for (auto m : metrics.data())
+  {
+    names_.push_back(QString::fromStdString(m.first));
+    values_.push_back(m.second.value);
+  }
+  update();
+}
+
+int MetricsModel::rowCount(const QModelIndex & /*parent*/) const
+{
+  return names_.size();
+}
+
+int MetricsModel::columnCount(const QModelIndex & /*parent*/) const
+{
+  return 2;
+}
+
+QVariant MetricsModel::data(const QModelIndex &index, int role) const
+{
+  int row = index.row();
+  int col = index.column();
+
+  if (role == Qt::DisplayRole)
+  {
+    switch (col) {
+    case 0:
+      return names_.at(row);
+    case 1:
+      return QString::number(values_.at(row));
+    }
+  }
+  return QVariant();
+}
+
+QVariant MetricsModel::headerData(int section, Qt::Orientation orientation, int role) const
+{
+  if (role == Qt::DisplayRole)
+  {
+    if (orientation == Qt::Horizontal) {
+      switch (section)
+      {
+      case 0:
+        return QString("Metric");
+      case 1:
+        return QString("Value");
+      }
+    } else if (orientation == Qt::Vertical) {
+      return QString::number(section);
+    }
+  }
+  return QVariant();
+}
+
+void MetricsModel::update()
+{
+  QModelIndex start_ix = createIndex( 0, 0 );
+  QModelIndex end_ix = createIndex(rowCount(), columnCount());
+  emit dataChanged( start_ix, end_ix );
+  emit layoutChanged();
 }
 

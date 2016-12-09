@@ -479,7 +479,7 @@
         </layout>
        </item>
        <item>
-        <widget class="QTableWidget" name="tableMetrics">
+        <widget class="QTableView" name="tableMetrics">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Fixed" vsizetype="MinimumExpanding">
            <horstretch>0</horstretch>

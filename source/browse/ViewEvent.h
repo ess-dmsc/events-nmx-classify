@@ -8,6 +8,7 @@
 #include "FileAPV.h"
 #include "TableSettings.h"
 #include "SpecialDelegate.h"
+#include "BoxesModel.h"
 
 
 namespace Ui {
@@ -64,6 +65,8 @@ private:
   void plot_current_event();
 
   void display_projection(NMX::Event &evt);
+
+  MetricsModel metrics_model_;
 
 };
 

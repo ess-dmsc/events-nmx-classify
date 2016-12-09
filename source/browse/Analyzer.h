@@ -52,6 +52,8 @@ private slots:
 
   void on_comboFit_currentTextChanged(const QString &arg1);
 
+  void on_doubleUnits_editingFinished();
+
 private:
   Ui::Analyzer *ui;
 

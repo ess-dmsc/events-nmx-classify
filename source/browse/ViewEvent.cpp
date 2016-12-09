@@ -16,11 +16,7 @@ ViewEvent::ViewEvent(QWidget *parent) :
   ui->comboPlanes->addItem("Y");
   ui->comboPlanes->addItem("X & Y");
 
-  ui->tableMetrics->setColumnCount(2);
-  QTableWidgetItem *newItem = new QTableWidgetItem("Mertic");
-  ui->tableMetrics->setHorizontalHeaderItem(0, newItem);
-  QTableWidgetItem *newItem2 = new QTableWidgetItem("Value");
-  ui->tableMetrics->setHorizontalHeaderItem(1, newItem2);
+  ui->tableMetrics->setModel(&metrics_model_);
   ui->tableMetrics->horizontalHeader()->setStretchLastSection(true);
   ui->tableMetrics->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
   ui->tableMetrics->setEditTriggers(QAbstractItemView::NoEditTriggers);
@@ -349,15 +345,5 @@ void ViewEvent::metrics_selected()
   for (auto name : ui->searchBoxMetrics->selection())
     final.set(name.toStdString(), metrics.get(name.toStdString()));
 
-  ui->tableMetrics->setRowCount(final.size());
-
-  int i = 0;
-  for (auto m : final.data())
-  {
-    QTableWidgetItem *newItem = new QTableWidgetItem(QString::fromStdString(m.first));
-    ui->tableMetrics->setItem(i, 0, newItem);
-    QTableWidgetItem *newItem2 = new QTableWidgetItem(QString::number(m.second.value));
-    ui->tableMetrics->setItem(i, 1, newItem2);
-    i++;
-  }
+  metrics_model_.set_metrics(final);
 }
