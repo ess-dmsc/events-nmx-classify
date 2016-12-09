@@ -9,7 +9,6 @@
 
 Browser::Browser(QWidget *parent) :
   QMainWindow(parent),
-  settings_model_(this),
   ui(new Ui::Browser)
 {
   qRegisterMetaType<Variant>("Variant");
@@ -20,7 +19,6 @@ Browser::Browser(QWidget *parent) :
   event_viewer_ = new ViewEvent();
   ui->tabWidget->addTab(event_viewer_, "Event viewer");
   connect(this, SIGNAL(enableIO(bool)), event_viewer_, SLOT(enableIO(bool)));
-  connect(event_viewer_, SIGNAL(planes_selected()), this, SLOT(display_params()));
 
   analyzer_ = new Analyzer();
   ui->tabWidget->addTab(analyzer_, "Analyzer");
@@ -32,20 +30,8 @@ Browser::Browser(QWidget *parent) :
   connect(review_, SIGNAL(digDownTown(QString,QString,QString)),
           this, SLOT(digDownTown(QString,QString,QString)));
 
-  connect(&thread_classify_, SIGNAL(data_ready(double)),
-          this, SLOT(update_progress(double)));
-  connect(&thread_classify_, SIGNAL(run_complete()), this, SLOT(run_complete()));
-
   connect(analyzer_, SIGNAL(select_indices(std::set<size_t>)), event_viewer_, SLOT(set_indices(std::set<size_t>)));
 
-  ui->tableParams->setModel(&settings_model_);
-  ui->tableParams->setItemDelegate(&params_delegate_);
-  ui->tableParams->horizontalHeader()->setStretchLastSection(true);
-  ui->tableParams->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-
-  connect(&settings_model_, SIGNAL(settings_changed()), this, SLOT(table_changed()));
-
-  thread_classify_.set_refresh_frequency(5);
   ui->comboGroup->setSizeAdjustPolicy(QComboBox::AdjustToContents);
 
   QTimer::singleShot(1000, this, SLOT(loadSettings()));
@@ -55,28 +41,6 @@ Browser::~Browser()
 {
   CustomLogger::closeLogger();
   delete ui;
-}
-
-void Browser::table_changed()
-{
-  NMX::Settings parameters = settings_model_.get_settings();
-  reader_->set_parameters(parameters);
-  event_viewer_->refresh_event();
-}
-
-void Browser::display_params()
-{
-  NMX::Settings settings;
-  if (reader_)
-  {
-    for (auto s : reader_->parameters().data())
-    {
-      if ((event_viewer_->x_visible() && QString::fromStdString(s.first).contains("x.")) ||
-          (event_viewer_->y_visible() && QString::fromStdString(s.first).contains("y.")))
-        settings.set(s.first, s.second);
-    }
-  }
-  settings_model_.update(settings);
 }
 
 void Browser::closeEvent(QCloseEvent *event)
@@ -155,55 +119,13 @@ void Browser::toggleIO(bool enable)
   auto names = reader_->analyses();
 
   ui->pushOpen->setEnabled(enable);
-  ui->tableParams->setEnabled(enable && reader_ && !reader_->num_analyzed());
 
   ui->comboGroup->setEnabled(enable && (names.size() > 0));
 
   ui->pushNewGroup->setEnabled(enable && reader_ && reader_->event_count());
   ui->pushDeleteGroup->setEnabled(enable && reader_ && names.size());
 
-  bool en = reader_ && reader_->event_count()
-      &&  (reader_->num_analyzed() < reader_->event_count()) && (names.size() > 0) && enable;
-  ui->pushStart->setEnabled(en);
-
-  if (enable) {
-    ui->tableParams->setEditTriggers(QAbstractItemView::AllEditTriggers);
-  } else {
-    ui->tableParams->setEditTriggers(QAbstractItemView::NoEditTriggers);
-  }
-
   emit enableIO(enable);
-}
-
-void Browser::on_pushStop_clicked()
-{
-  thread_classify_.terminate();
-}
-
-void Browser::on_pushStart_clicked()
-{
-  if (!reader_|| !reader_->event_count())
-    return;
-
-  ui->pushStop->setEnabled(true);
-  toggleIO(false);
-
-  thread_classify_.go(reader_);
-}
-
-void Browser::update_progress(double percent_done)
-{
-  ui->progressBar->setValue(percent_done);
-}
-
-
-void Browser::run_complete()
-{
-  toggleIO(true);
-  ui->pushStop->setEnabled(false);
-
-//  reader_->save_analysis();
-  analyzer_->set_new_source(reader_);
 }
 
 void Browser::on_comboGroup_activated(const QString& /*arg1*/)
@@ -215,11 +137,7 @@ void Browser::on_comboGroup_activated(const QString& /*arg1*/)
 
   double percent = double(reader_->num_analyzed()) / double(reader_->event_count()) * 100;
 
-  display_params();
-  ui->pushShowParams->setChecked(reader_->num_analyzed() == 0);
-  on_pushShowParams_clicked();
-
-  ui->progressBar->setValue(percent);
+  ui->labelPercent->setText(QString::number(percent) + "% complete ");
   analyzer_->set_new_source(reader_);
   toggleIO(true);
 }
@@ -277,11 +195,6 @@ void Browser::on_pushOpen_clicked()
     return;
 
   open_file(fileName);
-}
-
-void Browser::on_pushShowParams_clicked()
-{
-  ui->widgetParams->setVisible(ui->pushShowParams->isChecked());
 }
 
 void Browser::digDownTown(QString dset, QString metric, QString file)

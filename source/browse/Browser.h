@@ -7,11 +7,6 @@
 #include "Analyzer.h"
 #include "AggregateReview.h"
 
-#include "ThreadClassify.h"
-#include "TableSettings.h"
-#include "SpecialDelegate.h"
-
-
 namespace Ui {
 class Browser;
 }
@@ -36,22 +31,11 @@ private slots:
 
   void toggleIO(bool);
 
-  void run_complete();
-
-  void update_progress(double percent_done);
-
-  void table_changed();
-  void display_params();
-
-  void on_pushStop_clicked();
-  void on_pushStart_clicked();
-
   void on_comboGroup_activated(const QString &arg1);
   void on_pushNewGroup_clicked();
   void on_pushDeleteGroup_clicked();
   void populate_combo();
   void on_pushOpen_clicked();
-  void on_pushShowParams_clicked();
 
   void digDownTown(QString dset, QString metric, QString file);
 
@@ -64,11 +48,6 @@ private:
   ViewEvent   *event_viewer_;
   Analyzer    *analyzer_;
   AggregateReview *review_;
-
-  ThreadClassify thread_classify_;
-
-  TableSettings settings_model_;
-  SpecialDelegate params_delegate_;
 
   bool open_file(QString fileName);
 

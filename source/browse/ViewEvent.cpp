@@ -6,6 +6,7 @@
 
 ViewEvent::ViewEvent(QWidget *parent) :
   QWidget(parent),
+  params_model_(this),
   ui(new Ui::ViewEvent)
 {
   ui->setupUi(this);
@@ -15,6 +16,12 @@ ViewEvent::ViewEvent(QWidget *parent) :
   ui->comboPlanes->addItem("X");
   ui->comboPlanes->addItem("Y");
   ui->comboPlanes->addItem("X & Y");
+
+  ui->tableParams->setModel(&params_model_);
+  ui->tableParams->setItemDelegate(&params_delegate_);
+  ui->tableParams->horizontalHeader()->setStretchLastSection(true);
+  ui->tableParams->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+  connect(&params_model_, SIGNAL(settings_changed()), this, SLOT(table_changed()));
 
   ui->tableMetrics->setModel(&metrics_model_);
   ui->tableMetrics->horizontalHeader()->setStretchLastSection(true);
@@ -93,11 +100,42 @@ ViewEvent::~ViewEvent()
   delete ui;
 }
 
+
+void ViewEvent::table_changed()
+{
+  NMX::Settings parameters = params_model_.get_settings();
+  reader_->set_parameters(parameters);
+  refresh_event();
+}
+
+void ViewEvent::display_params()
+{
+  NMX::Settings settings;
+  if (reader_)
+  {
+    for (auto s : reader_->parameters().data())
+    {
+      if ((x_visible() && QString::fromStdString(s.first).contains("x.")) ||
+          (y_visible() && QString::fromStdString(s.first).contains("y.")))
+        settings.set(s.first, s.second);
+    }
+  }
+  params_model_.update(settings);
+}
+
 void ViewEvent::enableIO(bool enable)
 {
   bool en = reader_ && reader_->event_count() && enable;
   ui->spinEventIdx->setEnabled(en);
   ui->comboPlanes->setEnabled(en);
+
+  ui->tableParams->setEnabled(enable && reader_ && !reader_->num_analyzed());
+
+  if (enable) {
+    ui->tableParams->setEditTriggers(QAbstractItemView::AllEditTriggers);
+  } else {
+    ui->tableParams->setEditTriggers(QAbstractItemView::NoEditTriggers);
+  }
 }
 
 void ViewEvent::set_new_source(std::shared_ptr<NMX::FileAPV> r)
@@ -127,6 +165,10 @@ void ViewEvent::set_new_source(std::shared_ptr<NMX::FileAPV> r)
   }
   else
     clear();
+
+  ui->pushShowParams->setChecked(reader_->num_analyzed() == 0);
+  on_pushShowParams_clicked();
+  display_params();
 }
 
 void ViewEvent::loadSettings()
@@ -310,7 +352,7 @@ void ViewEvent::on_comboPlanes_currentIndexChanged(const QString&)
   ui->eventX->setVisible(ui->comboPlanes->currentText().contains("X"));
   ui->eventY->setVisible(ui->comboPlanes->currentText().contains("Y"));
   plot_current_event();
-  emit planes_selected();
+  display_params();
 }
 
 void ViewEvent::on_comboPoint1x_currentIndexChanged(const QString&)
@@ -356,4 +398,9 @@ void ViewEvent::metrics_selected()
     final.set(name.toStdString(), metrics.get(name.toStdString()));
 
   metrics_model_.set_metrics(final);
+}
+
+void ViewEvent::on_pushShowParams_clicked()
+{
+  ui->tableParams->setVisible(ui->pushShowParams->isChecked());
 }

@@ -15,7 +15,6 @@ public:
   void open_raw();
   bool has_raw() const;
 
-
   void write_raw(size_t index, const Event& event);
 
   size_t event_count() const;

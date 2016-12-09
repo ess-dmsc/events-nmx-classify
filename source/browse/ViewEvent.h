@@ -55,8 +55,10 @@ private slots:
 
   void metrics_selected();
 
-signals:
-  void planes_selected();
+  void table_changed();
+  void display_params();
+
+  void on_pushShowParams_clicked();
 
 private:
   Ui::ViewEvent *ui;
@@ -73,6 +75,9 @@ private:
   void display_projection(NMX::Event &evt);
 
   MetricsModel metrics_model_;
+
+  TableSettings params_model_;
+  SpecialDelegate params_delegate_;
 
 };
 
