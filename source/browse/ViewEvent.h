@@ -27,6 +27,9 @@ public:
 
   void refresh_event();
 
+  bool x_visible();
+  bool y_visible();
+
   void clear();
 
 public slots:
@@ -51,6 +54,9 @@ private slots:
   void on_comboPoint2y_currentIndexChanged(const QString &arg1);
 
   void metrics_selected();
+
+signals:
+  void planes_selected();
 
 private:
   Ui::ViewEvent *ui;

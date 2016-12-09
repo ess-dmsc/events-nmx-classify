@@ -24,24 +24,6 @@ public:
   explicit Browser(QWidget *parent = 0);
   ~Browser();
 
-private:
-  Ui::Browser *ui;
-
-  QString data_directory_;
-  std::shared_ptr<NMX::FileAPV> reader_;
-
-  ViewEvent   *event_viewer_;
-  Analyzer    *analyzer_;
-  AggregateReview *review_;
-
-  ThreadClassify thread_classify_;
-
-  TableSettings settings_model_;
-  SpecialDelegate params_delegate_;
-
-
-  bool open_file(QString fileName);
-
 signals:
   void enableIO(bool);
 
@@ -72,6 +54,24 @@ private slots:
   void on_pushShowParams_clicked();
 
   void digDownTown(QString dset, QString metric, QString file);
+
+private:
+  Ui::Browser *ui;
+
+  QString data_directory_;
+  std::shared_ptr<NMX::FileAPV> reader_;
+
+  ViewEvent   *event_viewer_;
+  Analyzer    *analyzer_;
+  AggregateReview *review_;
+
+  ThreadClassify thread_classify_;
+
+  TableSettings settings_model_;
+  SpecialDelegate params_delegate_;
+
+  bool open_file(QString fileName);
+
 };
 
 #endif // Browser_H

@@ -22,8 +22,8 @@ bool Event::empty() const
 
 std::string Event::debug() const
 {
-  return   "X: " + x_.debug() + "\n"
-         + "Y: " + y_.debug();
+  return   "X:\n" + x_.debug() + "\n"
+         + "Y:\n" + y_.debug();
 }
 
 void Event::collect_values()

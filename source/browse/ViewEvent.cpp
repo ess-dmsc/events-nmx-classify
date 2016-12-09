@@ -295,12 +295,22 @@ void ViewEvent::display_projection(NMX::Event &evt)
   ui->plotProjection->zoomOut();
 }
 
+bool ViewEvent::x_visible()
+{
+  return ui->comboPlanes->currentText().contains("X");
+}
+
+bool ViewEvent::y_visible()
+{
+  return ui->comboPlanes->currentText().contains("Y");
+}
 
 void ViewEvent::on_comboPlanes_currentIndexChanged(const QString&)
 {
   ui->eventX->setVisible(ui->comboPlanes->currentText().contains("X"));
   ui->eventY->setVisible(ui->comboPlanes->currentText().contains("Y"));
   plot_current_event();
+  emit planes_selected();
 }
 
 void ViewEvent::on_comboPoint1x_currentIndexChanged(const QString&)

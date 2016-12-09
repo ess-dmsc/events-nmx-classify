@@ -20,6 +20,7 @@ Browser::Browser(QWidget *parent) :
   event_viewer_ = new ViewEvent();
   ui->tabWidget->addTab(event_viewer_, "Event viewer");
   connect(this, SIGNAL(enableIO(bool)), event_viewer_, SLOT(enableIO(bool)));
+  connect(event_viewer_, SIGNAL(planes_selected()), this, SLOT(display_params()));
 
   analyzer_ = new Analyzer();
   ui->tabWidget->addTab(analyzer_, "Analyzer");
@@ -65,7 +66,17 @@ void Browser::table_changed()
 
 void Browser::display_params()
 {
-  settings_model_.update(reader_->parameters());
+  NMX::Settings settings;
+  if (reader_)
+  {
+    for (auto s : reader_->parameters().data())
+    {
+      if ((event_viewer_->x_visible() && QString::fromStdString(s.first).contains("x.")) ||
+          (event_viewer_->y_visible() && QString::fromStdString(s.first).contains("y.")))
+        settings.set(s.first, s.second);
+    }
+  }
+  settings_model_.update(settings);
 }
 
 void Browser::closeEvent(QCloseEvent *event)

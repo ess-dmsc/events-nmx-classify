@@ -53,7 +53,8 @@ void Analysis::set_parameters(const Settings& params)
     return;
 
   params_ = params;
-  params_.write_H5(group_, "parameters");
+  if (!group_.name().empty())
+    params_.write_H5(group_, "parameters");
 }
 
 std::list<std::string> Analysis::metrics() const
