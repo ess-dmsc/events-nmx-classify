@@ -58,6 +58,9 @@ protected:
   void analyze_all();
   void analyze_reduced();
 
+  void analyze_finalize(const PlanePerspective&strips_best,
+                        const PlanePerspective& strips_vmm);
+
 };
 
 

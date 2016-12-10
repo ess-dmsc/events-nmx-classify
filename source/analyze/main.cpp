@@ -66,7 +66,7 @@ int main(int argc, char* argv[])
 
   try
   {
-    reader = std::make_shared<NMX::FileAPV>(clone_params_file, true);
+    reader = std::make_shared<NMX::FileAPV>(clone_params_file, false);
   }
   catch (...)
   {

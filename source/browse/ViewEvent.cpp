@@ -87,8 +87,6 @@ void ViewEvent::populateCombos(const NMX::Settings &parameters)
   evt.set_parameters(parameters);
   evt.analyze();
 
-  saveSettings();
-
   ui->comboProjection->blockSignals(true);
   ui->comboPlot->blockSignals(true);
   ui->comboOverlay->blockSignals(true);
@@ -147,6 +145,7 @@ void ViewEvent::populateCombos(const NMX::Settings &parameters)
 
 void ViewEvent::table_changed()
 {
+  saveSettings();
   NMX::Settings parameters = params_model_.get_settings();
   reader_->set_parameters(parameters);
   populateCombos(parameters);
@@ -211,6 +210,7 @@ void ViewEvent::set_new_source(std::shared_ptr<NMX::FileAPV> r)
   else
     clear();
 
+  saveSettings();
   populateCombos(reader_->parameters());
   refresh_event();
 

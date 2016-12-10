@@ -60,4 +60,4 @@ private:
   QPlot::MarkerBox2D make_box(double cx, double cy, double size, QColor color);
 };
 
-#endif // FORM_CALIBRATION_H
+#endif

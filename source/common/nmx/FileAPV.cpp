@@ -34,7 +34,7 @@ void FileAPV::open_raw()
 
 FileAPV::~FileAPV()
 {
-  if (!analysis_.name().empty())
+  if (!analysis_.name().empty() && write_access_)
     analysis_.save();
 }
 
@@ -138,7 +138,8 @@ void FileAPV::load_analysis(std::string name)
 {
   if (name == analysis_.name())
     return;
-  if (!analysis_.name().empty())
+
+  if (!analysis_.name().empty() && write_access_)
     analysis_.save();
 
   if (file_.has_group("Analyses") && file_.open_group("Analyses").has_group(name))

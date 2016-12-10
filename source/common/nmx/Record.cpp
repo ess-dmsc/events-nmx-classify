@@ -25,8 +25,6 @@ Record::Record()
   parameters_.set("analysis_reduced",
                   Setting(Variant::from_int(0),
                           "Fewer metrics"));
-
-//  analyze();
 }
 
 Record::Record(const std::vector<int16_t>& data, uint16_t timebins)
@@ -198,35 +196,13 @@ void Record::analyze_all()
   point_lists_["strip_best"] = strips_best.points();
   point_lists_["tb_maxima"] = tb_maxima.points(true);
   point_lists_["tb_vmm"] = tb_vmm.points(true);
-
-  double tb_entry_c = -1;
-  if (!strips_best.empty())
-    tb_entry_c = point_lists_["strip_best"].front().y;
-  metrics_.set("timebins_entry_c", MetricVal(tb_entry_c, "Latest timebin of VMM maxima"));
-
   point_lists_["strip_maxima_tb"] = strips_maxima_tb.points(true);
   point_lists_["strip_vmm_tb"] = strips_vmm_tb.points(true);
 
   projections_["strips"] = strips_.projection();
   projections_["timebins"] = timebins.projection();
 
-  auto width  = metrics_.get_value("strips_max_span");
-  auto height =  metrics_.get_value("tb_strips_max_span");
-  int max_width = parameters_.get_value("gamma_max_width").as_int();
-  int max_height = parameters_.get_value("gamma_max_height").as_int();
-
-  int width_gamma = width - max_width;
-  if (width_gamma < 0)
-    width_gamma = 0;
-  int height_gamma = height - max_height;
-  if (height_gamma < 0)
-    height_gamma = 0;
-  int not_gamma = width_gamma + height_gamma;
-
-  metrics_.set("not_gamma",
-               MetricVal(not_gamma,
-               "higher numbers indicate event less likely to be a gamma"));
-
+  analyze_finalize(strips_best, strips_vmm);
 }
 
 
@@ -261,6 +237,12 @@ void Record::analyze_reduced()
 
   projections_["timebins"] = timebins.projection();
 
+  analyze_finalize(strips_best, strips_vmm);
+}
+
+
+void Record::analyze_finalize(const PlanePerspective& strips_best, const PlanePerspective&strips_vmm)
+{
   double tb_entry_c = -1;
   if (!strips_best.empty())
     tb_entry_c = point_lists_["strip_best"].front().y;
@@ -282,9 +264,7 @@ void Record::analyze_reduced()
   metrics_.set("not_gamma",
                MetricVal(not_gamma,
                "higher numbers indicate event less likely to be a gamma"));
-
 }
-
 
 
 
