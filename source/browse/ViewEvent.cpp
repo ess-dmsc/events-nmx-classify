@@ -60,13 +60,13 @@ void ViewEvent::set_point_metrics()
   QVector<PointMetrics> pmetrics;
   PointMetrics p;
 
-  p.x_metric = ui->comboPoint1x->currentText().toStdString();
-  p.y_metric = ui->comboPoint1y->currentText().toStdString();
+  p.x_metric = ui->push1x->text().toStdString();
+  p.y_metric = ui->push1y->text().toStdString();
   p.color = Qt::yellow;
   pmetrics.push_back(p);
 
-  p.x_metric = ui->comboPoint2x->currentText().toStdString();
-  p.y_metric = ui->comboPoint2y->currentText().toStdString();
+  p.x_metric = ui->push2x->text().toStdString();
+  p.y_metric = ui->push2y->text().toStdString();
   p.color = Qt::magenta;
   pmetrics.push_back(p);
 
@@ -90,18 +90,10 @@ void ViewEvent::populateCombos(const NMX::Settings &parameters)
   ui->comboProjection->blockSignals(true);
   ui->comboPlot->blockSignals(true);
   ui->comboOverlay->blockSignals(true);
-  ui->comboPoint1x->blockSignals(true);
-  ui->comboPoint2x->blockSignals(true);
-  ui->comboPoint1y->blockSignals(true);
-  ui->comboPoint2y->blockSignals(true);
 
   ui->comboProjection->clear();
   ui->comboPlot->clear();
   ui->comboOverlay->clear();
-  ui->comboPoint1x->clear();
-  ui->comboPoint2x->clear();
-  ui->comboPoint1y->clear();
-  ui->comboPoint2y->clear();
 
   for (auto &name : evt.projection_categories())
     ui->comboProjection->addItem(QString::fromStdString(name));
@@ -117,30 +109,11 @@ void ViewEvent::populateCombos(const NMX::Settings &parameters)
   ui->comboPlot->addItem("none");
   ui->comboPlot->addItem("everything");
 
-  for (auto &name : rec.metrics().with_suffix("_c", false).with_prefix("strips", false).data())
-  {
-    ui->comboPoint1x->addItem(QString::fromStdString(name.first));
-    ui->comboPoint2x->addItem(QString::fromStdString(name.first));
-  }
-  for (auto &name : rec.metrics().with_suffix("_c", false).with_prefix("timebins", false).data())
-  {
-    ui->comboPoint1y->addItem(QString::fromStdString(name.first));
-    ui->comboPoint2y->addItem(QString::fromStdString(name.first));
-  }
-  ui->comboPoint1x->addItem("none");
-  ui->comboPoint2x->addItem("none");
-  ui->comboPoint1y->addItem("none");
-  ui->comboPoint2y->addItem("none");
-
   loadSettings();
 
   ui->comboProjection->blockSignals(false);
   ui->comboPlot->blockSignals(false);
   ui->comboOverlay->blockSignals(false);
-  ui->comboPoint1x->blockSignals(false);
-  ui->comboPoint2x->blockSignals(false);
-  ui->comboPoint1y->blockSignals(false);
-  ui->comboPoint2y->blockSignals(false);
 }
 
 void ViewEvent::table_changed()
@@ -232,10 +205,10 @@ void ViewEvent::loadSettings()
   ui->comboPlot->setCurrentText(settings.value("plot", "everything").toString());
   ui->comboOverlay->setCurrentText(settings.value("overlay", "maxima").toString());
   ui->comboProjection->setCurrentText(settings.value("projection", "none").toString());
-  ui->comboPoint1x->setCurrentText(settings.value("point1x").toString());
-  ui->comboPoint2x->setCurrentText(settings.value("point2x").toString());
-  ui->comboPoint1y->setCurrentText(settings.value("point1y").toString());
-  ui->comboPoint2y->setCurrentText(settings.value("point2y").toString());
+  ui->push1x->setText(settings.value("point1x").toString());
+  ui->push2x->setText(settings.value("point2x").toString());
+  ui->push1y->setText(settings.value("point1y").toString());
+  ui->push2y->setText(settings.value("point2y").toString());
   ui->comboPlanes->setCurrentText(settings.value("show_planes", "X & Y").toString());
   ui->searchBoxMetrics->setFilter(settings.value("filter").toString());
 }
@@ -249,10 +222,10 @@ void ViewEvent::saveSettings()
   settings.setValue("plot", ui->comboPlot->currentText());
   settings.setValue("overlay", ui->comboOverlay->currentText());
   settings.setValue("projection", ui->comboProjection->currentText());
-  settings.setValue("point1x", ui->comboPoint1x->currentText());
-  settings.setValue("point2x", ui->comboPoint2x->currentText());
-  settings.setValue("point1y", ui->comboPoint1y->currentText());
-  settings.setValue("point2y", ui->comboPoint2y->currentText());
+  settings.setValue("point1x", ui->push1x->text());
+  settings.setValue("point2x", ui->push2x->text());
+  settings.setValue("point1y", ui->push1y->text());
+  settings.setValue("point2y", ui->push2y->text());
   settings.setValue("show_planes", ui->comboPlanes->currentText());
   settings.setValue("filter", ui->searchBoxMetrics->filter());
 }
@@ -341,18 +314,6 @@ void ViewEvent::plot_current_event()
   ui->searchBoxMetrics->setList(list);
 
   display_projection(event_);
-  auto desc1x = event_.x().metrics().get(ui->comboPoint1x->currentText().toStdString()).description;
-  ui->labelPoint1x->setText(QString::fromStdString(desc1x));
-
-  auto desc1y = event_.y().metrics().get(ui->comboPoint1y->currentText().toStdString()).description;
-  ui->labelPoint1y->setText(QString::fromStdString(desc1y));
-
-
-  auto desc2x = event_.x().metrics().get(ui->comboPoint2x->currentText().toStdString()).description;
-  ui->labelPoint2x->setText(QString::fromStdString(desc2x));
-
-  auto desc2y = event_.y().metrics().get(ui->comboPoint2y->currentText().toStdString()).description;
-  ui->labelPoint2y->setText(QString::fromStdString(desc2y));
 }
 
 void ViewEvent::set_indices(std::set<size_t> indices)
@@ -408,26 +369,6 @@ void ViewEvent::on_comboPlanes_currentIndexChanged(const QString&)
   display_params();
 }
 
-void ViewEvent::on_comboPoint1x_currentIndexChanged(const QString&)
-{
-  set_point_metrics();
-}
-
-void ViewEvent::on_comboPoint2x_currentIndexChanged(const QString&)
-{
-  set_point_metrics();
-}
-
-void ViewEvent::on_comboPoint1y_currentIndexChanged(const QString&)
-{
-  set_point_metrics();
-}
-
-void ViewEvent::on_comboPoint2y_currentIndexChanged(const QString&)
-{
-  set_point_metrics();
-}
-
 void ViewEvent::metrics_selected()
 {
   NMX::MetricSet metrics;
@@ -460,3 +401,73 @@ void ViewEvent::on_pushShowParams_clicked()
     ui->pushShowParams->setText("Show analysis parameters");
   }
 }
+
+void ViewEvent::on_push1x_clicked()
+{
+  make_coord_popup(ui->push1x,
+                   event_.x().metrics().with_prefix("strips_", false).with_suffix("_c", false));
+}
+
+void ViewEvent::on_push1y_clicked()
+{
+  make_coord_popup(ui->push1y,
+                   event_.x().metrics().with_prefix("timebins_", false).with_suffix("_c", false));
+}
+
+void ViewEvent::on_push2x_clicked()
+{
+  make_coord_popup(ui->push2x,
+                   event_.x().metrics().with_prefix("strips_", false).with_suffix("_c", false));
+}
+
+void ViewEvent::on_push2y_clicked()
+{
+  make_coord_popup(ui->push2y,
+                   event_.x().metrics().with_prefix("timebins_", false).with_suffix("_c", false));
+}
+
+void ViewEvent::make_coord_popup(QPushButton* button,
+                                 NMX::MetricSet metric_set)
+{
+  SearchDialog* popup = new SearchDialog();
+  popup->setFilterVisible(false);
+  popup->setWindowFlags(Qt::FramelessWindowHint | Qt::Popup);
+
+  QStringList list;
+  list.push_back("none");
+  QString selection = button->text();
+  int maxwidth = 220;
+  QFontMetrics fm(button->font());
+  for (auto &metric : metric_set.data())
+  {
+    QString text = QString::fromStdString(metric.first)
+        + "    (" + QString::fromStdString(metric.second.description) + ")";
+    list.push_back(text);
+    if (metric.first == selection.toStdString())
+      selection = text;
+    maxwidth = std::max(maxwidth, fm.width(text) + 30);
+  }
+  popup->setList(list);
+  popup->Select(selection);
+  QRect rect;
+  rect.setTopLeft(button->mapToGlobal(button->rect().topLeft()));
+  rect.setWidth(maxwidth);
+  rect.setHeight(std::min(250, (fm.height()+5) * list.size()));
+  popup->setGeometry(rect);
+
+  if (popup->exec())
+  {
+    //trim description
+    auto selection = popup->selection();
+    int j = 0;
+    if ((j = selection.indexOf("    (", j)) > 0)
+      selection = selection.left(j);
+
+    button->setText(selection);
+    button->setToolTip(QString::fromStdString(metric_set.get(selection.toStdString()).description));
+    set_point_metrics();
+  }
+
+  delete popup;
+}
+

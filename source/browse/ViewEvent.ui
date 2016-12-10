@@ -59,6 +59,13 @@
    <item row="0" column="0">
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
+      <widget class="QLabel" name="label_6">
+       <property name="text">
+        <string>   </string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QSpinBox" name="spinEventIdx">
        <property name="enabled">
         <bool>false</bool>
@@ -87,6 +94,13 @@
        </property>
        <property name="text">
         <string/>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_9">
+       <property name="text">
+        <string>   </string>
        </property>
       </widget>
      </item>
@@ -270,58 +284,15 @@
           </widget>
          </item>
          <item>
-          <widget class="QComboBox" name="comboPoint1x">
+          <widget class="QPushButton" name="push1x">
            <property name="minimumSize">
             <size>
              <width>220</width>
              <height>0</height>
             </size>
            </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="labelPoint1x">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
            <property name="text">
             <string/>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_6">
-         <item>
-          <widget class="QLabel" name="labelOfTotal_5">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_14">
-           <property name="minimumSize">
-            <size>
-             <width>90</width>
-             <height>0</height>
-            </size>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
           </widget>
          </item>
@@ -342,22 +313,12 @@
           </widget>
          </item>
          <item>
-          <widget class="QComboBox" name="comboPoint1y">
+          <widget class="QPushButton" name="push1y">
            <property name="minimumSize">
             <size>
              <width>220</width>
              <height>0</height>
             </size>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="labelPoint1y">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
            </property>
            <property name="text">
             <string/>
@@ -414,58 +375,15 @@
           </widget>
          </item>
          <item>
-          <widget class="QComboBox" name="comboPoint2x">
+          <widget class="QPushButton" name="push2x">
            <property name="minimumSize">
             <size>
              <width>220</width>
              <height>0</height>
             </size>
            </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="labelPoint2x">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
            <property name="text">
             <string/>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_7">
-         <item>
-          <widget class="QLabel" name="labelOfTotal_6">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_15">
-           <property name="minimumSize">
-            <size>
-             <width>90</width>
-             <height>0</height>
-            </size>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
           </widget>
          </item>
@@ -486,22 +404,12 @@
           </widget>
          </item>
          <item>
-          <widget class="QComboBox" name="comboPoint2y">
+          <widget class="QPushButton" name="push2y">
            <property name="minimumSize">
             <size>
              <width>220</width>
              <height>0</height>
             </size>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="labelPoint2y">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
            </property>
            <property name="text">
             <string/>

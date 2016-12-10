@@ -10,6 +10,10 @@
 #include "SpecialDelegate.h"
 #include "BoxesModel.h"
 
+#include "SearchList.h"
+#include "Settings.h"
+
+#include <QLabel>
 
 namespace Ui {
 class ViewEvent;
@@ -47,11 +51,6 @@ private slots:
 
   void on_comboPlanes_currentIndexChanged(const QString &arg1);
 
-  void on_comboPoint1x_currentIndexChanged(const QString &arg1);
-  void on_comboPoint2x_currentIndexChanged(const QString &arg1);
-
-  void on_comboPoint1y_currentIndexChanged(const QString &arg1);
-  void on_comboPoint2y_currentIndexChanged(const QString &arg1);
 
   void metrics_selected();
 
@@ -61,6 +60,11 @@ private slots:
   void set_point_metrics();
 
   void on_pushShowParams_clicked();
+
+  void on_push1x_clicked();
+  void on_push1y_clicked();
+  void on_push2x_clicked();
+  void on_push2y_clicked();
 
 private:
   Ui::ViewEvent *ui;
@@ -83,6 +87,8 @@ private:
 
   void populateCombos(const NMX::Settings &parameters);
 
+  void make_coord_popup(QPushButton *button,
+                        NMX::MetricSet metric_set);
 };
 
 #endif // FORM_CALIBRATION_H
