@@ -12,6 +12,13 @@ namespace Ui {
 class ViewRecord;
 }
 
+struct PointMetrics
+{
+  std::string x_metric;
+  std::string y_metric;
+  QColor color;
+};
+
 class ViewRecord : public QWidget
 {
   Q_OBJECT
@@ -27,11 +34,8 @@ public:
   void set_plot_type(QString);
   void set_overlay_type(QString);
 
-  void set_point_type1x(QString);
-  void set_point_type2x(QString);
+  void set_point_metrics(QVector<PointMetrics>);
 
-  void set_point_type1y(QString);
-  void set_point_type2y(QString);
 
   void set_title(QString);
 
@@ -46,12 +50,7 @@ private:
 
   QString plot_type_;
   QString overlay_type_;
-
-  QString point_type1x_;
-  QString point_type2x_;
-
-  QString point_type1y_;
-  QString point_type2y_;
+  QVector<PointMetrics> point_metrics_;
 
   void display_current_record();
 

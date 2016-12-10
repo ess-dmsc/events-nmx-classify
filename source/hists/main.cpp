@@ -26,7 +26,6 @@ const std::string options_text =
     "NMX metrics histogram generation tool. Available options:\n"
     "    -p [path] Path to analyzed data files. Defaults to current path\n"
     "    -o [path/file.h5] Output file\n"
-    "    -dma [] Dataset-metric-analysis hierarchy, otherwise Analysis-metric-dataset\n"
     "    --help/-h prints this list of options\n";
 
 int main(int argc, char* argv[])
@@ -41,7 +40,6 @@ int main(int argc, char* argv[])
   // Input file
   std::string input_path  = cmd_line.get_value("-p");
   std::string output_file = cmd_line.get_value("-o");
-  bool dma = cmd_line.has_switch("-dma");
 
   std::set<boost::filesystem::path> files;
 
@@ -75,7 +73,7 @@ int main(int argc, char* argv[])
   for (auto filename : files)
   {
     std::shared_ptr<NMX::FileAPV> reader
-        = std::make_shared<NMX::FileAPV>(filename.string());
+        = std::make_shared<NMX::FileAPV>(filename.string(), false);
 
     for (auto analysis : reader->analyses())
     {
@@ -112,7 +110,7 @@ int main(int argc, char* argv[])
     for (auto filename : files)
     {
       std::shared_ptr<NMX::FileAPV> reader
-          = std::make_shared<NMX::FileAPV>(filename.string());
+          = std::make_shared<NMX::FileAPV>(filename.string(), false);
 
       std::string dataset = filename.stem().string();
 
@@ -123,10 +121,7 @@ int main(int argc, char* argv[])
         if (!reader->num_analyzed())
           continue;
 
-        if (dma)
-          aggregates[dataset].merge(reader->get_metric(metric));
-        else
-          aggregates[analysis].merge(reader->get_metric(metric));
+        aggregates[analysis].merge(reader->get_metric(metric));
 
         if (term_flag)
           return 0;
@@ -157,7 +152,7 @@ int main(int argc, char* argv[])
   for (auto filename : files)
   {
     std::shared_ptr<NMX::FileAPV> reader
-        = std::make_shared<NMX::FileAPV>(filename.string());
+        = std::make_shared<NMX::FileAPV>(filename.string(), false);
 
     std::string dataset = filename.stem().string();
 
@@ -180,10 +175,7 @@ int main(int argc, char* argv[])
         double norm = NMX::Metric::normalizer(minima.at(metric), maxima.at(metric));
         auto hist = reader->get_metric(metric).make_histogram(norm);
 
-        if (dma)
-          write(outfile.require_group(dataset).require_group(metric), analysis, hist);
-        else
-          write(outfile.require_group(analysis).require_group(metric), dataset, hist);
+        write(outfile.require_group(analysis).require_group(metric), dataset, hist);
 
         ++(*prog);
         if (term_flag)

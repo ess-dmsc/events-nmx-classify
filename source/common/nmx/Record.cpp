@@ -26,7 +26,7 @@ Record::Record()
                   Setting(Variant::from_int(0),
                           "Fewer metrics"));
 
-  analyze();
+//  analyze();
 }
 
 Record::Record(const std::vector<int16_t>& data, uint16_t timebins)
@@ -112,7 +112,7 @@ bool Record::empty() const
 std::string Record::debug() const
 {
   return strips_.debug();
-  // other perspectives?
+  // other perspectives? metrics?
 }
 
 std::list<std::string> Record::point_categories() const
@@ -138,10 +138,10 @@ void Record::analyze()
   for (auto pj : projections_)
     pj.second.clear();
 
-//  if (parameters_.get_value("analysis_reduced").as_int() > 0)
+  if (parameters_.get_value("analysis_reduced").as_int() > 0)
     analyze_reduced();
-//  else
-//    analyze_all();
+  else
+    analyze_all();
 }
 
 void Record::analyze_all()
@@ -199,6 +199,11 @@ void Record::analyze_all()
   point_lists_["tb_maxima"] = tb_maxima.points(true);
   point_lists_["tb_vmm"] = tb_vmm.points(true);
 
+  double tb_entry_c = -1;
+  if (!strips_best.empty())
+    tb_entry_c = point_lists_["strip_best"].front().y;
+  metrics_.set("timebins_entry_c", MetricVal(tb_entry_c, "Latest timebin of VMM maxima"));
+
   point_lists_["strip_maxima_tb"] = strips_maxima_tb.points(true);
   point_lists_["strip_vmm_tb"] = strips_vmm_tb.points(true);
 
@@ -227,20 +232,8 @@ void Record::analyze_all()
 
 void Record::analyze_reduced()
 {
-  PlanePerspective strips("strip", "timebin");
-  PlanePerspective timebins("timebin", "strip");
-
-  PlanePerspective strips_noneg = strips_.subset("noneg");
-  if (parameters_.get_value("suppress_negatives").as_bool())
-  {
-    strips = strips_noneg;
-    timebins = strips_noneg.subset("orthogonal");
-  }
-  else
-  {
-    strips = strips_;
-    timebins = strips_.subset("orthogonal");
-  }
+  auto strips = strips_;//.subset("noneg");
+  auto timebins = strips.subset("orthogonal");
 
   auto strip_params = parameters_.with_prefix("strip.");
   auto tb_params = parameters_.with_prefix("timebin.");
@@ -260,23 +253,18 @@ void Record::analyze_reduced()
   metrics_.merge(timebins.metrics(), "timebins_all_", "valid ADC values");
   metrics_.merge(tb_vmm.metrics(), "timebins_vmm_", "VMM maxima");
 
-  auto tb_better_span = strips_better.subset("orthogonal").metrics().get("span");
-  tb_better_span.description += "better VMM maxima";
-  metrics_.set("uncert_upper", tb_better_span);
-
-  auto tb_best = strips_best.subset("orthogonal").metrics();
-  auto lower_uncert = tb_best.get("span"); lower_uncert.description += "best VMM maxima";
-  auto tb_entry_c = tb_best.get("average_c"); tb_entry_c.description += "best VMM maxima";
-  metrics_.set("uncert_lower", lower_uncert);
-  metrics_.set("timebins_entry_c", tb_entry_c);
-
-  point_lists_["noneg"] = strips_noneg.points();
+  point_lists_["noneg"] = strips.subset("noneg").points();
   point_lists_["strip_vmm"] = strips_vmm.points();
   point_lists_["strip_better"] = strips_better.points();
   point_lists_["strip_best"] = strips_best.points();
   point_lists_["tb_vmm"] = tb_vmm.points(true);
 
   projections_["timebins"] = timebins.projection();
+
+  double tb_entry_c = -1;
+  if (!strips_best.empty())
+    tb_entry_c = point_lists_["strip_best"].front().y;
+  metrics_.set("timebins_entry_c", MetricVal(tb_entry_c, "Latest timebin of VMM maxima"));
 
   auto width  = metrics_.get_value("strips_vmm_span");
   auto height =  strips_vmm.subset("orthogonal").metrics().get_value("span");

@@ -13,7 +13,6 @@ class Analysis
 public:
   Analysis() {}
   Analysis(H5CC::Group group, uint32_t eventnum);
-  ~Analysis() { save(); }
 
   std::list<std::string> metrics() const;
   Metric metric(std::string name) const;
@@ -26,6 +25,8 @@ public:
   void analyze_event(uint32_t index, Event event);
   Event gather_metrics(uint32_t index, Event event) const;
 
+  void save();
+
 private:
   Settings params_ { Event().parameters() };
   uint32_t num_analyzed_ {0};
@@ -34,7 +35,6 @@ private:
   std::map<std::string, H5CC::DataSet> datasets_;
   H5CC::Group group_;
 
-  void save();
 };
 
 

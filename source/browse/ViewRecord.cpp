@@ -38,27 +38,9 @@ void ViewRecord::set_overlay_type(QString overlay_type)
   display_current_record();
 }
 
-void ViewRecord::set_point_type1x(QString point_type)
+void ViewRecord::set_point_metrics(QVector<PointMetrics> pm)
 {
-  point_type1x_ = point_type;
-  display_current_record();
-}
-
-void ViewRecord::set_point_type2x(QString point_type)
-{
-  point_type2x_ = point_type;
-  display_current_record();
-}
-
-void ViewRecord::set_point_type1y(QString point_type)
-{
-  point_type1y_ = point_type;
-  display_current_record();
-}
-
-void ViewRecord::set_point_type2y(QString point_type)
-{
-  point_type2y_ = point_type;
+  point_metrics_ = pm;
   display_current_record();
 }
 
@@ -91,17 +73,15 @@ void ViewRecord::display_current_record()
 
   auto overlay = make_overlay();
 
-  double strip1 = metrics.get_value(point_type1x_.toStdString());
-  double time1 = metrics.get_value(point_type1y_.toStdString());
-  if ((strip1 >= 0.0) && (strip1 >= record_.strip_start()) && (strip1 <= record_.strip_end())
-      && (time1 >= 0.0) && (time1 >= record_.time_start()) && (time1 <= record_.time_end()))
-    overlay.push_back(make_box(strip1, time1, 0.5, Qt::yellow));
-
-  double strip2 = metrics.get_value(point_type2x_.toStdString());
-  double time2 = metrics.get_value(point_type2y_.toStdString());
-  if ((strip2 >= 0.0) && (strip2 >= record_.strip_start()) && (strip2 <= record_.strip_end())
-    && (time2 >= 0.0) && (time2 >= record_.time_start()) && (time2 <= record_.time_end()))
-    overlay.push_back(make_box(strip2, time2, 0.4, Qt::magenta));
+  for (int i=0; i < point_metrics_.size(); ++i)
+  {
+    auto pm = point_metrics_.at(i);
+    double strip1 = metrics.get_value(pm.x_metric);
+    double time1 = metrics.get_value(pm.y_metric);
+    if ((strip1 >= 0.0) && (strip1 >= record_.strip_start()) && (strip1 <= record_.strip_end())
+        && (time1 >= 0.0) && (time1 >= record_.time_start()) && (time1 <= record_.time_end()))
+      overlay.push_back(make_box(strip1, time1, 0.5, pm.color));
+  }
 
   ui->plotRecord->setBoxes(overlay);
   ui->plotRecord->replotExtras();

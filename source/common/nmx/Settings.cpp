@@ -13,7 +13,7 @@ namespace NMX {
 void Setting::write_H5(H5CC::Group group, std::string name) const
 {
   auto s_group = group.require_group(name);
-  s_group.write_attribute("value", value.as_float().val());
+  s_group.write_attribute("value", double(value.as_float().val()));
   s_group.write_attribute("description", Variant::from_menu(description).to_string());
 }
 

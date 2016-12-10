@@ -10,7 +10,10 @@ Analysis::Analysis(H5CC::Group group, uint32_t eventnum)
     return;
 
   max_num_ = eventnum;
-  num_analyzed_ = group_.read_attribute<uint32_t>("num_analyzed");
+  num_analyzed_ = 0;
+
+  if (group_.has_attribute("num_analyzed"))
+    num_analyzed_ = group_.read_attribute<uint32_t>("num_analyzed");
 
   if (group_.has_group("parameters"))
     params_.read_H5(group_, "parameters");
@@ -19,18 +22,6 @@ Analysis::Analysis(H5CC::Group group, uint32_t eventnum)
   {
     datasets_[d] = group_.open_dataset(d);
     metrics_[d].read_H5(datasets_[d]);
-  }
-
-  if (group_.datasets().empty())
-  {
-    Event evt;
-    evt.set_parameters(params_);
-    evt.analyze();
-    for (auto &a : evt.metrics().data())
-    {
-      datasets_[a.first] = group_.create_dataset<double>(a.first, {max_num_});
-      metrics_[a.first] = Metric(a.second.description);
-    }
   }
 }
 
@@ -41,9 +32,8 @@ void Analysis::save()
 
   group_.write_attribute("num_analyzed", num_analyzed_);
   params_.write_H5(group_, "parameters");
-
-  for (auto &m : metrics_)
-    m.second.write_H5(group_.open_dataset(m.first));
+  for (auto &d : group_.datasets())
+    metrics_.at(d).write_H5(datasets_.at(d));
 }
 
 
@@ -81,6 +71,15 @@ void Analysis::analyze_event(uint32_t index, Event event)
 
   event.set_parameters(params_);
   event.analyze();
+
+  if (group_.datasets().empty())
+  {
+    for (auto &a : event.metrics().data())
+    {
+      datasets_[a.first] = group_.create_dataset<double>(a.first, {max_num_});
+      metrics_[a.first] = Metric(a.second.description);
+    }
+  }
 
   for (auto &a : event.metrics().data())
   {

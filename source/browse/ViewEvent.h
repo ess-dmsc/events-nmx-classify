@@ -58,6 +58,8 @@ private slots:
   void table_changed();
   void display_params();
 
+  void set_point_metrics();
+
   void on_pushShowParams_clicked();
 
 private:
@@ -78,6 +80,8 @@ private:
 
   TableSettings params_model_;
   SpecialDelegate params_delegate_;
+
+  void populateCombos(const NMX::Settings &parameters);
 
 };
 

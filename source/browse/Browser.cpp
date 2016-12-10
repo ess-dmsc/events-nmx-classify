@@ -76,7 +76,7 @@ bool Browser::open_file(QString fileName)
 
   try
   {
-    reader_ = std::make_shared<NMX::FileAPV>(fileName.toStdString());
+    reader_ = std::make_shared<NMX::FileAPV>(fileName.toStdString(), true);
   }
   catch (...)
   {
@@ -136,9 +136,11 @@ void Browser::on_comboGroup_activated(const QString& /*arg1*/)
   reader_->load_analysis(name.toStdString());
 
   double percent = double(reader_->num_analyzed()) / double(reader_->event_count()) * 100;
-
   ui->labelPercent->setText(QString::number(percent) + "% complete ");
+
   analyzer_->set_new_source(reader_);
+  event_viewer_->set_new_source(reader_);
+
   toggleIO(true);
 }
 

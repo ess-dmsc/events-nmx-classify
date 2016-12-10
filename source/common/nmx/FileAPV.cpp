@@ -3,9 +3,13 @@
 
 namespace NMX {
 
-FileAPV::FileAPV(std::string filename)
+FileAPV::FileAPV(std::string filename, bool write_access)
 {
-  file_ = H5CC::File(filename);
+  write_access_ = write_access;
+  if (write_access_)
+    file_ = H5CC::File(filename);
+  else
+    file_ = H5CC::File(filename, H5CC::Access::r_existing);
 }
 
 void FileAPV::open_raw()
@@ -27,6 +31,13 @@ void FileAPV::open_raw()
     dataset_ = H5CC::DataSet();
   }
 }
+
+FileAPV::~FileAPV()
+{
+  if (!analysis_.name().empty())
+    analysis_.save();
+}
+
 
 bool FileAPV::has_raw() const
 {
@@ -83,16 +94,16 @@ void FileAPV::create_analysis(std::string name)
     return;
   file_.open_group("Analyses").create_group(name);
   file_.open_group("Analyses").open_group(name).write_attribute("num_analyzed", 0);
-  DBG << "Created " << name;
+  DBG << "Created analysis '" << name << "'";
 }
 
 void FileAPV::delete_analysis(std::string name)
 {
   if (!file_.require_group("Analyses").has_group(name))
     return;
-  file_.require_group("Analyses").remove(name);
   if (name == analysis_.name())
     analysis_ = Analysis();
+  file_.require_group("Analyses").remove(name);
 }
 
 Metric FileAPV::get_metric(std::string cat) const
@@ -127,7 +138,10 @@ void FileAPV::load_analysis(std::string name)
 {
   if (name == analysis_.name())
     return;
-  if (file_.require_group("Analyses").has_group(name))
+  if (!analysis_.name().empty())
+    analysis_.save();
+
+  if (file_.has_group("Analyses") && file_.open_group("Analyses").has_group(name))
     analysis_ = Analysis(file_.open_group("Analyses").open_group(name), event_count());
   else
     analysis_ = Analysis();

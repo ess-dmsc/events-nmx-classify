@@ -3,6 +3,7 @@
 #include "ui_ViewEvent.h"
 #include "CustomLogger.h"
 #include <QTableWidgetItem>
+#include "ViewRecord.h"
 
 ViewEvent::ViewEvent(QWidget *parent) :
   QWidget(parent),
@@ -30,8 +31,85 @@ ViewEvent::ViewEvent(QWidget *parent) :
   ui->tableMetrics->setSelectionMode(QAbstractItemView::MultiSelection);
   ui->tableMetrics->setSelectionBehavior(QAbstractItemView::SelectRows);
 
-  NMX::Record rec;
-  rec.analyze();
+  ui->eventX->set_title("X plane");
+  ui->eventY->set_title("Y plane");
+
+  populateCombos(NMX::Event().parameters());
+
+  ui->eventX->set_plot_type(ui->comboPlot->currentText());
+  ui->eventY->set_plot_type(ui->comboPlot->currentText());
+
+  ui->eventX->set_overlay_type(ui->comboOverlay->currentText());
+  ui->eventY->set_overlay_type(ui->comboOverlay->currentText());
+
+  set_point_metrics();
+
+  ui->plotProjection->setScaleType("Linear");
+  ui->plotProjection->setPlotStyle("Step center");
+//  ui->plotProjection->set_visible_options(ShowOptions::style | ShowOptions::scale |
+//                                          ShowOptions::labels | ShowOptions::thickness |
+//                                          ShowOptions::grid | ShowOptions::save |
+//                                          ShowOptions::zoom | ShowOptions::dither);
+
+  on_comboPlanes_currentIndexChanged("");
+  on_comboProjection_activated("");
+}
+
+void ViewEvent::set_point_metrics()
+{
+  QVector<PointMetrics> pmetrics;
+  PointMetrics p;
+
+  p.x_metric = ui->comboPoint1x->currentText().toStdString();
+  p.y_metric = ui->comboPoint1y->currentText().toStdString();
+  p.color = Qt::yellow;
+  pmetrics.push_back(p);
+
+  p.x_metric = ui->comboPoint2x->currentText().toStdString();
+  p.y_metric = ui->comboPoint2y->currentText().toStdString();
+  p.color = Qt::magenta;
+  pmetrics.push_back(p);
+
+  ui->eventX->set_point_metrics(pmetrics);
+  ui->eventY->set_point_metrics(pmetrics);
+}
+
+
+ViewEvent::~ViewEvent()
+{
+  saveSettings();
+  delete ui;
+}
+
+void ViewEvent::populateCombos(const NMX::Settings &parameters)
+{
+  NMX::Event evt;
+  evt.set_parameters(parameters);
+  evt.analyze();
+
+  saveSettings();
+
+  ui->comboProjection->blockSignals(true);
+  ui->comboPlot->blockSignals(true);
+  ui->comboOverlay->blockSignals(true);
+  ui->comboPoint1x->blockSignals(true);
+  ui->comboPoint2x->blockSignals(true);
+  ui->comboPoint1y->blockSignals(true);
+  ui->comboPoint2y->blockSignals(true);
+
+  ui->comboProjection->clear();
+  ui->comboPlot->clear();
+  ui->comboOverlay->clear();
+  ui->comboPoint1x->clear();
+  ui->comboPoint2x->clear();
+  ui->comboPoint1y->clear();
+  ui->comboPoint2y->clear();
+
+  for (auto &name : evt.projection_categories())
+    ui->comboProjection->addItem(QString::fromStdString(name));
+  ui->comboProjection->addItem("none");
+
+  NMX::Record rec = evt.x();
   for (auto &name : rec.point_categories())
   {
     ui->comboPlot->addItem(QString::fromStdString(name));
@@ -56,55 +134,22 @@ ViewEvent::ViewEvent(QWidget *parent) :
   ui->comboPoint1y->addItem("none");
   ui->comboPoint2y->addItem("none");
 
-  NMX::Event evt;
-  evt.analyze();
-  for (auto &name : evt.projection_categories())
-    ui->comboProjection->addItem(QString::fromStdString(name));
-  ui->comboProjection->addItem("none");
-
-  ui->eventX->set_title("X plane");
-  ui->eventY->set_title("Y plane");
-
   loadSettings();
 
-  ui->eventX->set_plot_type(ui->comboPlot->currentText());
-  ui->eventY->set_plot_type(ui->comboPlot->currentText());
-
-  ui->eventX->set_overlay_type(ui->comboOverlay->currentText());
-  ui->eventY->set_overlay_type(ui->comboOverlay->currentText());
-
-  ui->eventX->set_point_type1x(ui->comboPoint1x->currentText());
-  ui->eventY->set_point_type1x(ui->comboPoint1x->currentText());
-  ui->eventX->set_point_type1y(ui->comboPoint1y->currentText());
-  ui->eventY->set_point_type1y(ui->comboPoint1y->currentText());
-
-  ui->eventX->set_point_type2x(ui->comboPoint2x->currentText());
-  ui->eventY->set_point_type2x(ui->comboPoint2x->currentText());
-  ui->eventX->set_point_type2y(ui->comboPoint2y->currentText());
-  ui->eventY->set_point_type2y(ui->comboPoint2y->currentText());
-
-  ui->plotProjection->setScaleType("Linear");
-  ui->plotProjection->setPlotStyle("Step center");
-//  ui->plotProjection->set_visible_options(ShowOptions::style | ShowOptions::scale |
-//                                          ShowOptions::labels | ShowOptions::thickness |
-//                                          ShowOptions::grid | ShowOptions::save |
-//                                          ShowOptions::zoom | ShowOptions::dither);
-
-  on_comboPlanes_currentIndexChanged("");
-  on_comboProjection_activated("");
+  ui->comboProjection->blockSignals(false);
+  ui->comboPlot->blockSignals(false);
+  ui->comboOverlay->blockSignals(false);
+  ui->comboPoint1x->blockSignals(false);
+  ui->comboPoint2x->blockSignals(false);
+  ui->comboPoint1y->blockSignals(false);
+  ui->comboPoint2y->blockSignals(false);
 }
-
-ViewEvent::~ViewEvent()
-{
-  saveSettings();
-  delete ui;
-}
-
 
 void ViewEvent::table_changed()
 {
   NMX::Settings parameters = params_model_.get_settings();
   reader_->set_parameters(parameters);
+  populateCombos(parameters);
   refresh_event();
 }
 
@@ -165,6 +210,9 @@ void ViewEvent::set_new_source(std::shared_ptr<NMX::FileAPV> r)
   }
   else
     clear();
+
+  populateCombos(reader_->parameters());
+  refresh_event();
 
   ui->pushShowParams->setChecked(reader_->num_analyzed() == 0);
   on_pushShowParams_clicked();
@@ -357,30 +405,22 @@ void ViewEvent::on_comboPlanes_currentIndexChanged(const QString&)
 
 void ViewEvent::on_comboPoint1x_currentIndexChanged(const QString&)
 {
-  ui->eventX->set_point_type1x(ui->comboPoint1x->currentText());
-  ui->eventY->set_point_type1x(ui->comboPoint1x->currentText());
-  plot_current_event();
+  set_point_metrics();
 }
 
 void ViewEvent::on_comboPoint2x_currentIndexChanged(const QString&)
 {
-  ui->eventX->set_point_type2x(ui->comboPoint2x->currentText());
-  ui->eventY->set_point_type2x(ui->comboPoint2x->currentText());
-  plot_current_event();
+  set_point_metrics();
 }
 
 void ViewEvent::on_comboPoint1y_currentIndexChanged(const QString&)
 {
-  ui->eventX->set_point_type1y(ui->comboPoint1y->currentText());
-  ui->eventY->set_point_type1y(ui->comboPoint1y->currentText());
-  plot_current_event();
+  set_point_metrics();
 }
 
 void ViewEvent::on_comboPoint2y_currentIndexChanged(const QString&)
 {
-  ui->eventX->set_point_type2y(ui->comboPoint2y->currentText());
-  ui->eventY->set_point_type2y(ui->comboPoint2y->currentText());
-  plot_current_event();
+  set_point_metrics();
 }
 
 void ViewEvent::metrics_selected()
