@@ -49,7 +49,7 @@ private:
   Analyzer    *analyzer_;
   AggregateReview *review_;
 
-  bool open_file(QString fileName);
+  void open_file(QString fileName);
 
 };
 

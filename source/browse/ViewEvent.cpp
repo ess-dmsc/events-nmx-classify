@@ -146,9 +146,11 @@ void ViewEvent::populateCombos(const NMX::Settings &parameters)
 void ViewEvent::table_changed()
 {
   saveSettings();
-  NMX::Settings parameters = params_model_.get_settings();
-  reader_->set_parameters(parameters);
-  populateCombos(parameters);
+  auto all_params = reader_->parameters();
+  for (auto p : params_model_.get_settings().data())
+    all_params.set(p.first, p.second);
+  reader_->set_parameters(all_params);
+  populateCombos(all_params);
   refresh_event();
 }
 

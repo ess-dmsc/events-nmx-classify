@@ -233,7 +233,7 @@
             </size>
            </property>
            <property name="text">
-            <string>Strip size (um)</string>
+            <string>Strip pitch (um)</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>

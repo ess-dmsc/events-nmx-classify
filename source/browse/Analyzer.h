@@ -48,11 +48,11 @@ private slots:
   void on_pushAddTest_clicked();
   void on_pushRemoveTest_clicked();
 
-  void rebuild_data();
-
   void on_comboFit_currentTextChanged(const QString &arg1);
 
   void on_doubleUnits_editingFinished();
+
+  void rebuild();
 
 private:
   Ui::Analyzer *ui;
@@ -70,14 +70,17 @@ private:
 
   void populate_combos();
 
-  double xx_norm {1};
-  double yy_norm {1};
-  double zz_norm {1};
+  std::set<size_t> indices_;
+  HistMap1D histogram1d_;
 
   QVector<QColor> palette_ {Qt::black, Qt::darkRed, Qt::darkGreen,
                             Qt::darkYellow, Qt::darkMagenta,
                             Qt::red, Qt::blue,
                             Qt::darkCyan, Qt::darkBlue};
+
+  void replot();
+
+  void replot1d();
 };
 
 #endif // FORM_CALIBRATION_H

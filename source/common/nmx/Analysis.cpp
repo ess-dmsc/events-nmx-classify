@@ -27,7 +27,7 @@ Analysis::Analysis(H5CC::Group group, uint32_t eventnum)
 
 void Analysis::save()
 {
-  if (group_.name().empty())
+  if (group_.name().empty() || !modified_)
     return;
 
   group_.write_attribute("num_analyzed", num_analyzed_);
@@ -42,6 +42,7 @@ void Analysis::set_parameters(const Settings& params)
   if (!group_.name().empty() && (num_analyzed_ > 0))
     return;
 
+  modified_ = true;
   params_ = params;
   if (!group_.name().empty())
     params_.write_H5(group_, "parameters");
@@ -90,6 +91,8 @@ void Analysis::analyze_event(uint32_t index, Event event)
 
   if (index >= num_analyzed_)
     num_analyzed_ = index + 1;
+
+  modified_ = true;
 }
 
 

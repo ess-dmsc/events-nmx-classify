@@ -668,7 +668,7 @@
          </property>
          <property name="icon">
           <iconset resource="resources/tpccres.qrc">
-           <normaloff>:/icons/oxy/16/up.png</normaloff>:/icons/oxy/16/up.png</iconset>
+           <normaloff>:/icons/oxy/16/down.png</normaloff>:/icons/oxy/16/down.png</iconset>
          </property>
          <property name="iconSize">
           <size>

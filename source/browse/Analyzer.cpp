@@ -29,7 +29,7 @@ Analyzer::Analyzer(QWidget *parent)
   ui->tableTests->setSelectionMode(QAbstractItemView::ExtendedSelection);
   ui->tableTests->show();
 
-  connect(&tests_model_, SIGNAL(editing_finished()), this, SLOT(rebuild_data()));
+  connect(&tests_model_, SIGNAL(editing_finished()), this, SLOT(rebuild()));
   connect(&tests_delegate_, SIGNAL(edit_integer(QModelIndex,QVariant,int)),
           &tests_model_, SLOT(setDataQuietly(QModelIndex,QVariant,int)));
 
@@ -44,6 +44,10 @@ Analyzer::Analyzer(QWidget *parent)
 
 void Analyzer::populate_combos()
 {
+  ui->comboWeightsX->blockSignals(true);
+  ui->comboWeightsY->blockSignals(true);
+  ui->comboWeightsZ->blockSignals(true);
+
   ui->comboWeightsX->clear();
   ui->comboWeightsY->clear();
   ui->comboWeightsZ->clear();
@@ -61,6 +65,10 @@ void Analyzer::populate_combos()
   }
 
   tests_model_.set_available_metrics(reader_->metrics());
+
+  ui->comboWeightsX->blockSignals(false);
+  ui->comboWeightsY->blockSignals(false);
+  ui->comboWeightsZ->blockSignals(false);
 }
 
 Analyzer::~Analyzer()
@@ -90,11 +98,12 @@ void Analyzer::set_new_source(std::shared_ptr<NMX::FileAPV> r)
   if (ui->comboWeightsX->count())
     saveSettings();
 
+  rebuild();
+
   populate_combos();
 
   loadSettings();
 
-  rebuild_data();
   plot_block();
   plot_boxes();
 }
@@ -121,53 +130,57 @@ void Analyzer::saveSettings()
   settings.setValue("units", ui->doubleUnits->value());
 }
 
-void Analyzer::rebuild_data()
+void Analyzer::rebuild()
 {
   if (!reader_|| !reader_->event_count())
     return;
 
-  HistMap2D projection2d;
-  HistMap1D histo;
-  std::set<size_t> indices;
-
-  auto weight_x = ui->comboWeightsX->currentText().toStdString();
-  auto weight_y = ui->comboWeightsY->currentText().toStdString();
-  auto weight_z = ui->comboWeightsZ->currentText().toStdString();
-
-  auto xx = reader_->get_metric(weight_x);
-  auto yy = reader_->get_metric(weight_y);
-  auto zz = reader_->get_metric(weight_z);
+  indices_.clear();
 
   auto tests = tests_model_.tests();
-  tests.tests.push_back(MetricTest(weight_x, xx));
-  tests.tests.push_back(MetricTest(weight_y, yy));
-  tests.tests.push_back(MetricTest(weight_z, zz));
 
   std::map<std::string, NMX::Metric> metrics;
   for (auto m : tests.required_metrics())
     metrics[m] = reader_->get_metric(m);
 
+  for (size_t eventID = 0; eventID < reader_->num_analyzed(); ++eventID)
+    if (tests.validate(metrics, eventID))
+      indices_.insert(eventID);
+
+  replot();
+  emit select_indices(indices_);
+}
+
+void Analyzer::replot()
+{
+  if (!reader_|| !reader_->event_count())
+    return;
+
+  HistMap2D projection2d;
+  histogram1d_.clear();
+
+  auto xx = reader_->get_metric(ui->comboWeightsX->currentText().toStdString());
+  auto yy = reader_->get_metric(ui->comboWeightsY->currentText().toStdString());
+  auto zz = reader_->get_metric(ui->comboWeightsZ->currentText().toStdString());
+
   ui->labelX->setText("   " + QString::fromStdString(xx.description()));
   ui->labelY->setText("   " + QString::fromStdString(yy.description()));
   ui->labelZ->setText("   " + QString::fromStdString(zz.description()));
 
-  xx_norm = xx.normalizer();
-  yy_norm = yy.normalizer();
-  zz_norm = zz.normalizer();
+  auto xx_norm = xx.normalizer();
+  auto yy_norm = yy.normalizer();
+  auto zz_norm = zz.normalizer();
 
-  for (size_t eventID = 0; eventID < reader_->num_analyzed(); ++eventID)
-  {
-    if (!tests.validate(metrics, eventID))
-      continue;
+  if ((xx.data().size() > 0) &&
+      (xx.data().size() == yy.data().size()) &&
+      (xx.data().size() == zz.data().size()))
+    for (auto eventID : indices_)
+    {
+      projection2d[c2d(int32_t( (xx.data().at(eventID) - xx.min()) / xx_norm),
+                       int32_t( (yy.data().at(eventID) - yy.min()) / yy_norm))] ++;
 
-    projection2d[c2d(int32_t( (xx.data().at(eventID) - xx.min()) / xx_norm),
-                     int32_t( (yy.data().at(eventID) - yy.min()) / yy_norm))] ++;
-
-    histo[int( zz.data().at(eventID) / zz_norm) * zz_norm]++;
-
-    indices.insert(eventID);
-  }
-
+      histogram1d_[int( zz.data().at(eventID) / zz_norm) * zz_norm]++;
+    }
 
   ui->plot2D->updatePlot((xx.max()-xx.min()) / xx_norm + 1,
                          (yy.max()-yy.min()) / yy_norm + 1, projection2d);
@@ -176,25 +189,33 @@ void Analyzer::rebuild_data()
                       "Count");
   ui->plot2D->replot();
 
+  replot1d();
+}
+
+void Analyzer::replot1d()
+{
   ui->plotHistogram->clearAll();
 
   QPlot::Appearance profile;
 
   profile.default_pen = QPen(palette_[0], 2);
-  ui->plotHistogram->addGraph(histo, profile);
+  ui->plotHistogram->addGraph(histogram1d_, profile);
 
-  EdgeFitter fitter(histo);
-  fitter.analyze(ui->comboFit->currentText().toStdString());
-  ui->labelFit->setText(QString::fromStdString(fitter.info(ui->doubleUnits->value())));
+  auto fit_type = ui->comboFit->currentText().toStdString();
+
+  EdgeFitter fitter(histogram1d_);
+  fitter.analyze(fit_type);
+
+  if (fit_type != "none")
+    ui->labelFit->setText("   " + QString::fromStdString(fitter.info(ui->doubleUnits->value())));
+  else
+    ui->labelFit->setText("   No edge fit model selected");
 
   profile.default_pen = QPen(palette_[1], 2);
   ui->plotHistogram->addGraph(fitter.get_fit_hist(4), profile);
 
   ui->plotHistogram->setAxisLabels(ui->comboWeightsZ->currentText(), "count");
-//  ui->plotHistogram->setTitle(ui->comboWeightsZ->currentText());
   ui->plotHistogram->zoomOut();
-
-  emit select_indices(indices);
 }
 
 void Analyzer::plot_boxes()
@@ -225,17 +246,17 @@ void Analyzer::plot_boxes()
 
 void Analyzer::on_comboWeightsX_currentIndexChanged(const QString& /*arg1*/)
 {
-  rebuild_data();
+  replot();
 }
 
 void Analyzer::on_comboWeightsY_currentIndexChanged(const QString& /*arg1*/)
 {
-  rebuild_data();
+  replot();
 }
 
 void Analyzer::on_comboWeightsZ_currentIndexChanged(const QString& /*arg1*/)
 {
-  rebuild_data();
+  replot();
 }
 
 void Analyzer::plot_block()
@@ -255,7 +276,7 @@ void Analyzer::plot_block()
 void Analyzer::set_metric_z(QString str)
 {
   ui->comboWeightsZ->setCurrentText(str);
-  rebuild_data();
+  replot();
 }
 
 
@@ -284,10 +305,10 @@ void Analyzer::on_pushRemoveTest_clicked()
 
 void Analyzer::on_comboFit_currentTextChanged(const QString &arg1)
 {
-  rebuild_data(); //wrong
+  replot1d();
 }
 
 void Analyzer::on_doubleUnits_editingFinished()
 {
-  rebuild_data(); //wrong
+  replot1d();
 }

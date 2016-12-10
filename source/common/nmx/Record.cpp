@@ -241,7 +241,8 @@ void Record::analyze_reduced()
 }
 
 
-void Record::analyze_finalize(const PlanePerspective& strips_best, const PlanePerspective&strips_vmm)
+void Record::analyze_finalize(const PlanePerspective& strips_best,
+                              const PlanePerspective& strips_vmm)
 {
   double tb_entry_c = -1;
   if (!strips_best.empty())

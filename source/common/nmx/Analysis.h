@@ -35,6 +35,7 @@ private:
   std::map<std::string, H5CC::DataSet> datasets_;
   H5CC::Group group_;
 
+  bool modified_ {false};
 };
 
 

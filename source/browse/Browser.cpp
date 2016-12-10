@@ -70,7 +70,7 @@ void Browser::saveSettings()
   settings.setValue("data_directory", data_directory_);
 }
 
-bool Browser::open_file(QString fileName)
+void Browser::open_file(QString fileName)
 {
   data_directory_ = path_of_file(fileName);
 
@@ -81,13 +81,11 @@ bool Browser::open_file(QString fileName)
   catch (...)
   {
     printException();
-    return false;
+    return;
   }
 
   if (reader_->has_raw())
     reader_->open_raw();
-
-  event_viewer_->set_new_source(reader_);
 
   int evt_count = reader_->event_count();
 
@@ -97,7 +95,6 @@ bool Browser::open_file(QString fileName)
   {
     ui->pushOpen->setText("  " + fileName);
     settings.setValue("recent_file", fileName);
-    event_viewer_->refresh_event();
   }
   else
   {
@@ -110,8 +107,6 @@ bool Browser::open_file(QString fileName)
   if (!reader_->analyses().empty())
     ui->comboGroup->setCurrentText(QString::fromStdString(reader_->analyses().front()));
   on_comboGroup_activated("");
-
-  return (evt_count > 0);
 }
 
 void Browser::toggleIO(bool enable)
