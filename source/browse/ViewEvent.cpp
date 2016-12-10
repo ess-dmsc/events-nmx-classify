@@ -173,9 +173,9 @@ void ViewEvent::enableIO(bool enable)
   ui->spinEventIdx->setEnabled(en);
   ui->comboPlanes->setEnabled(en);
 
-  ui->tableParams->setEnabled(enable && reader_ && !reader_->num_analyzed());
+  bool editparams = enable && reader_ && !reader_->num_analyzed();;
 
-  if (enable) {
+  if (editparams) {
     ui->tableParams->setEditTriggers(QAbstractItemView::AllEditTriggers);
   } else {
     ui->tableParams->setEditTriggers(QAbstractItemView::NoEditTriggers);
@@ -214,8 +214,11 @@ void ViewEvent::set_new_source(std::shared_ptr<NMX::FileAPV> r)
   populateCombos(reader_->parameters());
   refresh_event();
 
-  ui->pushShowParams->setChecked(reader_->num_analyzed() == 0);
-  on_pushShowParams_clicked();
+  if (reader_->num_analyzed() == 0)
+  {
+    ui->tableParams->setVisible(false);
+    on_pushShowParams_clicked();
+  }
   display_params();
 }
 
@@ -442,5 +445,16 @@ void ViewEvent::metrics_selected()
 
 void ViewEvent::on_pushShowParams_clicked()
 {
-  ui->tableParams->setVisible(ui->pushShowParams->isChecked());
+  ui->tableParams->setVisible(!ui->tableParams->isVisible());
+
+  if (ui->tableParams->isVisible())
+  {
+    ui->pushShowParams->setIcon(QPixmap(":/icons/oxy/16/down.png"));
+    ui->pushShowParams->setText("Hide analysis parameters");
+  }
+  else
+  {
+    ui->pushShowParams->setIcon(QPixmap(":/icons/oxy/16/up.png"));
+    ui->pushShowParams->setText("Show analysis parameters");
+  }
 }
