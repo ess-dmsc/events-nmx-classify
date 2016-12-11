@@ -20,7 +20,7 @@ AggregateReview::AggregateReview(QWidget *parent)
   ui->plotHistogram->legend->setVisible(true);
   ui->plotHistogram->legend->setFont(QFont("Helvetica",12));
   ui->plotHistogram->legend->setSelectableParts(QCPLegend::spItems);
-  ui->plotHistogram->setLineThickness(2);
+//  ui->plotHistogram->setLineThickness(2);
   //  ui->plotHistogram->set_visible_options(ShowOptions::zoom | ShowOptions::thickness | ShowOptions::scale | ShowOptions::grid | ShowOptions::save);
 
   connect(ui->plotHistogram, SIGNAL(legendDoubleClick(QCPLegend*,QCPAbstractLegendItem*,QMouseEvent*)),

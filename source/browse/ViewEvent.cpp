@@ -173,7 +173,7 @@ void ViewEvent::set_new_source(std::shared_ptr<NMX::FileAPV> r)
   if (reader_)
     evt_count = reader_->event_count();
 
-  ui->labelOfTotal->setText(" of " + QString::number(evt_count));
+//  ui->labelOfTotal->setText(" of " + QString::number(evt_count));
   ui->spinEventIdx->setEnabled(evt_count > 0);
   ui->spinEventIdx->setRange(1, evt_count);
   ui->spinEventIdx->setValue(1);
@@ -266,8 +266,8 @@ void ViewEvent::on_spinEventIdx_valueChanged(int /*arg1*/)
   if (idx <= int(indices_.size()))
     evt_idx = indices_[idx-1];
 
-  ui->labelOfTotal->setText(" of " + QString::number(indices_.size())
-                            + "   [" + QString::number(evt_idx) + "/" + QString::number(evt_count) + "]");
+  ui->labelOfFiltered->setText(" of " + QString::number(indices_.size()));
+  ui->labelTotal->setText("[" + QString::number(evt_idx) + "/" + QString::number(evt_count) + "]");
   plot_current_event();
 }
 
