@@ -31,6 +31,7 @@ public:
 
   void clear();
   void display_record(const NMX::Record &record);
+  void refresh();
 
   void set_plot_type(QString);
   void set_overlay_type(QString);
@@ -49,8 +50,6 @@ private:
   QString plot_type_;
   QString overlay_type_;
   QVector<PointMetrics> point_metrics_;
-
-  void display_current_record();
 
   HistList2D make_list();
   std::list<QPlot::MarkerBox2D> make_overlay();

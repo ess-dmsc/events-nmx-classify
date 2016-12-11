@@ -4,7 +4,7 @@
 #include "CustomLogger.h"
 #include <QTableWidgetItem>
 #include "ViewRecord.h"
-#include "SearchList.h"
+
 
 ViewEvent::ViewEvent(QWidget *parent) :
   QWidget(parent),
@@ -12,13 +12,10 @@ ViewEvent::ViewEvent(QWidget *parent) :
   ui(new Ui::ViewEvent)
 {
   ui->setupUi(this);
-
-  connect(ui->searchBoxMetrics, SIGNAL(selectionChanged()), this, SLOT(metrics_selected()));
-
-  connect(ui->color1, SIGNAL(clicked()), this, SLOT(clicked_color1()));
-  connect(ui->color2, SIGNAL(clicked()), this, SLOT(clicked_color2()));
-  connect(ui->colorOverlay, SIGNAL(clicked()), this, SLOT(clicked_colorOverlay()));
-
+  ui->eventX->set_title("X plane");
+  ui->eventY->set_title("Y plane");
+  ui->plotProjection->setScaleType("Linear");
+  ui->plotProjection->setPlotStyle("Step center");
   ui->comboPlanes->addItem("X");
   ui->comboPlanes->addItem("Y");
   ui->comboPlanes->addItem("X & Y");
@@ -27,7 +24,7 @@ ViewEvent::ViewEvent(QWidget *parent) :
   ui->tableParams->setItemDelegate(&params_delegate_);
   ui->tableParams->horizontalHeader()->setStretchLastSection(true);
   ui->tableParams->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-  connect(&params_model_, SIGNAL(settings_changed()), this, SLOT(table_changed()));
+  connect(&params_model_, SIGNAL(settings_changed()), this, SLOT(parametersModified()));
 
   ui->tableMetrics->setModel(&metrics_model_);
   ui->tableMetrics->horizontalHeader()->setStretchLastSection(true);
@@ -35,50 +32,28 @@ ViewEvent::ViewEvent(QWidget *parent) :
   ui->tableMetrics->setEditTriggers(QAbstractItemView::NoEditTriggers);
   ui->tableMetrics->setSelectionMode(QAbstractItemView::MultiSelection);
   ui->tableMetrics->setSelectionBehavior(QAbstractItemView::SelectRows);
+  connect(ui->searchBoxMetrics, SIGNAL(selectionChanged()), this, SLOT(metricsFilterChanged()));
 
-  ui->eventX->set_title("X plane");
-  ui->eventY->set_title("Y plane");
+  //record display options
+  connect(ui->color1, SIGNAL(colorChanged(QColor)), this, SLOT(recordOptionsChanged()));
+  connect(ui->push1x, SIGNAL(selectionChanged(QString)), this, SLOT(recordOptionsChanged()));
+  connect(ui->push1y, SIGNAL(selectionChanged(QString)), this, SLOT(recordOptionsChanged()));
+  connect(ui->color2, SIGNAL(colorChanged(QColor)), this, SLOT(recordOptionsChanged()));
+  connect(ui->push2x, SIGNAL(selectionChanged(QString)), this, SLOT(recordOptionsChanged()));
+  connect(ui->push2y, SIGNAL(selectionChanged(QString)), this, SLOT(recordOptionsChanged()));
+  connect(ui->colorOverlay, SIGNAL(colorChanged(QColor)), this, SLOT(recordOptionsChanged()));
+  connect(ui->comboPlot, SIGNAL(currentIndexChanged(const QString &)),
+          this, SLOT(recordOptionsChanged()));
+  connect(ui->comboOverlay, SIGNAL(currentIndexChanged(const QString &)),
+          this, SLOT(recordOptionsChanged()));
+  connect(ui->comboProjection, SIGNAL(currentIndexChanged(const QString &)),
+          this, SLOT(plotProjection()));
 
-  populateCombos(NMX::Event().parameters());
-
-  ui->eventX->set_plot_type(ui->comboPlot->currentText());
-  ui->eventY->set_plot_type(ui->comboPlot->currentText());
-
-  ui->eventX->set_overlay_type(ui->comboOverlay->currentText());
-  ui->eventY->set_overlay_type(ui->comboOverlay->currentText());
-
-  set_point_metrics();
-
-  ui->plotProjection->setScaleType("Linear");
-  ui->plotProjection->setPlotStyle("Step center");
-//  ui->plotProjection->set_visible_options(ShowOptions::style | ShowOptions::scale |
-//                                          ShowOptions::labels | ShowOptions::thickness |
-//                                          ShowOptions::grid | ShowOptions::save |
-//                                          ShowOptions::zoom | ShowOptions::dither);
+  populateCombos();
 
   on_comboPlanes_currentIndexChanged("");
-  on_comboProjection_activated("");
+  recordOptionsChanged();
 }
-
-void ViewEvent::set_point_metrics()
-{
-  QVector<PointMetrics> pmetrics;
-  PointMetrics p;
-
-  p.x_metric = ui->push1x->text().toStdString();
-  p.y_metric = ui->push1y->text().toStdString();
-  p.color = ui->color1->color();
-  pmetrics.push_back(p);
-
-  p.x_metric = ui->push2x->text().toStdString();
-  p.y_metric = ui->push2y->text().toStdString();
-  p.color = ui->color2->color();
-  pmetrics.push_back(p);
-
-  ui->eventX->set_point_metrics(pmetrics);
-  ui->eventY->set_point_metrics(pmetrics);
-}
-
 
 ViewEvent::~ViewEvent()
 {
@@ -86,10 +61,11 @@ ViewEvent::~ViewEvent()
   delete ui;
 }
 
-void ViewEvent::populateCombos(const NMX::Settings &parameters)
+void ViewEvent::populateCombos()
 {
   NMX::Event evt;
-  evt.set_parameters(parameters);
+  if (reader_)
+    evt.set_parameters(reader_->parameters());
   evt.analyze();
 
   ui->comboProjection->blockSignals(true);
@@ -115,34 +91,34 @@ void ViewEvent::populateCombos(const NMX::Settings &parameters)
   ui->comboPlot->addItem("everything");
 
   loadSettings();
-  ui->eventX->set_overlay_color(ui->colorOverlay->color());
-  ui->eventY->set_overlay_color(ui->colorOverlay->color());
 
   ui->comboProjection->blockSignals(false);
   ui->comboPlot->blockSignals(false);
   ui->comboOverlay->blockSignals(false);
 }
 
-void ViewEvent::table_changed()
+void ViewEvent::parametersModified()
 {
-  saveSettings();
   auto all_params = reader_->parameters();
   for (auto p : params_model_.get_settings().data())
     all_params.set(p.first, p.second);
   reader_->set_parameters(all_params);
-  populateCombos(all_params);
-  refresh_event();
+  saveSettings();
+  populateCombos();
+  plot_current_event();
 }
 
-void ViewEvent::display_params()
+void ViewEvent::update_parameters_model()
 {
   NMX::Settings settings;
+  bool x_visible = ui->comboPlanes->currentText().contains("X");
+  bool y_visible = ui->comboPlanes->currentText().contains("Y");
   if (reader_)
   {
     for (auto s : reader_->parameters().data())
     {
-      if ((x_visible() && QString::fromStdString(s.first).contains("x.")) ||
-          (y_visible() && QString::fromStdString(s.first).contains("y.")))
+      if ((x_visible && QString::fromStdString(s.first).contains("x.")) ||
+          (y_visible && QString::fromStdString(s.first).contains("y.")))
         settings.set(s.first, s.second);
     }
   }
@@ -173,17 +149,12 @@ void ViewEvent::set_new_source(std::shared_ptr<NMX::FileAPV> r)
   if (reader_)
     evt_count = reader_->event_count();
 
-//  ui->labelOfTotal->setText(" of " + QString::number(evt_count));
   ui->spinEventIdx->setEnabled(evt_count > 0);
   ui->spinEventIdx->setRange(1, evt_count);
   ui->spinEventIdx->setValue(1);
 
   if (evt_count > 0)
   {
-    QSettings settings;
-    settings.beginGroup("Program");
-    ui->spinEventIdx->setValue(settings.value("current_idx").toInt());
-
     std::set<size_t> indices;
     for (int i=0; i < evt_count; ++i)
       indices.insert(i);
@@ -193,15 +164,16 @@ void ViewEvent::set_new_source(std::shared_ptr<NMX::FileAPV> r)
     clear();
 
   saveSettings();
-  populateCombos(reader_->parameters());
-  refresh_event();
+  populateCombos();
 
-  if (reader_->num_analyzed() == 0)
+  if (reader_->num_analyzed() != 0)
   {
     ui->tableParams->setVisible(false);
     on_pushShowParams_clicked();
   }
-  display_params();
+  update_parameters_model();
+
+  plot_current_event();
 }
 
 void ViewEvent::loadSettings()
@@ -257,59 +229,39 @@ void ViewEvent::clear()
 
 void ViewEvent::on_spinEventIdx_valueChanged(int /*arg1*/)
 {
+  plot_current_event();
+}
+
+void ViewEvent::recordOptionsChanged()
+{
+  set_record_options();
+  refresh_record_plots();
+}
+
+void ViewEvent::plot_current_event()
+{
   int evt_count {0};
   if (reader_)
     evt_count = reader_->event_count();
 
   int idx = ui->spinEventIdx->value();
   size_t evt_idx = 0;
-  if (idx <= int(indices_.size()))
-    evt_idx = indices_[idx-1];
+  if ((idx > 0) && (idx <= int(indices_.size())))
+    evt_idx = indices_.at(idx-1);
 
   ui->labelOfFiltered->setText(" of " + QString::number(indices_.size()));
   ui->labelTotal->setText("[" + QString::number(evt_idx) + "/" + QString::number(evt_count) + "]");
-  plot_current_event();
-}
 
-void ViewEvent::on_comboPlot_currentIndexChanged(const QString &/*arg1*/)
-{
-  ui->eventX->set_plot_type(ui->comboPlot->currentText());
-  ui->eventY->set_plot_type(ui->comboPlot->currentText());
-}
 
-void ViewEvent::on_comboOverlay_currentIndexChanged(const QString &/*arg1*/)
-{
-  ui->eventX->set_overlay_type(ui->comboOverlay->currentText());
-  ui->eventY->set_overlay_type(ui->comboOverlay->currentText());
-}
-
-void ViewEvent::on_comboProjection_activated(const QString &/*arg1*/)
-{
-  bool visible = (ui->comboProjection->currentText() != "none");
-  ui->plotProjection->setVisible(visible);
-  if (visible)
-    plot_current_event();
-}
-
-void ViewEvent::refresh_event()
-{
-  plot_current_event();
-}
-
-void ViewEvent::plot_current_event()
-{
-  int idx = ui->spinEventIdx->value();
-  size_t evt_idx = 0;
-  if ((idx > 0) && (idx <= int(indices_.size())))
-    evt_idx = indices_[idx-1];
-
-  if (!reader_ || (evt_idx >= reader_->event_count()))
+  if (!reader_ || (evt_idx >= evt_count))
   {
     clear();
     return;
   }
 
   event_ = reader_->get_event(evt_idx);
+
+  set_record_options();
 
   ui->eventX->display_record(event_.x());
   ui->eventY->display_record(event_.y());
@@ -321,12 +273,28 @@ void ViewEvent::plot_current_event()
     metrics = event_.y().metrics();
 
   QStringList list;
+
   for (auto a : metrics.data())
     list.push_back(QString::fromStdString(a.first));
-
   ui->searchBoxMetrics->setList(list);
 
-  display_projection(event_);
+  auto coord_metrics = event_.x().metrics().with_suffix("_c", false);
+
+  list.clear();
+  list.push_back("none");
+  for (auto m : coord_metrics.with_prefix("strips_", false).data())
+    list.push_back(QString::fromStdString(m.first));
+  ui->push1x->setList(list);
+  ui->push2x->setList(list);
+
+  list.clear();
+  list.push_back("none");
+  for (auto m : coord_metrics.with_prefix("timebins_", false).data())
+    list.push_back(QString::fromStdString(m.first));
+  ui->push1y->setList(list);
+  ui->push2y->setList(list);
+
+  plotProjection();
 }
 
 void ViewEvent::set_indices(std::set<size_t> indices)
@@ -335,7 +303,6 @@ void ViewEvent::set_indices(std::set<size_t> indices)
   std::copy( indices.begin(), indices.end(), std::inserter( indices_, indices_.end() ) );
 
   size_t evt_count {0};
-
   if (reader_)
     evt_count = reader_->event_count();
 
@@ -346,32 +313,32 @@ void ViewEvent::set_indices(std::set<size_t> indices)
   if (indices_.size() < evt_count)
     evt_count = indices_.size();
 
-  ui->spinEventIdx->setEnabled(evt_count > 0);
-  ui->spinEventIdx->setRange(1, evt_count);
-  ui->spinEventIdx->setValue(1);
-  on_spinEventIdx_valueChanged(0);
+  auto current_val = ui->spinEventIdx->value();
+  ui->spinEventIdx->setEnabled(indices_.size() > 0);
+  ui->spinEventIdx->setRange(1, indices_.size());
+  if (current_val <= indices_.size())
+    ui->spinEventIdx->setValue(current_val);
+  else
+    ui->spinEventIdx->setValue(1);
+
+  plot_current_event();
 }
 
-void ViewEvent::display_projection(NMX::Event &evt)
+void ViewEvent::plotProjection()
 {
+  bool visible = (ui->comboProjection->currentText() != "none");
+  ui->plotProjection->setVisible(visible);
+  if (!visible)
+    return;
+
   ui->plotProjection->clearAll();
 
   QPlot::Appearance profile;
   profile.default_pen = QPen(Qt::darkRed, 2);
-  ui->plotProjection->addGraph(evt.get_projection(ui->comboProjection->currentText().toStdString()), profile);
+  ui->plotProjection->addGraph(event_.get_projection(ui->comboProjection->currentText().toStdString()), profile);
   ui->plotProjection->setAxisLabels("position", "value");
   ui->plotProjection->setTitle(ui->comboProjection->currentText());
   ui->plotProjection->zoomOut();
-}
-
-bool ViewEvent::x_visible()
-{
-  return ui->comboPlanes->currentText().contains("X");
-}
-
-bool ViewEvent::y_visible()
-{
-  return ui->comboPlanes->currentText().contains("Y");
 }
 
 void ViewEvent::on_comboPlanes_currentIndexChanged(const QString&)
@@ -379,18 +346,16 @@ void ViewEvent::on_comboPlanes_currentIndexChanged(const QString&)
   ui->eventX->setVisible(ui->comboPlanes->currentText().contains("X"));
   ui->eventY->setVisible(ui->comboPlanes->currentText().contains("Y"));
   plot_current_event();
-  display_params();
+  update_parameters_model();
 }
 
-void ViewEvent::metrics_selected()
+void ViewEvent::metricsFilterChanged()
 {
-  NMX::MetricSet metrics;
+  auto metrics = event_.metrics();
   if (ui->comboPlanes->currentText() == "X")
     metrics = event_.x().metrics();
   else if (ui->comboPlanes->currentText() == "Y")
     metrics = event_.y().metrics();
-  else
-    metrics = event_.metrics();
 
   NMX::MetricSet final;
   for (auto name : ui->searchBoxMetrics->selection())
@@ -415,77 +380,38 @@ void ViewEvent::on_pushShowParams_clicked()
   }
 }
 
-void ViewEvent::on_push1x_clicked()
+void ViewEvent::set_record_options()
 {
-  makeCoordPopup(ui->push1x,
-                 event_.x().metrics().with_prefix("strips_", false).with_suffix("_c", false));
-}
+  QVector<PointMetrics> pmetrics;
+  PointMetrics p;
 
-void ViewEvent::on_push1y_clicked()
-{
-  makeCoordPopup(ui->push1y,
-                 event_.x().metrics().with_prefix("timebins_", false).with_suffix("_c", false));
-}
+  p.x_metric = ui->push1x->text().toStdString();
+  p.y_metric = ui->push1y->text().toStdString();
+  p.color = ui->color1->color();
+  pmetrics.push_back(p);
 
-void ViewEvent::on_push2x_clicked()
-{
-  makeCoordPopup(ui->push2x,
-                 event_.x().metrics().with_prefix("strips_", false).with_suffix("_c", false));
-}
+  p.x_metric = ui->push2x->text().toStdString();
+  p.y_metric = ui->push2y->text().toStdString();
+  p.color = ui->color2->color();
+  pmetrics.push_back(p);
 
-void ViewEvent::on_push2y_clicked()
-{
-  makeCoordPopup(ui->push2y,
-                 event_.x().metrics().with_prefix("timebins_", false).with_suffix("_c", false));
-}
+  ui->eventX->set_plot_type(ui->comboPlot->currentText());
+  ui->eventY->set_plot_type(ui->comboPlot->currentText());
 
-void ViewEvent::makeCoordPopup(QPushButton* button,
-                               NMX::MetricSet metric_set)
-{
-  QStringList list;
-  list.push_back("none");
-  for (auto &metric : metric_set.data())
-    list.push_back(QString::fromStdString(metric.first));
-  if (popupSearchDialog(button, list))
-    set_point_metrics();
-}
+  ui->eventX->set_overlay_type(ui->comboOverlay->currentText());
+  ui->eventY->set_overlay_type(ui->comboOverlay->currentText());
 
-void ViewEvent::clicked_color1()
-{
-  pick_color(ui->color1);
-  set_point_metrics();
-}
-
-void ViewEvent::clicked_color2()
-{
-  pick_color(ui->color2);
-  set_point_metrics();
-}
-
-void ViewEvent::clicked_colorOverlay()
-{
-  pick_color(ui->colorOverlay);
   ui->eventX->set_overlay_color(ui->colorOverlay->color());
   ui->eventY->set_overlay_color(ui->colorOverlay->color());
+
+  ui->eventX->set_point_metrics(pmetrics);
+  ui->eventY->set_point_metrics(pmetrics);
 }
 
-void ViewEvent::pick_color(color_widgets::ColorPreview* prev)
+void ViewEvent::refresh_record_plots()
 {
-  QDialog *popup = new QDialog(this);
-  QBoxLayout *popupLayout = new QHBoxLayout(popup);
-  popupLayout->setMargin(2);
-
-  color_widgets::HueSlider* slider_
-      = new color_widgets::HueSlider(Qt::Horizontal, popup);
-  slider_->setColor(prev->color());
-
-  popupLayout->addWidget(slider_);
-
-  popup->move(prev->mapToGlobal(prev->rect().topLeft()));
-  popup->setWindowFlags(Qt::FramelessWindowHint | Qt::Popup);
-
-  popup->exec();
-  prev->setColor(slider_->color());
-  delete popup;
+  if (ui->eventX->isVisible())
+    ui->eventX->refresh();
+  if (ui->eventY->isVisible())
+    ui->eventY->refresh();
 }
-

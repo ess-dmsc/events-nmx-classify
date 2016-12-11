@@ -7,6 +7,7 @@
 #include <QLineEdit>
 #include <QListWidget>
 #include <QLabel>
+#include <QPushButton>
 #include "SearchBox.h"
 
 class MyListWidget : public QListWidget
@@ -90,7 +91,34 @@ private:
   QString selection_;
 };
 
-bool popupSearchDialog(QPushButton *button, QStringList choices);
+bool popupSearchDialog(QPushButton *button,
+                       QStringList choices,
+                       QString default_filter = "",
+                       QString filter_label = "Filter:");
+
+
+class FilterCombo : public QPushButton
+{
+  Q_OBJECT
+
+public:
+  explicit FilterCombo(QWidget *parent = 0);
+
+  void setList(QStringList lst) { list_ = lst; }
+  void setDefaultFilter(QString filter) { default_filter_ = filter; }
+  void setFilterLabel(QString txt) { filter_label_ = txt; }
+
+signals:
+  void selectionChanged(QString);
+
+private slots:
+  void clickedButton();
+
+private:
+  QString default_filter_;
+  QString filter_label_ {"Filter:"};
+  QStringList list_;
+};
 
 
 #endif

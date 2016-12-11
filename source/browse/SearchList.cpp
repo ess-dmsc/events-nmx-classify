@@ -5,7 +5,6 @@
 #include <QGridLayout>
 #include <QBoxLayout>
 #include <QKeyEvent>
-#include <QPushButton>
 
 void MyListWidget::keyPressEvent(QKeyEvent *event)
 {
@@ -193,7 +192,9 @@ void SearchDialog::focusInEvent(QFocusEvent* e)
   widget_->setFocus();
 }
 
-bool popupSearchDialog(QPushButton* button, QStringList choices)
+bool popupSearchDialog(QPushButton* button, QStringList choices,
+                       QString default_filter,
+                       QString filter_label)
 {
   SearchDialog* popup = new SearchDialog();
   popup->setWindowFlags(Qt::FramelessWindowHint | Qt::Popup);
@@ -203,7 +204,9 @@ bool popupSearchDialog(QPushButton* button, QStringList choices)
   for (auto &choice : choices)
     maxwidth = std::max(maxwidth, fm.width(choice) + 30);
   popup->setList(choices);
+  popup->setFilter(default_filter);
   popup->Select(button->text());
+  popup->setFilterLabel(filter_label);
   QRect rect;
   rect.setTopLeft(button->mapToGlobal(button->rect().topLeft()));
   rect.setWidth(maxwidth);
@@ -222,3 +225,14 @@ bool popupSearchDialog(QPushButton* button, QStringList choices)
   return result;
 }
 
+FilterCombo::FilterCombo(QWidget *parent)
+  : QPushButton(parent)
+{
+  connect(this, SIGNAL(clicked(bool)), this, SLOT(clickedButton()));
+}
+
+void FilterCombo::clickedButton()
+{
+  if (popupSearchDialog(this, list_))
+    emit selectionChanged(text());
+}

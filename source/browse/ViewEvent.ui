@@ -273,7 +273,7 @@
           </widget>
          </item>
          <item>
-          <widget class="color_widgets::ColorPreview" name="colorOverlay" native="true">
+          <widget class="PreviewHue" name="colorOverlay" native="true">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -361,7 +361,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="push1x">
+          <widget class="FilterCombo" name="push1x">
            <property name="minimumSize">
             <size>
              <width>220</width>
@@ -400,7 +400,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="push1y">
+          <widget class="FilterCombo" name="push1y">
            <property name="minimumSize">
             <size>
              <width>220</width>
@@ -439,7 +439,7 @@
           </widget>
          </item>
          <item>
-          <widget class="color_widgets::ColorPreview" name="color1" native="true">
+          <widget class="PreviewHue" name="color1" native="true">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -516,7 +516,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="push2x">
+          <widget class="FilterCombo" name="push2x">
            <property name="minimumSize">
             <size>
              <width>220</width>
@@ -555,7 +555,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="push2y">
+          <widget class="FilterCombo" name="push2y">
            <property name="minimumSize">
             <size>
              <width>220</width>
@@ -594,7 +594,7 @@
           </widget>
          </item>
          <item>
-          <widget class="color_widgets::ColorPreview" name="color2" native="true">
+          <widget class="PreviewHue" name="color2" native="true">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -842,9 +842,14 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>color_widgets::ColorPreview</class>
+   <class>FilterCombo</class>
+   <extends>QPushButton</extends>
+   <header>SearchList.h</header>
+  </customwidget>
+  <customwidget>
+   <class>PreviewHue</class>
    <extends>QWidget</extends>
-   <header>color_preview.hpp</header>
+   <header>PreviewHue.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

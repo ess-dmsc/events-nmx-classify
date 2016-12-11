@@ -29,20 +29,23 @@ void ViewRecord::set_title(QString title)
 void ViewRecord::set_plot_type(QString plot_type)
 {
   plot_type_ = plot_type;
-  display_current_record();
 }
 
 void ViewRecord::set_overlay_type(QString overlay_type)
 {
   overlay_type_ = overlay_type;
-  display_current_record();
 }
 
 void ViewRecord::set_point_metrics(QVector<PointMetrics> pm)
 {
   point_metrics_ = pm;
-  display_current_record();
 }
+
+void ViewRecord::set_overlay_color(QColor col)
+{
+  overlay_color_ = col;
+}
+
 
 void ViewRecord::clear()
 {
@@ -55,10 +58,10 @@ void ViewRecord::clear()
 void ViewRecord::display_record(const NMX::Record &record)
 {
   record_ = record;
-  display_current_record();
+  refresh();
 }
 
-void ViewRecord::display_current_record()
+void ViewRecord::refresh()
 {
   clear();
 
@@ -131,8 +134,3 @@ std::list<QPlot::MarkerBox2D> ViewRecord::make_overlay()
   return ret;
 }
 
-void ViewRecord::set_overlay_color(QColor col)
-{
-  overlay_color_ = col;
-  display_current_record();
-}
