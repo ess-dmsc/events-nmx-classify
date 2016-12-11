@@ -27,17 +27,15 @@ public:
   explicit ViewRecord(QWidget *parent = 0);
   ~ViewRecord();
 
-  void display_record(const NMX::Record &record);
+  void set_title(QString);
 
   void clear();
+  void display_record(const NMX::Record &record);
 
   void set_plot_type(QString);
   void set_overlay_type(QString);
-
+  void set_overlay_color(QColor);
   void set_point_metrics(QVector<PointMetrics>);
-
-
-  void set_title(QString);
 
 private:
   Ui::ViewRecord *ui;
@@ -56,6 +54,8 @@ private:
 
   HistList2D make_list();
   std::list<QPlot::MarkerBox2D> make_overlay();
+
+  QColor overlay_color_ {Qt::red};
 
   QPlot::MarkerBox2D make_box(double cx, double cy, double size, QColor color);
 };

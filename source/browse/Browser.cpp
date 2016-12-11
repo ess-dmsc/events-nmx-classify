@@ -21,12 +21,12 @@ Browser::Browser(QWidget *parent) :
   connect(this, SIGNAL(enableIO(bool)), event_viewer_, SLOT(enableIO(bool)));
 
   analyzer_ = new Analyzer();
-  ui->tabWidget->addTab(analyzer_, "Analyzer");
+  ui->tabWidget->addTab(analyzer_, "Dataset metrics");
   connect(analyzer_, SIGNAL(toggleIO(bool)), this, SLOT(toggleIO(bool)));
   connect(this, SIGNAL(enableIO(bool)), analyzer_, SLOT(enableIO(bool)));
 
   review_ = new AggregateReview();
-  ui->tabWidget->addTab(review_, "Review");
+  ui->tabWidget->addTab(review_, "Aggregate hists");
   connect(review_, SIGNAL(digDownTown(QString,QString,QString)),
           this, SLOT(digDownTown(QString,QString,QString)));
 

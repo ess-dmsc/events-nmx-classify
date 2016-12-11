@@ -63,6 +63,16 @@
            <property name="text">
             <string/>
            </property>
+           <property name="icon">
+            <iconset resource="resources/tpccres.qrc">
+             <normaloff>:/icons/oxy/16/1downarrow.png</normaloff>:/icons/oxy/16/1downarrow.png</iconset>
+           </property>
+           <property name="iconSize">
+            <size>
+             <width>10</width>
+             <height>10</height>
+            </size>
+           </property>
           </widget>
          </item>
          <item>
@@ -103,6 +113,16 @@
            </property>
            <property name="text">
             <string/>
+           </property>
+           <property name="icon">
+            <iconset resource="resources/tpccres.qrc">
+             <normaloff>:/icons/oxy/16/1downarrow.png</normaloff>:/icons/oxy/16/1downarrow.png</iconset>
+           </property>
+           <property name="iconSize">
+            <size>
+             <width>10</width>
+             <height>10</height>
+            </size>
            </property>
           </widget>
          </item>
@@ -185,6 +205,16 @@
            </property>
            <property name="text">
             <string/>
+           </property>
+           <property name="icon">
+            <iconset resource="resources/tpccres.qrc">
+             <normaloff>:/icons/oxy/16/1downarrow.png</normaloff>:/icons/oxy/16/1downarrow.png</iconset>
+           </property>
+           <property name="iconSize">
+            <size>
+             <width>10</width>
+             <height>10</height>
+            </size>
            </property>
           </widget>
          </item>

@@ -11,6 +11,8 @@
 #include "BoxesModel.h"
 
 #include "Settings.h"
+#include "hue_slider.hpp"
+#include "color_preview.hpp"
 
 #include <QLabel>
 
@@ -65,6 +67,11 @@ private slots:
   void on_push2x_clicked();
   void on_push2y_clicked();
 
+  void clicked_color1();
+  void clicked_color2();
+
+  void clicked_colorOverlay();
+
 private:
   Ui::ViewEvent *ui;
 
@@ -88,6 +95,8 @@ private:
 
   void make_coord_popup(QPushButton *button,
                         NMX::MetricSet metric_set);
+
+  void pick_color(color_widgets::ColorPreview* prev);
 };
 
 #endif // FORM_CALIBRATION_H

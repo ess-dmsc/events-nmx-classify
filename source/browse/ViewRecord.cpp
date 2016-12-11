@@ -105,7 +105,9 @@ QPlot::MarkerBox2D ViewRecord::make_box(double cx, double cy, double size, QColo
   box.y1  = cy - 0.5 *size;
   box.y2  = cy + 0.5 *size;
   box.border = color;
-  QColor color2 = QColor::fromHsvF(color.hsvHueF(), color.hsvSaturationF(), color.valueF() * 0.50);
+  QColor color2 = QColor::fromHsvF(color.hsvHueF(),
+                                   color.hsvSaturationF(),
+                                   color.valueF() * 0.50);
   color2.setAlpha(90);
   box.fill = color2;
   return box;
@@ -121,7 +123,7 @@ std::list<QPlot::MarkerBox2D> ViewRecord::make_overlay()
 
   for (auto &i : record_.get_points(overlay_type_.toStdString()))
   {
-    auto box = make_box(i.x, i.y, 0.9, Qt::red);
+    auto box = make_box(i.x, i.y, 0.9, overlay_color_);
     box.fill.setAlpha(48);
     ret.push_back(box);
   }
@@ -129,6 +131,8 @@ std::list<QPlot::MarkerBox2D> ViewRecord::make_overlay()
   return ret;
 }
 
-
-
-
+void ViewRecord::set_overlay_color(QColor col)
+{
+  overlay_color_ = col;
+  display_current_record();
+}

@@ -35,6 +35,7 @@ include_directories(${CMAKE_SOURCE_DIR}
                     ${CMAKE_SOURCE_DIR}/common/h5cc
                     ${CMAKE_SOURCE_DIR}/common/nmx
                     ${CMAKE_SOURCE_DIR}/browse
+                    ${CMAKE_SOURCE_DIR}/browse/ColorWidgets
                     ${CMAKE_SOURCE_DIR}/browse/plots
                     ${CMAKE_SOURCE_DIR}/browse/plots/qcustomplot
                     ${HDF5_INCLUDE_DIR}
@@ -85,6 +86,7 @@ add_executable(
   ${sources_browse}
   ${sources_common}
   browse/resources/tpccres.qrc
+  browse/ColorWidgets/color_widgets.qrc
 )
 
 target_link_libraries(

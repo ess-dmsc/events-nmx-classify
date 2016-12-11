@@ -15,6 +15,10 @@ ViewEvent::ViewEvent(QWidget *parent) :
 
   connect(ui->searchBoxMetrics, SIGNAL(selectionChanged()), this, SLOT(metrics_selected()));
 
+  connect(ui->color1, SIGNAL(clicked()), this, SLOT(clicked_color1()));
+  connect(ui->color2, SIGNAL(clicked()), this, SLOT(clicked_color2()));
+  connect(ui->colorOverlay, SIGNAL(clicked()), this, SLOT(clicked_colorOverlay()));
+
   ui->comboPlanes->addItem("X");
   ui->comboPlanes->addItem("Y");
   ui->comboPlanes->addItem("X & Y");
@@ -63,12 +67,12 @@ void ViewEvent::set_point_metrics()
 
   p.x_metric = ui->push1x->text().toStdString();
   p.y_metric = ui->push1y->text().toStdString();
-  p.color = Qt::yellow;
+  p.color = ui->color1->color();
   pmetrics.push_back(p);
 
   p.x_metric = ui->push2x->text().toStdString();
   p.y_metric = ui->push2y->text().toStdString();
-  p.color = Qt::magenta;
+  p.color = ui->color2->color();
   pmetrics.push_back(p);
 
   ui->eventX->set_point_metrics(pmetrics);
@@ -208,8 +212,10 @@ void ViewEvent::loadSettings()
   ui->comboProjection->setCurrentText(settings.value("projection", "none").toString());
   ui->push1x->setText(settings.value("point1x").toString());
   ui->push2x->setText(settings.value("point2x").toString());
+  ui->color1->setColor(QColor(settings.value("color1", QColor(Qt::yellow).name()).toString()));
   ui->push1y->setText(settings.value("point1y").toString());
   ui->push2y->setText(settings.value("point2y").toString());
+  ui->color2->setColor(QColor(settings.value("color2", QColor(Qt::magenta).name()).toString()));
   ui->comboPlanes->setCurrentText(settings.value("show_planes", "X & Y").toString());
   ui->searchBoxMetrics->setFilter(settings.value("filter").toString());
 }
@@ -225,8 +231,10 @@ void ViewEvent::saveSettings()
   settings.setValue("projection", ui->comboProjection->currentText());
   settings.setValue("point1x", ui->push1x->text());
   settings.setValue("point2x", ui->push2x->text());
+  settings.setValue("color1", ui->color1->color().name());
   settings.setValue("point1y", ui->push1y->text());
   settings.setValue("point2y", ui->push2y->text());
+  settings.setValue("color2", ui->color2->color().name());
   settings.setValue("show_planes", ui->comboPlanes->currentText());
   settings.setValue("filter", ui->searchBoxMetrics->filter());
 }
@@ -394,12 +402,12 @@ void ViewEvent::on_pushShowParams_clicked()
   if (ui->tableParams->isVisible())
   {
     ui->pushShowParams->setIcon(QPixmap(":/icons/oxy/16/down.png"));
-    ui->pushShowParams->setText("Hide analysis parameters");
+    ui->pushShowParams->setText("   Hide analysis parameters");
   }
   else
   {
     ui->pushShowParams->setIcon(QPixmap(":/icons/oxy/16/up.png"));
-    ui->pushShowParams->setText("Show analysis parameters");
+    ui->pushShowParams->setText("   Show analysis parameters");
   }
 }
 
@@ -467,6 +475,45 @@ void ViewEvent::make_coord_popup(QPushButton* button,
     set_point_metrics();
   }
 
+  delete popup;
+}
+
+void ViewEvent::clicked_color1()
+{
+  pick_color(ui->color1);
+  set_point_metrics();
+}
+
+void ViewEvent::clicked_color2()
+{
+  pick_color(ui->color2);
+  set_point_metrics();
+}
+
+void ViewEvent::clicked_colorOverlay()
+{
+  pick_color(ui->colorOverlay);
+  ui->eventX->set_overlay_color(ui->colorOverlay->color());
+  ui->eventY->set_overlay_color(ui->colorOverlay->color());
+}
+
+void ViewEvent::pick_color(color_widgets::ColorPreview* prev)
+{
+  QDialog *popup = new QDialog(this);
+  QBoxLayout *popupLayout = new QHBoxLayout(popup);
+  popupLayout->setMargin(2);
+
+  color_widgets::HueSlider* slider_
+      = new color_widgets::HueSlider(Qt::Horizontal, popup);
+  slider_->setColor(prev->color());
+
+  popupLayout->addWidget(slider_);
+
+  popup->move(prev->mapToGlobal(prev->rect().topLeft()));
+  popup->setWindowFlags(Qt::FramelessWindowHint | Qt::Popup);
+
+  popup->exec();
+  prev->setColor(slider_->color());
   delete popup;
 }
 

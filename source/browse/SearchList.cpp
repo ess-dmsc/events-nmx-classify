@@ -44,13 +44,6 @@ SearchList::SearchList(QWidget *parent)
   mainGrid->addWidget(subset_list_, 1, 0, 1, -1);
   mainGrid->setMargin(0);
   setLayout(mainGrid);
-
-
-//  QAction *action = new QAction(this);
-//  action->setShortcut(Qt::Key_Enter);
-
-//  connect(action, SIGNAL(triggered()), this, SLOT(double_click()));
-//  this->addAction(action);
 }
 
 void SearchList::setSingleSelection(bool ss)
