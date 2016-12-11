@@ -4,6 +4,7 @@
 #include "CustomLogger.h"
 #include <QTableWidgetItem>
 #include "ViewRecord.h"
+#include "SearchList.h"
 
 ViewEvent::ViewEvent(QWidget *parent) :
   QWidget(parent),
@@ -435,20 +436,21 @@ void ViewEvent::make_coord_popup(QPushButton* button,
 
   QStringList list;
   list.push_back("none");
-  QString selection = button->text();
   int maxwidth = 220;
   QFontMetrics fm(button->font());
+  QMap<QString,QString> descriptions;
   for (auto &metric : metric_set.data())
   {
-    QString text = QString::fromStdString(metric.first)
-        + "    (" + QString::fromStdString(metric.second.description) + ")";
-    list.push_back(text);
-    if (metric.first == selection.toStdString())
-      selection = text;
+    descriptions[QString::fromStdString(metric.first)] =
+        QString::fromStdString(metric.second.description);
+    QString text = QString::fromStdString(metric.first);
+//        + "   " + QString::fromStdString(metric.second.description);
+    list.push_back(QString::fromStdString(metric.first));
     maxwidth = std::max(maxwidth, fm.width(text) + 30);
   }
   popup->setList(list);
-  popup->Select(selection);
+//  popup->setDescriptions(descriptions);
+  popup->Select(button->text());
   QRect rect;
   rect.setTopLeft(button->mapToGlobal(button->rect().topLeft()));
   rect.setWidth(maxwidth);
@@ -457,14 +459,11 @@ void ViewEvent::make_coord_popup(QPushButton* button,
 
   if (popup->exec())
   {
-    //trim description
     auto selection = popup->selection();
-    int j = 0;
-    if ((j = selection.indexOf("    (", j)) > 0)
-      selection = selection.left(j);
 
     button->setText(selection);
-    button->setToolTip(QString::fromStdString(metric_set.get(selection.toStdString()).description));
+    button->setToolTip(descriptions.value(selection));
+
     set_point_metrics();
   }
 

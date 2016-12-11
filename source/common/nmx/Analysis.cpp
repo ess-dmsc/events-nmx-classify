@@ -56,12 +56,15 @@ std::list<std::string> Analysis::metrics() const
   return ret;
 }
 
-Metric Analysis::metric(std::string name) const
+Metric Analysis::metric(std::string name, bool with_data) const
 {
   Metric ret;
   if (group_.name().empty() || !group_.has_dataset(name))
     return ret;
-  ret.read_H5_data(group_.open_dataset(name));
+  if (with_data)
+    ret.read_H5_data(group_.open_dataset(name));
+  else
+    ret.read_H5(group_.open_dataset(name));
   return ret;
 }
 

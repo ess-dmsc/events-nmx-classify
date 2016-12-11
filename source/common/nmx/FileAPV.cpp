@@ -106,9 +106,9 @@ void FileAPV::delete_analysis(std::string name)
   file_.require_group("Analyses").remove(name);
 }
 
-Metric FileAPV::get_metric(std::string cat) const
+Metric FileAPV::get_metric(std::string cat, bool with_data) const
 {
-  return analysis_.metric(cat);
+  return analysis_.metric(cat, with_data);
 }
 
 std::list<std::string> FileAPV::analyses() const

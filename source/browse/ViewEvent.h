@@ -10,7 +10,6 @@
 #include "SpecialDelegate.h"
 #include "BoxesModel.h"
 
-#include "SearchList.h"
 #include "Settings.h"
 
 #include <QLabel>

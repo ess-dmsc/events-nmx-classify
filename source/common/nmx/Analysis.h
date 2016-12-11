@@ -15,7 +15,7 @@ public:
   Analysis(H5CC::Group group, uint32_t eventnum);
 
   std::list<std::string> metrics() const;
-  Metric metric(std::string name) const;
+  Metric metric(std::string name, bool with_data = true) const;
   void set_parameters(const Settings&);
 
   Settings parameters() const { return params_; }

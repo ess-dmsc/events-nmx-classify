@@ -41,10 +41,6 @@ private slots:
 
   void plot_boxes();
 
-  void on_comboWeightsX_currentIndexChanged(const QString &arg1);
-  void on_comboWeightsY_currentIndexChanged(const QString &arg1);
-  void on_comboWeightsZ_currentIndexChanged(const QString &arg1);
-
   void on_pushAddTest_clicked();
   void on_pushRemoveTest_clicked();
 
@@ -53,6 +49,10 @@ private slots:
   void on_doubleUnits_editingFinished();
 
   void rebuild();
+
+  void on_pushX_clicked();
+  void on_pushY_clicked();
+  void on_pushMetric1D_clicked();
 
 private:
   Ui::Analyzer *ui;
@@ -81,6 +81,10 @@ private:
   void replot();
 
   void replot1d();
+
+
+  void make_coord_popup(QPushButton *button,
+                        std::list<std::string> metric_set);
 };
 
 #endif // FORM_CALIBRATION_H

@@ -4,10 +4,19 @@
 #include <QWidget>
 #include <QItemSelection>
 #include <QDialog>
+#include <QLineEdit>
+#include <QListWidget>
+#include <QLabel>
+#include "SearchBox.h"
 
-namespace Ui {
-class SearchList;
-}
+class MyListWidget : public QListWidget
+{
+  Q_OBJECT
+protected:
+  void keyPressEvent(QKeyEvent*) Q_DECL_OVERRIDE;
+signals:
+  void pressedEnter();
+};
 
 class SearchList : public QWidget
 {
@@ -15,9 +24,9 @@ class SearchList : public QWidget
 
 public:
   explicit SearchList(QWidget *parent = 0);
-  ~SearchList();
 
   void setList(QStringList lst);
+  void setDescriptions(QMap<QString,QString> descriptions);
   void setSingleSelection(bool);
   QStringList selection() const;
   void Select(QString sel);
@@ -32,14 +41,23 @@ signals:
   void doubleClickedOne(QString);
 
 private slots:
-  void filterSelectionChanged();
+  void filterChanged();
   void listSelectionChanged();
   void double_click();
+  void filterAccepted();
+
+protected:
+  void focusInEvent( QFocusEvent* e ) Q_DECL_OVERRIDE;
 
 private:
-  Ui::SearchList *ui;
+  QLabel* filter_label_;
+  SearchBox* filter_;
+  MyListWidget* subset_list_;
 
+  QStringList set_;
+  QStringList filtered_set_;
   QStringList selected_set_;
+  QMap<QString,QString> descriptions_;
 };
 
 
@@ -51,6 +69,8 @@ public:
   explicit SearchDialog(QWidget *parent = 0);
 
   void setList(QStringList lst) { widget_->setList(lst); }
+  void setDescriptions(QMap<QString,QString> descriptions)
+    { widget_->setDescriptions(descriptions);}
   QString selection() const { return selection_; }
   void Select(QString sel) { widget_->Select(sel); }
 
@@ -58,6 +78,9 @@ public:
   void setFilter(QString filter) { widget_->setFilter(filter); }
   void setFilterLabel(QString txt) { widget_->setFilterLabel(txt); }
   void setFilterVisible(bool vis) { widget_->setFilterVisible(vis); }
+
+protected:
+  void focusInEvent( QFocusEvent* e ) Q_DECL_OVERRIDE;
 
 signals:
   void selectionChanged();

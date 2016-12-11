@@ -3,6 +3,7 @@
 #include "ui_Analyzer.h"
 #include "CustomLogger.h"
 #include "doFit.h"
+#include "SearchList.h"
 
 Analyzer::Analyzer(QWidget *parent)
   : QWidget(parent)
@@ -44,31 +45,10 @@ Analyzer::Analyzer(QWidget *parent)
 
 void Analyzer::populate_combos()
 {
-  ui->comboWeightsX->blockSignals(true);
-  ui->comboWeightsY->blockSignals(true);
-  ui->comboWeightsZ->blockSignals(true);
-
-  ui->comboWeightsX->clear();
-  ui->comboWeightsY->clear();
-  ui->comboWeightsZ->clear();
-
   if (!reader_)
     return;
 
-  ui->comboWeightsZ->addItem("none");
-
-  for (auto &c : reader_->metrics())
-  {
-    ui->comboWeightsX->addItem(QString::fromStdString(c));
-    ui->comboWeightsY->addItem(QString::fromStdString(c));
-    ui->comboWeightsZ->addItem(QString::fromStdString(c));
-  }
-
   tests_model_.set_available_metrics(reader_->metrics());
-
-  ui->comboWeightsX->blockSignals(false);
-  ui->comboWeightsY->blockSignals(false);
-  ui->comboWeightsZ->blockSignals(false);
 }
 
 Analyzer::~Analyzer()
@@ -79,11 +59,6 @@ Analyzer::~Analyzer()
 
 void Analyzer::enableIO(bool enable)
 {
-  bool en = reader_ && reader_->event_count() && enable;
-  ui->comboWeightsX->setEnabled(en);
-  ui->comboWeightsY->setEnabled(en);
-  ui->comboWeightsZ->setEnabled(en);
-
   if (enable) {
     ui->tableTests->setEditTriggers(QAbstractItemView::AllEditTriggers);
   } else {
@@ -94,9 +69,6 @@ void Analyzer::enableIO(bool enable)
 void Analyzer::set_new_source(std::shared_ptr<NMX::FileAPV> r)
 {
   reader_ = r;
-
-  if (ui->comboWeightsX->count())
-    saveSettings();
 
   rebuild();
 
@@ -112,9 +84,9 @@ void Analyzer::loadSettings()
 {
   QSettings settings;
   settings.beginGroup("Program");
-  ui->comboWeightsX->setCurrentText(settings.value("weight_type_x", "X_entry_strip").toString());
-  ui->comboWeightsY->setCurrentText(settings.value("weight_type_y", "Y_entry_strip").toString());
-  ui->comboWeightsZ->setCurrentText(settings.value("weight_type_z").toString());
+  ui->pushX->setText(settings.value("weight_type_x", "none").toString());
+  ui->pushY->setText(settings.value("weight_type_y", "none").toString());
+  ui->pushMetric1D->setText(settings.value("metric_1d", "none").toString());
   ui->comboFit->setCurrentText(settings.value("fit").toString());
   ui->doubleUnits->setValue(settings.value("units", 400).toDouble());
 }
@@ -123,9 +95,9 @@ void Analyzer::saveSettings()
 {
   QSettings settings;
   settings.beginGroup("Program");
-  settings.setValue("weight_type_x", ui->comboWeightsX->currentText());
-  settings.setValue("weight_type_y", ui->comboWeightsY->currentText());
-  settings.setValue("weight_type_z", ui->comboWeightsZ->currentText());
+  settings.setValue("weight_type_x", ui->pushX->text());
+  settings.setValue("weight_type_y", ui->pushY->text());
+  settings.setValue("metric_1d", ui->pushMetric1D->text());
   settings.setValue("fit", ui->comboFit->currentText());
   settings.setValue("units", ui->doubleUnits->value());
 }
@@ -159,12 +131,10 @@ void Analyzer::replot()
   HistMap2D projection2d;
   histogram1d_.clear();
 
-  auto xx = reader_->get_metric(ui->comboWeightsX->currentText().toStdString());
-  auto yy = reader_->get_metric(ui->comboWeightsY->currentText().toStdString());
-  auto zz = reader_->get_metric(ui->comboWeightsZ->currentText().toStdString());
+  auto xx = reader_->get_metric(ui->pushX->text().toStdString());
+  auto yy = reader_->get_metric(ui->pushY->text().toStdString());
+  auto zz = reader_->get_metric(ui->pushMetric1D->text().toStdString());
 
-  ui->labelX->setText("   " + QString::fromStdString(xx.description()));
-  ui->labelY->setText("   " + QString::fromStdString(yy.description()));
   ui->labelZ->setText("   " + QString::fromStdString(zz.description()));
 
   auto xx_norm = xx.normalizer();
@@ -184,8 +154,8 @@ void Analyzer::replot()
 
   ui->plot2D->updatePlot((xx.max()-xx.min()) / xx_norm + 1,
                          (yy.max()-yy.min()) / yy_norm + 1, projection2d);
-  ui->plot2D->setAxes(ui->comboWeightsX->currentText(), xx.min(), xx.max(),
-                      ui->comboWeightsY->currentText(), yy.min(), yy.max(),
+  ui->plot2D->setAxes(ui->pushX->text(), xx.min(), xx.max(),
+                      ui->pushY->text(), yy.min(), yy.max(),
                       "Count");
   ui->plot2D->replot();
 
@@ -214,7 +184,7 @@ void Analyzer::replot1d()
   profile.default_pen = QPen(palette_[1], 2);
   ui->plotHistogram->addGraph(fitter.get_fit_hist(4), profile);
 
-  ui->plotHistogram->setAxisLabels(ui->comboWeightsZ->currentText(), "count");
+  ui->plotHistogram->setAxisLabels(ui->pushMetric1D->text(), "count");
   ui->plotHistogram->zoomOut();
 }
 
@@ -244,21 +214,6 @@ void Analyzer::plot_boxes()
   ui->plot2D->replotExtras();
 }
 
-void Analyzer::on_comboWeightsX_currentIndexChanged(const QString& /*arg1*/)
-{
-  replot();
-}
-
-void Analyzer::on_comboWeightsY_currentIndexChanged(const QString& /*arg1*/)
-{
-  replot();
-}
-
-void Analyzer::on_comboWeightsZ_currentIndexChanged(const QString& /*arg1*/)
-{
-  replot();
-}
-
 void Analyzer::plot_block()
 {
   QPlot::Appearance app;
@@ -275,10 +230,9 @@ void Analyzer::plot_block()
 
 void Analyzer::set_metric_z(QString str)
 {
-  ui->comboWeightsZ->setCurrentText(str);
+  ui->pushMetric1D->setText(str);
   replot();
 }
-
 
 
 void Analyzer::on_pushAddTest_clicked()
@@ -312,3 +266,65 @@ void Analyzer::on_doubleUnits_editingFinished()
 {
   replot1d();
 }
+
+void Analyzer::on_pushX_clicked()
+{
+  make_coord_popup(ui->pushX, reader_->metrics());
+}
+
+void Analyzer::on_pushY_clicked()
+{
+  make_coord_popup(ui->pushY, reader_->metrics());
+}
+
+void Analyzer::on_pushMetric1D_clicked()
+{
+  make_coord_popup(ui->pushMetric1D, reader_->metrics());
+}
+
+void Analyzer::make_coord_popup(QPushButton* button,
+                                std::list<std::string> metric_set)
+{
+  SearchDialog* popup = new SearchDialog();
+  popup->setWindowFlags(Qt::FramelessWindowHint | Qt::Popup);
+
+  QStringList list;
+  list.push_back("none");
+  QString selection = button->text();
+  int maxwidth = 220;
+  QFontMetrics fm(button->font());
+  for (auto &m : metric_set)
+  {
+    auto metric = reader_->get_metric(m, false);
+    QString text = QString::fromStdString(m);
+//        + "    (" + QString::fromStdString(metric.description()) + ")";
+    list.push_back(text);
+    if (m == selection.toStdString())
+      selection = text;
+    maxwidth = std::max(maxwidth, fm.width(text) + 30);
+  }
+  popup->setList(list);
+  popup->Select(selection);
+  QRect rect;
+  rect.setTopLeft(button->mapToGlobal(button->rect().topLeft()));
+  rect.setWidth(maxwidth);
+  rect.setHeight(std::min(250, (fm.height()+5) * list.size()));
+  popup->setGeometry(rect);
+
+  if (popup->exec())
+  {
+    //trim description
+    auto selection = popup->selection();
+    int j = 0;
+    if ((j = selection.indexOf("    (", j)) > 0)
+      selection = selection.left(j);
+
+    button->setText(selection);
+    button->setToolTip(QString::fromStdString(reader_->get_metric(selection.toStdString(), false).description()));
+
+    replot();
+  }
+
+  delete popup;
+}
+

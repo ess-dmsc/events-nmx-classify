@@ -27,7 +27,7 @@ public:
   void set_parameters(const Settings&);
   Settings parameters() const;
   std::list<std::string> metrics() const;
-  Metric get_metric(std::string cat) const;
+  Metric get_metric(std::string cat, bool with_data = true) const;
 
   std::list<std::string> analyses() const;
   void create_analysis(std::string name);

@@ -3,10 +3,7 @@
 
 #include <QWidget>
 #include <QItemSelection>
-
-namespace Ui {
-class SearchBox;
-}
+#include <QLineEdit>
 
 class SearchBox : public QWidget
 {
@@ -14,7 +11,6 @@ class SearchBox : public QWidget
 
 public:
   explicit SearchBox(QWidget *parent = 0);
-  ~SearchBox();
 
   void setList(QStringList lst);
   QStringList selection() const;
@@ -25,14 +21,18 @@ public:
 
 signals:
   void selectionChanged();
+  void acceptedFilter();
 
 private slots:
 
-  void on_lineFilter_textChanged(const QString &arg1);
-  void listSelectionChanged();
+  void filterChanged(QString);
+
+protected:
+  void focusInEvent( QFocusEvent* e ) Q_DECL_OVERRIDE;
+  void keyPressEvent(QKeyEvent*) Q_DECL_OVERRIDE;
 
 private:
-  Ui::SearchBox *ui;
+  QLineEdit* filter_;
 
   QStringList set_;
   QStringList selected_set_;

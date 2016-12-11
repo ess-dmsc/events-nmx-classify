@@ -1,36 +1,39 @@
 #include <QSettings>
 #include <QRegExp>
 #include "SearchBox.h"
-#include "ui_SearchBox.h"
 #include "CustomLogger.h"
+#include <QGridLayout>
+#include <QKeyEvent>
 
 SearchBox::SearchBox(QWidget *parent)
   : QWidget(parent)
-  , ui(new Ui::SearchBox)
 {
-  ui->setupUi(this);
-}
+  filter_ = new QLineEdit;
+  filter_->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Maximum);
+  filter_->setMinimumSize(0, 24);
+  connect(filter_, SIGNAL(textChanged(QString)), this, SLOT(filterChanged(QString)));
 
-SearchBox::~SearchBox()
-{
-  delete ui;
+  QGridLayout* mainGrid = new QGridLayout;
+  mainGrid->addWidget(filter_, 0, 0, -1, -1);
+  mainGrid->setMargin(0);
+  setLayout(mainGrid);
 }
 
 void SearchBox::setList(QStringList lst)
 {
   selected_set_ = set_ = lst;
-  on_lineFilter_textChanged(ui->lineFilter->text());
+  filterChanged(filter_->text());
 }
 
 void SearchBox::setFilter(QString filter)
 {
-  ui->lineFilter->setText(filter);
-  on_lineFilter_textChanged(filter);
+  filter_->setText(filter);
+  filterChanged(filter);
 }
 
 QString SearchBox::filter() const
 {
-  return ui->lineFilter->text();
+  return filter_->text();
 }
 
 QStringList SearchBox::selection() const
@@ -38,12 +41,7 @@ QStringList SearchBox::selection() const
   return selected_set_;
 }
 
-void SearchBox::listSelectionChanged()
-{
-  emit selectionChanged();
-}
-
-void SearchBox::on_lineFilter_textChanged(const QString &arg1)
+void SearchBox::filterChanged(QString arg1)
 {
   selected_set_ = clever_search(set_, arg1.split(" "));
   selected_set_.sort(Qt::CaseInsensitive);
@@ -79,4 +77,22 @@ QStringList SearchBox::clever_search(const QStringList& list, QStringList querie
       filtered.push_back(string);
   return clever_search(filtered, queries);
 }
+
+
+void SearchBox::focusInEvent( QFocusEvent* e )
+{
+  QWidget::focusInEvent(e);
+  filter_->setFocus();
+}
+
+void SearchBox::keyPressEvent(QKeyEvent *event)
+{
+  if ((event->key() == Qt::Key_Down)  ||
+      (event->key() == Qt::Key_Enter) ||
+      (event->key() == Qt::Key_Return))
+    emit acceptedFilter();
+  QWidget::keyPressEvent(event);
+}
+
+
 
