@@ -51,6 +51,8 @@ QVariant TestsModel::data(const QModelIndex &index, int role) const
       return QVariant::fromValue(tests_.tests.at(row).min);
     case 3:
       return QVariant::fromValue(tests_.tests.at(row).max);
+//    case 4:
+//      return QString::fromStdString(tests_.tests.at(row).description);
     }
   }
   return QVariant();

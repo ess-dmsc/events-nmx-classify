@@ -82,9 +82,7 @@ private:
 
   void replot1d();
 
-
-  void make_coord_popup(QPushButton *button,
-                        std::list<std::string> metric_set);
+  void makeMetricPopup(QPushButton *button, std::list<std::string> metric_set);
 };
 
 #endif // FORM_CALIBRATION_H

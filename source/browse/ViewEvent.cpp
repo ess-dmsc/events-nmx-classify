@@ -115,6 +115,8 @@ void ViewEvent::populateCombos(const NMX::Settings &parameters)
   ui->comboPlot->addItem("everything");
 
   loadSettings();
+  ui->eventX->set_overlay_color(ui->colorOverlay->color());
+  ui->eventY->set_overlay_color(ui->colorOverlay->color());
 
   ui->comboProjection->blockSignals(false);
   ui->comboPlot->blockSignals(false);
@@ -209,6 +211,7 @@ void ViewEvent::loadSettings()
   settings.beginGroup("Event");
   ui->comboPlot->setCurrentText(settings.value("plot", "everything").toString());
   ui->comboOverlay->setCurrentText(settings.value("overlay", "maxima").toString());
+  ui->colorOverlay->setColor(QColor(settings.value("color_overlay", QColor(Qt::red).name()).toString()));
   ui->comboProjection->setCurrentText(settings.value("projection", "none").toString());
   ui->push1x->setText(settings.value("point1x").toString());
   ui->push2x->setText(settings.value("point2x").toString());
@@ -228,6 +231,7 @@ void ViewEvent::saveSettings()
   settings.setValue("current_idx", ui->spinEventIdx->value());
   settings.setValue("plot", ui->comboPlot->currentText());
   settings.setValue("overlay", ui->comboOverlay->currentText());
+  settings.setValue("color_overlay", ui->colorOverlay->color().name());
   settings.setValue("projection", ui->comboProjection->currentText());
   settings.setValue("point1x", ui->push1x->text());
   settings.setValue("point2x", ui->push2x->text());
@@ -413,69 +417,37 @@ void ViewEvent::on_pushShowParams_clicked()
 
 void ViewEvent::on_push1x_clicked()
 {
-  make_coord_popup(ui->push1x,
-                   event_.x().metrics().with_prefix("strips_", false).with_suffix("_c", false));
+  makeCoordPopup(ui->push1x,
+                 event_.x().metrics().with_prefix("strips_", false).with_suffix("_c", false));
 }
 
 void ViewEvent::on_push1y_clicked()
 {
-  make_coord_popup(ui->push1y,
-                   event_.x().metrics().with_prefix("timebins_", false).with_suffix("_c", false));
+  makeCoordPopup(ui->push1y,
+                 event_.x().metrics().with_prefix("timebins_", false).with_suffix("_c", false));
 }
 
 void ViewEvent::on_push2x_clicked()
 {
-  make_coord_popup(ui->push2x,
-                   event_.x().metrics().with_prefix("strips_", false).with_suffix("_c", false));
+  makeCoordPopup(ui->push2x,
+                 event_.x().metrics().with_prefix("strips_", false).with_suffix("_c", false));
 }
 
 void ViewEvent::on_push2y_clicked()
 {
-  make_coord_popup(ui->push2y,
-                   event_.x().metrics().with_prefix("timebins_", false).with_suffix("_c", false));
+  makeCoordPopup(ui->push2y,
+                 event_.x().metrics().with_prefix("timebins_", false).with_suffix("_c", false));
 }
 
-void ViewEvent::make_coord_popup(QPushButton* button,
-                                 NMX::MetricSet metric_set)
+void ViewEvent::makeCoordPopup(QPushButton* button,
+                               NMX::MetricSet metric_set)
 {
-  SearchDialog* popup = new SearchDialog();
-  popup->setFilterVisible(false);
-  popup->setWindowFlags(Qt::FramelessWindowHint | Qt::Popup);
-
   QStringList list;
   list.push_back("none");
-  int maxwidth = 220;
-  QFontMetrics fm(button->font());
-  QMap<QString,QString> descriptions;
   for (auto &metric : metric_set.data())
-  {
-    descriptions[QString::fromStdString(metric.first)] =
-        QString::fromStdString(metric.second.description);
-    QString text = QString::fromStdString(metric.first);
-//        + "   " + QString::fromStdString(metric.second.description);
     list.push_back(QString::fromStdString(metric.first));
-    maxwidth = std::max(maxwidth, fm.width(text) + 30);
-  }
-  popup->setList(list);
-//  popup->setDescriptions(descriptions);
-  popup->Select(button->text());
-  QRect rect;
-  rect.setTopLeft(button->mapToGlobal(button->rect().topLeft()));
-  rect.setWidth(maxwidth);
-  rect.setHeight(std::min(250, (fm.height()+5) * list.size()));
-  popup->setGeometry(rect);
-
-  if (popup->exec())
-  {
-    auto selection = popup->selection();
-
-    button->setText(selection);
-    button->setToolTip(descriptions.value(selection));
-
+  if (popupSearchDialog(button, list))
     set_point_metrics();
-  }
-
-  delete popup;
 }
 
 void ViewEvent::clicked_color1()

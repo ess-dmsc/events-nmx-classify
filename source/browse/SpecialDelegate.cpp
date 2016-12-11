@@ -10,6 +10,8 @@
 
 #include <QApplication>
 #include "CustomLogger.h"
+#include "SearchList.h"
+#include <QPushButton>
 
 void SpecialDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
                                const QModelIndex &index) const
@@ -117,9 +119,15 @@ QWidget *SpecialDelegate::createEditor(QWidget *parent,
     else if (itemData.type() == Variant::code::type_menu)
     {
       auto menu = itemData.as_menu();
-      QComboBox *editor = new QComboBox(parent);
-      for (auto m : menu.options())
-        editor->addItem(QString::fromStdString(m));
+//      QStringList list;
+//      for (auto m : menu.options())
+//        list.push_back(QString::fromStdString(m));
+      QPushButton* editor = new QPushButton(parent);
+      editor->setText(QString::fromStdString(menu.choice()));
+
+//      QComboBox *editor = new QComboBox(parent);
+//      for (auto m : menu.options())
+//        editor->addItem(QString::fromStdString(m));
       return editor;
     }
   }
@@ -181,8 +189,16 @@ void SpecialDelegate::setEditorData ( QWidget *editor, const QModelIndex &index 
     }
     else if (itemData.type() == Variant::code::type_menu)
     {
-      if (QComboBox *cb = qobject_cast<QComboBox *>(editor))
-        cb->setCurrentText(QString::fromStdString(itemData.as_menu().choice()));
+      auto menu = itemData.as_menu();
+      QStringList list;
+      for (auto m : menu.options())
+        list.push_back(QString::fromStdString(m));
+
+      if (QPushButton *cb = qobject_cast<QPushButton *>(editor))
+        popupSearchDialog(cb, list);
+
+//      if (QComboBox *cb = qobject_cast<QComboBox *>(editor))
+//        cb->setCurrentText(QString::fromStdString(itemData.as_menu().choice()));
     }
   }
   else if (QSpinBox *sb = qobject_cast<QSpinBox *>(editor))
@@ -204,6 +220,8 @@ void SpecialDelegate::setModelData ( QWidget *editor, QAbstractItemModel *model,
     model->setData(index, QVariant::fromValue(sb->value()), Qt::EditRole);
   else if (QDoubleSpinBox *sb = qobject_cast<QDoubleSpinBox *>(editor))
     model->setData(index, QVariant::fromValue(sb->value()), Qt::EditRole);
+  else if (QPushButton *cb = qobject_cast<QPushButton *>(editor))
+    model->setData(index, cb->text(), Qt::EditRole);
   else if (QComboBox *cb = qobject_cast<QComboBox *>(editor))
   {
     if (index.data(Qt::EditRole).canConvert<Variant>())

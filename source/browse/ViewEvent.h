@@ -93,10 +93,9 @@ private:
 
   void populateCombos(const NMX::Settings &parameters);
 
-  void make_coord_popup(QPushButton *button,
-                        NMX::MetricSet metric_set);
+  void makeCoordPopup(QPushButton *button, NMX::MetricSet metric_set);
 
   void pick_color(color_widgets::ColorPreview* prev);
 };
 
-#endif // FORM_CALIBRATION_H
+#endif

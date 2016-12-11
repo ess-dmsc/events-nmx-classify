@@ -8,7 +8,6 @@
 Analyzer::Analyzer(QWidget *parent)
   : QWidget(parent)
   , ui(new Ui::Analyzer)
-//  , tests_model_(tests_.tests)
 {
   ui->setupUi(this);
 
@@ -269,62 +268,27 @@ void Analyzer::on_doubleUnits_editingFinished()
 
 void Analyzer::on_pushX_clicked()
 {
-  make_coord_popup(ui->pushX, reader_->metrics());
+  makeMetricPopup(ui->pushX, reader_->metrics());
 }
 
 void Analyzer::on_pushY_clicked()
 {
-  make_coord_popup(ui->pushY, reader_->metrics());
+  makeMetricPopup(ui->pushY, reader_->metrics());
 }
 
 void Analyzer::on_pushMetric1D_clicked()
 {
-  make_coord_popup(ui->pushMetric1D, reader_->metrics());
+  makeMetricPopup(ui->pushMetric1D, reader_->metrics());
 }
 
-void Analyzer::make_coord_popup(QPushButton* button,
-                                std::list<std::string> metric_set)
+void Analyzer::makeMetricPopup(QPushButton* button,
+                               std::list<std::string> metric_set)
 {
-  SearchDialog* popup = new SearchDialog();
-  popup->setWindowFlags(Qt::FramelessWindowHint | Qt::Popup);
-
   QStringList list;
   list.push_back("none");
-  QString selection = button->text();
-  int maxwidth = 220;
-  QFontMetrics fm(button->font());
-  for (auto &m : metric_set)
-  {
-    auto metric = reader_->get_metric(m, false);
-    QString text = QString::fromStdString(m);
-//        + "    (" + QString::fromStdString(metric.description()) + ")";
-    list.push_back(text);
-    if (m == selection.toStdString())
-      selection = text;
-    maxwidth = std::max(maxwidth, fm.width(text) + 30);
-  }
-  popup->setList(list);
-  popup->Select(selection);
-  QRect rect;
-  rect.setTopLeft(button->mapToGlobal(button->rect().topLeft()));
-  rect.setWidth(maxwidth);
-  rect.setHeight(std::min(250, (fm.height()+5) * list.size()));
-  popup->setGeometry(rect);
-
-  if (popup->exec())
-  {
-    //trim description
-    auto selection = popup->selection();
-    int j = 0;
-    if ((j = selection.indexOf("    (", j)) > 0)
-      selection = selection.left(j);
-
-    button->setText(selection);
-    button->setToolTip(QString::fromStdString(reader_->get_metric(selection.toStdString(), false).description()));
-
+  for (auto &name : metric_set)
+    list.push_back(QString::fromStdString(name));
+  if (popupSearchDialog(button, list))
     replot();
-  }
-
-  delete popup;
 }
 

@@ -5,6 +5,7 @@
 #include <QGridLayout>
 #include <QBoxLayout>
 #include <QKeyEvent>
+#include <QPushButton>
 
 void MyListWidget::keyPressEvent(QKeyEvent *event)
 {
@@ -74,18 +75,14 @@ void SearchList::setFilterVisible(bool vis)
 
 void SearchList::filterAccepted()
 {
+  if (subset_list_->selectedItems().isEmpty() && !filtered_set_.empty())
+    subset_list_->item(0)->setSelected(true);
   subset_list_->setFocus();
 }
 
 void SearchList::setList(QStringList lst)
 {
   filter_->setList(lst);
-  filterChanged();
-}
-
-void SearchList::setDescriptions(QMap<QString,QString> descriptions)
-{
-  descriptions_ = descriptions;
   filterChanged();
 }
 
@@ -118,20 +115,8 @@ void SearchList::filterChanged()
 {
   filtered_set_ = filter_->selection();
 
-  auto set = filtered_set_;
-  if (descriptions_.size())
-  {
-    set.clear();
-    for (auto i : filtered_set_)
-    {
-      if (descriptions_.count(i))
-        i = "<b>" + i +  "</b>   " + descriptions_.value(i);
-      set.push_back(i);
-    }
-  }
-
   subset_list_->clear();
-  subset_list_->addItems(set);
+  subset_list_->addItems(filtered_set_);
 
   selected_set_ = filtered_set_;
 
@@ -154,8 +139,6 @@ void SearchList::listSelectionChanged()
 
 void SearchList::Select(QString sel)
 {
-  if (descriptions_.count(sel))
-    sel += "   " + descriptions_.value(sel);
   for (int i=0; i < subset_list_->count(); i++)
   {
     if (subset_list_->item(i)->text() == sel)
@@ -208,5 +191,34 @@ void SearchDialog::focusInEvent(QFocusEvent* e)
 {
   QDialog::focusInEvent(e);
   widget_->setFocus();
+}
+
+bool popupSearchDialog(QPushButton* button, QStringList choices)
+{
+  SearchDialog* popup = new SearchDialog();
+  popup->setWindowFlags(Qt::FramelessWindowHint | Qt::Popup);
+
+  int maxwidth = button->rect().width();
+  QFontMetrics fm(button->font());
+  for (auto &choice : choices)
+    maxwidth = std::max(maxwidth, fm.width(choice) + 30);
+  popup->setList(choices);
+  popup->Select(button->text());
+  QRect rect;
+  rect.setTopLeft(button->mapToGlobal(button->rect().topLeft()));
+  rect.setWidth(maxwidth);
+  rect.setHeight(std::min(250, (fm.height()+5) * choices.size()));
+  popup->setGeometry(rect);
+  popup->setFilterVisible(choices.size() >= 15);
+
+  bool result = popup->exec();
+
+  auto selection = popup->selection();
+  delete popup;
+
+  if (result)
+    button->setText(selection);
+
+  return result;
 }
 
