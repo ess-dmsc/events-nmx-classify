@@ -76,11 +76,12 @@ void Browser::open_file(QString fileName)
 
   try
   {
-    reader_ = std::make_shared<NMX::FileAPV>(fileName.toStdString(), true);
+    reader_ = std::make_shared<NMX::FileAPV>(fileName.toStdString(), H5CC::Access::rw_existing);
   }
   catch (...)
   {
     printException();
+    ERR << "<nmx_browser> could not open " << fileName.toStdString();
     return;
   }
 

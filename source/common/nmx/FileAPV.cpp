@@ -3,13 +3,10 @@
 
 namespace NMX {
 
-FileAPV::FileAPV(std::string filename, bool write_access)
+FileAPV::FileAPV(std::string filename, H5CC::Access access)
 {
-  write_access_ = write_access;
-  if (write_access_)
-    file_ = H5CC::File(filename);
-  else
-    file_ = H5CC::File(filename, H5CC::Access::r_existing);
+  file_ = H5CC::File(filename, access);
+  write_access_ = (access != H5CC::Access::r_existing);
 }
 
 void FileAPV::open_raw()

@@ -7,8 +7,6 @@
 #include <memory>
 #include "ExceptionUtil.h"
 
-#define REFRESH_SECONDS 3
-
 volatile sig_atomic_t term_flag = 0;
 void term_key(int /*sig*/)
 {
@@ -66,7 +64,7 @@ int main(int argc, char* argv[])
 
   try
   {
-    reader = std::make_shared<NMX::FileAPV>(clone_params_file, false);
+    reader = std::make_shared<NMX::FileAPV>(clone_params_file, H5CC::Access::r_existing);
   }
   catch (...)
   {
@@ -96,11 +94,12 @@ int main(int argc, char* argv[])
     INFO << "\n\"" << g.first << "\"\n" << g.second.debug();
 
   size_t fnum {1};
-  for (auto filename : files)
+  for (auto f : files)
   {
+    auto filename = f.string();
     try
     {
-      reader = std::make_shared<NMX::FileAPV>(filename.string(), true);
+      reader = std::make_shared<NMX::FileAPV>(filename, H5CC::Access::rw_existing);
       reader->open_raw();
     }
     catch (...)
@@ -113,7 +112,7 @@ int main(int argc, char* argv[])
     if (!reader->event_count())
       continue;
 
-    INFO << "Processing file " << filename.string()
+    INFO << "Processing file " << filename
          << " (" << fnum << "/" << files.size() << ")";
 
     for (auto group : to_clone)

@@ -73,7 +73,7 @@ int main(int argc, char* argv[])
   for (auto filename : files)
   {
     std::shared_ptr<NMX::FileAPV> reader
-        = std::make_shared<NMX::FileAPV>(filename.string(), false);
+        = std::make_shared<NMX::FileAPV>(filename.string(), H5CC::Access::r_existing);
 
     for (auto analysis : reader->analyses())
     {
@@ -110,7 +110,7 @@ int main(int argc, char* argv[])
     for (auto filename : files)
     {
       std::shared_ptr<NMX::FileAPV> reader
-          = std::make_shared<NMX::FileAPV>(filename.string(), false);
+          = std::make_shared<NMX::FileAPV>(filename.string(), H5CC::Access::r_existing);
 
       std::string dataset = filename.stem().string();
 
@@ -152,7 +152,7 @@ int main(int argc, char* argv[])
   for (auto filename : files)
   {
     std::shared_ptr<NMX::FileAPV> reader
-        = std::make_shared<NMX::FileAPV>(filename.string(), false);
+        = std::make_shared<NMX::FileAPV>(filename.string(), H5CC::Access::r_existing);
 
     std::string dataset = filename.stem().string();
 

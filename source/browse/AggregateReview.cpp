@@ -192,7 +192,7 @@ void AggregateReview::openFile(QString fileName)
   QSet<QString> list1, list2, list3;
   try
   {
-    H5CC::File file(fileName.toStdString());
+    H5CC::File file(fileName.toStdString(), H5CC::Access::r_existing);
 
     for (auto g1 : file.groups())
     {
