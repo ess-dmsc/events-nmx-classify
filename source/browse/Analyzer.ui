@@ -343,6 +343,9 @@
         <layout class="QHBoxLayout" name="horizontalLayout_7">
          <item>
           <widget class="QPushButton" name="pushAddTest">
+           <property name="toolTip">
+            <string>New filter</string>
+           </property>
            <property name="text">
             <string/>
            </property>
@@ -354,12 +357,56 @@
          </item>
          <item>
           <widget class="QPushButton" name="pushRemoveTest">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="toolTip">
+            <string>Delete filter</string>
+           </property>
            <property name="text">
             <string/>
            </property>
            <property name="icon">
             <iconset resource="resources/tpccres.qrc">
              <normaloff>:/icons/oxy/16/editdelete.png</normaloff>:/icons/oxy/16/editdelete.png</iconset>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="Line" name="line_2">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="pushFilterFromPlot">
+           <property name="toolTip">
+            <string>From plot</string>
+           </property>
+           <property name="text">
+            <string>Filter from plot</string>
+           </property>
+           <property name="icon">
+            <iconset resource="resources/tpccres.qrc">
+             <normaloff>:/icons/oxy/16/1downarrow.png</normaloff>:/icons/oxy/16/1downarrow.png</iconset>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="pushFilterToPlot">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="toolTip">
+            <string>Plot filter</string>
+           </property>
+           <property name="text">
+            <string>Plot filter</string>
+           </property>
+           <property name="icon">
+            <iconset resource="resources/tpccres.qrc">
+             <normaloff>:/icons/oxy/16/1uparrow.png</normaloff>:/icons/oxy/16/1uparrow.png</iconset>
            </property>
           </widget>
          </item>

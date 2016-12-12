@@ -78,5 +78,6 @@
         <file>oxy/16/text_csv.png</file>
         <file>tpcc.xpm</file>
         <file>oxy/16/1downarrow.png</file>
+        <file>oxy/16/1uparrow.png</file>
     </qresource>
 </RCC>

@@ -40,6 +40,12 @@ private slots:
   void rebuildFilteredList();
   void replot();
 
+  void on_pushFilterFromPlot_clicked();
+
+  void on_pushFilterToPlot_clicked();
+
+  void filterSelectionChanged();
+
 private:
   Ui::Analyzer *ui;
   TestsModel tests_model_;

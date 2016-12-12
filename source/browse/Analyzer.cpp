@@ -31,6 +31,10 @@ Analyzer::Analyzer(QWidget *parent)
   ui->tableTests->setSelectionMode(QAbstractItemView::ExtendedSelection);
   ui->tableTests->show();
 
+  connect(ui->tableTests->selectionModel(),
+          SIGNAL(selectionChanged(const QItemSelection &, const QItemSelection &)),
+          this, SLOT(filterSelectionChanged()));
+
   connect(&tests_model_, SIGNAL(editing_finished()), this, SLOT(rebuildFilteredList()));
   connect(&tests_delegate_, SIGNAL(edit_integer(QModelIndex,QVariant,int)),
           &tests_model_, SLOT(setDataQuietly(QModelIndex,QVariant,int)));
@@ -224,4 +228,46 @@ QStringList Analyzer::getMetricsList(std::list<std::string> metric_set)
   for (auto &name : metric_set)
     list.push_back(QString::fromStdString(name));
   return list;
+}
+
+void Analyzer::on_pushFilterFromPlot_clicked()
+{
+  auto name = ui->pushMetric1D->text().toStdString();
+  auto filter = tests_model_.tests();
+  for (auto f : filter.tests)
+    if (f.metric == name)
+      return;
+  MetricTest newtest;
+  newtest.metric = name;
+  if (reader_)
+  {
+    auto metric_info = reader_->get_metric(name);
+    newtest.min = metric_info.min();
+    newtest.max = metric_info.max();
+  }
+  filter.tests.push_back(newtest);
+  tests_model_.set_tests(filter);
+}
+
+void Analyzer::on_pushFilterToPlot_clicked()
+{
+  auto filter = tests_model_.tests();
+  int row = -1;
+  auto rows = ui->tableTests->selectionModel()->selectedRows();
+  if (rows.size())
+    row = rows.front().row();
+
+  if ((row < 0) && (row >= filter.tests.size()))
+    return;
+
+  auto name = tests_model_.tests().tests.at(row).metric;
+  ui->pushMetric1D->setText(QString::fromStdString(name));
+  replot();
+}
+
+void Analyzer::filterSelectionChanged()
+{
+  auto rows = ui->tableTests->selectionModel()->selectedRows();
+  ui->pushFilterToPlot->setEnabled(rows.size());
+  ui->pushRemoveTest->setEnabled(rows.size());
 }
