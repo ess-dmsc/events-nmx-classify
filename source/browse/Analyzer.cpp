@@ -113,6 +113,11 @@ void Analyzer::rebuildFilteredList()
     if (tests.validate(metrics, eventID))
       indices_.insert(eventID);
 
+  double percent = double(indices_.size()) / double(reader_->event_count()) * 100.0;
+  ui->labelFilterResults->setText(
+        "   Filtered events: " + QString::number(percent) +
+        "% (" + QString::number(indices_.size()) + "/" +
+               QString::number(reader_->event_count()) + ")");
   replot();
   emit select_indices(indices_);
 }
