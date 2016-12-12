@@ -6,6 +6,9 @@
 #include "CustomLogger.h"
 #include "Variant.h"
 #include "ExceptionUtil.h"
+#include <QDialog>
+#include <QTableWidget>
+#include <QGridLayout>
 
 Browser::Browser(QWidget *parent) :
   QMainWindow(parent),
@@ -18,19 +21,16 @@ Browser::Browser(QWidget *parent) :
 
   event_viewer_ = new ViewEvent();
   ui->tabWidget->addTab(event_viewer_, "Event viewer");
-  connect(this, SIGNAL(enableIO(bool)), event_viewer_, SLOT(enableIO(bool)));
 
   analyzer_ = new Analyzer();
   ui->tabWidget->addTab(analyzer_, "Dataset metrics");
-  connect(analyzer_, SIGNAL(toggleIO(bool)), this, SLOT(toggleIO(bool)));
-  connect(this, SIGNAL(enableIO(bool)), analyzer_, SLOT(enableIO(bool)));
+  connect(analyzer_, SIGNAL(select_indices(std::set<size_t>)),
+          event_viewer_, SLOT(set_indices(std::set<size_t>)));
 
   review_ = new AggregateReview();
   ui->tabWidget->addTab(review_, "Aggregate hists");
   connect(review_, SIGNAL(digDownTown(QString,QString,QString)),
           this, SLOT(digDownTown(QString,QString,QString)));
-
-  connect(analyzer_, SIGNAL(select_indices(std::set<size_t>)), event_viewer_, SLOT(set_indices(std::set<size_t>)));
 
   ui->comboGroup->setSizeAdjustPolicy(QComboBox::AdjustToContents);
 
@@ -206,4 +206,43 @@ void Browser::digDownTown(QString dset, QString metric, QString file)
   }
   analyzer_->set_metric_z(metric);
   ui->tabWidget->setCurrentWidget(analyzer_);
+}
+
+void Browser::on_pushMetricsGlossary_clicked()
+{
+  if (!reader_)
+    return;
+
+  QTableWidget* table = new QTableWidget;
+  table->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
+  table->horizontalHeader()->setStretchLastSection(true);
+  table->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+  table->setEditTriggers(QAbstractItemView::NoEditTriggers);
+  table->setSelectionMode(QAbstractItemView::NoSelection);
+
+  QDialog* dialog = new QDialog();
+  dialog->setWindowTitle("Metrics glossary");
+  dialog->setSizeGripEnabled(true);
+  dialog->resize(800, 400);
+  QGridLayout* layout = new QGridLayout;
+  layout->setMargin(3);
+
+  layout->addWidget(table, 0,0, -1,-1);
+  dialog->setLayout(layout);
+
+  auto metrics = reader_->metrics();
+  table->setRowCount(metrics.size());
+  table->setColumnCount(2);
+  table->setHorizontalHeaderLabels(QStringList({"Metric", "Description"}));
+
+  int i=0;
+  for (auto m : metrics)
+  {
+    auto metric = reader_->get_metric(m, false);
+    table->setItem(i,0,new QTableWidgetItem(QString::fromStdString(m)));
+    table->setItem(i,1,new QTableWidgetItem(QString::fromStdString(metric.description())));
+    i++;
+  }
+
+  dialog->exec();
 }

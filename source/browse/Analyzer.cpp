@@ -3,17 +3,19 @@
 #include "ui_Analyzer.h"
 #include "CustomLogger.h"
 #include "doFit.h"
-#include "SearchList.h"
 
 Analyzer::Analyzer(QWidget *parent)
   : QWidget(parent)
   , ui(new Ui::Analyzer)
 {
   ui->setupUi(this);
+  ui->comboFit->addItem("none");
+  ui->comboFit->addItem("left");
+  ui->comboFit->addItem("right");
+  ui->comboFit->addItem("double");
 
   ui->plotHistogram->setScaleType("Linear");
   ui->plotHistogram->setPlotStyle("Step center");
-  //  ui->plotHistogram->set_visible_options(ShowOptions::zoom | ShowOptions::thickness | ShowOptions::scale | ShowOptions::grid | ShowOptions::save);
 
   ui->plot2D->setAntialiased(false);
   ui->plot2D->setScaleType("Linear");
@@ -29,25 +31,15 @@ Analyzer::Analyzer(QWidget *parent)
   ui->tableTests->setSelectionMode(QAbstractItemView::ExtendedSelection);
   ui->tableTests->show();
 
-  connect(&tests_model_, SIGNAL(editing_finished()), this, SLOT(rebuild()));
+  connect(&tests_model_, SIGNAL(editing_finished()), this, SLOT(rebuildFilteredList()));
   connect(&tests_delegate_, SIGNAL(edit_integer(QModelIndex,QVariant,int)),
           &tests_model_, SLOT(setDataQuietly(QModelIndex,QVariant,int)));
 
-
-  ui->comboFit->addItem("none");
-  ui->comboFit->addItem("left");
-  ui->comboFit->addItem("right");
-  ui->comboFit->addItem("double");
+  connect(ui->pushX, SIGNAL(selectionChanged(QString)), this, SLOT(replot()));
+  connect(ui->pushY, SIGNAL(selectionChanged(QString)), this, SLOT(replot()));
+  connect(ui->pushMetric1D, SIGNAL(selectionChanged(QString)), this, SLOT(replot()));
 
   loadSettings();
-}
-
-void Analyzer::populate_combos()
-{
-  if (!reader_)
-    return;
-
-  tests_model_.set_available_metrics(reader_->metrics());
 }
 
 Analyzer::~Analyzer()
@@ -56,33 +48,11 @@ Analyzer::~Analyzer()
   delete ui;
 }
 
-void Analyzer::enableIO(bool enable)
-{
-  if (enable) {
-    ui->tableTests->setEditTriggers(QAbstractItemView::AllEditTriggers);
-  } else {
-    ui->tableTests->setEditTriggers(QAbstractItemView::NoEditTriggers);
-  }
-}
-
-void Analyzer::set_new_source(std::shared_ptr<NMX::FileAPV> r)
-{
-  reader_ = r;
-
-  rebuild();
-
-  populate_combos();
-
-  loadSettings();
-
-  plot_block();
-  plot_boxes();
-}
-
 void Analyzer::loadSettings()
 {
   QSettings settings;
   settings.beginGroup("Program");
+  settings.beginGroup("DatasetMetrics");
   ui->pushX->setText(settings.value("weight_type_x", "none").toString());
   ui->pushY->setText(settings.value("weight_type_y", "none").toString());
   ui->pushMetric1D->setText(settings.value("metric_1d", "none").toString());
@@ -94,6 +64,7 @@ void Analyzer::saveSettings()
 {
   QSettings settings;
   settings.beginGroup("Program");
+  settings.beginGroup("DatasetMetrics");
   settings.setValue("weight_type_x", ui->pushX->text());
   settings.setValue("weight_type_y", ui->pushY->text());
   settings.setValue("metric_1d", ui->pushMetric1D->text());
@@ -101,7 +72,27 @@ void Analyzer::saveSettings()
   settings.setValue("units", ui->doubleUnits->value());
 }
 
-void Analyzer::rebuild()
+void Analyzer::set_new_source(std::shared_ptr<NMX::FileAPV> r)
+{
+  reader_ = r;
+  rebuildFilteredList();
+  populate_combos();
+}
+
+void Analyzer::populate_combos()
+{
+  if (!reader_)
+    return;
+
+  auto metrics = reader_->metrics();
+  tests_model_.set_available_metrics(metrics);
+  auto list = getMetricsList(metrics);
+  ui->pushX->setList(list);
+  ui->pushY->setList(list);
+  ui->pushMetric1D->setList(list);
+}
+
+void Analyzer::rebuildFilteredList()
 {
   if (!reader_|| !reader_->event_count())
     return;
@@ -187,46 +178,6 @@ void Analyzer::replot1d()
   ui->plotHistogram->zoomOut();
 }
 
-void Analyzer::plot_boxes()
-{
-  std::list<QPlot::MarkerBox2D> boxes;
-
-//  for (int i=0; i < histograms1d_.size(); ++i)
-//  {
-//    const auto &p = histograms1d_[i];
-
-//    QPlot::MarkerBox2D box;
-//    box.x1 = p.x1();
-//    box.x2 = p.x2();
-//    box.y1 = p.y1();
-//    box.y2 = p.y2();
-//    box.selectable = false;
-//    //    box.selected = true;
-//    box.fill = box.border = p.color;
-//    box.fill.setAlpha(box.fill.alpha() * 0.15);
-//    box.label = QString::number(i);
-
-//    boxes.push_back(box);
-//  }
-
-  ui->plot2D->setBoxes(boxes);
-  ui->plot2D->replotExtras();
-}
-
-void Analyzer::plot_block()
-{
-  QPlot::Appearance app;
-  QColor cc (Qt::darkGray);
-  cc.setAlpha(64);
-  app.default_pen = QPen(cc, 2);
-
-  //  ui->plotHistogram->setHighlight(QPlot::Marker1D(ui->spinMinZ->value(), app),
-  //                                  QPlot::Marker1D(ui->spinMaxZ->value(), app));
-
-  ui->plotHistogram->replotExtras();
-  ui->plotHistogram->replot();
-}
-
 void Analyzer::set_metric_z(QString str)
 {
   ui->pushMetric1D->setText(str);
@@ -266,29 +217,11 @@ void Analyzer::on_doubleUnits_editingFinished()
   replot1d();
 }
 
-void Analyzer::on_pushX_clicked()
-{
-  makeMetricPopup(ui->pushX, reader_->metrics());
-}
-
-void Analyzer::on_pushY_clicked()
-{
-  makeMetricPopup(ui->pushY, reader_->metrics());
-}
-
-void Analyzer::on_pushMetric1D_clicked()
-{
-  makeMetricPopup(ui->pushMetric1D, reader_->metrics());
-}
-
-void Analyzer::makeMetricPopup(QPushButton* button,
-                               std::list<std::string> metric_set)
+QStringList Analyzer::getMetricsList(std::list<std::string> metric_set)
 {
   QStringList list;
   list.push_back("none");
   for (auto &name : metric_set)
     list.push_back(QString::fromStdString(name));
-  if (popupSearchDialog(button, list))
-    replot();
+  return list;
 }
-

@@ -188,6 +188,12 @@
              <height>0</height>
             </size>
            </property>
+           <property name="maximumSize">
+            <size>
+             <width>120</width>
+             <height>16777215</height>
+            </size>
+           </property>
           </widget>
          </item>
          <item>
@@ -212,6 +218,12 @@
             <size>
              <width>146</width>
              <height>0</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>146</width>
+             <height>16777215</height>
             </size>
            </property>
           </widget>
@@ -244,6 +256,12 @@
              <height>0</height>
             </size>
            </property>
+           <property name="maximumSize">
+            <size>
+             <width>120</width>
+             <height>16777215</height>
+            </size>
+           </property>
           </widget>
          </item>
          <item>
@@ -268,6 +286,12 @@
             <size>
              <width>120</width>
              <height>0</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>120</width>
+             <height>16777215</height>
             </size>
            </property>
           </widget>
@@ -309,6 +333,9 @@
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_4">
+         <property name="spacing">
+          <number>3</number>
+         </property>
          <item>
           <widget class="QLabel" name="labelOfTotal_3">
            <property name="sizePolicy">
@@ -464,6 +491,9 @@
        </item>
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_5">
+         <property name="spacing">
+          <number>3</number>
+         </property>
          <item>
           <widget class="QLabel" name="labelOfTotal_4">
            <property name="sizePolicy">

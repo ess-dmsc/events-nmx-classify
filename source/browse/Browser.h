@@ -39,6 +39,8 @@ private slots:
 
   void digDownTown(QString dset, QString metric, QString file);
 
+  void on_pushMetricsGlossary_clicked();
+
 private:
   Ui::Browser *ui;
 

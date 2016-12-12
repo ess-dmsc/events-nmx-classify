@@ -125,21 +125,6 @@ void ViewEvent::update_parameters_model()
   params_model_.update(settings);
 }
 
-void ViewEvent::enableIO(bool enable)
-{
-  bool en = reader_ && reader_->event_count() && enable;
-  ui->spinEventIdx->setEnabled(en);
-  ui->comboPlanes->setEnabled(en);
-
-  bool editparams = enable && reader_ && !reader_->num_analyzed();;
-
-  if (editparams) {
-    ui->tableParams->setEditTriggers(QAbstractItemView::AllEditTriggers);
-  } else {
-    ui->tableParams->setEditTriggers(QAbstractItemView::NoEditTriggers);
-  }
-}
-
 void ViewEvent::set_new_source(std::shared_ptr<NMX::FileAPV> r)
 {
   reader_ = r;
@@ -152,6 +137,11 @@ void ViewEvent::set_new_source(std::shared_ptr<NMX::FileAPV> r)
   ui->spinEventIdx->setEnabled(evt_count > 0);
   ui->spinEventIdx->setRange(1, evt_count);
   ui->spinEventIdx->setValue(1);
+
+  if (reader_ && !reader_->num_analyzed())
+    ui->tableParams->setEditTriggers(QAbstractItemView::AllEditTriggers);
+  else
+    ui->tableParams->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
   if (evt_count > 0)
   {
@@ -250,8 +240,10 @@ void ViewEvent::plot_current_event()
     evt_idx = indices_.at(idx-1);
 
   ui->labelOfFiltered->setText(" of " + QString::number(indices_.size()));
-  ui->labelTotal->setText("[" + QString::number(evt_idx) + "/" + QString::number(evt_count) + "]");
-
+  if (evt_count)
+    ui->labelTotal->setText("[" + QString::number(evt_idx) + "/" + QString::number(evt_count-1) + "]");
+  else
+    ui->labelTotal->setText("");
 
   if (!reader_ || (evt_idx >= evt_count))
   {
@@ -266,33 +258,21 @@ void ViewEvent::plot_current_event()
   ui->eventX->display_record(event_.x());
   ui->eventY->display_record(event_.y());
 
-  auto metrics = event_.metrics();
   if (ui->comboPlanes->currentText() == "X")
-    metrics = event_.x().metrics();
+    ui->searchBoxMetrics->setList(getMetricsList(event_.x().metrics(), false));
   else if (ui->comboPlanes->currentText() == "Y")
-    metrics = event_.y().metrics();
-
-  QStringList list;
-
-  for (auto a : metrics.data())
-    list.push_back(QString::fromStdString(a.first));
-  ui->searchBoxMetrics->setList(list);
+    ui->searchBoxMetrics->setList(getMetricsList(event_.y().metrics(), false));
+  else
+    ui->searchBoxMetrics->setList(getMetricsList(event_.metrics(), false));
 
   auto coord_metrics = event_.x().metrics().with_suffix("_c", false);
+  auto coords_x = getMetricsList(coord_metrics.with_prefix("strips_", false), true);
+  ui->push1x->setList(coords_x);
+  ui->push2x->setList(coords_x);
 
-  list.clear();
-  list.push_back("none");
-  for (auto m : coord_metrics.with_prefix("strips_", false).data())
-    list.push_back(QString::fromStdString(m.first));
-  ui->push1x->setList(list);
-  ui->push2x->setList(list);
-
-  list.clear();
-  list.push_back("none");
-  for (auto m : coord_metrics.with_prefix("timebins_", false).data())
-    list.push_back(QString::fromStdString(m.first));
-  ui->push1y->setList(list);
-  ui->push2y->setList(list);
+  auto coords_y = getMetricsList(coord_metrics.with_prefix("timebins_", false), true);
+  ui->push1y->setList(coords_y);
+  ui->push2y->setList(coords_y);
 
   plotProjection();
 }
@@ -414,4 +394,14 @@ void ViewEvent::refresh_record_plots()
     ui->eventX->refresh();
   if (ui->eventY->isVisible())
     ui->eventY->refresh();
+}
+
+QStringList ViewEvent::getMetricsList(NMX::MetricSet metric_set, bool include_none)
+{
+  QStringList list;
+  for (auto &m : metric_set.data())
+    list.push_back(QString::fromStdString(m.first));
+  if (include_none)
+    list.push_back("none");
+  return list;
 }

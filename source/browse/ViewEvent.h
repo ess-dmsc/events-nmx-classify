@@ -27,7 +27,6 @@ public:
   void clear();
 
 public slots:
-  void enableIO(bool);
   void set_indices(std::set<size_t> indices);
 
 private slots:
@@ -67,6 +66,9 @@ private:
   void set_record_options();
   void refresh_record_plots();
   void update_parameters_model();
+
+  QStringList getMetricsList(NMX::MetricSet metric_set, bool include_none);
+
 };
 
 #endif

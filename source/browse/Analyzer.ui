@@ -47,7 +47,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="pushX">
+          <widget class="FilterCombo" name="pushX">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -98,7 +98,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="pushY">
+          <widget class="FilterCombo" name="pushY">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -196,7 +196,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="pushMetric1D">
+          <widget class="FilterCombo" name="pushMetric1D">
            <property name="minimumSize">
             <size>
              <width>220</width>
@@ -405,15 +405,20 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>QPlot::Plot2D</class>
-   <extends>QWidget</extends>
-   <header>qp_2d.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
    <class>QPlot::Multi1D</class>
    <extends>QWidget</extends>
    <header>qp_multi1d.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>FilterCombo</class>
+   <extends>QPushButton</extends>
+   <header>SearchList.h</header>
+  </customwidget>
+  <customwidget>
+   <class>QPlot::Plot2D</class>
+   <extends>QWidget</extends>
+   <header>qp_2d.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
