@@ -14,7 +14,7 @@ node ("qt") {
             sh "source /opt/cern/root/bin/thisroot.sh && \
                 HDF5_ROOT=/opt/dm_group/hdf5 \
                 CMAKE_PREFIX_PATH=/opt/dm_group/hdf5 \
-                cmake ../code/source -D "
+                cmake ../code/source"
         }
 
         stage("Build project") {
