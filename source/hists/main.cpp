@@ -25,6 +25,7 @@ namespace fs = boost::filesystem;
 const std::string options_text =
     "NMX metrics histogram generation tool. Available options:\n"
     "    -p [path] Path to analyzed data files. Defaults to current path\n"
+    "    -r Recursive file search. Default=false\n"
     "    -o [path/file.h5] Output file\n"
     "    --help/-h prints this list of options\n";
 
@@ -40,19 +41,20 @@ int main(int argc, char* argv[])
   // Input file
   std::string input_path  = cmd_line.get_value("-p");
   std::string output_file = cmd_line.get_value("-o");
+  bool recurse = cmd_line.has_switch("-r");
 
   std::set<boost::filesystem::path> files;
 
   if (!input_path.empty())
   {
-    files = files_in(input_path, ".h5");
+    files = files_in(input_path, ".h5", recurse);
     if (files.empty())
       WARN << "No *.h5 files found in " << input_path;
   }
 
   if (files.empty())
   {
-    files = files_in(fs::current_path(), ".h5");
+    files = files_in(fs::current_path(), ".h5", recurse);
     if (files.empty())
       ERR << "No *.h5 files found in " << fs::current_path();
   }
@@ -66,6 +68,10 @@ int main(int argc, char* argv[])
   }
 
   H5CC::File outfile(fs::path(output_file).string());
+
+  std::cout << "Will analyse the following files:\n";
+  for (auto p : files)
+    std::cout << "   " << p << "\n";
 
   std::set<std::string> all_metrics;
 
