@@ -11,6 +11,7 @@ node ("qt") {
     dir("build") {
         stage("Run CMake") {
             sh 'rm -rf ./*'
+            sh '/opt/cmake/cmake-3.7.1-Linux-x86_64/bin/cmake --version'
             sh "source /opt/cern/root/bin/thisroot.sh && \
                 HDF5_ROOT=/opt/dm_group/hdf5 \
                 CMAKE_PREFIX_PATH=/opt/dm_group/hdf5 \
