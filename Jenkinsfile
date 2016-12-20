@@ -2,7 +2,7 @@
  * h5cc_test Jenkinsfile
  */
 
-node {
+node ("qt") {
 
     stage("Checkout projects") {
         checkout scm
