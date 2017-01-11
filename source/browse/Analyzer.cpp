@@ -165,10 +165,10 @@ void Analyzer::replot1d()
 {
   ui->plotHistogram->clearAll();
 
-  QPlot::Appearance profile;
+//  QPlot::Appearance profile;
 
-  profile.default_pen = QPen(palette_[0], 2);
-  ui->plotHistogram->addGraph(histogram1d_, profile);
+//  profile.default_pen = QPen(palette_[0], 2);
+  ui->plotHistogram->addGraph(histogram1d_, QPen(palette_[0], 2));
 
   auto fit_type = ui->comboFit->currentText().toStdString();
 
@@ -180,8 +180,8 @@ void Analyzer::replot1d()
   else
     ui->labelFit->setText("   No edge fit model selected");
 
-  profile.default_pen = QPen(palette_[1], 2);
-  ui->plotHistogram->addGraph(fitter.get_fit_hist(4), profile);
+//  profile.default_pen = QPen(palette_[1], 2);
+  ui->plotHistogram->addGraph(fitter.get_fit_hist(4), QPen(palette_[1], 2));
 
   ui->plotHistogram->setAxisLabels(ui->pushMetric1D->text(), "count");
   ui->plotHistogram->zoomOut();

@@ -4,7 +4,7 @@
 #include <QWidget>
 #include "qp_generic.h"
 #include "qp_appearance.h"
-#include "histogram.h"
+//#include "histogram.h"
 
 namespace QPlot
 {
@@ -21,6 +21,11 @@ struct Marker1D
   bool visible {false};
   double pos {0};
   Appearance appearance;
+  Qt::Alignment alignment {Qt::AlignTop};
+  double closest_val{nan("")};
+
+  double worstVal() const;
+  bool isValBetterThan(double newval, double oldval) const;
 };
 
 
@@ -35,8 +40,9 @@ public:
   void clearExtras() override;
   void replotExtras() override;
 
-  void addGraph(const HistMap1D&, Appearance, QString name = "");
-  void addGraph(const HistList1D&, Appearance, QString name = "");
+  template<typename T> QCPGraph* addGraph(const T& hist, const QPen&, QString name = "");
+  template<typename T> QCPGraph* addGraph(const T& x, const T& y, const QPen&, QString name = "");
+
   void setAxisLabels(QString x, QString y);
   void setTitle(QString title);
 
@@ -47,34 +53,103 @@ public:
   void tightenX();
   void setScaleType(QString) override;
 
+  virtual QCPRange getDomain();
+  virtual QCPRange getRange(QCPRange domain = QCPRange());
+
 public slots:
   void zoomOut() Q_DECL_OVERRIDE;
 
 signals:
-  void clickedLeft(double);
-  void clickedRight(double);
+  void clickedPlot(double x, double y, Qt::MouseButton button);
 
 protected slots:
   void mousePressed(QMouseEvent*);
   void mouseReleased(QMouseEvent*);
-
-  void adjustY();
+  virtual void adjustY();
 
 protected:
   void mouseClicked(double x, double y, QMouseEvent *event) override;
 
   QString title_text_;
-  std::list<Marker1D> my_markers_;
+  std::list<Marker1D> markers_;
   std::vector<Marker1D> highlight_;
 
   QCPGraphDataContainer aggregate_;
-  QCPRange getDomain();
-  QCPRange getRange(QCPRange domain = QCPRange());
 
   void plotMarkers();
   void plotHighlight();
   void plotTitle();
+
+  QCPItemTracer* placeMarker(const Marker1D &);
+  QCPItemLine* addArrow(QCPItemTracer*, const Marker1D &);
+  QCPItemText* addLabel(QCPItemTracer*, const Marker1D &);
 };
+
+template<typename T>
+QCPGraph* Multi1D::addGraph(const T& hist, const QPen& pen, QString name)
+{
+  if (hist.empty())
+    return nullptr; // is this wise?
+
+  double minimum {std::numeric_limits<double>::max()};
+  double maximum {std::numeric_limits<double>::min()};
+
+  GenericPlot::addGraph();
+  auto ret = graph(graphCount() - 1);
+  ret->setName(name);
+  auto data = ret->data();
+  for (auto p : hist)
+  {
+    QCPGraphData point(p.first, p.second);
+    data->add(point);
+    aggregate_.add(point);
+    minimum = std::min(p.first, minimum);
+    maximum = std::max(p.first, maximum);
+  }
+
+  ret->setProperty("minimum", QVariant::fromValue(minimum));
+  ret->setProperty("maximum", QVariant::fromValue(maximum));
+
+  ret->setPen(pen);
+  setGraphStyle(ret);
+  setGraphThickness(ret);
+  return ret;
+}
+
+template<typename T>
+QCPGraph* Multi1D::addGraph(const T& x, const T& y, const QPen& pen, QString name)
+{
+  if (x.empty() || y.empty() || (x.size() != y.size()))
+    return nullptr; // is this wise?
+
+  double minimum {std::numeric_limits<double>::max()};
+  double maximum {std::numeric_limits<double>::min()};
+
+  GenericPlot::addGraph();
+  auto ret = graph(graphCount() - 1);
+  ret->setName(name);
+  auto data = ret->data();
+  auto ix = x.begin();
+  auto iy = y.begin();
+  while (ix != x.end())
+  {
+    QCPGraphData point(*ix, *iy);
+    data->add(point);
+    aggregate_.add(point);
+    ++ix;
+    ++iy;
+    minimum = std::min(*ix, minimum);
+    maximum = std::max(*ix, maximum);
+  }
+
+  ret->setProperty("minimum", QVariant::fromValue(minimum));
+  ret->setProperty("maximum", QVariant::fromValue(maximum));
+
+  ret->setPen(pen);
+  setGraphStyle(ret);
+  setGraphThickness(ret);
+  return ret;
+}
 
 }
 

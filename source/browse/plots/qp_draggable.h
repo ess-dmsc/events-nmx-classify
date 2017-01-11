@@ -14,6 +14,7 @@ public:
 
     void startMoving(const QPointF &mousePos);
     void set_limits(double l , double r);
+    QCPItemTracer *tracer() const;
 
 signals:
     void moved(const QPointF &pos);
@@ -33,7 +34,7 @@ private:
     QPointF grip_delta_;
     QPointF pos_initial_;
     QPointF pos_last_;
-    QTimer *move_timer_;
+    QTimer  move_timer_;
     QPointF pos_current_;
 
     double limit_l, limit_r;

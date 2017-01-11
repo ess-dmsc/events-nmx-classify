@@ -1,5 +1,4 @@
 #include "qp_generic.h"
-#include "CustomLogger.h"
 #include "qt_util.h"
 
 namespace QPlot
@@ -28,15 +27,35 @@ void GenericPlot::setVisibleOptions(ShowOptions options)
   replot();
 }
 
-void GenericPlot::clearAll()
+ShowOptions GenericPlot::visibleOptions() const
 {
+  return visible_options_;
+}
+
+bool GenericPlot::containsItem(QCPAbstractItem *item) const
+{
+  return (mItems.contains(item));
+}
+
+void GenericPlot::clearAll()
+{  
+  clearGraphs();
+  clearItems();
   this->clearPrimary();
   this->clearExtras();
 }
 
+void GenericPlot::replotAll()
+{
+  clearGraphs();
+  clearItems();
+  this->replotPrimary();
+  this->replotExtras();
+  replot();
+}
+
 void GenericPlot::replotExtras()
 {
-  this->clearItems();
   this->plotButtons();
 }
 
@@ -119,7 +138,7 @@ void GenericPlot::setShowGradientLegend(bool show)
 
   QCPColorMap *colorMap {nullptr};
   for (int i=0; i < plottableCount(); ++i)
-    if ((colorMap = qobject_cast<QCPColorMap*>(plottable(i))))
+    if (colorMap = qobject_cast<QCPColorMap*>(plottable(i)))
       break;
 
   if (show_gradient_legend_ && colorMap)
@@ -241,6 +260,7 @@ void GenericPlot::setScaleType(QString scale_type)
 
   current_scale_type_ = scale_type;
   checkoffOptionsMenu();
+  //replot();
   this->setCursor(Qt::ArrowCursor);
 }
 
@@ -305,7 +325,8 @@ void GenericPlot::addStandardGradients()
 
 QSize GenericPlot::sizeHint() const
 {
-  if (always_square_) {
+  if (always_square_)
+  {
     QSize s = size();
     previous_height_ = s.height();
 
@@ -332,14 +353,14 @@ QSize GenericPlot::sizeHint() const
     s.setWidth(s.height() - extra_height + extra_width);
     s.setHeight(QCustomPlot::sizeHint().height());
     return s;
-  } else
+  }
+  else
     return QCustomPlot::sizeHint();
 }
 
 void GenericPlot::resizeEvent(QResizeEvent * event)
 {
   QCustomPlot::resizeEvent(event);
-
   // maybe this call should be scheduled for next iteration of event loop?
   if (always_square_ && (previous_height_ != height()))
     updateGeometry();
@@ -395,15 +416,11 @@ void GenericPlot::mouseReleaseEvent(QMouseEvent *event)
 {
   emit mouseRelease(event);
 
-  //DBG << "GenericPlot::mouseReleaseEvent";
-
   if ((mMousePressPos-event->pos()).manhattanLength() < 5) {
     double co_x, co_y;
 
     co_x = xAxis->pixelToCoord(event->x());
     co_y = yAxis->pixelToCoord(event->y());
-
-    //DBG << "Custom plot mouse released at coords: " << co_x << ", " << co_y;
 
     QCPAbstractItem *ai = qobject_cast<QCPAbstractItem*>(itemAt(event->localPos(), false));
 
@@ -464,39 +481,34 @@ void GenericPlot::keyReleaseEvent(QKeyEvent *event)
 
 void GenericPlot::plotButtons()
 {
-  Button *previousButton {nullptr};
-  Button *newButton {nullptr};
+  lastStackButton = nullptr;
 
   if (visible_options_ & ShowOptions::zoom)
-  {
-    newButton = new Button(this,
-                           QPixmap(":/icons/oxy/22/view_fullscreen.png"),
-                           "reset_scales", "Zoom out",
-                           Qt::AlignBottom | Qt::AlignRight);
-    newButton->setClipToAxisRect(false);
-    setButtonPosition(newButton->topLeft, nullptr);
-    previousButton = newButton;
-  }
+    addStackButton(new Button(this,
+                              QPixmap(":/icons/oxy/22/view_fullscreen.png"),
+                              "reset_scales", "Zoom out",
+                              Qt::AlignBottom | Qt::AlignRight));
 
   if (!options_menu_.isEmpty())
-  {
-    newButton = new Button(this, QPixmap(":/icons/oxy/22/view_statistics.png"),
-                           "options", "Style options",
-                           Qt::AlignBottom | Qt::AlignRight);
-    newButton->setClipToAxisRect(false);
-    setButtonPosition(newButton->topLeft, previousButton);
-    previousButton = newButton;
-  }
+    addStackButton(new Button(this, QPixmap(":/icons/oxy/22/view_statistics.png"),
+                              "options", "Style options",
+                              Qt::AlignBottom | Qt::AlignRight));
 
   if (visible_options_ & ShowOptions::save)
-  {
-    newButton = new Button(this,
-                           QPixmap(":/icons/oxy/22/document_save.png"),
-                           "export", "Export plot",
-                           Qt::AlignBottom | Qt::AlignRight);
-    newButton->setClipToAxisRect(false);
-    setButtonPosition(newButton->topLeft, previousButton);
-  }
+    addStackButton(new Button(this,
+                              QPixmap(":/icons/oxy/22/document_save.png"),
+                              "export", "Export plot",
+                              Qt::AlignBottom | Qt::AlignRight));
+}
+
+void GenericPlot::addStackButton(Button* button)
+{
+  button->setClipToAxisRect(false);
+  if (!lastStackButton)
+    setButtonPosition(button->topLeft, nullptr);
+  else
+    setButtonPosition(button->topLeft, lastStackButton);
+  lastStackButton = button;
 }
 
 void GenericPlot::setButtonPosition(QCPItemPosition* pos, Button* previous)
@@ -616,29 +628,32 @@ void GenericPlot::setGraphThickness(QCPGraph* graph)
   }
 }
 
-void GenericPlot::setGraphStyle(QCPGraph* graph)
+void GenericPlot::setGraphStyle(QCPGraph* graph, QString style)
 {
-  if (current_plot_style_ == "Fill") {
+  if (style.isEmpty())
+    style = current_plot_style_;
+
+  if (style == "Fill") {
     graph->setBrush(QBrush(graph->pen().color()));
     graph->setLineStyle(QCPGraph::lsLine);
     graph->setScatterStyle(QCPScatterStyle::ssNone);
-  } else if (current_plot_style_ == "Lines") {
+  } else if (style == "Lines") {
     graph->setBrush(QBrush());
     graph->setLineStyle(QCPGraph::lsLine);
     graph->setScatterStyle(QCPScatterStyle::ssNone);
-  } else if (current_plot_style_ == "Step center") {
+  } else if (style == "Step center") {
     graph->setBrush(QBrush());
     graph->setLineStyle(QCPGraph::lsStepCenter);
     graph->setScatterStyle(QCPScatterStyle::ssNone);
-  } else if (current_plot_style_ == "Step left") {
+  } else if (style == "Step left") {
     graph->setBrush(QBrush());
     graph->setLineStyle(QCPGraph::lsStepLeft);
     graph->setScatterStyle(QCPScatterStyle::ssNone);
-  } else if (current_plot_style_ == "Step right") {
+  } else if (style == "Step right") {
     graph->setBrush(QBrush());
     graph->setLineStyle(QCPGraph::lsStepRight);
     graph->setScatterStyle(QCPScatterStyle::ssNone);
-  } else if (current_plot_style_ == "Scatter") {
+  } else if (style == "Scatter") {
     graph->setBrush(QBrush());
     graph->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc));
     graph->setLineStyle(QCPGraph::lsNone);

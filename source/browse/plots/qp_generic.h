@@ -34,12 +34,18 @@ public:
   explicit GenericPlot(QWidget *parent = 0);
   QSize sizeHint() const Q_DECL_OVERRIDE;
 
+  bool containsItem(QCPAbstractItem *item) const;
+
   void clearAll();
   virtual void clearPrimary() {}
   virtual void clearExtras() {}
+
+  void replotAll();
+  virtual void replotPrimary() {}
   virtual void replotExtras();
 
   void setVisibleOptions(ShowOptions);
+  ShowOptions visibleOptions() const;
 
   bool alwaysSquare() const;
   bool antialiased() const;
@@ -87,7 +93,9 @@ protected:
 
   void plotButtons();
   void setGraphThickness(QCPGraph* graph);
-  void setGraphStyle(QCPGraph* graph);
+  void setGraphStyle(QCPGraph* graph, QString style = "");
+  void setButtonPosition(QCPItemPosition*, Button* previous);
+  void addStackButton(Button* button);
 
 protected slots:
   void exportPlot(QAction*);
@@ -95,11 +103,11 @@ protected slots:
 
 private:
   mutable int previous_height_ {0};
-  Draggable *under_mouse_ {nullptr};
 
   ShowOptions visible_options_;
   QMenu options_menu_;
   QMenu export_menu_;
+  Button *lastStackButton {nullptr};
 
   bool always_square_ {false};
   bool antialiased_ {false};
@@ -127,7 +135,6 @@ private:
   void checkoffOptionsMenu();
   void removeGradientLegend();
   void addGradientLegend(QCPColorMap* colorMap);
-  void setButtonPosition(QCPItemPosition*, Button* previous);
 };
 
 

@@ -151,9 +151,9 @@ void AggregateReview::render_selection()
         f2 = f.second;
 
 
-      QPlot::Appearance ap;
-      ap.default_pen = palette_.at(i % palette_.size());
-      ui->plotHistogram->addGraph(f2, ap, f.first);
+//      QPlot::Appearance ap;
+//      ap.default_pen = palette_.at(i % palette_.size());
+      ui->plotHistogram->addGraph(f2, palette_.at(i % palette_.size()), f.first);
       ++i;
     }
   }

@@ -313,9 +313,10 @@ void ViewEvent::plotProjection()
 
   ui->plotProjection->clearAll();
 
-  QPlot::Appearance profile;
-  profile.default_pen = QPen(Qt::darkRed, 2);
-  ui->plotProjection->addGraph(event_.get_projection(ui->comboProjection->currentText().toStdString()), profile);
+//  QPlot::Appearance profile;
+//  profile.default_pen = QPen(Qt::darkRed, 2);
+  ui->plotProjection->addGraph(event_.get_projection(ui->comboProjection->currentText().toStdString()),
+                               QPen(Qt::darkRed, 2));
   ui->plotProjection->setAxisLabels("position", "value");
   ui->plotProjection->setTitle(ui->comboProjection->currentText());
   ui->plotProjection->zoomOut();

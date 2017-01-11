@@ -9,7 +9,6 @@ Draggable::Draggable(QCustomPlot *parentPlot, QCPItemTracer *trc, int size)
   , grip_delta_()
   , pos_initial_()
   , pos_last_()
-  , move_timer_(new QTimer(this))
   , pos_current_()
 {
   start->setParentAnchor(center_tracer_->position);
@@ -21,14 +20,22 @@ Draggable::Draggable(QCustomPlot *parentPlot, QCPItemTracer *trc, int size)
 
   setSelectable(true); // plot moves only selectable points, see Plot::mouseMoveEvent
 
-  limit_l = parentPlot->xAxis->coordToPixel(center_tracer_->position->key() - 1);
-  limit_l = parentPlot->xAxis->coordToPixel(center_tracer_->position->key() + 1);
+  if (trc->graph()->property("minimum").isValid())
+    limit_l = parentPlot->xAxis->coordToPixel(trc->graph()->property("minimum").toDouble());
+  else
+    limit_l = parentPlot->xAxis->coordToPixel(center_tracer_->position->key() - 1);
 
-  move_timer_->setInterval(25); // 40 FPS
-  connect(move_timer_, SIGNAL(timeout()), this, SLOT(moveToWantedPos()));
+  if (trc->graph()->property("maximum").isValid())
+    limit_r = parentPlot->xAxis->coordToPixel(trc->graph()->property("maximum").toDouble());
+  else
+    limit_r = parentPlot->xAxis->coordToPixel(center_tracer_->position->key() + 1);
+
+  move_timer_.setInterval(25); // 40 FPS
+  connect(&move_timer_, SIGNAL(timeout()), this, SLOT(moveToWantedPos()));
 }
 
-void Draggable::set_limits(double l , double r) {
+void Draggable::set_limits(double l , double r)
+{
   limit_l = parentPlot()->xAxis->coordToPixel(l);
   limit_r = parentPlot()->xAxis->coordToPixel(r);
 }
@@ -54,7 +61,7 @@ void Draggable::startMoving(const QPointF &mousePos)
   pos_last_ = pos_initial_;
   pos_current_ = QPointF();
 
-  move_timer_->start();
+  move_timer_.start();
 
 //  QApplication::setOverrideCursor(Qt::ClosedHandCursor);
 }
@@ -68,7 +75,7 @@ void Draggable::stopMov(QMouseEvent* /*evt*/)
   disconnect(parentPlot(), SIGNAL(mouseRelease(QMouseEvent*)),
              this, SLOT(stopMov(QMouseEvent*)));
 
-  move_timer_->stop();
+  move_timer_.stop();
   moveToWantedPos();
 
 //  QApplication::restoreOverrideCursor();
@@ -102,15 +109,22 @@ void Draggable::onMouseMove(QMouseEvent *event)
 
 void Draggable::moveToWantedPos()
 {
-  if (!pos_current_.isNull()) {
+  if (!pos_current_.isNull())
+  {
     double xx = pos_current_.x();
-    if (xx <= limit_l)
-      xx = limit_l + 1;
-    if (xx >= limit_r)
-      xx = limit_r - 1;
+    if (xx < limit_l)
+      xx = limit_l;
+    if (xx > limit_r)
+      xx = limit_r;
     movePx(xx, pos_current_.y());
     pos_current_ = QPointF();
   }
 }
+
+QCPItemTracer* Draggable::tracer() const
+{
+  return center_tracer_;
+}
+
 
 }

@@ -1,5 +1,4 @@
 #include "qp_button.h"
-#include "CustomLogger.h"
 #include <QToolTip>
 
 namespace QPlot
@@ -17,13 +16,14 @@ Button::Button(QCustomPlot *parentPlot,
   setPixmap(pixmap);
   setSelectable(false);
 
-  if (second_point == (Qt::AlignBottom | Qt::AlignRight)) {
-    //    DBG << "Alightning bottom right";
+  if (second_point == (Qt::AlignBottom | Qt::AlignRight))
+  {
     bottomRight->setType(QCPItemPosition::ptAbsolute);
     bottomRight->setParentAnchor(topLeft);
     bottomRight->setCoords(pixmap.width(), pixmap.height());
-  } else {
-    //    DBG << "Alightning top left";
+  }
+  else
+  {
     topLeft->setType(QCPItemPosition::ptAbsolute);
     topLeft->setParentAnchor(bottomRight);
     topLeft->setCoords(-pixmap.width(), -pixmap.height());
