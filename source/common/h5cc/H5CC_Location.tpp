@@ -93,16 +93,13 @@ TT TDT DT Location<T>::read_attribute(std::string name) const
   return ret;
 }
 
-TT void Location<T>::write_variant(std::string name, const VariantType& val)
+TT TDT void Location<T>::write_enum(std::string name, const Enum<DT>& val)
 {
   if (has_attribute(name))
     remove_attribute(name);
   try
   {
-    auto type = val.h5_type();
-//    if (!VariantFactory::getInstance().has(type))
-//      VariantFactory::getInstance().register_type(val.type_name(), val.h5_type(), )
-    auto attribute = location_.createAttribute(name, type, H5::DataSpace(H5S_SCALAR));
+    auto attribute = location_.createAttribute(name, val.h5_type(), H5::DataSpace(H5S_SCALAR));
     val.write(attribute);
   }
   catch (...)
@@ -111,14 +108,13 @@ TT void Location<T>::write_variant(std::string name, const VariantType& val)
   }
 }
 
-TT VariantPtr Location<T>::read_variant(std::string name) const
+TT TDT Enum<DT> Location<T>::read_enum(std::string name) const
 {
-  VariantPtr ret;
+  Enum<DT> ret;
   try
   {
     auto attribute = location_.openAttribute(name);
-    ret = VariantFactory::getInstance().create(attribute.getDataType());
-    ret->read(attribute);
+    ret.read(attribute);
   }
   catch (...)
   {

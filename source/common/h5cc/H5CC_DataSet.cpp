@@ -1,6 +1,6 @@
 #include "H5CC_DataSet.h"
 #include "H5CC_Exception.h"
-#include "H5CC_Variant.h"
+#include "H5CC_Enum.h"
 #include <sstream>
 
 namespace H5CC {
@@ -39,9 +39,9 @@ Space DataSet::slab_space(std::initializer_list<int> list) const
 std::string DataSet::debug() const
 {
   std::stringstream ss;
-  ss << name() << " " << space_.debug() <<
-        " (" << space_.data_size() << ") " <<
-        VariantFactory::getInstance().name_of(type_);
+  ss << name() << " " << space_.debug()
+     << " (" << space_.data_size() << ")";
+//     << VariantFactory::getInstance().name_of(type_);
   return ss.str();
 }
 

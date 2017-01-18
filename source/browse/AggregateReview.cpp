@@ -166,7 +166,8 @@ void AggregateReview::render_selection()
   ui->pushDigDown->setEnabled(
         (ui->searchBox1->selection().size() == 1) &&
         (ui->searchBox2->selection().size() == 1) &&
-        (ui->searchBox3->selection().size() == 1));
+        (ui->searchBox3->selection().size() == 1) &&
+        (ui->searchBox3->selection().front() == "aggregate"));
 
   ui->plotHistogram->update();
   ui->plotHistogram->zoomOut();
@@ -278,7 +279,6 @@ void AggregateReview::on_pushDigDown_clicked()
     return;
   if (ui->searchBox3->selection().front() == "aggregate")
     return;
-
 
   QString filename = data_directory_ + "/" + ui->searchBox3->selection().front();
 

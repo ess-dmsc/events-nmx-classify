@@ -24,7 +24,7 @@ TT std::list<std::string> Groupoid<T>::members() const
   std::list<std::string> ret;
   try
   {
-    for (auto i=0; i < Location<T>::location_.getNumObjs(); ++i)
+    for (size_t i=0; i < Location<T>::location_.getNumObjs(); ++i)
       ret.push_back(std::string(Location<T>::location_.getObjnameByIdx(i)));
   }
   catch (...)
