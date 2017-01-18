@@ -178,9 +178,10 @@ void AggregateReview::on_pushOpen_clicked()
   ui->pushOpen->setText("");
   QSettings settings;
   settings.beginGroup("Program");
-  QString data_directory = settings.value("data_directory", "").toString();
+  if (data_directory_.isEmpty())
+    data_directory_ = settings.value("data_directory", "").toString();
 
-  QString fileName = QFileDialog::getOpenFileName(this, "Load TPC data", data_directory, "HDF5 (*.h5)");
+  QString fileName = QFileDialog::getOpenFileName(this, "Load TPC data", data_directory_, "HDF5 (*.h5)");
   if (!validateFile(this, fileName, false))
     return;
 
@@ -189,6 +190,7 @@ void AggregateReview::on_pushOpen_clicked()
 
 void AggregateReview::openFile(QString fileName)
 {
+  data_directory_ = path_of_file(fileName);
   QSet<QString> list1, list2, list3;
   try
   {
@@ -204,9 +206,12 @@ void AggregateReview::openFile(QString fileName)
         auto group2 = group1.open_group(g2);
         for (auto dset : group2.datasets())
         {
-          list3.insert(QString::fromStdString(dset));
           auto dataset = group2.open_dataset(dset);
-          data_[g1][g2][dset] = read(dataset);
+          std::string dset_name = dset;
+          if (dataset.has_attribute("relpath"))
+            dset_name = dataset.read_attribute<std::string>("relpath");
+          list3.insert(QString::fromStdString(dset_name));
+          data_[g1][g2][dset_name] = read(dataset);
         }
       }
     }
@@ -271,10 +276,15 @@ void AggregateReview::on_pushDigDown_clicked()
     return;
   if (ui->searchBox3->selection().size() != 1)
     return;
+  if (ui->searchBox3->selection().front() == "aggregate")
+    return;
+
+
+  QString filename = data_directory_ + "/" + ui->searchBox3->selection().front();
 
   emit digDownTown(ui->searchBox1->selection().front(),
                    ui->searchBox2->selection().front(),
-                   ui->searchBox3->selection().front());
+                   filename);
 }
 
 void AggregateReview::on_pushButton_clicked()

@@ -52,6 +52,7 @@ private:
   void saveSettings();
 
   QVector<QPen> palette_;
+  QString data_directory_;
 
 
   std::map<std::string, std::map<std::string, std::map<std::string, HistMap1D>>> data_;

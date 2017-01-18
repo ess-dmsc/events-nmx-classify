@@ -24,4 +24,37 @@ std::set<boost::filesystem::path> files_in(boost::filesystem::path path, std::st
   return ret;
 }
 
+static boost::filesystem::path relative_to(boost::filesystem::path from,
+                                           boost::filesystem::path to)
+{
+  namespace fs = boost::filesystem;
+  // Start at the root path and while they are the same then do nothing then when they first
+  // diverge take the remainder of the two path and replace the entire from path with ".."
+  // segments.
+  fs::path::const_iterator fromIter = from.begin();
+  fs::path::const_iterator toIter = to.begin();
+
+  // Loop through both
+  while (fromIter != from.end() && toIter != to.end() && (*toIter) == (*fromIter))
+  {
+    ++toIter;
+    ++fromIter;
+  }
+
+  fs::path finalPath;
+  while (fromIter != from.end())
+  {
+    finalPath /= "..";
+    ++fromIter;
+  }
+
+  while (toIter != to.end())
+  {
+    finalPath /= *toIter;
+    ++toIter;
+  }
+
+  return finalPath;
+}
+
 #endif

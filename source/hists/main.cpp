@@ -67,72 +67,56 @@ int main(int argc, char* argv[])
     return 1;
   }
 
-  H5CC::File outfile(fs::path(output_file).string());
-
   std::cout << "Will analyse the following files:\n";
   for (auto p : files)
     std::cout << "   " << p << "\n";
 
-  std::set<std::string> all_metrics;
+  std::set<std::string> all_metric_names;
 
   auto prog1 = make_prog(files.size(), "  Indexing metrics  ");
   for (auto filename : files)
   {
-    std::shared_ptr<NMX::FileAPV> reader
-        = std::make_shared<NMX::FileAPV>(filename.string(), H5CC::Access::r_existing);
+    auto reader = std::make_shared<NMX::FileAPV>(filename.string(), H5CC::Access::r_existing);
 
     for (auto analysis : reader->analyses())
     {
       reader->load_analysis(analysis);
-      if (!reader->num_analyzed())
-        continue;
-      for (auto &metric : reader->metrics())
-        all_metrics.insert(metric);
+      if (reader->num_analyzed())
+        for (auto &metric : reader->metrics())
+          all_metric_names.insert(metric);
     }
 
     ++(*prog1);
     if (term_flag)
       return 0;
-
-    reader.reset();
   }
-  prog1.reset();
 
-
-  if (all_metrics.empty())
+  if (all_metric_names.empty())
   {
     INFO << "No metrics found.";
     return 0;
   }
 
+  H5CC::File outfile(fs::path(output_file).string(), H5CC::Access::rw_truncate);
   std::map<std::string, double> minima;
   std::map<std::string, double> maxima;
 
-  auto prog2 = make_prog(all_metrics.size(), "  Aggregating metrics  ");
-  for (auto metric : all_metrics)
+  auto prog2 = make_prog(all_metric_names.size(), "  Aggregating metrics  ");
+  for (auto metric : all_metric_names)
   {
     std::map<std::string, NMX::Metric> aggregates;
 
     for (auto filename : files)
     {
-      std::shared_ptr<NMX::FileAPV> reader
-          = std::make_shared<NMX::FileAPV>(filename.string(), H5CC::Access::r_existing);
-
-      std::string dataset = filename.stem().string();
-
+      auto reader = std::make_shared<NMX::FileAPV>(filename.string(), H5CC::Access::r_existing);
       for (auto analysis : reader->analyses())
       {
         reader->load_analysis(analysis);
-
-        if (!reader->num_analyzed())
-          continue;
-
-        aggregates[analysis].merge(reader->get_metric(metric));
-
+        if (reader->num_analyzed())
+          aggregates[analysis].merge(reader->get_metric(metric));
         if (term_flag)
           return 0;
       }
-      reader.reset();
     }
 
     for (auto a : aggregates)
@@ -150,19 +134,18 @@ int main(int argc, char* argv[])
     }
     ++(*prog2);
   }
-  prog2.reset();
 
 
-
+  auto ofilepath = fs::absolute(fs::path(output_file).root_path()).relative_path();
   size_t fnum {0};
   for (auto filename : files)
   {
-    std::shared_ptr<NMX::FileAPV> reader
-        = std::make_shared<NMX::FileAPV>(filename.string(), H5CC::Access::r_existing);
+    auto reader = std::make_shared<NMX::FileAPV>(filename.string(), H5CC::Access::r_existing);
 
     std::string dataset = filename.stem().string();
+    auto relpath = relative_to(ofilepath, filename.relative_path());
 
-    INFO << "Processing file " << filename.string()
+    INFO << "Processing file " << relpath.string()
          << " (" << fnum+1 << "/" << files.size() << ")";
 
     for (auto analysis : reader->analyses())
@@ -176,12 +159,13 @@ int main(int argc, char* argv[])
 
       for (auto &metric : reader->metrics())
       {
-        all_metrics.insert(metric);
+        all_metric_names.insert(metric);
 
         double norm = NMX::Metric::normalizer(minima.at(metric), maxima.at(metric));
         auto hist = reader->get_metric(metric).make_histogram(norm);
 
         write(outfile.require_group(analysis).require_group(metric), dataset, hist);
+        outfile.open_group(analysis).open_group(metric).open_dataset(dataset).write_attribute("relpath", relpath.string());
 
         ++(*prog);
         if (term_flag)

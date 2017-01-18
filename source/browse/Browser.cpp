@@ -198,7 +198,7 @@ void Browser::on_pushOpen_clicked()
 void Browser::digDownTown(QString dset, QString metric, QString file)
 {
   if (!ui->pushOpen->text().contains(file))
-    open_file(data_directory_+"/"+file+".h5");
+    open_file(file);
   if (ui->comboGroup->currentText() != dset)
   {
     ui->comboGroup->setCurrentText(dset);
