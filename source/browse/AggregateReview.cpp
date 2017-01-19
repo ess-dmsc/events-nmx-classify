@@ -167,7 +167,7 @@ void AggregateReview::render_selection()
         (ui->searchBox1->selection().size() == 1) &&
         (ui->searchBox2->selection().size() == 1) &&
         (ui->searchBox3->selection().size() == 1) &&
-        (ui->searchBox3->selection().front() == "aggregate"));
+        (ui->searchBox3->selection().front() != "aggregate"));
 
   ui->plotHistogram->update();
   ui->plotHistogram->zoomOut();
