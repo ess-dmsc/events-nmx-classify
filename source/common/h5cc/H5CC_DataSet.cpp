@@ -11,39 +11,58 @@ DataSet::DataSet(H5::DataSet ds, std::string name) : Location<H5::DataSet>(ds, n
 {
   try
   {
-    space_ = Space(ds.getSpace());
+    shape_ = Shape(ds.getSpace());
     type_ = ds.getDataType();
   }
   catch (...)
   {
-    space_ = Space();
+    shape_ = Shape();
     Exception::rethrow();
   }
 }
 
-size_t DataSet::rank() const
+Shape DataSet::slab_shape(std::vector<hsize_t> list) const
 {
-  return space_.rank();
+  return shape_.slab_shape(list);
 }
 
-hsize_t DataSet::dim(size_t d) const
+Shape DataSet::shape() const
 {
-  return space_.dim(d);
+  return shape_;
 }
 
-Space DataSet::slab_space(std::initializer_list<int> list) const
+H5::DataType DataSet::type() const
 {
-  return space_.slab_space(list);
+  return type_;
+}
+
+bool DataSet::is_chunked() const
+{
+  auto prop = Location<H5::DataSet>::location_.getCreatePlist();
+  return (H5D_CHUNKED == prop.getLayout());
+}
+
+
+Shape DataSet::chunk_shape() const
+{
+  auto prop = Location<H5::DataSet>::location_.getCreatePlist();
+  if (H5D_CHUNKED != prop.getLayout())
+    return Shape();
+  std::vector<hsize_t> ret;
+  ret.resize(shape_.rank());
+  prop.getChunk(ret.size(), ret.data());
+  return Shape(ret);
 }
 
 std::string DataSet::debug() const
 {
   std::stringstream ss;
-  ss << name() << " " << space_.debug()
-     << " (" << space_.data_size() << ")";
-//     << VariantFactory::getInstance().name_of(type_);
+  ss << name() << " " << shape_.debug()
+     << " (" << shape_.data_size() << ")";
   return ss.str();
 }
+
+
 
 
 }

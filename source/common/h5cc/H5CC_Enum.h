@@ -1,7 +1,7 @@
-#ifndef H5CC_VARIANT_H
-#define H5CC_VARIANT_H
+#ifndef H5CC_ENUM_H
+#define H5CC_ENUM_H
 
-#include <H5Cpp.h>
+#include "H5CC_Common.h"
 #include "H5DataType.h"
 #include <string>
 #include <map>

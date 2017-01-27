@@ -1,7 +1,7 @@
 #ifndef H5CC_LOCATION_H
 #define H5CC_LOCATION_H
 
-#include <H5Cpp.h>
+#include "H5CC_Common.h"
 #include <list>
 #include "H5CC_Types.h"
 #include "H5CC_Enum.h"

@@ -12,19 +12,14 @@ FileAPV::FileAPV(std::string filename, H5CC::Access access)
 void FileAPV::open_raw()
 {
   dataset_ = file_.open_dataset("RawAPV");
+  auto shape = dataset_.shape();
 
-  if ((dataset_.rank() != 4) ||
-      (dataset_.dim(1) != 2) ||
-      (dataset_.dim(2) < 1) ||
-      (dataset_.dim(3) < 1))
+  if ((shape.rank() != 4) ||
+      (shape.dim(1) != 2) ||
+      (shape.data_size() < 1))
 
   {
-    ERR << "<NMX::FileAPV> bad size for raw datset "
-        << " rank=" << dataset_.rank() << " dims="
-        << " " << dataset_.dim(0)
-        << " " << dataset_.dim(1)
-        << " " << dataset_.dim(2)
-        << " " << dataset_.dim(3);
+    ERR << "<NMX::FileAPV> bad size for raw datset " << dataset_.debug();
     dataset_ = H5CC::DataSet();
   }
 }
@@ -43,7 +38,7 @@ bool FileAPV::has_raw() const
 
 size_t FileAPV::event_count() const
 {
-  return dataset_.dim(0);
+  return dataset_.shape().dim(0);
 }
 
 
@@ -58,18 +53,18 @@ Record FileAPV::read_record(size_t index, size_t plane) const
   if (index >= event_count())
     return Record();
 
-  auto timebins = dataset_.dim(3);
-  return Record(dataset_.read<int16_t>({1,1,-1,-1}, {index, plane, 0, 0}), timebins);
+  auto timebins = dataset_.shape().dim(3);
+  return Record(dataset_.read<int16_t>({1,1,H5CC::kMax,H5CC::kMax}, {index, plane, 0, 0}),
+                timebins);
 }
 
 void FileAPV::write_record(size_t index, size_t plane, const Record& record)
 {
-  auto strips = dataset_.dim(2);
-  auto timebins = dataset_.dim(3);
+  auto strips = dataset_.shape().dim(2);
+  auto timebins = dataset_.shape().dim(3);
   dataset_.write(record.to_buffer(strips, timebins),
-                 {1,1,-1,-1}, {index, plane, 0, 0});
+                 {1,1,H5CC::kMax,H5CC::kMax}, {index, plane, 0, 0});
 }
-
 
 size_t FileAPV::num_analyzed() const
 {

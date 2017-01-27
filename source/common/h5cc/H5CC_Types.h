@@ -9,8 +9,6 @@
 #include <string>
 #include <stdint.h>
 
-#include <iostream>
-
 namespace H5CC
 {
 
