@@ -76,7 +76,7 @@ void Analyzer::saveSettings()
   settings.setValue("units", ui->doubleUnits->value());
 }
 
-void Analyzer::set_new_source(std::shared_ptr<NMX::FileAPV> r)
+void Analyzer::set_new_source(std::shared_ptr<NMX::File> r)
 {
   reader_ = r;
   rebuildFilteredList();

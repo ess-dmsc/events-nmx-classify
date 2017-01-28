@@ -76,7 +76,7 @@ void Browser::open_file(QString fileName)
 
   try
   {
-    reader_ = std::make_shared<NMX::FileAPV>(fileName.toStdString(), H5CC::Access::rw_existing);
+    reader_ = std::make_shared<NMX::File>(fileName.toStdString(), H5CC::Access::rw_existing);
   }
   catch (...)
   {
@@ -85,8 +85,8 @@ void Browser::open_file(QString fileName)
     return;
   }
 
-  if (reader_->has_raw())
-    reader_->open_raw();
+  if (reader_->has_APV())
+    reader_->open_APV();
 
   int evt_count = reader_->event_count();
 

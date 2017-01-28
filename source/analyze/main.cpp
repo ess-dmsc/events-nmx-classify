@@ -1,6 +1,6 @@
 #include "CustomLogger.h"
 #include "CLParser.h"
-#include "FileAPV.h"
+#include "File.h"
 #include <signal.h>
 #include <boost/progress.hpp>
 #include "Filesystem.h"
@@ -60,11 +60,11 @@ int main(int argc, char* argv[])
 
   std::map<std::string, NMX::Settings> to_clone;
 
-  std::shared_ptr<NMX::FileAPV> reader;
+  std::shared_ptr<NMX::File> reader;
 
   try
   {
-    reader = std::make_shared<NMX::FileAPV>(clone_params_file, H5CC::Access::r_existing);
+    reader = std::make_shared<NMX::File>(clone_params_file, H5CC::Access::r_existing);
   }
   catch (...)
   {
@@ -99,8 +99,8 @@ int main(int argc, char* argv[])
     auto filename = f.string();
     try
     {
-      reader = std::make_shared<NMX::FileAPV>(filename, H5CC::Access::rw_existing);
-      reader->open_raw();
+      reader = std::make_shared<NMX::File>(filename, H5CC::Access::rw_existing);
+      reader->open_APV();
     }
     catch (...)
     {

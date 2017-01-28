@@ -6,17 +6,17 @@
 
 namespace NMX {
 
-class FileAPV
+class File
 {
 public:
-  FileAPV(std::string filename, H5CC::Access access);
-  ~FileAPV();
+  File(std::string filename, H5CC::Access access);
+  ~File();
 
-  void create_raw(size_t max_events, size_t strips, size_t timebins);
-  void open_raw();
-  bool has_raw() const;
+  void create_APV(size_t strips, size_t timebins);
+  void open_APV();
+  bool has_APV() const;
 
-  void write_raw(size_t index, const Event& event);
+  void write_event(size_t index, const Event& event);
 
   size_t event_count() const;
   Event get_event(size_t index) const;
@@ -37,7 +37,7 @@ public:
 private:
   H5CC::File     file_;
   bool           write_access_ {false};
-  H5CC::DataSet  dataset_;
+  H5CC::DataSet  dataset_APV_;
   Analysis       analysis_;
 
   Record read_record(size_t index, size_t plane) const;

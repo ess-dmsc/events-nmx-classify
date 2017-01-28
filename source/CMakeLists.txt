@@ -31,6 +31,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBOOST_LOG_DYN_LINK")
 add_definitions(-DQCUSTOMPLOT_USE_OPENGL)
 
 include_directories(${CMAKE_SOURCE_DIR}
+                    ${CMAKE_SOURCE_DIR}/convert
                     ${CMAKE_SOURCE_DIR}/common
                     ${CMAKE_SOURCE_DIR}/common/h5cc
                     ${CMAKE_SOURCE_DIR}/common/nmx
@@ -77,6 +78,16 @@ target_link_libraries(
   ${Boost_LIBRARIES}
 )
 
+file(GLOB_RECURSE sources_convert convert/*.cpp convert/*.h)
+
+add_executable(nmx_convert ${sources_convert} ${sources_common})
+target_link_libraries(
+  nmx_convert
+
+  ${HDF5_LIBRARIES}
+  ${Boost_LIBRARIES}
+  ${ROOT_LIBRARIES}
+)
 
 file(GLOB_RECURSE sources_browse browse/*.cpp browse/*.h browse/*.ui)
 

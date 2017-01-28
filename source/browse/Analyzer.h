@@ -5,7 +5,7 @@
 #include <QItemSelection>
 #include <memory>
 
-#include "FileAPV.h"
+#include "File.h"
 
 #include "BoxesModel.h"
 #include "SpecialDelegate.h"
@@ -23,7 +23,7 @@ public:
   explicit Analyzer(QWidget *parent = 0);
   ~Analyzer();
 
-  void set_new_source(std::shared_ptr<NMX::FileAPV> r);
+  void set_new_source(std::shared_ptr<NMX::File> r);
   void set_metric_z(QString);
 
 signals:
@@ -51,7 +51,7 @@ private:
   TestsModel tests_model_;
   SpecialDelegate tests_delegate_;
 
-  std::shared_ptr<NMX::FileAPV> reader_;
+  std::shared_ptr<NMX::File> reader_;
   std::set<size_t> indices_;
   HistMap1D histogram1d_;
 
