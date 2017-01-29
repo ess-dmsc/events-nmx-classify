@@ -2,11 +2,10 @@
 #include "CLParser.h"
 #include "File.h"
 #include <signal.h>
-#include <boost/progress.hpp>
 #include <boost/algorithm/string.hpp>
 #include "Filesystem.h"
 #include "ExceptionUtil.h"
-#include <memory>
+#include "progbar.h"
 
 #include "ReaderRawAPV.h"
 #include "ReaderROOT.h"
@@ -129,14 +128,12 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
-	string gname = "  Converting '" + input_file + "'  ";
-	string blanks(gname.size(), ' ');
-	boost::progress_display prog(nevents, cout, blanks, gname, blanks);
+  auto prog = progbar(nevents, "  Converting '" + input_file + "'  ");
 
 	for (size_t eventID = start; eventID < (start + nevents); ++eventID)
 	{
 		if (!verbose)
-			++prog;
+      ++(*prog);
 		try
 		{
 			NMX::Event event = reader->get_event(eventID);

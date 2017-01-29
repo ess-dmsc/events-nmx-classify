@@ -2,10 +2,9 @@
 #include "CLParser.h"
 #include "File.h"
 #include <signal.h>
-#include <boost/progress.hpp>
 #include "Filesystem.h"
-#include <memory>
 #include "ExceptionUtil.h"
+#include "progbar.h"
 
 volatile sig_atomic_t term_flag = 0;
 void term_key(int /*sig*/)
@@ -18,7 +17,7 @@ namespace fs = boost::filesystem;
 const std::string options_text =
     "NMX data analysis program. Available options:\n"
     "    -p [path] Defaults to current path\n"
-    "    -tovmm  Convert to vmm only\n"
+    "    -tovmm [chunksize] Save emulated vmm data, use specified chunksize\n"
     "    -clone [path/filename.h5] Clone analysis parameters from file\n"
     "    --help/-h prints this list of options\n";
 
@@ -34,7 +33,15 @@ int main(int argc, char* argv[])
   std::string target_path  = cmd_line.get_value("-p");
   std::string clone_params_file = cmd_line.get_value("-clone");
 
-  bool to_vmm = cmd_line.has_switch("-tovmm");
+  bool to_vmm = cmd_line.has_value("-tovmm");
+  int chunksize = 0;
+  if (to_vmm)
+  {
+    chunksize = std::stoi(cmd_line.get_value("-tovmm"));
+    if (chunksize < 1)
+      chunksize = 10;
+    INFO << "Saving as emulated VMM data using chunksize=" << chunksize;
+  }
 
   std::set<boost::filesystem::path> files;
 
@@ -47,7 +54,6 @@ int main(int argc, char* argv[])
 
   if (files.empty())
   {
-    INFO << "Searching crurent directory";
     files = files_in(fs::current_path(), ".h5");
     if (files.empty())
       ERR << "No *.h5 files found in " << fs::current_path();
@@ -111,38 +117,36 @@ int main(int argc, char* argv[])
     catch (...)
     {
       printException();
-      ERR << "Could not open file";
+      ERR << "Could not open file " << filename;
       continue;
     }
 
     if (!reader->event_count())
       continue;
 
-    INFO << "Processing file " << filename
-         << " (" << fnum << "/" << files.size() << ")";
+    INFO << "Processing file " << filename << " (" << fnum << "/" << files.size() << ")";
 
     for (auto group : to_clone)
     {
       if (to_vmm)
       {
         size_t nevents = reader->event_count();
-        std::string newname = filename + "_" + group.first + ".h5";
+        std::string newname =
+            boost::filesystem::change_extension(filename, "").string() +
+            "_" + group.first + ".h5";
 
         auto writer = std::make_shared<NMX::File>(newname, H5CC::Access::rw_truncate);
-        writer->create_VMM(nevents);
+        writer->create_VMM(nevents, chunksize);
 
-        std::string gname = "  Converting '" + newname + "'  ";
-        std::string blanks (gname.size(), ' ');
+        auto prog = progbar(nevents, "  Converting to '" + newname + "'  ");
 
-        boost::progress_display prog( nevents, std::cout,
-                                      blanks,  gname,  blanks);
         for (size_t eventID = 0; eventID < nevents; ++eventID)
         {
           auto event = reader->get_event(eventID);
           event.set_parameters(group.second);
           event.analyze();
           writer->write_event(eventID, event);
-          ++prog;
+          ++(*prog);
           if (term_flag)
             return 0;
         }
@@ -160,16 +164,12 @@ int main(int argc, char* argv[])
 
         reader->set_parameters(group.second);
 
-        std::string gname = "  Analyzing '" + group.first + "'  ";
-        std::string blanks (gname.size(), ' ');
-
-        boost::progress_display prog( nevents, std::cout,
-                                      blanks,  gname,  blanks);
-        prog += numanalyzed;
+        auto prog = progbar(nevents, "  Analyzing '" + group.first + "'  ");
+        (*prog) += numanalyzed;
         for (size_t eventID = numanalyzed; eventID < nevents; ++eventID)
         {
           reader->analyze_event(eventID);
-          ++prog;
+          ++(*prog);
           if (term_flag)
             return 0;
         }

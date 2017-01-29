@@ -2,22 +2,14 @@
 #include "CLParser.h"
 #include "File.h"
 #include <signal.h>
-#include <boost/progress.hpp>
 #include "Filesystem.h"
-#include <memory>
 #include "histogram_h5.h"
+#include "progbar.h"
 
 volatile sig_atomic_t term_flag = 0;
 void term_key(int /*sig*/)
 {
   term_flag = 1;
-}
-
-std::shared_ptr<boost::progress_display> make_prog(size_t size, std::string text)
-{
-  std::string blanks (text.size(), ' ');
-  return std::make_shared<boost::progress_display>(size, std::cout,
-                                                   blanks, text, blanks);
 }
 
 namespace fs = boost::filesystem;
@@ -73,7 +65,7 @@ int main(int argc, char* argv[])
 
   std::set<std::string> all_metric_names;
 
-  auto prog1 = make_prog(files.size(), "  Indexing metrics  ");
+  auto prog = progbar(files.size(), "  Indexing metrics  ");
   for (auto filename : files)
   {
     auto reader = std::make_shared<NMX::File>(filename.string(), H5CC::Access::r_existing);
@@ -86,7 +78,7 @@ int main(int argc, char* argv[])
           all_metric_names.insert(metric);
     }
 
-    ++(*prog1);
+    ++(*prog);
     if (term_flag)
       return 0;
   }
@@ -101,7 +93,7 @@ int main(int argc, char* argv[])
   std::map<std::string, double> minima;
   std::map<std::string, double> maxima;
 
-  auto prog2 = make_prog(all_metric_names.size(), "  Aggregating metrics  ");
+  prog = progbar(all_metric_names.size(), "  Aggregating metrics  ");
   for (auto metric : all_metric_names)
   {
     std::map<std::string, NMX::Metric> aggregates;
@@ -132,7 +124,7 @@ int main(int argc, char* argv[])
       else
         maxima[metric] = a.second.max();
     }
-    ++(*prog2);
+    ++(*prog);
   }
 
 
@@ -155,7 +147,7 @@ int main(int argc, char* argv[])
       if (!reader->num_analyzed())
         continue;
 
-      auto prog = make_prog(reader->metrics().size(), "  Processing '" + analysis + "'  ");
+      prog = progbar(reader->metrics().size(), "  Processing '" + analysis + "'  ");
 
       for (auto &metric : reader->metrics())
       {
