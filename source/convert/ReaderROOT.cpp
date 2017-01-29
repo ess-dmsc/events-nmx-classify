@@ -1,5 +1,4 @@
 #include "ReaderROOT.h"
-#include "CustomLogger.h"
 
 namespace NMX {
 
@@ -31,14 +30,14 @@ ReaderROOT::ReaderROOT(std::string filename)
   fFile = TFile::Open(filename.data(), "READ");
   if (!fFile)
   {
-    ERR << "<ReaderROOT> No file with path/name: " << filename;
+    std::cout << "<ReaderROOT> No file with path/name: " << filename << "\n";
     return;
   }
 
   fTree = static_cast<TTree*>(fFile->Get("THit"));
   if (!fTree)
   {
-    ERR << "<ReaderROOT> Could not get TTree 'THit'";
+    std::cout << "<ReaderROOT> Could not get TTree 'THit'\n";
     return;
   }
 
@@ -70,10 +69,6 @@ Event ReaderROOT::get_event(size_t ievent)
     int stripnum =  current_event_.strip_number[istrip];
     if ((stripnum < 0) || (stripnum >= strip_count()))
       continue;
-
-    //You don't have to add every strip, if you can know it's empty at low cost
-    //in this case, the data is an array, but it can be a map(tree)
-    //Check out API for NMX::Record
 
     std::vector<int16_t> data(timebin_count(), 0);
     for (int itb = 0; itb < timebin_count(); itb++)

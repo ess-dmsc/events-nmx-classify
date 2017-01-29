@@ -156,7 +156,7 @@ Settings Settings::with_prefix(std::string prefix, bool drop_prefix) const
   return ret;
 }
 
-std::string Settings::debug(std::__cxx11::string prepend) const
+std::string Settings::debug(std::string prepend) const
 {
   std::string ret;
   for (auto &param : data_)

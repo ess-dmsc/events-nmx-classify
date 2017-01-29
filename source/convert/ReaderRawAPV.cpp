@@ -1,5 +1,4 @@
-﻿#include "CustomLogger.h"
-#include "ReaderRawAPV.h"
+﻿#include "ReaderRawAPV.h"
 #include <sstream>
 
 #define APV_EVENT_END 0xfafafafa
@@ -16,11 +15,11 @@ ReaderRawAPV::ReaderRawAPV(std::string filename) :
   file_.open(filename, std::ios::binary);
   if (!file_.is_open())
   {
-    ERR << "File " << filename << " could not be opened!";
+    std::cout << "<ReaderRawAPV> " << filename << " could not be opened!\n";
     return;
   }
 
-  DBG << "Cataloging events in '" << filename << "' ...";
+  std::cout << "<ReaderRawAPV> Cataloging events in '" << filename << "' ...\n";
   surveyFile();
 
   file_.close();
