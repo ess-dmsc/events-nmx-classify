@@ -12,7 +12,7 @@ set(CMAKE_AUTOUIC ON)
 
 #Locate packages
 find_package(HDF5 COMPONENTS CXX REQUIRED)
-find_package(Boost COMPONENTS system filesystem thread log timer REQUIRED)
+find_package(Boost COMPONENTS system filesystem thread log timer program_options REQUIRED)
 find_package(Qt5Widgets REQUIRED)
 find_package(ROOT REQUIRED COMPONENTS RIO Net)
 find_package(OpenGL REQUIRED)

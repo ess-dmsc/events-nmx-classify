@@ -15,6 +15,15 @@ File::~File()
     analysis_.save();
 }
 
+void File::open_raw()
+{
+  close_raw();
+  if (has_APV())
+    open_APV();
+  else if (has_VMM())
+    open_VMM();
+}
+
 void File::close_raw()
 {
   open_APV_ = false;

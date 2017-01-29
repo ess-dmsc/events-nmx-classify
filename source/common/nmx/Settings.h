@@ -84,7 +84,7 @@ public:
 //  Settings prepend(std::string prefix) const;
   Settings with_prefix(std::string prefix, bool drop_prefix = true) const;
 
-  std::string debug() const;
+  std::string debug(std::string prepend = "") const;
 
   void write_H5(H5CC::Group group, std::string name) const;
   void read_H5(const H5CC::Group &group, std::string name);

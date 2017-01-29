@@ -13,6 +13,7 @@ public:
   ~File();
 
   //Raw data
+  void open_raw();
   void close_raw();
 
   bool has_APV() const;
