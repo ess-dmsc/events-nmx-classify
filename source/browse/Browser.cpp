@@ -87,6 +87,8 @@ void Browser::open_file(QString fileName)
 
   if (reader_->has_APV())
     reader_->open_APV();
+  if (!reader_->event_count())
+    reader_->open_VMM();
 
   int evt_count = reader_->event_count();
 

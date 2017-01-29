@@ -11,6 +11,10 @@ File::File(std::string filename, H5CC::Access access)
 
 void File::open_APV()
 {
+  dataset_VMM_ = H5CC::DataSet();
+  indices_VMM_ = H5CC::DataSet();
+  event_count_ = 0;
+
   dataset_APV_ = file_.open_dataset("RawAPV");
   auto shape = dataset_APV_.shape();
 
@@ -22,6 +26,8 @@ void File::open_APV()
     ERR << "<NMX::File> bad size for raw datset " << dataset_APV_.debug();
     dataset_APV_ = H5CC::DataSet();
   }
+
+  event_count_ = dataset_APV_.shape().dim(0);
 }
 
 File::~File()
@@ -36,9 +42,14 @@ bool File::has_APV() const
   return file_.has_dataset("RawAPV");
 }
 
+bool File::has_VMM() const
+{
+  return file_.has_group("RawVMM");
+}
+
 size_t File::event_count() const
 {
-  return dataset_APV_.shape().dim(0);
+  return event_count_;
 }
 
 
@@ -50,6 +61,16 @@ Event File::get_event(size_t index) const
 
 Record File::read_record(size_t index, size_t plane) const
 {
+  if (dataset_APV_.shape().dim(0))
+    return read_APV(index, plane);
+  else if (indices_VMM_.shape().dim(0))
+    return read_VMM(index, plane);
+  else
+    return Record();
+}
+
+Record File::read_APV(size_t index, size_t plane) const
+{
   if (index >= event_count())
     return Record();
 
@@ -58,7 +79,16 @@ Record File::read_record(size_t index, size_t plane) const
                                        {index, plane, 0, 0}), timebins);
 }
 
+
 void File::write_record(size_t index, size_t plane, const Record& record)
+{
+  if (dataset_APV_.shape().dim(0))
+    return write_APV(index, plane, record);
+  else if (indices_VMM_.shape().dim(0))
+    return write_VMM(index, plane, record);
+}
+
+void File::write_APV(size_t index, size_t plane, const Record& record)
 {
   auto strips = dataset_APV_.shape().dim(2);
   auto timebins = dataset_APV_.shape().dim(3);
@@ -151,6 +181,85 @@ void File::create_APV(size_t strips, size_t timebins)
   dataset_APV_ = file_.require_dataset<int16_t>("RawAPV",
                                             {H5CC::kMax, 2, strips, timebins},
                                             {1,          2, strips, timebins});
+}
+
+void File::create_VMM(size_t events)
+{
+  auto grp = file_.require_group("RawVMM");
+
+  dataset_VMM_ = grp.require_dataset<int16_t>("points",
+                                              {H5CC::kMax, 3},
+                                              {1,          3});
+
+  indices_VMM_ = grp.require_dataset<uint64_t>("indices",
+                                               {events, 4},
+                                               {1,      4});
+}
+
+void File::write_VMM(size_t index, size_t plane, const Record& record)
+{
+  size_t start = dataset_VMM_.shape().dim(0);
+  for (auto p : record.get_points("strip_vmm"))
+  {
+    std::vector<int16_t> data {int16_t(p.x), int16_t(p.y), int16_t(p.v)};
+    dataset_VMM_.write(data, {1,H5CC::kMax}, {dataset_VMM_.shape().dim(0), 0});
+  }
+  size_t stop = dataset_VMM_.shape().dim(0);
+  std::vector<uint64_t> data {start, stop};
+  indices_VMM_.write(data, {1,2}, {index, 2 * plane});
+}
+
+Record File::read_VMM(size_t index, size_t plane) const
+{
+  if (index >= event_count())
+    return Record();
+
+  size_t start = indices_VMM_.read<uint64_t>({index, plane});
+  size_t stop = indices_VMM_.read<uint64_t>({index, 2*plane + 1});
+
+  std::map<int16_t, std::map<uint16_t, int16_t>> strips;
+
+  for (size_t i = start; i < stop; ++i)
+  {
+    auto data = dataset_VMM_.read<int16_t>({1,H5CC::kMax}, {i, 0});
+    strips[data.at(0)][data.at(1)] = data.at(2);
+  }
+
+  Record record;
+  for (const auto& s : strips)
+    record.add_strip(s.first, Strip(s.second));
+  return record;
+}
+
+void File::open_VMM()
+{
+  dataset_VMM_ = H5CC::DataSet();
+  indices_VMM_ = H5CC::DataSet();
+  event_count_ = 0;
+
+  if (!has_VMM())
+    return;
+
+  auto grp = file_.open_group("RawVMM");
+  if (!grp.has_dataset("points") || !grp.has_dataset("indices"))
+    return;
+
+  dataset_VMM_ = grp.open_dataset("points");
+  indices_VMM_ = grp.open_dataset("indices");
+
+  auto shape = indices_VMM_.shape();
+
+  if ((shape.rank() != 2) ||
+      (shape.dim(1) != 4))
+
+  {
+    ERR << "<NMX::File> bad size for rawVMM datset " << indices_VMM_.debug();
+    dataset_VMM_ = H5CC::DataSet();
+    indices_VMM_ = H5CC::DataSet();
+  }
+
+  dataset_APV_ = H5CC::DataSet();
+  event_count_ = indices_VMM_.shape().dim(0);
 }
 
 }

@@ -55,8 +55,10 @@ protected:
   MetricSet metrics_;
 
 
-  void analyze_all();
+  void analyze_to_vmm();
   void analyze_reduced();
+  void analyze_reduced_from_vmm();
+  void analyze_all();
 
   void analyze_finalize(const PlanePerspective&strips_best,
                         const PlanePerspective& strips_vmm);

@@ -16,6 +16,10 @@ public:
   void open_APV();
   bool has_APV() const;
 
+  void create_VMM(size_t events);
+  void open_VMM();
+  bool has_VMM() const;
+
   void write_event(size_t index, const Event& event);
 
   size_t event_count() const;
@@ -40,8 +44,18 @@ private:
   H5CC::DataSet  dataset_APV_;
   Analysis       analysis_;
 
+  H5CC::DataSet  dataset_VMM_;
+  H5CC::DataSet  indices_VMM_;
+
+  size_t event_count_ {0};
+
   Record read_record(size_t index, size_t plane) const;
+  Record read_APV(size_t index, size_t plane) const;
+  Record read_VMM(size_t index, size_t plane) const;
+
   void write_record(size_t index, size_t plane, const Record&);
+  void write_APV(size_t index, size_t plane, const Record&);
+  void write_VMM(size_t index, size_t plane, const Record&);
 };
 
 }

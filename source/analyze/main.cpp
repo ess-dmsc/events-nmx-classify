@@ -18,6 +18,7 @@ namespace fs = boost::filesystem;
 const std::string options_text =
     "NMX data analysis program. Available options:\n"
     "    -p [path] Defaults to current path\n"
+    "    -tovmm  Convert to vmm only\n"
     "    -clone [path/filename.h5] Clone analysis parameters from file\n"
     "    --help/-h prints this list of options\n";
 
@@ -32,6 +33,8 @@ int main(int argc, char* argv[])
   // Input file
   std::string target_path  = cmd_line.get_value("-p");
   std::string clone_params_file = cmd_line.get_value("-clone");
+
+  bool to_vmm = cmd_line.has_switch("-tovmm");
 
   std::set<boost::filesystem::path> files;
 
@@ -100,7 +103,10 @@ int main(int argc, char* argv[])
     try
     {
       reader = std::make_shared<NMX::File>(filename, H5CC::Access::rw_existing);
-      reader->open_APV();
+      if (reader->has_APV())
+        reader->open_APV();
+      else if (reader->has_VMM())
+        reader->open_VMM();
     }
     catch (...)
     {
@@ -117,29 +123,56 @@ int main(int argc, char* argv[])
 
     for (auto group : to_clone)
     {
-      reader->create_analysis(group.first);
-      reader->load_analysis(group.first);
-
-      size_t nevents = reader->event_count();
-      size_t numanalyzed = reader->num_analyzed();
-
-      if (numanalyzed >= nevents)
-        continue;
-
-      reader->set_parameters(group.second);
-
-      std::string gname = "  Analyzing '" + group.first + "'  ";
-      std::string blanks (gname.size(), ' ');
-
-      boost::progress_display prog( nevents, std::cout,
-                                    blanks,  gname,  blanks);
-      prog += numanalyzed;
-      for (size_t eventID = numanalyzed; eventID < nevents; ++eventID)
+      if (to_vmm)
       {
-        reader->analyze_event(eventID);
-        ++prog;
-        if (term_flag)
-          return 0;
+        size_t nevents = reader->event_count();
+        std::string newname = filename + "_" + group.first + ".h5";
+
+        auto writer = std::make_shared<NMX::File>(newname, H5CC::Access::rw_truncate);
+        writer->create_VMM(nevents);
+
+        std::string gname = "  Converting '" + newname + "'  ";
+        std::string blanks (gname.size(), ' ');
+
+        boost::progress_display prog( nevents, std::cout,
+                                      blanks,  gname,  blanks);
+        for (size_t eventID = 0; eventID < nevents; ++eventID)
+        {
+          auto event = reader->get_event(eventID);
+          event.set_parameters(group.second);
+          event.analyze();
+          writer->write_event(eventID, event);
+          ++prog;
+          if (term_flag)
+            return 0;
+        }
+      }
+      else
+      {
+        reader->create_analysis(group.first);
+        reader->load_analysis(group.first);
+
+        size_t nevents = reader->event_count();
+        size_t numanalyzed = reader->num_analyzed();
+
+        if (numanalyzed >= nevents)
+          continue;
+
+        reader->set_parameters(group.second);
+
+        std::string gname = "  Analyzing '" + group.first + "'  ";
+        std::string blanks (gname.size(), ' ');
+
+        boost::progress_display prog( nevents, std::cout,
+                                      blanks,  gname,  blanks);
+        prog += numanalyzed;
+        for (size_t eventID = numanalyzed; eventID < nevents; ++eventID)
+        {
+          reader->analyze_event(eventID);
+          ++prog;
+          if (term_flag)
+            return 0;
+        }
       }
     }
     ++fnum;

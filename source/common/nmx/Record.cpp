@@ -136,7 +136,13 @@ void Record::analyze()
   for (auto pj : projections_)
     pj.second.clear();
 
-  if (parameters_.get_value("analysis_reduced").as_int() > 0)
+  int reduced = parameters_.get_value("analysis_reduced").as_int();
+
+  if (reduced == 3)
+    analyze_reduced_from_vmm();
+  else if (reduced == 2)
+    analyze_to_vmm();
+  else if (reduced == 1)
     analyze_reduced();
   else
     analyze_all();
@@ -205,7 +211,6 @@ void Record::analyze_all()
   analyze_finalize(strips_best, strips_vmm);
 }
 
-
 void Record::analyze_reduced()
 {
   auto strips = strips_;//.subset("noneg");
@@ -240,6 +245,39 @@ void Record::analyze_reduced()
   analyze_finalize(strips_best, strips_vmm);
 }
 
+void Record::analyze_to_vmm()
+{
+  auto strips = strips_;
+  auto strip_params = parameters_.with_prefix("strip.");
+  PlanePerspective strips_vmm = strips.subset("vmm", strip_params);
+  point_lists_["strip_vmm"] = strips_vmm.points();
+}
+
+void Record::analyze_reduced_from_vmm()
+{
+  auto strip_params = parameters_.with_prefix("strip.");
+  auto best_params = strip_params;
+  best_params.set("best_max_bincount", Variant::from_int(1));
+
+  auto timebins = strips_.subset("orthogonal");
+
+  PlanePerspective strips_better = strips_.subset("best", strip_params);
+  PlanePerspective strips_best = strips_.subset("best", best_params);
+
+  metrics_.merge(strips_.metrics(), "strips_vmm_", "VMM maxima");
+  metrics_.merge(strips_better.metrics(), "strips_better_", "better VMM maxima");
+  metrics_.merge(strips_best.metrics(), "strips_best_", "best VMM maxima");
+
+  metrics_.merge(timebins.metrics(), "timebins_all_", "valid ADC values");
+
+  point_lists_["strip_vmm"] = strips_.points();
+  point_lists_["strip_better"] = strips_better.points();
+  point_lists_["strip_best"] = strips_best.points();
+
+  projections_["timebins"] = timebins.projection();
+
+  analyze_finalize(strips_best, strips_);
+}
 
 void Record::analyze_finalize(const PlanePerspective& strips_best,
                               const PlanePerspective& strips_vmm)
