@@ -10,6 +10,31 @@
 #include "BoxesModel.h"
 #include "SpecialDelegate.h"
 
+class Histogram1D
+{
+public:
+
+  HistMap1D map() const;
+  HistList1D list() const;
+
+  void clear();
+  void add_one(double bin);
+
+  static std::list<std::string> values();
+  double get_value(std::string) const;
+
+  double mean() const;
+  double harmonic_mean() const;
+  double RMS() const;
+
+  double midrange() const;
+  double median() const;
+  double mode() const;
+private:
+  HistMap1D map_;
+  uint64_t count_ {0};
+};
+
 
 namespace Ui {
 class Analyzer;
@@ -46,6 +71,8 @@ private slots:
 
   void filterSelectionChanged();
 
+  void on_comboAverage_currentIndexChanged(int index);
+
 private:
   Ui::Analyzer *ui;
   TestsModel tests_model_;
@@ -53,7 +80,7 @@ private:
 
   std::shared_ptr<NMX::File> reader_;
   std::set<size_t> indices_;
-  HistMap1D histogram1d_;
+  Histogram1D histogram1d_;
 
   QVector<QColor> palette_ {Qt::black, Qt::darkRed, Qt::darkGreen,
                             Qt::darkYellow, Qt::darkMagenta,

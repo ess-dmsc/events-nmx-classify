@@ -170,6 +170,7 @@ void AggregateReview::render_selection()
         (ui->searchBox3->selection().front() != "aggregate"));
 
   ui->plotHistogram->update();
+  ui->plotHistogram->replotExtras();
   ui->plotHistogram->zoomOut();
 }
 

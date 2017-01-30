@@ -43,6 +43,9 @@ Analyzer::Analyzer(QWidget *parent)
   connect(ui->pushY, SIGNAL(selectionChanged(QString)), this, SLOT(replot()));
   connect(ui->pushMetric1D, SIGNAL(selectionChanged(QString)), this, SLOT(replot()));
 
+  for (auto s : histogram1d_.values())
+    ui->comboAverage->addItem(QString::fromStdString(s));
+
   loadSettings();
 }
 
@@ -148,7 +151,7 @@ void Analyzer::replot()
       projection2d[c2d(int32_t( (xx.data().at(eventID) - xx.min()) / xx_norm),
                        int32_t( (yy.data().at(eventID) - yy.min()) / yy_norm))] ++;
 
-      histogram1d_[int( zz.data().at(eventID) / zz_norm) * zz_norm]++;
+      histogram1d_.add_one(int( zz.data().at(eventID) / zz_norm) * zz_norm);
     }
 
   ui->plot2D->updatePlot((xx.max()-xx.min()) / xx_norm + 1,
@@ -163,16 +166,13 @@ void Analyzer::replot()
 
 void Analyzer::replot1d()
 {
-  ui->plotHistogram->clearAll();
+  double average = histogram1d_.get_value(ui->comboAverage->currentText().toStdString());
 
-//  QPlot::Appearance profile;
-
-//  profile.default_pen = QPen(palette_[0], 2);
-  ui->plotHistogram->addGraph(histogram1d_, QPen(palette_[0], 2));
+  ui->labelAverage->setText(" = " + QString::number(average));
 
   auto fit_type = ui->comboFit->currentText().toStdString();
 
-  EdgeFitter fitter(histogram1d_);
+  EdgeFitter fitter(histogram1d_.map());
   fitter.analyze(fit_type);
 
   if (fit_type != "none")
@@ -180,10 +180,15 @@ void Analyzer::replot1d()
   else
     ui->labelFit->setText("   No edge fit model selected");
 
-//  profile.default_pen = QPen(palette_[1], 2);
+  ui->plotHistogram->clearAll();
+  //  QPlot::Appearance profile;
+  //  profile.default_pen = QPen(palette_[0], 2);
+  ui->plotHistogram->addGraph(histogram1d_.map(), QPen(palette_[0], 2));
   ui->plotHistogram->addGraph(fitter.get_fit_hist(4), QPen(palette_[1], 2));
-
+  QPlot::Marker1D marker(average);
+  ui->plotHistogram->setHighlight(marker, marker);
   ui->plotHistogram->setAxisLabels(ui->pushMetric1D->text(), "count");
+  ui->plotHistogram->replotExtras();
   ui->plotHistogram->zoomOut();
 }
 
@@ -275,4 +280,113 @@ void Analyzer::filterSelectionChanged()
   auto rows = ui->tableTests->selectionModel()->selectedRows();
   ui->pushFilterToPlot->setEnabled(rows.size());
   ui->pushRemoveTest->setEnabled(rows.size());
+}
+
+
+HistMap1D Histogram1D::map() const
+{
+  return map_;
+}
+
+HistList1D Histogram1D::list() const
+{
+  return to_list(map_);
+}
+
+void Histogram1D::add_one(double bin)
+{
+  map_[bin]++;
+  count_++;
+}
+
+void Histogram1D::clear()
+{
+  map_.clear();
+  count_ = 0;
+}
+
+std::list<std::string> Histogram1D::values()
+{
+  return {"mean", "median", "mode", "midrange", "RMS", "harmonic mean"};
+}
+
+double Histogram1D::get_value(std::string t) const
+{
+  if (t == "mean")
+    return mean();
+  else if (t == "median")
+    return median();
+  else if (t == "mode")
+    return mode();
+  else if (t == "midrange")
+    return midrange();
+  else if (t == "RMS")
+    return RMS();
+  else if (t == "harmonic mean")
+    return harmonic_mean();
+  return std::numeric_limits<double>::quiet_NaN();
+}
+
+double Histogram1D::mean() const
+{
+  double sum {0};
+  for (const auto& m : map_)
+    sum += m.first * m.second;
+  return sum / static_cast<double>(count_);
+}
+
+double Histogram1D::median() const
+{
+  double med_count = static_cast<double>(count_) / 2.0;
+  double mcount {0};
+  double prev = std::numeric_limits<double>::quiet_NaN();
+  for (const auto& m : map_)
+  {
+    mcount += m.second;
+    if (mcount > med_count)
+      break;
+    prev = m.first;
+  }
+  return prev;
+}
+
+double Histogram1D::mode() const
+{
+  double maxcount = std::numeric_limits<double>::min();
+  double maxbin = std::numeric_limits<double>::quiet_NaN();
+  for (const auto& m : map_)
+    if (m.second > maxcount)
+    {
+      maxcount = m.second;
+      maxbin = m.first;
+    }
+  return maxbin;
+}
+
+double Histogram1D::harmonic_mean() const
+{
+  double sum {0};
+  for (const auto& m : map_)
+    sum += m.second / m.first;
+  return static_cast<double>(count_) / sum;
+}
+
+double Histogram1D::RMS() const
+{
+  double sum {0};
+  for (const auto& m : map_)
+    sum += m.first * m.first * m.second;
+  return sqrt(sum / static_cast<double>(count_));
+}
+
+double Histogram1D::midrange() const
+{
+  if (map_.empty())
+    return std::numeric_limits<double>::quiet_NaN();
+  return (map_.begin()->first + map_.rbegin()->first) / 2.0;
+}
+
+void Analyzer::on_comboAverage_currentIndexChanged(int index)
+{
+  replot1d();
 }
