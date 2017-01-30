@@ -286,7 +286,7 @@ void ViewEvent::set_indices(std::set<size_t> indices)
   if (reader_)
     evt_count = reader_->event_count();
 
-  if ((evt_count > 0) && (reader_->num_analyzed() == 0))
+  if ((evt_count > 0) && (reader_->num_analyzed() == 0) && indices_.empty())
     for (size_t i=0; i < evt_count; ++i)
       indices_.push_back(i);
 
