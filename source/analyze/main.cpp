@@ -189,7 +189,7 @@ void analyze_metrics(const std::set<boost::filesystem::path>& files,
         if (term_flag)
           return;
       }
-      std::cout << "Analysis time = " << timer.done() << "\n";
+      std::cout << "Analysis time = " << timer.done() << "   secs/1000events=" << timer.s() / nevents * 1000 << "\n";
     }
     ++fnum;
   }
@@ -249,7 +249,7 @@ void emulate_vmm(const std::set<boost::filesystem::path>& files,
         if (term_flag)
           return;
       }
-      std::cout << "Analysis time = " << timer.done() << "\n";
+      std::cout << "Analysis time = " << timer.done() << "   secs/1000events=" << timer.s() / nevents * 1000 << "\n";
     }
     ++fnum;
   }
