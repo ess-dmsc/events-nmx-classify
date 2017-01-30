@@ -3,6 +3,8 @@
 #include "ui_Analyzer.h"
 #include "CustomLogger.h"
 #include "doFit.h"
+#include "qt_util.h"
+#include "histogram_h5.h"
 
 Analyzer::Analyzer(QWidget *parent)
   : QWidget(parent)
@@ -130,8 +132,8 @@ void Analyzer::replot()
   if (!reader_|| !reader_->event_count())
     return;
 
-  HistMap2D projection2d;
   histogram1d_.clear();
+  histogram2d_.clear();
 
   auto xx = reader_->get_metric(ui->pushX->text().toStdString());
   auto yy = reader_->get_metric(ui->pushY->text().toStdString());
@@ -148,14 +150,14 @@ void Analyzer::replot()
       (xx.data().size() == zz.data().size()))
     for (auto eventID : indices_)
     {
-      projection2d[c2d(int32_t( (xx.data().at(eventID) - xx.min()) / xx_norm),
+      histogram2d_[c2d(int32_t( (xx.data().at(eventID) - xx.min()) / xx_norm),
                        int32_t( (yy.data().at(eventID) - yy.min()) / yy_norm))] ++;
 
       histogram1d_.add_one(int( zz.data().at(eventID) / zz_norm) * zz_norm);
     }
 
   ui->plot2D->updatePlot((xx.max()-xx.min()) / xx_norm + 1,
-                         (yy.max()-yy.min()) / yy_norm + 1, projection2d);
+                         (yy.max()-yy.min()) / yy_norm + 1, histogram2d_);
   ui->plot2D->setAxes(ui->pushX->text(), xx.min(), xx.max(),
                       ui->pushY->text(), yy.min(), yy.max(),
                       "Count");
@@ -389,4 +391,63 @@ double Histogram1D::midrange() const
 void Analyzer::on_comboAverage_currentIndexChanged(int index)
 {
   replot1d();
+}
+
+void Analyzer::on_pushSave1D_clicked()
+{
+  QSettings settings;
+  settings.beginGroup("Program");
+  auto data_directory = settings.value("data_directory", "").toString();
+  QString fileName = CustomSaveFileDialog(this, "Save project",
+                                          data_directory, "hdf5 (*.h5)");
+  if (fileName.isEmpty())
+    return;
+
+  bool ok;
+  QString text = QInputDialog::getText(this, "Name histogram",
+                                       "Histogram name:", QLineEdit::Normal,
+                                       "", &ok);
+  if (!ok || text.isEmpty())
+    return;
+
+  try
+  {
+    H5CC::File file(fileName.toStdString(), H5CC::Access::rw_require);
+    write(file.require_group("histograms1d"), text.toStdString(), histogram1d_.map());
+    auto dset = file.require_group("histograms1d").open_dataset(text.toStdString());
+    for (auto s : histogram1d_.values())
+      dset.write_attribute<double>(s, histogram1d_.get_value(s));
+  }
+  catch (...)
+  {
+
+  }
+}
+
+void Analyzer::on_pushSave2D_clicked()
+{
+  QSettings settings;
+  settings.beginGroup("Program");
+  auto data_directory = settings.value("data_directory", "").toString();
+  QString fileName = CustomSaveFileDialog(this, "Save project",
+                                          data_directory, "hdf5 (*.h5)");
+  if (fileName.isEmpty())
+    return;
+
+  bool ok;
+  QString text = QInputDialog::getText(this, "Name histogram",
+                                       "Histogram name:", QLineEdit::Normal,
+                                       "", &ok);
+  if (!ok || text.isEmpty())
+    return;
+
+  try
+  {
+    H5CC::File file(fileName.toStdString(), H5CC::Access::rw_require);
+    write(file.require_group("histograms2d"), text.toStdString(), histogram2d_);
+  }
+  catch (...)
+  {
+
+  }
 }

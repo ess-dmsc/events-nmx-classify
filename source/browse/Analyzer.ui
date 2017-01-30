@@ -148,6 +148,26 @@
            </property>
           </widget>
          </item>
+         <item>
+          <widget class="QPushButton" name="pushSave2D">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="toolTip">
+            <string>New filter</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset resource="resources/tpccres.qrc">
+             <normaloff>:/icons/oxy/16/document_save.png</normaloff>:/icons/oxy/16/document_save.png</iconset>
+           </property>
+          </widget>
+         </item>
         </layout>
        </item>
        <item>
@@ -359,8 +379,28 @@
          </item>
          <item>
           <widget class="QLabel" name="labelAverage">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
            <property name="text">
             <string/>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="pushSave1D">
+           <property name="toolTip">
+            <string>New filter</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset resource="resources/tpccres.qrc">
+             <normaloff>:/icons/oxy/16/document_save.png</normaloff>:/icons/oxy/16/document_save.png</iconset>
            </property>
           </widget>
          </item>

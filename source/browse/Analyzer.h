@@ -13,7 +13,6 @@
 class Histogram1D
 {
 public:
-
   HistMap1D map() const;
   HistList1D list() const;
 
@@ -30,6 +29,7 @@ public:
   double midrange() const;
   double median() const;
   double mode() const;
+
 private:
   HistMap1D map_;
   uint64_t count_ {0};
@@ -73,6 +73,10 @@ private slots:
 
   void on_comboAverage_currentIndexChanged(int index);
 
+  void on_pushSave1D_clicked();
+
+  void on_pushSave2D_clicked();
+
 private:
   Ui::Analyzer *ui;
   TestsModel tests_model_;
@@ -81,6 +85,8 @@ private:
   std::shared_ptr<NMX::File> reader_;
   std::set<size_t> indices_;
   Histogram1D histogram1d_;
+
+  HistMap2D histogram2d_;
 
   QVector<QColor> palette_ {Qt::black, Qt::darkRed, Qt::darkGreen,
                             Qt::darkYellow, Qt::darkMagenta,
