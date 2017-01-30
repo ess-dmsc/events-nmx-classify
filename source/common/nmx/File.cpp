@@ -240,7 +240,7 @@ Record File::read_APV(size_t index, size_t plane) const
                                        {index, plane, 0, 0}), timebins);
 }
 
-void File::write_VMM(size_t index, size_t plane, const Record& record)
+void File::write_VMM(size_t index, uint32_t plane, const Record& record)
 {
   size_t start = dataset_VMM_.shape().dim(0);
   size_t idx = start;
@@ -250,7 +250,7 @@ void File::write_VMM(size_t index, size_t plane, const Record& record)
     {
       static_cast<uint32_t>(index), //time offset
       static_cast<uint32_t>(p.y),   //timestamp
-      static_cast<uint32_t>(p.x),   //strip
+      static_cast<uint32_t>(p.x + (plane << 16)),   //strip
       static_cast<uint32_t>(p.v)    //ADC value
     };
     dataset_VMM_.write(data, {1,H5CC::kMax}, {idx, 0});
@@ -276,7 +276,7 @@ Record File::read_VMM(size_t index, size_t plane) const
     auto data = dataset_VMM_.read<uint32_t>({1,H5CC::kMax}, {i, 0});
     if (data.at(0) != index) //assume clustered
       continue;
-    strips[data.at(2)][data.at(1)] = data.at(3);
+    strips[data.at(2) & 0x0000FFFF][data.at(1)] = data.at(3);
   }
 
   Record record;

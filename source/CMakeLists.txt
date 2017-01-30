@@ -1,5 +1,8 @@
-cmake_minimum_required(VERSION 2.8.11)
+cmake_minimum_required(VERSION 3.1)
 project(nmx_util CXX)
+
+# Set C++11 flag.
+set (CMAKE_CXX_STANDARD 11)
 
 #root
 list(APPEND CMAKE_PREFIX_PATH $ENV{ROOTSYS})
@@ -10,9 +13,11 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
+set(HDF5_USE_SHARED_LIBRARIES ON)
+
 #Locate packages
 find_package(HDF5 COMPONENTS CXX REQUIRED)
-find_package(Boost COMPONENTS system filesystem thread log timer program_options REQUIRED)
+find_package(Boost COMPONENTS system filesystem thread timer program_options REQUIRED)
 find_package(Qt5Widgets REQUIRED)
 find_package(ROOT REQUIRED COMPONENTS RIO Net)
 find_package(OpenGL REQUIRED)
@@ -20,15 +25,12 @@ find_package(OpenGL REQUIRED)
 #ROOT needs this
 include(${ROOT_USE_FILE})
 
-
-# Set C++11 flag.
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-
 # Boost needs this
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBOOST_LOG_DYN_LINK")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBOOST_LOG_DYN_LINK")
 
+link_directories( ${BOOST_LIBRARY_DIRS} )
 
-add_definitions(-DQCUSTOMPLOT_USE_OPENGL)
+#add_definitions(-DQCUSTOMPLOT_USE_OPENGL)
 
 include_directories(${CMAKE_SOURCE_DIR}
                     ${CMAKE_SOURCE_DIR}/convert
@@ -39,8 +41,8 @@ include_directories(${CMAKE_SOURCE_DIR}
                     ${CMAKE_SOURCE_DIR}/browse/ColorWidgets
                     ${CMAKE_SOURCE_DIR}/browse/plots
                     ${CMAKE_SOURCE_DIR}/browse/plots/qcustomplot
-                    ${HDF5_INCLUDE_DIR}
-                    ${Boost_INCLUDE_DIR}
+                    ${HDF5_INCLUDE_DIRS}
+                    ${Boost_INCLUDE_DIRS}
                     ${ROOT_INCLUDE_DIR}
                     ${OPENGL_INCLUDE_DIR}
 )
@@ -111,12 +113,9 @@ target_link_libraries(
 
 qt5_use_modules(nmx_browse Widgets PrintSupport)
 
-
 if(UNIX)
   install(TARGETS nmx_analyze DESTINATION bin)
   install(TARGETS nmx_hists DESTINATION bin)
   install(TARGETS nmx_browse DESTINATION bin)
+  install(TARGETS nmx_convert DESTINATION bin)
 endif()
-
-#HACK!! Until H5CC is made better
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-return-type")

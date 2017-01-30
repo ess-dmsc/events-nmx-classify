@@ -16,7 +16,7 @@ Browser::Browser(QWidget *parent) :
 {
   qRegisterMetaType<Variant>("Variant");
 
-  CustomLogger::initLogger();
+//  CustomLogger::initLogger();
   ui->setupUi(this);
 
   event_viewer_ = new ViewEvent();
@@ -39,7 +39,6 @@ Browser::Browser(QWidget *parent) :
 
 Browser::~Browser()
 {
-  CustomLogger::closeLogger();
   delete ui;
 }
 

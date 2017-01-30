@@ -63,7 +63,7 @@ private:
 
   void write_record(size_t index, size_t plane, const Record&);
   void write_APV(size_t index, size_t plane, const Record&);
-  void write_VMM(size_t index, size_t plane, const Record&);
+  void write_VMM(size_t index, uint32_t plane, const Record&);
 };
 
 }

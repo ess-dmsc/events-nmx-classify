@@ -25,7 +25,7 @@ int main(int argc, char* argv[])
 {
   signal(SIGINT, term_key);
   H5::Exception::dontPrint();
-  CustomLogger::initLogger();
+//  CustomLogger::initLogger();
 
   // Parse the command line aguments
   CLParser cmd_line(argc, argv);

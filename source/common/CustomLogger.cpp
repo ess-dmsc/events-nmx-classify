@@ -1,6 +1,6 @@
 #include "CustomLogger.h"
 
-#ifdef BOOST_VERSION
+#ifdef BOOST_VERSIONN
 
 #include <fstream>
 #include <boost/core/null_deleter.hpp>
