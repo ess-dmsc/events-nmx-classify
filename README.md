@@ -1,6 +1,6 @@
-# tpcClassify #
+# nmx neutron event utilities #
 
-Program for viewing and classification of uTPC events for ESS NMX.
+Set of programs converting, viewing and analyzing neutron detector events for ESS NMX.
 
 ### How do I get set up? ###
 
@@ -11,7 +11,7 @@ Program for viewing and classification of uTPC events for ESS NMX.
 * to compile: cmake ../path/to/source && make
 
 ### Where is the raw data? ###
-H5 files analyzed by the program can be found on the DMSC cluster at:
+Raw and analyzed data files can be found on the DMSC cluster at:
 /nfs/groups/nmx/data
 
 ### Who do I talk to? ###
