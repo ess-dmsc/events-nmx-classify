@@ -41,6 +41,8 @@ bool File::has_APV() const
 
 void File::create_APV(size_t strips, size_t timebins)
 {
+  if (file_.status() == H5CC::Access::r_existing)
+    return;
   close_raw();
   dataset_APV_ = file_.require_dataset<int16_t>("RawAPV",
                                             {H5CC::kMax, 2, strips, timebins},
@@ -78,6 +80,9 @@ bool File::has_VMM() const
 
 void File::create_VMM(size_t events, size_t chunksize)
 {
+  if (file_.status() == H5CC::Access::r_existing)
+    return;
+
   close_raw();
   auto grp = file_.require_group("RawVMM");
 
@@ -127,6 +132,9 @@ Event File::get_event(size_t index) const
 
 void File::write_event(size_t index, const Event& event)
 {
+  if (file_.status() == H5CC::Access::r_existing)
+    return;
+
   write_record(index, 0, event.x());
   write_record(index, 1, event.y());
 }
@@ -141,6 +149,9 @@ std::list<std::string> File::analyses() const
 
 void File::create_analysis(std::string name)
 {
+  if (file_.status() == H5CC::Access::r_existing)
+    return;
+
   if (!file_.require_group("Analyses").has_group(name))
   {
     file_.open_group("Analyses").create_group(name);
@@ -150,6 +161,9 @@ void File::create_analysis(std::string name)
 
 void File::delete_analysis(std::string name)
 {
+  if (file_.status() == H5CC::Access::r_existing)
+    return;
+
   if (file_.require_group("Analyses").has_group(name))
   {
     file_.require_group("Analyses").remove(name);
@@ -184,11 +198,17 @@ Settings File::parameters() const
 
 void File::set_parameters(const Settings& params)
 {
+  if (file_.status() == H5CC::Access::r_existing)
+    return;
+
   analysis_.set_parameters(params);
 }
 
 void File::analyze_event(size_t index)
 {
+  if (file_.status() == H5CC::Access::r_existing)
+    return;
+
   if (index <= event_count())
     analysis_.analyze_event(index, Event(read_record(index, 0),
                                          read_record(index, 1)));

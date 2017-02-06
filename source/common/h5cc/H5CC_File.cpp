@@ -44,15 +44,15 @@ bool File::open(std::string filename, Access access)
     catch (...)
     {
       open(filename, Access::rw_new);
-      if (!open_)
+      if (!is_open())
         Exception::rethrow();
     }
   }
 
-  open_ = true;
+  status_ = access;
   name_ = filename;
 
-  return open_;
+  return (status_ != Access::no_access);
 }
 
 void File::close()
@@ -65,7 +65,7 @@ void File::close()
   {
     Exception::rethrow();
   }
-  open_ = false;
+  status_ = Access::no_access;
   name_.clear();
 }
 

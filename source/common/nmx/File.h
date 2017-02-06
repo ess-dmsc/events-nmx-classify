@@ -12,6 +12,8 @@ public:
   File(std::string filename, H5CC::Access access);
   ~File();
 
+  H5CC::Access access() { return file_.status(); }
+
   //Raw data
   void open_raw();
   void close_raw();

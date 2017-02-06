@@ -73,6 +73,7 @@ void Browser::open_file(QString fileName)
 {
   data_directory_ = path_of_file(fileName);
 
+  bool failed {false};
   try
   {
     reader_ = std::make_shared<NMX::File>(fileName.toStdString(), H5CC::Access::rw_existing);
@@ -81,8 +82,24 @@ void Browser::open_file(QString fileName)
   {
     printException();
     ERR << "<nmx_browser> could not open " << fileName.toStdString();
+    failed = true;
     return;
   }
+
+  if (failed)
+  {
+    try
+    {
+      reader_ = std::make_shared<NMX::File>(fileName.toStdString(), H5CC::Access::r_existing);
+    }
+    catch (...)
+    {
+      printException();
+      ERR << "<nmx_browser> could not open " << fileName.toStdString();
+      return;
+    }
+  }
+
 
   reader_->open_raw();
   int evt_count = reader_->event_count();
