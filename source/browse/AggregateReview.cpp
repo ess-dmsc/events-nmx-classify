@@ -79,12 +79,6 @@ void AggregateReview::make_palette()
 
 }
 
-void AggregateReview::enableIO(bool enable)
-{
-  Q_UNUSED(enable);
-
-}
-
 void AggregateReview::loadSettings()
 {
   QSettings settings;
@@ -288,7 +282,7 @@ void AggregateReview::on_pushDigDown_clicked()
                    filename);
 }
 
-void AggregateReview::on_pushButton_clicked()
+void AggregateReview::on_pushpushGenColors_clicked()
 {
   make_palette();
   render_selection();

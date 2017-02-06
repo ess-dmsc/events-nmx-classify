@@ -134,8 +134,6 @@ void Browser::toggleIO(bool enable)
 
   ui->pushNewGroup->setEnabled(enable && reader_ && reader_->event_count());
   ui->pushDeleteGroup->setEnabled(enable && reader_ && names.size());
-
-  emit enableIO(enable);
 }
 
 void Browser::on_comboGroup_activated(const QString& /*arg1*/)

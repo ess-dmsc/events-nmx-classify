@@ -21,9 +21,6 @@ public:
   explicit AggregateReview(QWidget *parent = 0);
   ~AggregateReview();
 
-public slots:
-  void enableIO(bool);
-
 signals:
   void toggleIO(bool);
 
@@ -43,7 +40,7 @@ private slots:
 
   void on_pushDigDown_clicked();
 
-  void on_pushButton_clicked();
+  void on_pushpushGenColors_clicked();
 
 private:
   Ui::AggregateReview *ui;

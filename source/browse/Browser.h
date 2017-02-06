@@ -19,9 +19,6 @@ public:
   explicit Browser(QWidget *parent = 0);
   ~Browser();
 
-signals:
-  void enableIO(bool);
-
 protected:
   void closeEvent(QCloseEvent*);
 
