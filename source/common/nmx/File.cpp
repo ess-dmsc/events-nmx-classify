@@ -90,9 +90,10 @@ void File::create_VMM(size_t events, size_t chunksize)
                                                {H5CC::kMax, 4},
                                                {chunksize , 4});
 
-  indices_VMM_ = grp.require_dataset<uint64_t>("indices",
-                                               {events, 4},
-                                               {1,      4});
+  if (events > 0)
+    indices_VMM_ = grp.require_dataset<uint64_t>("indices",
+                                                 {events, 4},
+                                                 {1,      4});
   open_VMM_ = true;
 }
 
@@ -279,6 +280,32 @@ void File::write_VMM(size_t index, uint32_t plane, const Record& record)
   std::vector<uint64_t> data {start, idx};
   indices_VMM_.write(data, {1,2}, {index, 2 * plane});
 }
+
+void File::write_vmm_entry(const PacketVMM &packet)
+{
+  uint32_t time_u = packet.time >> 32;
+  uint32_t time_l = packet.time & 0xFFFFFFFF;
+  uint32_t strip_id = (uint32_t(packet.plane_id) << 16) | packet.strip_id;
+  uint32_t adc_flags = (uint32_t(packet.flag) << 16) | (uint32_t(packet.over_threshold) << 17)
+      | packet.adc;
+
+  write_vmm_entry({time_u, time_l, strip_id, adc_flags});
+}
+
+void File::write_vmm_entry(uint32_t offset, uint32_t timebin,
+                           uint32_t strip,  uint32_t adc)
+{
+  write_vmm_entry({offset, timebin, strip, adc});
+}
+
+void File::write_vmm_entry(const std::vector<uint32_t>& entry)
+{
+  if (!open_VMM_ || (entry.size() != 4))
+    return;
+  dataset_VMM_.write(entry, {1,H5CC::kMax},
+                            {dataset_VMM_.shape().dim(0), 0});
+}
+
 
 Record File::read_VMM(size_t index, size_t plane) const
 {

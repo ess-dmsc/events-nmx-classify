@@ -8,6 +8,7 @@
 #include "progbar.h"
 
 #include "ReaderRawAPV.h"
+#include "ReaderRawVMM.h"
 #include "ReaderROOT.h"
 
 volatile sig_atomic_t term_flag = 0;
@@ -55,12 +56,18 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
+  bool is_apv = false;
+  bool is_vmm = false;
+
 	// Initialize the reader to read the root-file containing the events
 	shared_ptr<NMX::Reader> reader;
 
 	fs::path input_path(input_file);
   if (boost::iequals(input_path.extension().string(), ".root"))
+  {
+    is_apv = true;
 		reader = make_shared < NMX::ReaderROOT > (input_file);
+  }
   else if (boost::iequals(input_path.extension().string(), ".raw"))
 	{
     // Data format
@@ -71,17 +78,17 @@ int main(int argc, char* argv[])
       return 1;
     }
 
+    is_apv = boost::iequals(data_format, "APV");
+    is_vmm = boost::iequals(data_format, "VMM");
 
-		if(boost::iequals(data_format, "APV"))
+    if(is_apv)
 		{
-			reader = make_shared < NMX::ReaderRawAPV > (input_file);
+      reader = make_shared<NMX::ReaderRawAPV>(input_file);
 		}
-		/*
-		else if(boost::iequals(data_format, "VMM"))
+    else if(is_vmm)
 		{
-			reader = make_shared < NMX::ReaderRawVMM > (input_file);
+      reader = make_shared<NMX::ReaderRawVMM>(input_file);
 		}
-		*/
 
 	}
 	else
@@ -121,13 +128,18 @@ int main(int argc, char* argv[])
 	try
 	{
     writer = make_shared<NMX::File>(output_file, H5CC::Access::rw_truncate);
-    writer->create_APV(reader->strip_count(), reader->timebin_count());
-	} catch (...)
+  }
+  catch (...)
 	{
 		printException();
 		ERR<< "Failed to create output target. Aborting.";
 		return 1;
 	}
+
+  if (is_vmm)
+    writer->create_VMM(0, 20);
+  else
+    writer->create_APV(reader->strip_count(), reader->timebin_count());
 
   auto prog = progbar(nevents, "  Converting '" + input_file + "'  ");
 
@@ -137,10 +149,25 @@ int main(int argc, char* argv[])
       ++(*prog);
 		try
 		{
-			NMX::Event event = reader->get_event(eventID);
-			if (verbose)
-        INFO<< "\nEvent # " << eventID << "\n" << event.debug() << "\n";
-			writer->write_event(eventID - start, event);
+      if (is_vmm)
+      {
+        for (const auto &entry : reader->get_entries(eventID))
+        {
+          if (verbose)
+          {
+            INFO << "Packet # " << eventID << "  "
+                 << entry.debug();
+          }
+          writer->write_vmm_entry(entry);
+        }
+      }
+      else
+      {
+        NMX::Event event = reader->get_event(eventID);
+        if (verbose)
+          INFO<< "\nEvent # " << eventID << "\n" << event.debug() << "\n";
+        writer->write_event(eventID - start, event);
+      }
     }
     catch (...)
 		{
