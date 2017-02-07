@@ -60,7 +60,7 @@ private:
   int32_t vmmID_ {0};
 
   uint32_t trigger_timestamp_ {0};
-  uint64_t timestamp_prev_ {0};
+  uint64_t trigger_prev_ {0};
   uint64_t timestamp_hi_ {0};
 
   std::list<PacketVMM> events_;

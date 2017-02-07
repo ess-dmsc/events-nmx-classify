@@ -272,12 +272,17 @@ void ReaderRawVMM::AnalyzeEventWord(const int32_t &data,
       double trigger_timestamp_ns = trigger_timestamp_ * 3.125;
       double total_timestamp_ns = trigger_timestamp_ns + chip_time;
       uint64_t total_timestamp = total_timestamp_ns * 2;
-      if (timestamp_prev_ > total_timestamp)
-        timestamp_hi_++;
-      timestamp_prev_ = total_timestamp;
-//      total_timestamp = total_timestamp | (timestamp_hi_ << 36);
 
-      total_timestamp = bcid | (timestamp_hi_ << 36);
+      bool overflown = false;
+      if (trigger_prev_ > trigger_timestamp_)
+      {
+        overflown = true;
+        timestamp_hi_++;
+      }
+      trigger_prev_ = trigger_timestamp_;
+      total_timestamp = total_timestamp | (timestamp_hi_ << 36);
+
+//      total_timestamp = trigger_timestamp_ | (timestamp_hi_ << 36);
 
       PacketVMM packet;
       packet.time = total_timestamp;
@@ -286,6 +291,9 @@ void ReaderRawVMM::AnalyzeEventWord(const int32_t &data,
       packet.over_threshold = over_threshold;
       packet.plane_id = stripID << 16;
       packet.strip_id = stripID & 0xFFFFFFFF;
+
+      if (overflown)
+        WARN << "Overflow at " << packet.debug();
 
       events_.push_back(packet);
 
