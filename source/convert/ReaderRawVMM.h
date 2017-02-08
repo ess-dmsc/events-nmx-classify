@@ -14,7 +14,7 @@ public:
   ~ReaderRawVMM();
 
   size_t event_count() const override;
-  std::list<PacketVMM> get_entries(size_t) override;
+  std::list<EventVMM> get_entries(size_t) override;
 
   void define_plane(uint16_t planeID,
                     std::initializer_list<std::pair<uint16_t, uint16_t>> chips);
@@ -63,7 +63,7 @@ private:
   uint64_t trigger_prev_ {0};
   uint64_t timestamp_hi_ {0};
 
-  std::list<PacketVMM> events_;
+  std::list<EventVMM> events_;
 };
 
 }

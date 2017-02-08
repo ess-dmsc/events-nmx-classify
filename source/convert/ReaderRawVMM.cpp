@@ -107,10 +107,10 @@ void ReaderRawVMM::surveyFile()
 }
 
 
-std::list<PacketVMM> ReaderRawVMM::get_entries(size_t buffID)
+std::list<EventVMM> ReaderRawVMM::get_entries(size_t buffID)
 {
   if (buffID >= event_locations_.size())
-    return std::list<PacketVMM>();
+    return std::list<EventVMM>();
 
   file_.seekg(event_locations_.at(buffID), std::ios::beg);
 
@@ -278,13 +278,17 @@ void ReaderRawVMM::AnalyzeEventWord(const int32_t &data,
       {
         overflown = true;
         timestamp_hi_++;
+        DBG << "Overflow " << trigger_prev_ << " > " << trigger_timestamp_;
       }
       trigger_prev_ = trigger_timestamp_;
-      total_timestamp = total_timestamp | (timestamp_hi_ << 36);
+//      total_timestamp = total_timestamp | (timestamp_hi_ << 36);
 
 //      total_timestamp = trigger_timestamp_ | (timestamp_hi_ << 36);
 
-      PacketVMM packet;
+      total_timestamp = tdc | (bcid << 8) | (uint64_t(trigger_timestamp_) << 20) |
+          (timestamp_hi_ << 52);
+
+      EventVMM packet;
       packet.time = total_timestamp;
       packet.adc = adc;
       packet.flag = flag;

@@ -3,6 +3,7 @@
 
 #include "H5CC_File.h"
 #include "Analysis.h"
+#include "EventVMM.h"
 
 namespace NMX {
 
@@ -29,10 +30,8 @@ public:
   size_t event_count() const;
   Event get_event(size_t index) const;
   void write_event(size_t index, const Event& event);
-  void write_vmm_entry(uint32_t offset, uint32_t timebin,
-                       uint32_t strip,  uint32_t adc);
-  void write_vmm_entry(const std::vector<uint32_t>& entry);
-  void write_vmm_entry(const PacketVMM& packet);
+
+  void write_vmm_entry(const EventVMM& packet);
 
   //Metrics
   std::list<std::string> analyses() const;

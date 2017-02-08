@@ -264,48 +264,26 @@ Record File::read_APV(size_t index, size_t plane) const
 void File::write_VMM(size_t index, uint32_t plane, const Record& record)
 {
   size_t start = dataset_VMM_.shape().dim(0);
-  size_t idx = start;
   for (auto p : record.get_points("strip_vmm"))
   {
-    std::vector<uint32_t> data
-    {
-      static_cast<uint32_t>(index), //time offset
-      static_cast<uint32_t>(p.y),   //timestamp
-      static_cast<uint32_t>(p.x + (plane << 16)),   //strip
-      static_cast<uint32_t>(p.v)    //ADC value
-    };
-    dataset_VMM_.write(data, {1,H5CC::kMax}, {idx, 0});
-    idx++;
+    EventVMM evt;
+    evt.time = (index << 6) | p.y;
+    evt.plane_id = plane;
+    evt.strip_id = p.x;
+    evt.adc = p.v;
+    write_vmm_entry(evt);
   }
-  std::vector<uint64_t> data {start, idx};
+  std::vector<uint64_t> data {start, dataset_VMM_.shape().dim(0)};
   indices_VMM_.write(data, {1,2}, {index, 2 * plane});
 }
 
-void File::write_vmm_entry(const PacketVMM &packet)
+void File::write_vmm_entry(const EventVMM &packet)
 {
-  uint32_t time_u = packet.time >> 32;
-  uint32_t time_l = packet.time & 0xFFFFFFFF;
-  uint32_t strip_id = (uint32_t(packet.plane_id) << 16) | packet.strip_id;
-  uint32_t adc_flags = (uint32_t(packet.flag) << 16) | (uint32_t(packet.over_threshold) << 17)
-      | packet.adc;
-
-  write_vmm_entry({time_u, time_l, strip_id, adc_flags});
-}
-
-void File::write_vmm_entry(uint32_t offset, uint32_t timebin,
-                           uint32_t strip,  uint32_t adc)
-{
-  write_vmm_entry({offset, timebin, strip, adc});
-}
-
-void File::write_vmm_entry(const std::vector<uint32_t>& entry)
-{
-  if (!open_VMM_ || (entry.size() != 4))
+  if (!open_VMM_)
     return;
-  dataset_VMM_.write(entry, {1,H5CC::kMax},
-                            {dataset_VMM_.shape().dim(0), 0});
+  dataset_VMM_.write(packet.to_packet(), {1,H5CC::kMax},
+                                         {dataset_VMM_.shape().dim(0), 0});
 }
-
 
 Record File::read_VMM(size_t index, size_t plane) const
 {
@@ -321,9 +299,10 @@ Record File::read_VMM(size_t index, size_t plane) const
   for (size_t i = start; i < stop; ++i)
   {
     auto data = dataset_VMM_.read<uint32_t>({1,H5CC::kMax}, {i, 0});
-    if (data.at(0) != index) //assume clustered
-      continue;
-    strips[data.at(2) & 0x0000FFFF][data.at(1)] = data.at(3);
+    EventVMM evt = EventVMM::from_packet(data);
+    //if (data.at(0) != index) //assume clustered
+    //  continue;
+    strips[evt.strip_id][evt.time & 0xFF] = evt.adc;
   }
 
   Record record;

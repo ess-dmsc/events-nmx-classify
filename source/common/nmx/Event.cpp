@@ -4,24 +4,6 @@
 
 namespace NMX {
 
-std::string PacketVMM::debug() const
-{
-  std::stringstream ss;
-  if (flag)
-    ss << " flag ";
-  else
-    ss << "      ";
-  if (over_threshold)
-    ss << " othr ";
-  else
-    ss << "      ";
-  ss << " time=" << (time >> 36) << ":" << (time & 0xFFFFFFFFF)
-     << " plane=" << plane_id
-     << " strip=" << strip_id
-     << " adc=" << adc;
-  return ss.str();
-}
-
 Event::Event()
   :Event(Record(), Record())
 {}
