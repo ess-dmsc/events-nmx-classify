@@ -83,7 +83,6 @@ void Browser::open_file(QString fileName)
     printException();
     ERR << "<nmx_browser> could not open " << fileName.toStdString();
     failed = true;
-    return;
   }
 
   if (failed)
