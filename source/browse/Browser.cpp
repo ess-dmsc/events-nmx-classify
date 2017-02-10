@@ -81,7 +81,7 @@ void Browser::open_file(QString fileName)
   catch (...)
   {
     printException();
-    ERR << "<nmx_browser> could not open " << fileName.toStdString();
+    ERR << "<nmx_browser> could not open(rw) " << fileName.toStdString();
     failed = true;
   }
 
@@ -94,7 +94,7 @@ void Browser::open_file(QString fileName)
     catch (...)
     {
       printException();
-      ERR << "<nmx_browser> could not open " << fileName.toStdString();
+      ERR << "<nmx_browser> could not open(r) " << fileName.toStdString();
       return;
     }
   }

@@ -110,7 +110,15 @@ Event Analysis::gather_metrics(uint32_t index, Event event) const
   for (auto m : metrics_)
   {
     double d {0.0};
-    d = datasets_.at(m.first).read<double>({index});
+    try
+    {
+      d = datasets_.at(m.first).read<double>({index});
+    }
+    catch (...)
+    {
+      ERR << "<NMX::Analysis> Failed to read metric \'" << m.first << "\' for event " << index;
+    }
+
     event.set_metric(m.first, d, m.second.description());
   }
 

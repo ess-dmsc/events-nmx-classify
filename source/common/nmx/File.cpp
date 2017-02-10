@@ -181,10 +181,17 @@ void File::load_analysis(std::string name)
   if (!analysis_.name().empty() && write_access_)
     analysis_.save();
 
-  if (file_.has_group("Analyses") && file_.open_group("Analyses").has_group(name))
-    analysis_ = Analysis(file_.open_group("Analyses").open_group(name), event_count());
-  else
-    analysis_ = Analysis();
+  try
+  {
+    if (file_.has_group("Analyses") && file_.open_group("Analyses").has_group(name))
+      analysis_ = Analysis(file_.open_group("Analyses").open_group(name), event_count());
+    else
+      analysis_ = Analysis();
+  }
+  catch (...)
+  {
+    ERR << "<NMX::File>< Failed to read dataset " << name;
+  }
 }
 
 size_t File::num_analyzed() const
@@ -257,8 +264,17 @@ Record File::read_APV(size_t index, size_t plane) const
     return Record();
 
   auto timebins = dataset_APV_.shape().dim(3);
-  return Record(dataset_APV_.read<int16_t>({1,1,H5CC::kMax,H5CC::kMax},
-                                       {index, plane, 0, 0}), timebins);
+  try
+  {
+    return Record(dataset_APV_.read<int16_t>({1,1,H5CC::kMax,H5CC::kMax},
+    {index, plane, 0, 0}), timebins);
+  }
+  catch (...)
+  {
+    ERR << "<NMX::File> Failed to read APV record at " << index << ":p" << plane
+        << " from " << dataset_APV_.debug();
+  }
+  return Record();
 }
 
 void File::write_VMM(size_t index, uint32_t plane, const Record& record)
