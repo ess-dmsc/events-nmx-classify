@@ -21,7 +21,7 @@ DataSet::DataSet(H5::DataSet ds, std::string name) : Location<H5::DataSet>(ds, n
   }
 }
 
-Shape DataSet::slab_shape(std::vector<hsize_t> list) const
+Shape DataSet::slab_shape(const std::vector<hsize_t>& list) const
 {
   return shape_.slab_shape(list);
 }

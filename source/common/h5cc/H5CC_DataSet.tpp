@@ -5,7 +5,7 @@ namespace H5CC {
 
 #define TT template<typename T>
 
-TT void DataSet::write(const T& data, std::vector<hsize_t> index)
+TT void DataSet::write(const T& data, const std::vector<hsize_t>& index)
 {
   try
   {
@@ -22,7 +22,7 @@ TT void DataSet::write(const T& data, std::vector<hsize_t> index)
 }
 
 TT void DataSet::write(const std::vector<T>& data, Shape slab,
-                       std::vector<hsize_t> index)
+                       const std::vector<hsize_t>& index)
 {
   try
   {
@@ -47,8 +47,8 @@ TT void DataSet::write(const std::vector<T>& data, Shape slab,
 }
 
 TT void DataSet::write(const std::vector<T>& data,
-                       std::vector<hsize_t> slab_size,
-                       std::vector<hsize_t> index)
+                       const std::vector<hsize_t>& slab_size,
+                       const std::vector<hsize_t>& index)
 {
   write(data, shape_.slab_shape(slab_size), index);
 }
@@ -68,7 +68,7 @@ TT void DataSet::write(const std::vector<T>& data)
 }
 
 
-TT T DataSet::read(std::vector<hsize_t> index) const
+TT T DataSet::read(const std::vector<hsize_t>& index) const
 {
   try
   {
@@ -86,16 +86,16 @@ TT T DataSet::read(std::vector<hsize_t> index) const
   }
 }
 
-TT std::vector<T> DataSet::read(Shape slab, std::vector<hsize_t> index) const
+TT void DataSet::read(std::vector<T>& data, Shape slab, const std::vector<hsize_t>& index) const
 {
   try
   {
     auto shape = shape_;
     shape.select_slab(slab, index);
-    std::vector<T> data(slab.data_size());
+    if (data.size() < slab.data_size())
+      data.resize(slab.data_size());
     Location<H5::DataSet>::location_.read(data.data(), pred_type_of(T()),
                                           slab.dataspace(), shape.dataspace());
-    return data;
   }
   catch (...)
   {
@@ -103,10 +103,20 @@ TT std::vector<T> DataSet::read(Shape slab, std::vector<hsize_t> index) const
   }
 }
 
-TT std::vector<T> DataSet::read(std::vector<hsize_t> slab_size,
-                                std::vector<hsize_t> index) const
+TT void DataSet::read(std::vector<T>& data,
+                      const std::vector<hsize_t>& slab_size,
+                      const std::vector<hsize_t>& index) const
 {
-  return read<T>(shape_.slab_shape(slab_size), index);
+  read(data, shape_.slab_shape(slab_size), index);
+}
+
+TT std::vector<T> DataSet::read(const std::vector<hsize_t>& slab_size,
+                                const std::vector<hsize_t>& index) const
+{
+  auto slab = shape_.slab_shape(slab_size);
+  std::vector<T> data(slab.data_size());
+  read(data, slab, index);
+  return data;
 }
 
 TT std::vector<T> DataSet::read() const
