@@ -1,0 +1,140 @@
+#include "FileAnalysis.h"
+#include "CustomLogger.h"
+#include "FileClustered.h"
+#include "FileAPV.h"
+
+namespace NMX {
+
+FileAnalysis::FileAnalysis(std::string filename, H5CC::Access access)
+{
+  file_ = H5CC::File(filename, access);
+  write_access_ = (file_.status() != H5CC::Access::r_existing) &&
+      (file_.status() != H5CC::Access::no_access);
+}
+
+FileAnalysis::~FileAnalysis()
+{
+  if (!analysis_.name().empty() && write_access_)
+    analysis_.save();
+}
+
+bool FileAnalysis::has_APV()
+{
+  return FileAPV::exists_in(file_);
+}
+
+bool FileAnalysis::has_clustered()
+{
+  return FileClustered::exists_in(file_);
+}
+
+void FileAnalysis::open_raw()
+{
+  close_raw();
+  if (FileAPV::exists_in(file_))
+    raw_ = std::make_shared<FileAPV>(file_);
+  else if (FileClustered::exists_in(file_))
+    raw_ = std::make_shared<FileClustered>(file_);
+}
+
+void FileAnalysis::close_raw()
+{
+  raw_.reset();
+}
+
+size_t FileAnalysis::event_count() const
+{
+  if (raw_)
+    return raw_->event_count();
+  else
+    return 0;
+}
+
+Event FileAnalysis::get_event(size_t index) const
+{
+  if (raw_)
+    return analysis_.gather_metrics(index, raw_->get_event(index));
+  else
+    return Event();
+}
+
+void FileAnalysis::write_event(size_t index, const Event& event)
+{
+  if (write_access_ && raw_)
+    raw_->write_event(index, event);
+}
+
+std::list<std::string> FileAnalysis::analyses() const
+{
+  if (file_.is_open() && file_.has_group("Analyses"))
+    return file_.open_group("Analyses").groups();
+  else
+    return std::list<std::string>();
+}
+
+void FileAnalysis::create_analysis(std::string name)
+{
+  if (write_access_ && !file_.require_group("Analyses").has_group(name))
+  {
+    file_.open_group("Analyses").create_group(name);
+    file_.open_group("Analyses").open_group(name).write_attribute("num_analyzed", 0);
+  }
+}
+
+void FileAnalysis::delete_analysis(std::string name)
+{
+  if (write_access_ && file_.require_group("Analyses").has_group(name))
+  {
+    file_.require_group("Analyses").remove(name);
+    if (name == analysis_.name())
+      analysis_ = Analysis();
+  }
+}
+
+void FileAnalysis::load_analysis(std::string name)
+{
+  if (name == analysis_.name())
+    return;
+
+  if (!analysis_.name().empty() && write_access_)
+    analysis_.save();
+
+  if (file_.has_group("Analyses") && file_.open_group("Analyses").has_group(name))
+    analysis_ = Analysis(file_.open_group("Analyses").open_group(name), event_count());
+  else
+    analysis_ = Analysis();
+}
+
+size_t FileAnalysis::num_analyzed() const
+{
+  return analysis_.num_analyzed();
+}
+
+Settings FileAnalysis::parameters() const
+{
+  return analysis_.parameters();
+}
+
+void FileAnalysis::set_parameters(const Settings& params)
+{
+  if (write_access_)
+    analysis_.set_parameters(params);
+}
+
+void FileAnalysis::analyze_event(size_t index)
+{
+  if (raw_ && write_access_ && (index <= event_count()))
+    analysis_.analyze_event(index, raw_->get_event(index));
+}
+
+std::list<std::string> FileAnalysis::metrics() const
+{
+  return analysis_.metrics();
+}
+
+Metric FileAnalysis::get_metric(std::string cat, bool with_data) const
+{
+  return analysis_.metric(cat, with_data);
+}
+
+}

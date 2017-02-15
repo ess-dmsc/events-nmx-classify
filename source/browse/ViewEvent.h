@@ -5,7 +5,7 @@
 #include <memory>
 #include <set>
 
-#include "File.h"
+#include "FileAnalysis.h"
 #include "TableSettings.h"
 #include "SpecialDelegate.h"
 #include "BoxesModel.h"
@@ -23,7 +23,7 @@ public:
   explicit ViewEvent(QWidget *parent = 0);
   ~ViewEvent();
 
-  void set_new_source(std::shared_ptr<NMX::File> r);
+  void set_new_source(std::shared_ptr<NMX::FileAnalysis> r);
   void clear();
 
 public slots:
@@ -45,7 +45,7 @@ private slots:
 private:
   Ui::ViewEvent *ui;
 
-  std::shared_ptr<NMX::File> reader_;
+  std::shared_ptr<NMX::FileAnalysis> reader_;
   std::vector<size_t> indices_;
 
   NMX::Event event_;

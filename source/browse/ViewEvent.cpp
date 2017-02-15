@@ -125,7 +125,7 @@ void ViewEvent::update_parameters_model()
   params_model_.update(settings);
 }
 
-void ViewEvent::set_new_source(std::shared_ptr<NMX::File> r)
+void ViewEvent::set_new_source(std::shared_ptr<NMX::FileAnalysis> r)
 {
   reader_ = r;
 

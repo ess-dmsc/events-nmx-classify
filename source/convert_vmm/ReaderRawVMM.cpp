@@ -1,5 +1,6 @@
 ﻿#include "ReaderRawVMM.h"
 #include <sstream>
+#include "CustomLogger.h"
 
 #define VMM_EVENT_END 0xfafafafa
 #define VMM_EVENT_HEADER 0x564d32
@@ -12,8 +13,7 @@
 namespace NMX
 {
 
-ReaderRawVMM::ReaderRawVMM(std::string filename) :
-  Reader(filename)
+ReaderRawVMM::ReaderRawVMM(std::string filename)
 {
   file_.open(filename, std::ios::binary);
   if (!file_.is_open())

@@ -33,7 +33,8 @@ link_directories( ${BOOST_LIBRARY_DIRS} )
 #add_definitions(-DQCUSTOMPLOT_USE_OPENGL)
 
 include_directories(${CMAKE_SOURCE_DIR}
-                    ${CMAKE_SOURCE_DIR}/convert
+                    ${CMAKE_SOURCE_DIR}/convert_apv
+                    ${CMAKE_SOURCE_DIR}/convert_vmm
                     ${CMAKE_SOURCE_DIR}/common
                     ${CMAKE_SOURCE_DIR}/common/h5cc
                     ${CMAKE_SOURCE_DIR}/common/nmx
@@ -80,11 +81,22 @@ target_link_libraries(
   ${Boost_LIBRARIES}
 )
 
-file(GLOB_RECURSE sources_convert convert/*.cpp convert/*.h)
+file(GLOB_RECURSE sources_convert_apv convert_apv/*.cpp convert_apv/*.h)
 
-add_executable(nmx_convert ${sources_convert} ${sources_common})
+add_executable(nmx_convert_apv ${sources_convert_apv} ${sources_common})
 target_link_libraries(
-  nmx_convert
+  nmx_convert_apv
+
+  ${HDF5_LIBRARIES}
+  ${Boost_LIBRARIES}
+  ${ROOT_LIBRARIES}
+)
+
+file(GLOB_RECURSE sources_convert_vmm convert_vmm/*.cpp convert_vmm/*.h)
+
+add_executable(nmx_convert_vmm ${sources_convert_vmm} ${sources_common})
+target_link_libraries(
+  nmx_convert_vmm
 
   ${HDF5_LIBRARIES}
   ${Boost_LIBRARIES}
@@ -117,5 +129,6 @@ if(UNIX)
   install(TARGETS nmx_analyze DESTINATION bin)
   install(TARGETS nmx_hists DESTINATION bin)
   install(TARGETS nmx_browse DESTINATION bin)
-  install(TARGETS nmx_convert DESTINATION bin)
+  install(TARGETS nmx_convert_apv DESTINATION bin)
+  install(TARGETS nmx_convert_vmm DESTINATION bin)
 endif()

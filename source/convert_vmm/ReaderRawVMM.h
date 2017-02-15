@@ -1,20 +1,22 @@
 #ifndef ReaderRawVMM_H
 #define ReaderRawVMM_H
 
-#include "Reader.h"
 #include <fstream>
 #include <utility>
+#include <list>
+#include <vector>
+#include "EventVMM.h"
 
 namespace NMX {
 
-class ReaderRawVMM : public Reader
+class ReaderRawVMM
 {
 public:
   ReaderRawVMM(std::string filename);
   ~ReaderRawVMM();
 
-  size_t event_count() const override;
-  std::list<EventVMM> get_entries(size_t) override;
+  size_t event_count() const;
+  std::list<EventVMM> get_entries(size_t);
 
   void define_plane(uint16_t planeID,
                     std::initializer_list<std::pair<uint16_t, uint16_t>> chips);

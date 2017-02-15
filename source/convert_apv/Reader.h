@@ -14,8 +14,6 @@ public:
     virtual ~Reader() {}
         
     virtual Event get_event(size_t) { return Event(); }
-    virtual std::list<EventVMM> get_entries(size_t)
-    { return std::list<EventVMM>(); }
 
     virtual size_t event_count() const { return 0; }
     virtual size_t strip_count() const { return 0; }

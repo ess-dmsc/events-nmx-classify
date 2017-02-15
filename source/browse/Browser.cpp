@@ -76,7 +76,7 @@ void Browser::open_file(QString fileName)
   bool failed {false};
   try
   {
-    reader_ = std::make_shared<NMX::File>(fileName.toStdString(), H5CC::Access::rw_existing);
+    reader_ = std::make_shared<NMX::FileAnalysis>(fileName.toStdString(), H5CC::Access::rw_existing);
   }
   catch (...)
   {
@@ -89,7 +89,7 @@ void Browser::open_file(QString fileName)
   {
     try
     {
-      reader_ = std::make_shared<NMX::File>(fileName.toStdString(), H5CC::Access::r_existing);
+      reader_ = std::make_shared<NMX::FileAnalysis>(fileName.toStdString(), H5CC::Access::r_existing);
     }
     catch (...)
     {
@@ -238,7 +238,7 @@ void Browser::on_pushMetricsGlossary_clicked()
   QGridLayout* layout = new QGridLayout;
   layout->setMargin(3);
 
-  layout->addWidget(table, 0,0, -1,-1);
+  layout->addWidget(table, 0, 0, -1, -1);
   dialog->setLayout(layout);
 
   auto metrics = reader_->metrics();

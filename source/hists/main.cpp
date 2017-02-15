@@ -1,6 +1,6 @@
 #include "CustomLogger.h"
 #include "CLParser.h"
-#include "File.h"
+#include "FileAnalysis.h"
 #include <signal.h>
 #include "Filesystem.h"
 #include "histogram_h5.h"
@@ -68,7 +68,7 @@ int main(int argc, char* argv[])
   auto prog = progbar(files.size(), "  Indexing metrics  ");
   for (auto filename : files)
   {
-    auto reader = std::make_shared<NMX::File>(filename.string(), H5CC::Access::r_existing);
+    auto reader = std::make_shared<NMX::FileAnalysis>(filename.string(), H5CC::Access::r_existing);
 
     for (auto analysis : reader->analyses())
     {
@@ -100,7 +100,7 @@ int main(int argc, char* argv[])
 
     for (auto filename : files)
     {
-      auto reader = std::make_shared<NMX::File>(filename.string(), H5CC::Access::r_existing);
+      auto reader = std::make_shared<NMX::FileAnalysis>(filename.string(), H5CC::Access::r_existing);
       for (auto analysis : reader->analyses())
       {
         reader->load_analysis(analysis);
@@ -132,7 +132,7 @@ int main(int argc, char* argv[])
   size_t fnum {0};
   for (auto filename : files)
   {
-    auto reader = std::make_shared<NMX::File>(filename.string(), H5CC::Access::r_existing);
+    auto reader = std::make_shared<NMX::FileAnalysis>(filename.string(), H5CC::Access::r_existing);
 
     std::string dataset = filename.stem().string();
     auto relpath = relative_to(ofilepath, filename.relative_path());
