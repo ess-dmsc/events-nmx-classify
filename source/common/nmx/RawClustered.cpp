@@ -80,7 +80,7 @@ Record RawClustered::read_record(size_t index, size_t plane) const
       EventVMM evt = read_entry(i);
       //if (data.at(0) != index) //assume clustered
       //  continue;
-      strips[evt.strip_id][evt.time & 0xFF] = evt.adc;
+      strips[evt.strip][evt.time & 0xFF] = evt.adc;
     }
 
     Record record;
@@ -102,7 +102,7 @@ void RawClustered::write_record(size_t index, size_t plane, const Record& record
       EventVMM evt;
       evt.time = (index << 6) | p.y;
       evt.plane_id = plane;
-      evt.strip_id = p.x;
+      evt.strip = p.x;
       evt.adc = p.v;
       write_vmm_entry(evt);
     }

@@ -254,7 +254,7 @@ EventVMM ReaderRawVMM::parse_event(const int32_t &data_before,
   event.flag = (data_strip & 0x1);
   event.over_threshold = (data_strip & 0x2) >> 1;
   event.plane_id = stripID << 16;
-  event.strip_id = stripID & 0xFFFFFFFF;
+  event.strip    = stripID & 0xFFFFFFFF;
 
   if (stripID == VMM_INVALID_STRIP)
     ERR << "Bad stripID from fec=" << fecID_

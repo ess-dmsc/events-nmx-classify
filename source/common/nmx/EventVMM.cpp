@@ -20,7 +20,7 @@ std::string EventVMM::debug() const
      << ((time >> 8) & 0xFFF) << ":"
      << (time & 0xFF);
   ss << " plane=" << plane_id
-     << " strip=" << strip_id
+     << " strip=" << strip
      << " adc=" << adc;
   return ss.str();
 }
@@ -28,11 +28,18 @@ std::string EventVMM::debug() const
 std::vector<uint32_t> EventVMM::to_packet() const
 {
   std::vector<uint32_t> ret(4);
-  ret[0] = time >> 32;
-  ret[1] = time & 0xFFFFFFFF;
-  ret[2] = (uint32_t(plane_id) << 16) | strip_id;
-  ret[3] = (uint32_t(flag) << 16) | (uint32_t(over_threshold) << 17) | adc;
+  to_packet(ret);
   return ret;
+}
+
+void EventVMM::to_packet(std::vector<uint32_t>& packet) const
+{
+  if (packet.size() != 4)
+    packet.resize(4, 0);
+  packet[0] = time >> 32;
+  packet[1] = time & 0xFFFFFFFF;
+  packet[2] = (uint32_t(plane_id) << 16) | strip;
+  packet[3] = (uint32_t(flag) << 16) | (uint32_t(over_threshold) << 17) | adc;
 }
 
 EventVMM EventVMM::from_packet(const std::vector<uint32_t>& packet)
@@ -42,7 +49,7 @@ EventVMM EventVMM::from_packet(const std::vector<uint32_t>& packet)
   {
     ret.time = (uint64_t(packet.at(0)) << 32) | uint64_t(packet.at(1));
     ret.plane_id = packet.at(2) >> 16;
-    ret.strip_id = packet.at(2) & 0xFFFF;
+    ret.strip = packet.at(2) & 0xFFFF;
     ret.flag = (packet.at(3) >> 16) & 0x1;
     ret.over_threshold = (packet.at(3) >> 17) & 0x1;
     ret.adc = packet.at(3) & 0xFFFF;
