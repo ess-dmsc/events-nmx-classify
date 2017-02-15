@@ -202,104 +202,12 @@ void ReaderRawVMM::AnalyzeEventWord(const int32_t &data,
   {
     if (wordCountEvent == 2)
     {
-      //Register 0x0C: evbld_eventInfoData
-      //          31-16          15-0
-      // 0x00: HINFO_LABEL EVBLD_DATALENGTH
-      // 0x01: TRIGGERCOUNTER EVBLD_DATALENGTH
-      // 0x02: TRIGGERCOUNTER (31-0)
-      // 0x03: TRIGGERTIMESTAMP EVBLD_DATALENGTH
-      // 0x04: TRIGGERTIMESTAMP (31-0)
-      // 0x05: TRIGGERCOUNTER TRIGGERTIMESTAMP
-
-      // High resolution checkbox (Atlas tool)
-      // modifies register 0x0C: evbld_eventInfoData
-      // enable: 0x80
-      // disable: 0x00 (default)
-      // enable: removes top 3 bits of 32 bit timestamp, adds 3 bit for high res
-      // 3 bit high res are 320 MHz = 3.125 ns
-      // high res disabled: 25 ns resolution
-      // high res enabled: 3.125 ns resolution
-      trigger_timestamp_ = data_before;
+      trigger_timestamp_ = interpret_trigger_timestamp(data_before);
     }
     if ((wordCountEvent > 2) && (wordCountEvent % 2 == 0))
     {
-      uint32_t data_time = ReverseBits(data_before_two);
-      //adc: 0-7 14-15
-      //tdc: 8-13 22-23
-      //bcid: 16-21 26-31
-      uint32_t data1 = (data_time >> 24) & 0xFF;
-      uint32_t data2 = (data_time >> 16) & 0x3;
-      uint32_t data3 = (data_time >> 18) & 0x3F;
-      uint32_t data4 = (data_time >> 8) & 0x3;
-      uint32_t data5 = (data_time >> 10) & 0x3F;
-      uint32_t data6 = data_time & 0x3F;
-      //10 bits (8+2)
-      //8 bits (6+2)
-      uint32_t adc = (data2 << 8) + data1;
-      uint32_t tdc = (data4 << 6) + data3;
-      //***********************************************************
-      //Bunch crossing clock: 2.5 - 160 MHz (400 ns - 6.25 ns)
-      //***********************************************************
-      //12 bits (6+6)
-      uint32_t gray_bcid = (data6 << 6) + data5;
-      uint32_t bcid = GrayToBinary32(gray_bcid);
-      //BC time: bcid value * 1/(clock frequency)
-      double bcTime = double(bcid) * (1.0 / bcClock);
-      //TDC time: tacSlope * tdc value (8 bit) * ramp length
-      double tdcTime = tacSlope * (double) tdc / 256.0;
-      //Chip time: bcid plus tdc value
-      //Talk Vinnie: HIT time  = BCIDx25 + ADC*125/256 [ns]
-      double chip_time = bcTime * 1000 + tdcTime;
-
-      uint32_t data_strip = ReverseBits(data_before);
-
-      uint16_t flag           = (data & 0x1);
-      uint16_t over_threshold = (data & 0x2) >> 1;
-
-      uint32_t flags = (data_strip & 0x3) << 16;
-      uint32_t chan = (data_strip & 0xfc) >> 2;
-      uint32_t stripID = get_strip_ID(fecID_, vmmID_, chan);
-
-      if (stripID == VMM_INVALID_STRIP)
-      {
-        ERR << "Bad stripID from fec=" << fecID_
-            << " vmm=" << vmmID_
-            << " chan=" << chan << "\n";
-        return;
-      }
-
-      //Timestamp overflow magic:
-      double trigger_timestamp_ns = trigger_timestamp_ * 3.125;
-      double total_timestamp_ns = trigger_timestamp_ns + chip_time;
-      uint64_t total_timestamp = total_timestamp_ns * 2;
-
-      bool overflown = false;
-      if (trigger_prev_ > trigger_timestamp_)
-      {
-        overflown = true;
-        timestamp_hi_++;
-        DBG << "Overflow " << trigger_prev_ << " > " << trigger_timestamp_;
-      }
-      trigger_prev_ = trigger_timestamp_;
-//      total_timestamp = total_timestamp | (timestamp_hi_ << 36);
-
-//      total_timestamp = trigger_timestamp_ | (timestamp_hi_ << 36);
-
-      total_timestamp = tdc | (bcid << 8) | (uint64_t(trigger_timestamp_) << 20) |
-          (timestamp_hi_ << 52);
-
-      EventVMM packet;
-      packet.time = total_timestamp;
-      packet.adc = adc;
-      packet.flag = flag;
-      packet.over_threshold = over_threshold;
-      packet.plane_id = stripID << 16;
-      packet.strip_id = stripID & 0xFFFFFFFF;
-
-      if (overflown)
-        WARN << "Overflow at " << packet.debug();
-
-      events_.push_back(packet);
+      EventVMM event = parse_event(data_before, data_before_two);
+      events_.push_back(event);
 
       /*fRoot->AddHits(unixtimestamp, timestamp_us);*/
     }
@@ -326,6 +234,106 @@ uint32_t ReaderRawVMM::GrayToBinary32(uint32_t num)
   num = num ^ (num >> 1);
   return num;
 }
+
+EventVMM ReaderRawVMM::parse_event(const int32_t &data_before,
+                                   const int32_t &data_before_two)
+{
+  uint32_t data_strip = ReverseBits(data_before);
+  uint32_t chan = (data_strip & 0xfc) >> 2;
+  uint32_t stripID = get_strip_ID(fecID_, vmmID_, chan);
+  //uint32_t flags = (data_strip & 0x3) << 16;
+
+  uint32_t data_time = ReverseBits(data_before_two);
+  //adc: 0-7 14-15
+  uint32_t adc1 = (data_time >> 24) & 0xFF;
+  uint32_t adc2 = (data_time >> 16) & 0x3;
+
+  EventVMM event;
+  event.time = make_full_timestamp(data_time);
+  event.adc = (adc2 << 8) + adc1;
+  event.flag = (data_strip & 0x1);
+  event.over_threshold = (data_strip & 0x2) >> 1;
+  event.plane_id = stripID << 16;
+  event.strip_id = stripID & 0xFFFFFFFF;
+
+  if (stripID == VMM_INVALID_STRIP)
+    ERR << "Bad stripID from fec=" << fecID_
+        << " vmm=" << vmmID_
+        << " chan=" << chan << "\n";
+
+  return event;
+}
+
+
+uint32_t ReaderRawVMM::interpret_trigger_timestamp(uint32_t data)
+{
+  //Register 0x0C: evbld_eventInfoData
+  //          31-16          15-0
+  // 0x00: HINFO_LABEL EVBLD_DATALENGTH
+  // 0x01: TRIGGERCOUNTER EVBLD_DATALENGTH
+  // 0x02: TRIGGERCOUNTER (31-0)
+  // 0x03: TRIGGERTIMESTAMP EVBLD_DATALENGTH
+  // 0x04: TRIGGERTIMESTAMP (31-0)
+  // 0x05: TRIGGERCOUNTER TRIGGERTIMESTAMP
+
+  // High resolution checkbox (Atlas tool)
+  // modifies register 0x0C: evbld_eventInfoData
+  // enable: 0x80
+  // disable: 0x00 (default)
+  // enable: removes top 3 bits of 32 bit timestamp, adds 3 bit for high res
+  // 3 bit high res are 320 MHz = 3.125 ns
+  // high res disabled: 25 ns resolution
+  // high res enabled: 3.125 ns resolution
+  return data;
+}
+
+uint64_t ReaderRawVMM::make_full_timestamp(uint32_t data_time)
+{
+  //tdc: 8-13 22-23
+  //bcid: 16-21 26-31
+  uint32_t data3 = (data_time >> 18) & 0x3F;
+  uint32_t data4 = (data_time >> 8) & 0x3;
+  uint32_t data5 = (data_time >> 10) & 0x3F;
+  uint32_t data6 = data_time & 0x3F;
+  //10 bits (8+2)
+  //8 bits (6+2)
+  uint32_t tdc = (data4 << 6) + data3;
+  //***********************************************************
+  //Bunch crossing clock: 2.5 - 160 MHz (400 ns - 6.25 ns)
+  //***********************************************************
+  //12 bits (6+6)
+  uint32_t gray_bcid = (data6 << 6) + data5;
+  uint32_t bcid = GrayToBinary32(gray_bcid);
+  //BC time: bcid value * 1/(clock frequency)
+  double bcTime = double(bcid) * (1.0 / bcClock);
+  //TDC time: tacSlope * tdc value (8 bit) * ramp length
+  double tdcTime = tacSlope * (double) tdc / 256.0;
+  //Chip time: bcid plus tdc value
+  //Talk Vinnie: HIT time  = BCIDx25 + ADC*125/256 [ns]
+  double chip_time = bcTime * 1000 + tdcTime;
+
+  //Timestamp overflow magic:
+  double trigger_timestamp_ns = trigger_timestamp_ * 3.125;
+  double total_timestamp_ns = trigger_timestamp_ns + chip_time;
+  uint64_t total_timestamp = total_timestamp_ns * 2;
+
+  if (trigger_prev_ > trigger_timestamp_)
+  {
+    timestamp_hi_++;
+//    DBG << "Overflow " << trigger_prev_ << " > " << trigger_timestamp_;
+  }
+  trigger_prev_ = trigger_timestamp_;
+//      total_timestamp = total_timestamp | (timestamp_hi_ << 36);
+
+//      total_timestamp = trigger_timestamp_ | (timestamp_hi_ << 36);
+
+  total_timestamp = tdc | (bcid << 8) | (uint64_t(trigger_timestamp_) << 20) |
+      (timestamp_hi_ << 52);
+
+  return total_timestamp;
+}
+
+
 
 
 }

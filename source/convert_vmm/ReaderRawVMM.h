@@ -36,6 +36,12 @@ private:
   uint32_t GrayToBinary32(uint32_t num);
   uint32_t ReverseBits(uint32_t n);
 
+  uint32_t interpret_trigger_timestamp(uint32_t data);
+  uint64_t make_full_timestamp(uint32_t data_time);
+
+  EventVMM parse_event(const int32_t &data_before,
+                       const int32_t &data_before_two);
+
   void set_mapping(uint16_t fecID, uint16_t vmmID,
                    uint16_t planeID, uint16_t strip_offset);
 
