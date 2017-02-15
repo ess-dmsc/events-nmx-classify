@@ -124,7 +124,7 @@ int main(int argc, char* argv[])
           INFO << "Packet # " << eventID << "  "
                << entry.debug();
         }
-        writer->write_vmm_entry(entry);
+        writer->write_entry(entry);
       }
     }
     catch (...)

@@ -4,30 +4,23 @@
 namespace NMX {
 
 RawClustered::RawClustered(H5CC::File& file)
-  : RawVMM(file)
 {
   if (exists_in(file))
   {
-    indices_VMM_ = file.open_group("RawVMM").open_dataset("indices");
-  }
-
-  auto shape = indices_VMM_.shape();
-  if ((shape.rank() == 2) && (shape.dim(1) == 4))
-  {
-    event_count_ = shape.dim(0);
+    unclustered_ = RawVMM(file);
+    indices_VMM_ = file.open_dataset("RawVMM/indices");
+    event_count_ = indices_VMM_.shape().dim(0);
     write_access_ = (file.status() != H5CC::Access::r_existing) &&
                     (file.status() != H5CC::Access::no_access);
   }
   else
-  {
     ERR << "<NMX::RawClustered> bad size for raw/VMM cluster indices datset " << indices_VMM_.debug();
-    indices_VMM_ = H5CC::DataSet();
-  }
 }
 
 RawClustered::RawClustered(H5CC::File& file, size_t events, size_t chunksize)
-  : RawVMM(file, chunksize)
 {
+  unclustered_ = RawVMM(file, chunksize);
+
   bool write = (file.status() != H5CC::Access::r_existing) &&
                (file.status() != H5CC::Access::no_access);
   if (write && events > 0)
@@ -36,14 +29,17 @@ RawClustered::RawClustered(H5CC::File& file, size_t events, size_t chunksize)
                                                 {events, 4},
                                                 {1,      4});
     write_access_ = write;
+    event_count_ = 0;
   }
-//  event_count_ = 0;
 }
 
 bool RawClustered::exists_in(const H5CC::File& file)
 {
-  return (RawVMM::has_VMM(file) &&
-          file.open_group("RawVMM").has_dataset("indices"));
+  if (!RawVMM::exists_in(file) ||
+      !file.has_dataset("RawVMM/indices"))
+    return false;
+  auto shape = file.open_dataset("RawVMM/indices").shape();
+  return ((shape.rank() == 2) && (shape.dim(1) == 4));
 }
 
 size_t RawClustered::event_count() const
@@ -77,7 +73,7 @@ Record RawClustered::read_record(size_t index, size_t plane) const
 
     for (size_t i = start; i < stop; ++i)
     {
-      EventVMM evt = read_entry(i);
+      EventVMM evt = unclustered_.read_entry(i);
       //if (data.at(0) != index) //assume clustered
       //  continue;
       strips[evt.strip][evt.time & 0xFF] = evt.adc;
@@ -96,7 +92,7 @@ void RawClustered::write_record(size_t index, size_t plane, const Record& record
 {
   if (write_access_)
   {
-    size_t start = dataset_VMM_.shape().dim(0);
+    size_t start = unclustered_.entry_count();
     for (auto p : record.get_points("strip_vmm"))
     {
       EventVMM evt;
@@ -104,9 +100,9 @@ void RawClustered::write_record(size_t index, size_t plane, const Record& record
       evt.plane_id = plane;
       evt.strip = p.x;
       evt.adc = p.v;
-      write_vmm_entry(evt);
+      unclustered_.write_entry(evt);
     }
-    std::vector<uint64_t> data {start, dataset_VMM_.shape().dim(0)};
+    std::vector<uint64_t> data {start, unclustered_.entry_count()};
     indices_VMM_.write(data, {1,2}, {index, 2 * plane});
   }
 }

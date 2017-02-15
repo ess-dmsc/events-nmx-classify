@@ -5,7 +5,7 @@
 
 namespace NMX {
 
-class RawClustered : public RawVMM, public Raw
+class RawClustered : public Raw
 {
 public:
   RawClustered(H5CC::File& file);
@@ -21,8 +21,9 @@ public:
 protected:
   bool write_access_ {false};
   H5CC::DataSet  indices_VMM_;
-
   size_t event_count_ {0};
+
+  RawVMM unclustered_;
 
   Record read_record(size_t index, size_t plane) const;
   void write_record(size_t index, size_t plane, const Record&);

@@ -5,22 +5,16 @@ namespace NMX {
 
 RawAPV::RawAPV(H5CC::File& file)
 {
-  dataset_APV_ = file.open_dataset("RawAPV");
-  auto shape = dataset_APV_.shape();
-
-  if ((shape.rank() == 4) &&
-      (shape.dim(1) == 2) &&
-      (shape.data_size() > 0))
+  if (exists_in(file))
   {
+    dataset_APV_ = file.open_dataset("RawAPV");
+    auto shape = dataset_APV_.shape();
     event_count_ = shape.dim(0);
     write_access_ = (file.status() != H5CC::Access::r_existing) &&
                     (file.status() != H5CC::Access::no_access);
   }
   else
-  {
     ERR << "<NMX::RawAPV> bad size for raw/APV datset " << dataset_APV_.debug();
-    dataset_APV_ = H5CC::DataSet();
-  }
 }
 
 RawAPV::RawAPV(H5CC::File& file, size_t strips, size_t timebins)
@@ -38,7 +32,12 @@ RawAPV::RawAPV(H5CC::File& file, size_t strips, size_t timebins)
 
 bool RawAPV::exists_in(const H5CC::File &file)
 {
-  return file.has_dataset("RawAPV");
+  if (!file.has_dataset("RawAPV"))
+    return false;
+  auto shape = file.open_dataset("RawAPV").shape();
+  return ((shape.rank() == 4) &&
+          (shape.dim(1) == 2) &&
+          (shape.data_size() > 0));
 }
 
 size_t RawAPV::event_count() const
