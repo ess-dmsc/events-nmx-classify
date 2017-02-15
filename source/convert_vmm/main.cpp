@@ -1,15 +1,14 @@
 #include "CustomLogger.h"
 #include "CLParser.h"
-#include "File.h"
+#include "FileAnalysis.h"
+#include "FileVMM.h"
 #include <signal.h>
 #include <boost/algorithm/string.hpp>
 #include "Filesystem.h"
 #include "ExceptionUtil.h"
 #include "progbar.h"
 
-#include "ReaderRawAPV.h"
 #include "ReaderRawVMM.h"
-#include "ReaderROOT.h"
 
 volatile sig_atomic_t term_flag = 0;
 void term_key(int /*sig*/)
@@ -22,8 +21,7 @@ using namespace std;
 
 const string options_text =
 		"NMX data conversion program for ROOT/Raw to HDF5. Available options:\n"
-				"    -i [path/input.root or .raw] Must be specified\n"
-        "    -f [Format of raw data, APV or VMM] Must be specified if reading *.raw file\n"
+        "    -i [path/input.raw] Must be specified\n"
 				"    -o [path/oputput.h5] Output file - defaults to input.h5\n"
 				"    -s [int] Number of event to start with   - default 0\n"
 				"    -n [int] Number of event to be processed - default all\n"
@@ -56,40 +54,13 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
-  bool is_apv = false;
-  bool is_vmm = false;
-
 	// Initialize the reader to read the root-file containing the events
-	shared_ptr<NMX::Reader> reader;
+  shared_ptr<NMX::ReaderRawVMM> reader;
 
 	fs::path input_path(input_file);
-  if (boost::iequals(input_path.extension().string(), ".root"))
-  {
-    is_apv = true;
-		reader = make_shared < NMX::ReaderROOT > (input_file);
-  }
-  else if (boost::iequals(input_path.extension().string(), ".raw"))
+  if (boost::iequals(input_path.extension().string(), ".raw"))
 	{
-    // Data format
-    string data_format = cmd_line.get_value("-f");
-    if (data_format.empty() || (!boost::iequals(data_format, "APV") && !boost::iequals(data_format, "VMM")))
-    {
-      ERR << "Error: Please specify the data format (APV or VMM) of the raw data file!\n\n";
-      return 1;
-    }
-
-    is_apv = boost::iequals(data_format, "APV");
-    is_vmm = boost::iequals(data_format, "VMM");
-
-    if(is_apv)
-		{
-      reader = make_shared<NMX::ReaderRawAPV>(input_file);
-		}
-    else if(is_vmm)
-		{
-      reader = make_shared<NMX::ReaderRawVMM>(input_file);
-		}
-
+    reader = make_shared<NMX::ReaderRawVMM>(input_file);
 	}
 	else
 	{
@@ -122,12 +93,14 @@ int main(int argc, char* argv[])
 		output_file = input_path.string();
 	}
 
-  INFO << "Destination '" << output_file << "'";
+  INFO << "Destination '" << output_file << "'\n";
 
-  shared_ptr<NMX::File> writer;
+  H5CC::File outfile;
+  shared_ptr<NMX::FileVMM> writer;
 	try
 	{
-    writer = make_shared<NMX::File>(output_file, H5CC::Access::rw_truncate);
+    outfile.open(output_file, H5CC::Access::rw_truncate);
+    writer = make_shared<NMX::FileVMM>(outfile, 20);
   }
   catch (...)
 	{
@@ -136,37 +109,22 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
-  if (is_vmm)
-    writer->create_VMM(0, 20);
-  else
-    writer->create_APV(reader->strip_count(), reader->timebin_count());
-
   auto prog = progbar(nevents, "  Converting '" + input_file + "'  ");
 
 	for (size_t eventID = start; eventID < (start + nevents); ++eventID)
 	{
 		if (!verbose)
       ++(*prog);
-		try
-		{
-      if (is_vmm)
+    try
+    {
+      for (const auto &entry : reader->get_entries(eventID))
       {
-        for (const auto &entry : reader->get_entries(eventID))
-        {
-          if (verbose)
-          {
-            INFO << "Packet # " << eventID << "  "
-                 << entry.debug();
-          }
-          writer->write_vmm_entry(entry);
-        }
-      }
-      else
-      {
-        NMX::Event event = reader->get_event(eventID);
         if (verbose)
-          INFO<< "\nEvent # " << eventID << "\n" << event.debug() << "\n";
-        writer->write_event(eventID - start, event);
+        {
+          INFO << "Packet # " << eventID << "  "
+               << entry.debug();
+        }
+        writer->write_vmm_entry(entry);
       }
     }
     catch (...)

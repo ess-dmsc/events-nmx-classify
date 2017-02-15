@@ -3,64 +3,49 @@
 
 namespace NMX {
 
-FileVMM::FileVMM(std::string filename, H5CC::Access access)
-  : File(filename, access)
-{}
-
-void FileVMM::close_raw()
+FileVMM::FileVMM(H5CC::File& file)
 {
-  open_VMM_ = false;
-  dataset_VMM_ = H5CC::DataSet();
-  entry_count_ = 0;
+  if (has_VMM(file))
+  {
+    dataset_VMM_ = file.open_group("RawVMM").open_dataset("points");
+  }
+
+  auto shape = dataset_VMM_.shape();
+  if ((shape.rank() == 2) && (shape.dim(1) == 4))
+  {
+    entry_count_ = shape.dim(0);
+    open_VMM_ = true;
+  }
+  else
+  {
+    ERR << "<NMX::FileVMM> bad size for raw/VMM datset " << dataset_VMM_.debug();
+    dataset_VMM_ = H5CC::DataSet();
+  }
 }
 
-bool FileVMM::has_VMM() const
+FileVMM::FileVMM(H5CC::File& file, size_t chunksize)
 {
-  return (file_.has_group("RawVMM") &&
-          file_.open_group("RawVMM").has_dataset("points"));
-}
-
-void FileVMM::create_VMM(size_t chunksize)
-{
-  if (access() == H5CC::Access::r_existing)
-    return;
-
-  this->close_raw();
-  auto grp = file_.require_group("RawVMM");
+//  if (access() == H5CC::Access::r_existing)
+//    return;
+  auto grp = file.require_group("RawVMM");
 
   dataset_VMM_ = grp.require_dataset<uint32_t>("points",
                                                {H5CC::kMax, 4},
                                                {chunksize , 4});
   open_VMM_ = true;
+  entry_count_ = 0;
 }
 
-void FileVMM::open_VMM()
+bool FileVMM::has_VMM(const H5CC::File& file)
 {
-  this->close_raw();
-
-  if (has_VMM())
-  {
-    dataset_VMM_ = file_.open_group("RawVMM").open_dataset("points");
-  }
-
-  auto shape = dataset_VMM_.shape();
-  if ((shape.rank() != 2) || (shape.dim(1) != 4))
-  {
-    ERR << "<NMX::FileVMM> bad size for raw/VMM datset " << dataset_VMM_.debug();
-    this->close_raw();
-    return;
-  }
-
-  entry_count_ = shape.dim(0);
-  open_VMM_ = true;
+  return (file.has_group("RawVMM") &&
+          file.open_group("RawVMM").has_dataset("points"));
 }
-
 
 size_t FileVMM::entry_count() const
 {
   return entry_count_;
 }
-
 
 void FileVMM::write_vmm_entry(const EventVMM &packet)
 {
@@ -68,6 +53,7 @@ void FileVMM::write_vmm_entry(const EventVMM &packet)
     return;
   dataset_VMM_.write(packet.to_packet(), {1,H5CC::kMax},
                                          {dataset_VMM_.shape().dim(0), 0});
+  entry_count_ = dataset_VMM_.shape().dim(0);
 }
 
 }

@@ -3,61 +3,48 @@
 
 namespace NMX {
 
-FileClustered::FileClustered(std::string filename, H5CC::Access access)
-  : FileVMM(filename, access)
-{}
-
-void FileClustered::close_raw()
+FileClustered::FileClustered(H5CC::File& file)
+  : FileVMM(file)
 {
-  FileVMM::close_raw();
-  indices_VMM_ = H5CC::DataSet();
-  event_count_ = 0;
-  open_clustered_ = false;
-}
-
-
-bool FileClustered::has_clustered() const
-{
-  return (FileVMM::has_VMM() &&
-          file_.open_group("RawVMM").has_dataset("indices"));
-}
-
-void FileClustered::create_clustered(size_t events, size_t chunksize)
-{
-  if (file_.status() == H5CC::Access::r_existing)
-    return;
-
-  FileVMM::create_VMM(chunksize);
-
-  if (events > 0)
-    indices_VMM_ = file_.require_group("RawVMM").require_dataset<uint64_t>("indices",
-                                                 {events, 4},
-                                                 {1,      4});
-  open_clustered_ = true;
-}
-
-void FileClustered::open_clustered()
-{
-  this->close_raw();
-
-  if (has_clustered())
+  if (exists_in(file))
   {
-    FileVMM::open_VMM();
-    indices_VMM_ = file_.open_group("RawVMM").open_dataset("indices");
+    indices_VMM_ = file.open_group("RawVMM").open_dataset("indices");
   }
 
   auto shape = indices_VMM_.shape();
-  if ((shape.rank() != 2) || (shape.dim(1) != 4))
+  if ((shape.rank() == 2) && (shape.dim(1) == 4))
+  {
+    event_count_ = shape.dim(0);
+    write_access_ = (file.status() != H5CC::Access::r_existing) &&
+                    (file.status() != H5CC::Access::no_access);
+  }
+  else
   {
     ERR << "<NMX::FileClustered> bad size for raw/VMM cluster indices datset " << indices_VMM_.debug();
-    this->close_raw();
-    return;
+    indices_VMM_ = H5CC::DataSet();
   }
-
-  event_count_ = shape.dim(0);
-  open_clustered_ = true;
 }
 
+FileClustered::FileClustered(H5CC::File& file, size_t events, size_t chunksize)
+  : FileVMM(file, chunksize)
+{
+  bool write = (file.status() != H5CC::Access::r_existing) &&
+               (file.status() != H5CC::Access::no_access);
+  if (write && events > 0)
+  {
+    indices_VMM_ = file.require_group("RawVMM").require_dataset<uint64_t>("indices",
+                                                {events, 4},
+                                                {1,      4});
+    write_access_ = write;
+  }
+//  event_count_ = 0;
+}
+
+bool FileClustered::exists_in(const H5CC::File& file)
+{
+  return (FileVMM::has_VMM(file) &&
+          file.open_group("RawVMM").has_dataset("indices"));
+}
 
 size_t FileClustered::event_count() const
 {
@@ -71,67 +58,58 @@ Event FileClustered::get_event(size_t index) const
 
 void FileClustered::write_event(size_t index, const Event& event)
 {
-  if (file_.status() == H5CC::Access::r_existing)
-    return;
-
-  this->write_record(index, 0, event.x());
-  this->write_record(index, 1, event.y());
+  if (write_access_)
+  {
+    write_record(index, 0, event.x());
+    write_record(index, 1, event.y());
+  }
 }
 
 Record FileClustered::read_record(size_t index, size_t plane) const
 {
-  if (open_clustered_)
-    return read_clustered(index, plane);
+  if (index < event_count())
+  {
+    size_t start = indices_VMM_.read<uint64_t>({index, 2*plane});
+    size_t stop = indices_VMM_.read<uint64_t>({index, 2*plane + 1});
+
+    //strip->(timebin->adc)
+    std::map<int16_t, std::map<uint16_t, int16_t>> strips;
+
+    for (size_t i = start; i < stop; ++i)
+    {
+      auto data = dataset_VMM_.read<uint32_t>({1,H5CC::kMax}, {i, 0});
+      EventVMM evt = EventVMM::from_packet(data);
+      //if (data.at(0) != index) //assume clustered
+      //  continue;
+      strips[evt.strip_id][evt.time & 0xFF] = evt.adc;
+    }
+
+    Record record;
+    for (const auto& s : strips)
+      record.add_strip(s.first, Strip(s.second));
+    return record;
+  }
   else
     return Record();
 }
 
 void FileClustered::write_record(size_t index, size_t plane, const Record& record)
 {
-  if (open_clustered_)
-    return write_clustered(index, plane, record);
-}
-
-void FileClustered::write_clustered(size_t index, uint32_t plane, const Record& record)
-{
-  size_t start = dataset_VMM_.shape().dim(0);
-  for (auto p : record.get_points("strip_vmm"))
+  if (write_access_)
   {
-    EventVMM evt;
-    evt.time = (index << 6) | p.y;
-    evt.plane_id = plane;
-    evt.strip_id = p.x;
-    evt.adc = p.v;
-    write_vmm_entry(evt);
+    size_t start = dataset_VMM_.shape().dim(0);
+    for (auto p : record.get_points("strip_vmm"))
+    {
+      EventVMM evt;
+      evt.time = (index << 6) | p.y;
+      evt.plane_id = plane;
+      evt.strip_id = p.x;
+      evt.adc = p.v;
+      write_vmm_entry(evt);
+    }
+    std::vector<uint64_t> data {start, dataset_VMM_.shape().dim(0)};
+    indices_VMM_.write(data, {1,2}, {index, 2 * plane});
   }
-  std::vector<uint64_t> data {start, dataset_VMM_.shape().dim(0)};
-  indices_VMM_.write(data, {1,2}, {index, 2 * plane});
-}
-
-Record FileClustered::read_clustered(size_t index, size_t plane) const
-{
-  if (index >= event_count())
-    return Record();
-
-  size_t start = indices_VMM_.read<uint64_t>({index, 2*plane});
-  size_t stop = indices_VMM_.read<uint64_t>({index, 2*plane + 1});
-
-  //strip->(timebin->adc)
-  std::map<int16_t, std::map<uint16_t, int16_t>> strips;
-
-  for (size_t i = start; i < stop; ++i)
-  {
-    auto data = dataset_VMM_.read<uint32_t>({1,H5CC::kMax}, {i, 0});
-    EventVMM evt = EventVMM::from_packet(data);
-    //if (data.at(0) != index) //assume clustered
-    //  continue;
-    strips[evt.strip_id][evt.time & 0xFF] = evt.adc;
-  }
-
-  Record record;
-  for (const auto& s : strips)
-    record.add_strip(s.first, Strip(s.second));
-  return record;
 }
 
 

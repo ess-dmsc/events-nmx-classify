@@ -6,6 +6,8 @@
 #include <boost/program_options.hpp>
 #include "custom_timer.h"
 
+#include "FileClustered.h"
+
 namespace fs = boost::filesystem;
 namespace po = boost::program_options;
 
@@ -217,7 +219,7 @@ void emulate_vmm(const std::set<boost::filesystem::path>& files,
     }
 
     if (reader->has_APV())
-      reader->open_APV();
+      reader->open_raw();
     else
       std::cout << "No raw/APV dataset found in " << filename << "\n";
 
@@ -233,8 +235,8 @@ void emulate_vmm(const std::set<boost::filesystem::path>& files,
           boost::filesystem::change_extension(filename, "").string() +
           "_" + group.first + ".h5";
 
-      auto writer = std::make_shared<NMX::FileAnalysis>(newname, H5CC::Access::rw_require);
-      writer->create_clustered(nevents, chunksize);
+      H5CC::File outfile(newname, H5CC::Access::rw_require);
+      NMX::FileClustered writer(outfile, nevents, chunksize);
 
       auto prog = progbar(nevents, "  Converting to '" + newname + "'  ");
 
@@ -244,7 +246,7 @@ void emulate_vmm(const std::set<boost::filesystem::path>& files,
         auto event = reader->get_event(eventID);
         event.set_parameters(group.second);
         event.analyze();
-        writer->write_event(eventID, event);
+        writer.write_event(eventID, event);
         ++(*prog);
         if (term_flag)
           return;

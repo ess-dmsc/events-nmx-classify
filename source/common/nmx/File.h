@@ -1,21 +1,18 @@
 #ifndef NMX_FILE_H
 #define NMX_FILE_H
 
-#include "H5CC_File.h"
+#include "Event.h"
 
 namespace NMX {
 
 class File
 {
 public:
-  File(std::string filename, H5CC::Access access);
   virtual ~File() {}
 
-  H5CC::Access access() { return file_.status(); }
-
-protected:
-  H5CC::File     file_;
-
+  virtual size_t event_count() const = 0;
+  virtual Event get_event(size_t index) const = 0;
+  virtual void write_event(size_t index, const Event& event) = 0;
 };
 
 }

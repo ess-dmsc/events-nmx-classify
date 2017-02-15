@@ -1,22 +1,19 @@
 #ifndef NMX_FILE_VMM_H
 #define NMX_FILE_VMM_H
 
-#include "File.h"
+#include "H5CC_File.h"
 #include "EventVMM.h"
 
 namespace NMX {
 
-class FileVMM : public File
+class FileVMM
 {
 public:
-  FileVMM(std::string filename, H5CC::Access access);
+  FileVMM(H5CC::File& file);
+  FileVMM(H5CC::File& file, size_t chunksize);
+  static bool has_VMM(const H5CC::File& file);
+
   virtual ~FileVMM() {}
-
-  virtual void close_raw();
-
-  virtual bool has_VMM() const;
-  void create_VMM(size_t chunksize);
-  virtual void open_VMM();
 
   size_t entry_count() const;
   void write_vmm_entry(const EventVMM& packet);
@@ -26,7 +23,6 @@ protected:
   H5CC::DataSet  dataset_VMM_;
 
   size_t entry_count_ {0};
-
 };
 
 }

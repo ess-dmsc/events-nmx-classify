@@ -1,59 +1,67 @@
 #include "FileAnalysis.h"
 #include "CustomLogger.h"
+#include "FileClustered.h"
+#include "FileAPV.h"
 
 namespace NMX {
 
 FileAnalysis::FileAnalysis(std::string filename, H5CC::Access access)
-  : FileClustered(filename, access), FileAPV(filename, access)
-{}
+{
+  file_ = H5CC::File(filename, access);
+  write_access_ = (file_.status() != H5CC::Access::r_existing) &&
+      (file_.status() != H5CC::Access::no_access);
+}
 
 FileAnalysis::~FileAnalysis()
 {
-  if (!analysis_.name().empty() && write_access())
+  if (!analysis_.name().empty() && write_access_)
     analysis_.save();
 }
 
-bool FileAnalysis::write_access()
+bool FileAnalysis::has_APV()
 {
-  return (File::file_.status() != H5CC::Access::r_existing) &&
-      (File::file_.status() != H5CC::Access::no_access);
+  return FileAPV::exists_in(file_);
 }
 
+bool FileAnalysis::has_clustered()
+{
+  return FileClustered::exists_in(file_);
+}
 
 void FileAnalysis::open_raw()
 {
   close_raw();
-  if (FileAPV::has_APV())
-    FileAPV::open_APV();
-  else if (FileClustered::has_clustered())
-    FileClustered::open_clustered();
+  if (FileAPV::exists_in(file_))
+    raw_ = std::make_shared<FileAPV>(file_);
+  else if (FileClustered::exists_in(file_))
+    raw_ = std::make_shared<FileClustered>(file_);
 }
 
 void FileAnalysis::close_raw()
 {
-  FileAPV::close_raw();
-  FileClustered::close_raw();
+  raw_.reset();
 }
-
 
 size_t FileAnalysis::event_count() const
 {
-  return event_count_;
+  if (raw_)
+    return raw_->event_count();
+  else
+    return 0;
 }
 
 Event FileAnalysis::get_event(size_t index) const
 {
-  return analysis_.gather_metrics(index, Event(read_record(index, 0),
-                                               read_record(index, 1)));
+  if (raw_)
+    return analysis_.gather_metrics(index, raw_->get_event(index));
+  else
+    return Event();
 }
 
 void FileAnalysis::write_event(size_t index, const Event& event)
 {
-  if (file_.status() == H5CC::Access::r_existing)
-    return;
-
-  write_record(index, 0, event.x());
-  write_record(index, 1, event.y());
+  if (write_access_ && raw_)
+    raw_->write_event(index, event);
 }
 
 std::list<std::string> FileAnalysis::analyses() const
@@ -66,10 +74,7 @@ std::list<std::string> FileAnalysis::analyses() const
 
 void FileAnalysis::create_analysis(std::string name)
 {
-  if (file_.status() == H5CC::Access::r_existing)
-    return;
-
-  if (!file_.require_group("Analyses").has_group(name))
+  if (write_access_ && !file_.require_group("Analyses").has_group(name))
   {
     file_.open_group("Analyses").create_group(name);
     file_.open_group("Analyses").open_group(name).write_attribute("num_analyzed", 0);
@@ -78,10 +83,7 @@ void FileAnalysis::create_analysis(std::string name)
 
 void FileAnalysis::delete_analysis(std::string name)
 {
-  if (file_.status() == H5CC::Access::r_existing)
-    return;
-
-  if (file_.require_group("Analyses").has_group(name))
+  if (write_access_ && file_.require_group("Analyses").has_group(name))
   {
     file_.require_group("Analyses").remove(name);
     if (name == analysis_.name())
@@ -94,7 +96,7 @@ void FileAnalysis::load_analysis(std::string name)
   if (name == analysis_.name())
     return;
 
-  if (!analysis_.name().empty() && write_access())
+  if (!analysis_.name().empty() && write_access_)
     analysis_.save();
 
   if (file_.has_group("Analyses") && file_.open_group("Analyses").has_group(name))
@@ -115,20 +117,14 @@ Settings FileAnalysis::parameters() const
 
 void FileAnalysis::set_parameters(const Settings& params)
 {
-  if (file_.status() == H5CC::Access::r_existing)
-    return;
-
-  analysis_.set_parameters(params);
+  if (write_access_)
+    analysis_.set_parameters(params);
 }
 
 void FileAnalysis::analyze_event(size_t index)
 {
-  if (file_.status() == H5CC::Access::r_existing)
-    return;
-
-  if (index <= event_count())
-    analysis_.analyze_event(index, Event(read_record(index, 0),
-                                         read_record(index, 1)));
+  if (raw_ && write_access_ && (index <= event_count()))
+    analysis_.analyze_event(index, raw_->get_event(index));
 }
 
 std::list<std::string> FileAnalysis::metrics() const
@@ -139,24 +135,6 @@ std::list<std::string> FileAnalysis::metrics() const
 Metric FileAnalysis::get_metric(std::string cat, bool with_data) const
 {
   return analysis_.metric(cat, with_data);
-}
-
-Record FileAnalysis::read_record(size_t index, size_t plane) const
-{
-  if (open_APV_)
-    return read_APV(index, plane);
-  else if (open_clustered_)
-    return read_clustered(index, plane);
-  else
-    return Record();
-}
-
-void FileAnalysis::write_record(size_t index, size_t plane, const Record& record)
-{
-  if (open_APV_)
-    return write_APV(index, plane, record);
-  else if (open_clustered_)
-    return write_clustered(index, plane, record);
 }
 
 }
