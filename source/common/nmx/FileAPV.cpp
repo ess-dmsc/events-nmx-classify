@@ -62,7 +62,7 @@ void FileAPV::write_event(size_t index, const Event& event)
 
 Record FileAPV::read_record(size_t index, size_t plane) const
 {
-  if (index >= event_count())
+  if (index < event_count())
   {
     auto timebins = dataset_APV_.shape().dim(3);
     return Record(dataset_APV_.read<int16_t>({1,1,H5CC::kMax,H5CC::kMax},

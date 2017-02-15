@@ -56,4 +56,13 @@ void FileVMM::write_vmm_entry(const EventVMM &packet)
   entry_count_ = dataset_VMM_.shape().dim(0);
 }
 
+EventVMM FileVMM::read_entry(size_t i) const
+{
+  if (i < entry_count_)
+    return EventVMM::from_packet(dataset_VMM_.read<uint32_t>({1,H5CC::kMax}, {i, 0}));
+  else
+    return EventVMM();
+}
+
+
 }

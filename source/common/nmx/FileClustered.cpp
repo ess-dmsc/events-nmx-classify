@@ -77,8 +77,7 @@ Record FileClustered::read_record(size_t index, size_t plane) const
 
     for (size_t i = start; i < stop; ++i)
     {
-      auto data = dataset_VMM_.read<uint32_t>({1,H5CC::kMax}, {i, 0});
-      EventVMM evt = EventVMM::from_packet(data);
+      EventVMM evt = read_entry(i);
       //if (data.at(0) != index) //assume clustered
       //  continue;
       strips[evt.strip_id][evt.time & 0xFF] = evt.adc;
