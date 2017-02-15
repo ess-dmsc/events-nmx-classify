@@ -1,5 +1,4 @@
-#ifndef H5CC_FILE_H
-#define H5CC_FILE_H
+#pragma once
 
 #include "H5CC_Group.h"
 
@@ -31,5 +30,3 @@ private:
 };
 
 }
-
-#endif

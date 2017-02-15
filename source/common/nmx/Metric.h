@@ -1,5 +1,4 @@
-#ifndef NMX_METRIC_H
-#define NMX_METRIC_H
+#pragma once
 
 #include "H5CC_DataSet.h"
 #include <map>
@@ -43,5 +42,3 @@ private:
 };
 
 }
-
-#endif

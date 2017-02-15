@@ -1,5 +1,4 @@
-#ifndef SEARCH_BOX_H
-#define SEARCH_BOX_H
+#pragma once
 
 #include <QWidget>
 #include <QItemSelection>
@@ -40,5 +39,3 @@ private:
   QStringList clever_search(const QStringList& list, QStringList queries);
   bool clever_test(const QString& string, const QString& query);
 };
-
-#endif

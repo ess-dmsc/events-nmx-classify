@@ -1,5 +1,4 @@
-#ifndef NMX_READER_H
-#define NMX_READER_H
+#pragma once
 
 #include <string>
 #include "Event.h"
@@ -21,5 +20,3 @@ public:
 };
 
 }
-
-#endif

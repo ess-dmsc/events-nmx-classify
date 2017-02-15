@@ -1,5 +1,4 @@
-#ifndef NMX_RECORD_H
-#define NMX_RECORD_H
+#pragma once
 
 #include "PlanePerspective.h"
 #include <map>
@@ -65,7 +64,4 @@ protected:
 
 };
 
-
 }
-
-#endif

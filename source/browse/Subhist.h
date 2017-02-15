@@ -1,5 +1,4 @@
-#ifndef SUBHIST_H_
-#define SUBHIST_H_
+#pragma once
 
 #include <QColor>
 #include "histogram.h"
@@ -57,4 +56,3 @@ struct MetricFilter
   QVector<MetricTest> tests;
 };
 
-#endif

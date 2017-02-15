@@ -1,5 +1,4 @@
-#ifndef H5CC_ENUM_H
-#define H5CC_ENUM_H
+#pragma once
 
 #include "H5CC_Common.h"
 #include "H5DataType.h"
@@ -99,4 +98,3 @@ protected:
 
 }
 
-#endif

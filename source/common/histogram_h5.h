@@ -1,5 +1,4 @@
-#ifndef HISTOGRAM_H5_H
-#define HISTOGRAM_H5_H
+#pragma once
 
 #include "H5CC_Group.h"
 #include "histogram.h"
@@ -10,5 +9,3 @@ HistMap1D read(const H5CC::DataSet& dataset);
 bool write(H5CC::Group group, std::string name, const HistMap2D& hist, uint16_t subdivisions = 10);
 HistMap2D read_hist2d(const H5CC::DataSet& dataset);
 
-
-#endif

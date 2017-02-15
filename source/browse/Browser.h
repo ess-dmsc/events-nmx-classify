@@ -1,5 +1,4 @@
-#ifndef Browser_H
-#define Browser_H
+#pragma once
 
 #include <QMainWindow>
 
@@ -52,4 +51,3 @@ private:
 
 };
 
-#endif // Browser_H

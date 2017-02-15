@@ -1,5 +1,4 @@
-#ifndef AGGREGATE_REVIEW_H
-#define AGGREGATE_REVIEW_H
+#pragma once
 
 #include <QWidget>
 #include <QItemSelection>
@@ -60,5 +59,3 @@ private:
   void make_palette();
 
 };
-
-#endif

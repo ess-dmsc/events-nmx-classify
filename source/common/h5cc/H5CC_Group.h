@@ -1,5 +1,4 @@
-#ifndef H5CC_GROUP_H
-#define H5CC_GROUP_H
+#pragma once
 
 #include "H5CC_DataSet.h"
 
@@ -43,4 +42,3 @@ using Group = Groupoid<H5::Group>;
 
 #include "H5CC_Group.tpp"
 
-#endif

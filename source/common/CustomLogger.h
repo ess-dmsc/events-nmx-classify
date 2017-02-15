@@ -1,5 +1,4 @@
-#ifndef CUSTOM_LOGGER_H_
-#define CUSTOM_LOGGER_H_
+#pragma once
 
 #include <iostream>
 
@@ -69,4 +68,4 @@ BOOST_LOG_INLINE_GLOBAL_LOGGER_DEFAULT(g_custom_logger,
 
 #endif
 
-#endif // CUSTOM_LOGGER_H
+

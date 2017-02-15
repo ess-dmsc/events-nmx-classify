@@ -1,5 +1,4 @@
-#ifndef SPECIAL_DELEGATE_H_
-#define SPECIAL_DELEGATE_H_
+#pragma once
 
 #include <QStyledItemDelegate>
 #include <QDialog>
@@ -40,4 +39,3 @@ private:
 
 };
 
-#endif

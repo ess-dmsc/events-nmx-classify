@@ -1,5 +1,4 @@
-#ifndef NMX_EVENT_H
-#define NMX_EVENT_H
+#pragma once
 
 #include "Record.h"
 
@@ -42,5 +41,3 @@ private:
 };
 
 }
-
-#endif

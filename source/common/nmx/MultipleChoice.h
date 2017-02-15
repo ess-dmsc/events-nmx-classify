@@ -1,5 +1,4 @@
-#ifndef MULTIPLE_CHOICE_H
-#define MULTIPLE_CHOICE_H
+#pragma once
 
 #include <string>
 #include <list>
@@ -32,5 +31,3 @@ public:
   MultipleChoice operator--(int);
 };
 
-
-#endif

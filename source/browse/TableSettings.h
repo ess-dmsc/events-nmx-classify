@@ -1,5 +1,4 @@
-#ifndef TABLE_SETTINGS_H_
-#define TABLE_SETTINGS_H_
+#pragma once
 
 #include <QAbstractTableModel>
 #include <QFont>
@@ -31,4 +30,3 @@ signals:
 
 };
 
-#endif

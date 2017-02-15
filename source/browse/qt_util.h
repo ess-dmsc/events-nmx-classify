@@ -1,5 +1,5 @@
-#ifndef QT_UTIL_H_
-#define QT_UTIL_H_
+#pragma once
+
 #include <QWidget>
 #include <QFileDialog>
 #include <QTableWidget>
@@ -24,4 +24,3 @@ QString path_of_file(QString filename);
 
 void clearLayout(QLayout* layout, bool deleteWidgets = true);
 
-#endif

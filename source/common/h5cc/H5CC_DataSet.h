@@ -1,5 +1,4 @@
-#ifndef H5CC_DATASET_H
-#define H5CC_DATASET_H
+#pragma once
 
 #include "H5CC_Shape.h"
 #include "H5CC_Location.h"
@@ -57,4 +56,3 @@ private:
 
 #include "H5CC_DataSet.tpp"
 
-#endif

@@ -1,5 +1,4 @@
-#ifndef NMX_EVENT_VMM_H
-#define NMX_EVENT_VMM_H
+#pragma once
 
 #include <inttypes.h>
 #include <string>
@@ -24,5 +23,3 @@ struct EventVMM
 };
 
 }
-
-#endif

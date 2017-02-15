@@ -1,5 +1,4 @@
-#ifndef H5CC_LOCATION_H
-#define H5CC_LOCATION_H
+#pragma once
 
 #include "H5CC_Common.h"
 #include <list>
@@ -44,4 +43,3 @@ protected:
 
 #include "H5CC_Location.tpp"
 
-#endif

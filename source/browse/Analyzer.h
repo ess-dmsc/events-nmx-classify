@@ -1,5 +1,4 @@
-#ifndef ANALYZER_H
-#define ANALYZER_H
+#pragma once
 
 #include <QWidget>
 #include <QItemSelection>
@@ -102,5 +101,3 @@ private:
 
   QStringList getMetricsList(std::list<std::string> metric_set);
 };
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef ReaderROOT_H
-#define ReaderROOT_H
+#pragma once
 
 #include "Reader.h"
 
@@ -44,4 +43,3 @@ private:
 
 }
 
-#endif

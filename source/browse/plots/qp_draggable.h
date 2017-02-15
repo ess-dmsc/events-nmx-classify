@@ -1,5 +1,4 @@
-#ifndef QP_DRAGGABLE_H
-#define QP_DRAGGABLE_H
+#pragma once
 
 #include "qcustomplot.h"
 
@@ -42,4 +41,3 @@ private:
 
 }
 
-#endif

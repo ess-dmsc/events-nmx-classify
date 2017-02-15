@@ -1,5 +1,4 @@
-#ifndef ReaderRawAPV_H
-#define ReaderRawAPV_H
+#pragma once
 
 #include "Reader.h"
 #include <fstream>
@@ -60,5 +59,3 @@ private:
 };
 
 }
-
-#endif

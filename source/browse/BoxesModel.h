@@ -1,5 +1,4 @@
-#ifndef BOXES_MODEL_H_
-#define BOXES_MODEL_H_
+#pragma once
 
 #include <QDialog>
 #include <QAbstractTableModel>
@@ -63,4 +62,3 @@ private:
 };
 
 
-#endif

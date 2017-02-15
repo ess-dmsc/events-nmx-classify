@@ -1,5 +1,4 @@
-#ifndef EVENT_VIEWER_H
-#define EVENT_VIEWER_H
+#pragma once
 
 #include <QWidget>
 #include <memory>
@@ -71,4 +70,3 @@ private:
 
 };
 
-#endif

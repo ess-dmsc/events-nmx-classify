@@ -1,5 +1,5 @@
-#ifndef H5CC_EXCEPTION_H
-#define H5CC_EXCEPTION_H
+#pragma once
+
 #include "H5Exception.h"
 #include <stdexcept>
 
@@ -31,4 +31,3 @@ public:
 
 }
 
-#endif

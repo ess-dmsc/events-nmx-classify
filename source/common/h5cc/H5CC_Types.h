@@ -1,5 +1,4 @@
-#ifndef H5CC_TYPES_H
-#define H5CC_TYPES_H
+#pragma once
 
 #include "H5DataType.h"
 #include "H5AtomType.h"
@@ -76,5 +75,3 @@ inline H5::PredType pred_type_of(const T& t)
 }
 
 }
-
-#endif

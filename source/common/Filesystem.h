@@ -1,5 +1,4 @@
-#ifndef FILESYSTEM_H
-#define FILESYSTEM_H
+#pragma once
 
 #include <boost/filesystem.hpp>
 #include <set>
@@ -57,4 +56,3 @@ static boost::filesystem::path relative_to(boost::filesystem::path from,
   return finalPath;
 }
 
-#endif

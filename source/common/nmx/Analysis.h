@@ -1,5 +1,4 @@
-#ifndef NMX_ANALYSIS_H
-#define NMX_ANALYSIS_H
+#pragma once
 
 #include "H5CC_Group.h"
 #include <map>
@@ -40,5 +39,3 @@ private:
 
 
 }
-
-#endif

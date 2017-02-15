@@ -1,5 +1,5 @@
-#ifndef DOFIT_H
-#define DOFIT_H
+#pragma once
+
 #include "histogram.h"
 #include "TF1.h"
 
@@ -24,5 +24,3 @@ struct EdgeFitter
 
   int fits{0}, fite{0};
 };
-
-#endif

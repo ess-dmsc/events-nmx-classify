@@ -1,5 +1,4 @@
-#ifndef NMX_PLANE_PERSPECTIVE_H
-#define NMX_PLANE_PERSPECTIVE_H
+#pragma once
 
 #include "Strip.h"
 #include "histogram.h"
@@ -53,5 +52,3 @@ private:
 };
 
 }
-
-#endif

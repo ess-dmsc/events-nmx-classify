@@ -1,5 +1,4 @@
-#ifndef VARIANT_H
-#define VARIANT_H
+#pragma once
 
 #include <string>
 
@@ -97,6 +96,3 @@ private:
     result_type operator () (const menu_t& v) const { return v.choice(); }
   };
 };
-
-
-#endif

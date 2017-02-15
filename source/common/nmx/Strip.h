@@ -1,5 +1,4 @@
-#ifndef NMX_STRIP_H
-#define NMX_STRIP_H
+#pragma once
 
 #include <vector>
 #include <map>
@@ -48,5 +47,3 @@ private:
 
 
 }
-
-#endif

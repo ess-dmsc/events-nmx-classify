@@ -1,5 +1,4 @@
-#ifndef CLPARSER_H
-#define CLPARSER_H
+#pragma once
 
 #include <iostream>
 #include <vector>
@@ -27,4 +26,3 @@ private:
   std::map<std::string,std::string> switch_map_;
 };
 
-#endif

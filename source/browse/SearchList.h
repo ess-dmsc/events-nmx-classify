@@ -1,5 +1,4 @@
-#ifndef SEARCH_LIST_H
-#define SEARCH_LIST_H
+#pragma once
 
 #include <QWidget>
 #include <QItemSelection>
@@ -120,5 +119,3 @@ private:
   QStringList list_;
 };
 
-
-#endif

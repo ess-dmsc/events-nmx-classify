@@ -1,5 +1,4 @@
-#ifndef NMX_MetricSet_H
-#define NMX_MetricSet_H
+#pragma once
 
 #include <vector>
 #include <map>
@@ -94,7 +93,5 @@ private:
 };
 
 
-
 }
 
-#endif

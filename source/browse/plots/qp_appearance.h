@@ -1,5 +1,4 @@
-#ifndef QP_APPEARANCE_H
-#define QP_APPEARANCE_H
+#pragma once
 
 #include <QPen>
 #include <QMap>
@@ -18,4 +17,3 @@ struct Appearance
 
 }
 
-#endif

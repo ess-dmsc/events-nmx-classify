@@ -1,5 +1,4 @@
-#ifndef ReaderRawVMM_H
-#define ReaderRawVMM_H
+#pragma once
 
 #include <fstream>
 #include <utility>
@@ -75,5 +74,3 @@ private:
 };
 
 }
-
-#endif

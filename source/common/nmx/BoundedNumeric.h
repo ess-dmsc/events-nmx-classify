@@ -1,5 +1,4 @@
-#ifndef BOUNDED_NUMERIC_H
-#define BOUNDED_NUMERIC_H
+#pragma once
 
 #include <string>
 #include <limits>
@@ -46,5 +45,3 @@ public:
 };
 
 #include "BoundedNumeric.tpp"
-
-#endif

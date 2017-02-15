@@ -1,5 +1,4 @@
-#ifndef EXEPTION_UTIL_H
-#define EXEPTION_UTIL_H
+#pragma once
 
 #include <exception>
 #include <system_error>
@@ -54,4 +53,3 @@ void printException()
   }
 }
 
-#endif

@@ -1,5 +1,4 @@
-#ifndef H5CC_SHAPE_H
-#define H5CC_SHAPE_H
+#pragma once
 
 #include "H5CC_Common.h"
 #include <vector>
@@ -56,5 +55,3 @@ private:
 };
 
 }
-
-#endif

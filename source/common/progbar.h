@@ -1,5 +1,4 @@
-#ifndef PROGBAR_H
-#define PROGBAR_H
+#pragma once
 
 #define timer   timer_class
 #include <boost/progress.hpp>
@@ -13,5 +12,3 @@ std::shared_ptr<boost::progress_display> progbar(size_t size, std::string text)
   return std::make_shared<boost::progress_display>(size, std::cout,
                                                    blanks, text, blanks);
 }
-
-#endif

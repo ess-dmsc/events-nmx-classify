@@ -1,5 +1,4 @@
-#ifndef QP_BUTTON_H
-#define QP_BUTTON_H
+#pragma once
 
 #include "qcustomplot.h"
 
@@ -30,4 +29,3 @@ private:
 
 }
 
-#endif

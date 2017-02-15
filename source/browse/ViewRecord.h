@@ -1,5 +1,4 @@
-#ifndef RECORD_VIEWER_H
-#define RECORD_VIEWER_H
+#pragma once
 
 #include <QWidget>
 
@@ -59,4 +58,3 @@ private:
   QPlot::MarkerBox2D make_box(double cx, double cy, double size, QColor color);
 };
 
-#endif

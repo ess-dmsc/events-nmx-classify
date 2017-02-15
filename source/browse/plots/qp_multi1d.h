@@ -1,5 +1,4 @@
-#ifndef QP_MULTI1D_H
-#define QP_MULTI1D_H
+#pragma once
 
 #include <QWidget>
 #include "qp_generic.h"
@@ -153,4 +152,3 @@ QCPGraph* Multi1D::addGraph(const T& x, const T& y, const QPen& pen, QString nam
 
 }
 
-#endif
