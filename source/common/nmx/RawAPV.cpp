@@ -1,9 +1,9 @@
-#include "FileAPV.h"
+#include "RawAPV.h"
 #include "CustomLogger.h"
 
 namespace NMX {
 
-FileAPV::FileAPV(H5CC::File& file)
+RawAPV::RawAPV(H5CC::File& file)
 {
   dataset_APV_ = file.open_dataset("RawAPV");
   auto shape = dataset_APV_.shape();
@@ -18,12 +18,12 @@ FileAPV::FileAPV(H5CC::File& file)
   }
   else
   {
-    ERR << "<NMX::FileAPV> bad size for raw/APV datset " << dataset_APV_.debug();
+    ERR << "<NMX::RawAPV> bad size for raw/APV datset " << dataset_APV_.debug();
     dataset_APV_ = H5CC::DataSet();
   }
 }
 
-FileAPV::FileAPV(H5CC::File& file, size_t strips, size_t timebins)
+RawAPV::RawAPV(H5CC::File& file, size_t strips, size_t timebins)
 {
   bool write = (file.status() != H5CC::Access::r_existing) &&
                (file.status() != H5CC::Access::no_access);
@@ -36,22 +36,22 @@ FileAPV::FileAPV(H5CC::File& file, size_t strips, size_t timebins)
   }
 }
 
-bool FileAPV::exists_in(const H5CC::File &file)
+bool RawAPV::exists_in(const H5CC::File &file)
 {
   return file.has_dataset("RawAPV");
 }
 
-size_t FileAPV::event_count() const
+size_t RawAPV::event_count() const
 {
   return event_count_;
 }
 
-Event FileAPV::get_event(size_t index) const
+Event RawAPV::get_event(size_t index) const
 {
   return Event(this->read_record(index, 0), this->read_record(index, 1));
 }
 
-void FileAPV::write_event(size_t index, const Event& event)
+void RawAPV::write_event(size_t index, const Event& event)
 {
   if (write_access_)
   {
@@ -60,7 +60,7 @@ void FileAPV::write_event(size_t index, const Event& event)
   }
 }
 
-Record FileAPV::read_record(size_t index, size_t plane) const
+Record RawAPV::read_record(size_t index, size_t plane) const
 {
   if (index < event_count())
   {
@@ -72,7 +72,7 @@ Record FileAPV::read_record(size_t index, size_t plane) const
     return Record();
 }
 
-void FileAPV::write_record(size_t index, size_t plane, const Record& record)
+void RawAPV::write_record(size_t index, size_t plane, const Record& record)
 {
   auto strips = dataset_APV_.shape().dim(2);
   auto timebins = dataset_APV_.shape().dim(3);

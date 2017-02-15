@@ -1,7 +1,7 @@
 #include "CustomLogger.h"
 #include "CLParser.h"
-#include "FileAnalysis.h"
-#include "FileVMM.h"
+#include "File.h"
+#include "RawVMM.h"
 #include <signal.h>
 #include <boost/algorithm/string.hpp>
 #include "Filesystem.h"
@@ -96,11 +96,11 @@ int main(int argc, char* argv[])
   INFO << "Destination '" << output_file << "'\n";
 
   H5CC::File outfile;
-  shared_ptr<NMX::FileVMM> writer;
+  shared_ptr<NMX::RawVMM> writer;
 	try
 	{
     outfile.open(output_file, H5CC::Access::rw_truncate);
-    writer = make_shared<NMX::FileVMM>(outfile, 20);
+    writer = make_shared<NMX::RawVMM>(outfile, 20);
   }
   catch (...)
 	{

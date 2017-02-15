@@ -1,9 +1,9 @@
-#include "FileVMM.h"
+#include "RawVMM.h"
 #include "CustomLogger.h"
 
 namespace NMX {
 
-FileVMM::FileVMM(H5CC::File& file)
+RawVMM::RawVMM(H5CC::File& file)
 {
   if (has_VMM(file))
   {
@@ -18,12 +18,12 @@ FileVMM::FileVMM(H5CC::File& file)
   }
   else
   {
-    ERR << "<NMX::FileVMM> bad size for raw/VMM datset " << dataset_VMM_.debug();
+    ERR << "<NMX::RawVMM> bad size for raw/VMM datset " << dataset_VMM_.debug();
     dataset_VMM_ = H5CC::DataSet();
   }
 }
 
-FileVMM::FileVMM(H5CC::File& file, size_t chunksize)
+RawVMM::RawVMM(H5CC::File& file, size_t chunksize)
 {
 //  if (access() == H5CC::Access::r_existing)
 //    return;
@@ -36,18 +36,18 @@ FileVMM::FileVMM(H5CC::File& file, size_t chunksize)
   entry_count_ = 0;
 }
 
-bool FileVMM::has_VMM(const H5CC::File& file)
+bool RawVMM::has_VMM(const H5CC::File& file)
 {
   return (file.has_group("RawVMM") &&
           file.open_group("RawVMM").has_dataset("points"));
 }
 
-size_t FileVMM::entry_count() const
+size_t RawVMM::entry_count() const
 {
   return entry_count_;
 }
 
-void FileVMM::write_vmm_entry(const EventVMM &packet)
+void RawVMM::write_vmm_entry(const EventVMM &packet)
 {
   if (!open_VMM_)
     return;
@@ -56,7 +56,7 @@ void FileVMM::write_vmm_entry(const EventVMM &packet)
   entry_count_ = dataset_VMM_.shape().dim(0);
 }
 
-EventVMM FileVMM::read_entry(size_t i) const
+EventVMM RawVMM::read_entry(size_t i) const
 {
   if (i < entry_count_)
     return EventVMM::from_packet(dataset_VMM_.read<uint32_t>({1,H5CC::kMax}, {i, 0}));

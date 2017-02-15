@@ -1,10 +1,10 @@
-#include "FileClustered.h"
+#include "RawClustered.h"
 #include "CustomLogger.h"
 
 namespace NMX {
 
-FileClustered::FileClustered(H5CC::File& file)
-  : FileVMM(file)
+RawClustered::RawClustered(H5CC::File& file)
+  : RawVMM(file)
 {
   if (exists_in(file))
   {
@@ -20,13 +20,13 @@ FileClustered::FileClustered(H5CC::File& file)
   }
   else
   {
-    ERR << "<NMX::FileClustered> bad size for raw/VMM cluster indices datset " << indices_VMM_.debug();
+    ERR << "<NMX::RawClustered> bad size for raw/VMM cluster indices datset " << indices_VMM_.debug();
     indices_VMM_ = H5CC::DataSet();
   }
 }
 
-FileClustered::FileClustered(H5CC::File& file, size_t events, size_t chunksize)
-  : FileVMM(file, chunksize)
+RawClustered::RawClustered(H5CC::File& file, size_t events, size_t chunksize)
+  : RawVMM(file, chunksize)
 {
   bool write = (file.status() != H5CC::Access::r_existing) &&
                (file.status() != H5CC::Access::no_access);
@@ -40,23 +40,23 @@ FileClustered::FileClustered(H5CC::File& file, size_t events, size_t chunksize)
 //  event_count_ = 0;
 }
 
-bool FileClustered::exists_in(const H5CC::File& file)
+bool RawClustered::exists_in(const H5CC::File& file)
 {
-  return (FileVMM::has_VMM(file) &&
+  return (RawVMM::has_VMM(file) &&
           file.open_group("RawVMM").has_dataset("indices"));
 }
 
-size_t FileClustered::event_count() const
+size_t RawClustered::event_count() const
 {
   return event_count_;
 }
 
-Event FileClustered::get_event(size_t index) const
+Event RawClustered::get_event(size_t index) const
 {
   return Event(this->read_record(index, 0), this->read_record(index, 1));
 }
 
-void FileClustered::write_event(size_t index, const Event& event)
+void RawClustered::write_event(size_t index, const Event& event)
 {
   if (write_access_)
   {
@@ -65,7 +65,7 @@ void FileClustered::write_event(size_t index, const Event& event)
   }
 }
 
-Record FileClustered::read_record(size_t index, size_t plane) const
+Record RawClustered::read_record(size_t index, size_t plane) const
 {
   if (index < event_count())
   {
@@ -92,7 +92,7 @@ Record FileClustered::read_record(size_t index, size_t plane) const
     return Record();
 }
 
-void FileClustered::write_record(size_t index, size_t plane, const Record& record)
+void RawClustered::write_record(size_t index, size_t plane, const Record& record)
 {
   if (write_access_)
   {

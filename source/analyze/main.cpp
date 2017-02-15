@@ -1,4 +1,4 @@
-#include "FileAnalysis.h"
+#include "File.h"
 #include <signal.h>
 #include "Filesystem.h"
 #include "ExceptionUtil.h"
@@ -6,7 +6,7 @@
 #include <boost/program_options.hpp>
 #include "custom_timer.h"
 
-#include "FileClustered.h"
+#include "RawClustered.h"
 
 namespace fs = boost::filesystem;
 namespace po = boost::program_options;
@@ -127,7 +127,7 @@ std::map<std::string, NMX::Settings> collect_params(std::string file_path)
     return params;
   try
   {
-    auto reader = std::make_shared<NMX::FileAnalysis>(file_path, H5CC::Access::r_existing);
+    auto reader = std::make_shared<NMX::File>(file_path, H5CC::Access::r_existing);
     for (auto a : reader->analyses())
     {
       reader->load_analysis(a);
@@ -148,11 +148,11 @@ void analyze_metrics(const std::set<boost::filesystem::path>& files,
   for (auto f : files)
   {
     auto filename = f.string();
-    std::shared_ptr<NMX::FileAnalysis> reader;
+    std::shared_ptr<NMX::File> reader;
 
     try
     {
-      reader = std::make_shared<NMX::FileAnalysis>(filename, H5CC::Access::rw_existing);
+      reader = std::make_shared<NMX::File>(filename, H5CC::Access::rw_existing);
     }
     catch (...)
     {
@@ -205,11 +205,11 @@ void emulate_vmm(const std::set<boost::filesystem::path>& files,
   for (auto f : files)
   {
     auto filename = f.string();
-    std::shared_ptr<NMX::FileAnalysis> reader;
+    std::shared_ptr<NMX::File> reader;
 
     try
     {
-      reader = std::make_shared<NMX::FileAnalysis>(filename, H5CC::Access::r_existing);
+      reader = std::make_shared<NMX::File>(filename, H5CC::Access::r_existing);
     }
     catch (...)
     {
@@ -236,7 +236,7 @@ void emulate_vmm(const std::set<boost::filesystem::path>& files,
           "_" + group.first + ".h5";
 
       H5CC::File outfile(newname, H5CC::Access::rw_require);
-      NMX::FileClustered writer(outfile, nevents, chunksize);
+      NMX::RawClustered writer(outfile, nevents, chunksize);
 
       auto prog = progbar(nevents, "  Converting to '" + newname + "'  ");
 

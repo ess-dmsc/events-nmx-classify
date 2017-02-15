@@ -1,19 +1,16 @@
-#ifndef NMX_FILE_CLUSTERED_H
-#define NMX_FILE_CLUSTERED_H
+#pragma once
 
-#include "FileVMM.h"
-#include "File.h"
+#include "H5CC_File.h"
+#include "Raw.h"
 
 namespace NMX {
 
-class FileClustered : public FileVMM, public File
+class RawAPV : public Raw
 {
 public:
-  FileClustered(H5CC::File& file);
-  FileClustered(H5CC::File& file, size_t events, size_t chunksize);
+  RawAPV(H5CC::File& file);
+  RawAPV(H5CC::File& file, size_t strips, size_t timebins);
   static bool exists_in(const H5CC::File& file);
-
-  virtual ~FileClustered() {}
 
   size_t event_count() const override;
   Event get_event(size_t index) const override;
@@ -21,8 +18,7 @@ public:
 
 protected:
   bool write_access_ {false};
-  H5CC::DataSet  indices_VMM_;
-
+  H5CC::DataSet  dataset_APV_;
   size_t event_count_ {0};
 
   Record read_record(size_t index, size_t plane) const;
@@ -31,4 +27,3 @@ protected:
 
 }
 
-#endif
