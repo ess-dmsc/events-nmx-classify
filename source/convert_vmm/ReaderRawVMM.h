@@ -4,7 +4,7 @@
 #include <utility>
 #include <list>
 #include <vector>
-#include "EventVMM.h"
+#include "Eventlet.h"
 
 namespace NMX {
 
@@ -15,7 +15,7 @@ public:
   ~ReaderRawVMM();
 
   size_t event_count() const;
-  std::list<EventVMM> get_entries(size_t);
+  std::list<Eventlet> get_entries(size_t);
 
   void define_plane(uint16_t planeID,
                     std::initializer_list<std::pair<uint16_t, uint16_t>> chips);
@@ -38,7 +38,7 @@ private:
   uint32_t interpret_trigger_timestamp(uint32_t data);
   uint64_t make_full_timestamp(uint32_t data_time);
 
-  EventVMM parse_event(const int32_t &data_before,
+  Eventlet parse_event(const int32_t &data_before,
                        const int32_t &data_before_two);
 
   void set_mapping(uint16_t fecID, uint16_t vmmID,
@@ -70,7 +70,7 @@ private:
   uint64_t trigger_prev_ {0};
   uint64_t timestamp_hi_ {0};
 
-  std::list<EventVMM> events_;
+  std::list<Eventlet> events_;
 };
 
 }

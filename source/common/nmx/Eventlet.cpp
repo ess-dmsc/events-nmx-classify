@@ -1,9 +1,9 @@
-#include "EventVMM.h"
+#include "Eventlet.h"
 #include <sstream>
 
 namespace NMX {
 
-std::string EventVMM::debug() const
+std::string Eventlet::debug() const
 {
   std::stringstream ss;
   if (flag)
@@ -25,14 +25,14 @@ std::string EventVMM::debug() const
   return ss.str();
 }
 
-std::vector<uint32_t> EventVMM::to_packet() const
+std::vector<uint32_t> Eventlet::to_packet() const
 {
   std::vector<uint32_t> ret(4);
   to_packet(ret);
   return ret;
 }
 
-void EventVMM::to_packet(std::vector<uint32_t>& packet) const
+void Eventlet::to_packet(std::vector<uint32_t>& packet) const
 {
   if (packet.size() != 4)
     packet.resize(4, 0);
@@ -42,9 +42,9 @@ void EventVMM::to_packet(std::vector<uint32_t>& packet) const
   packet[3] = (uint32_t(flag) << 16) | (uint32_t(over_threshold) << 17) | adc;
 }
 
-EventVMM EventVMM::from_packet(const std::vector<uint32_t>& packet)
+Eventlet Eventlet::from_packet(const std::vector<uint32_t>& packet)
 {
-  EventVMM ret;
+  Eventlet ret;
   if (packet.size() == 4)
   {
     ret.time = (uint64_t(packet.at(0)) << 32) | uint64_t(packet.at(1));

@@ -2,7 +2,7 @@
 
 #include <string>
 #include "Event.h"
-#include "EventVMM.h"
+#include "Eventlet.h"
 
 namespace NMX {
 

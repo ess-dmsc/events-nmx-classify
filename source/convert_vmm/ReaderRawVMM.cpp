@@ -107,10 +107,10 @@ void ReaderRawVMM::surveyFile()
 }
 
 
-std::list<EventVMM> ReaderRawVMM::get_entries(size_t buffID)
+std::list<Eventlet> ReaderRawVMM::get_entries(size_t buffID)
 {
   if (buffID >= event_locations_.size())
-    return std::list<EventVMM>();
+    return std::list<Eventlet>();
 
   file_.seekg(event_locations_.at(buffID), std::ios::beg);
 
@@ -206,7 +206,7 @@ void ReaderRawVMM::AnalyzeEventWord(const int32_t &data,
     }
     if ((wordCountEvent > 2) && (wordCountEvent % 2 == 0))
     {
-      EventVMM event = parse_event(data_before, data_before_two);
+      Eventlet event = parse_event(data_before, data_before_two);
       events_.push_back(event);
 
       /*fRoot->AddHits(unixtimestamp, timestamp_us);*/
@@ -235,7 +235,7 @@ uint32_t ReaderRawVMM::GrayToBinary32(uint32_t num)
   return num;
 }
 
-EventVMM ReaderRawVMM::parse_event(const int32_t &data_before,
+Eventlet ReaderRawVMM::parse_event(const int32_t &data_before,
                                    const int32_t &data_before_two)
 {
   uint32_t data_strip = ReverseBits(data_before);
@@ -248,7 +248,7 @@ EventVMM ReaderRawVMM::parse_event(const int32_t &data_before,
   uint32_t adc1 = (data_time >> 24) & 0xFF;
   uint32_t adc2 = (data_time >> 16) & 0x3;
 
-  EventVMM event;
+  Eventlet event;
   event.time = make_full_timestamp(data_time);
   event.adc = (adc2 << 8) + adc1;
   event.flag = (data_strip & 0x1);

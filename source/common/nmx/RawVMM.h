@@ -1,7 +1,7 @@
 #pragma once
 
 #include "H5CC_File.h"
-#include "EventVMM.h"
+#include "Eventlet.h"
 
 namespace NMX {
 
@@ -16,8 +16,8 @@ public:
   virtual ~RawVMM() {}
 
   size_t entry_count() const;
-  void write_entry(const EventVMM& packet);
-  EventVMM read_entry(size_t index) const;
+  void write_entry(const Eventlet& packet);
+  Eventlet read_entry(size_t index) const;
 
 protected:
   H5CC::DataSet  dataset_VMM_;

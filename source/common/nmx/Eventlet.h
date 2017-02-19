@@ -7,7 +7,7 @@
 namespace NMX
 {
 
-struct EventVMM
+struct Eventlet
 {
   uint64_t time {0};
   uint16_t plane_id {0};
@@ -20,7 +20,7 @@ struct EventVMM
 
   std::vector<uint32_t> to_packet() const;
   void to_packet(std::vector<uint32_t>& packet) const;
-  static EventVMM from_packet(const std::vector<uint32_t>& packet);
+  static Eventlet from_packet(const std::vector<uint32_t>& packet);
 };
 
 }
