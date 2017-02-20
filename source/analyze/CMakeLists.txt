@@ -8,7 +8,7 @@ set(HDF5_USE_SHARED_LIBRARIES ON)
 
 #Locate packages
 find_package(HDF5 COMPONENTS CXX REQUIRED)
-find_package(Boost COMPONENTS system filesystem thread timer program_options REQUIRED)
+find_package(Boost COMPONENTS system filesystem timer program_options REQUIRED)
 
 # Boost needs this
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBOOST_LOG_DYN_LINK")
