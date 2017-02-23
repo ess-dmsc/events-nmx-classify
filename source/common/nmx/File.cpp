@@ -3,6 +3,8 @@
 #include "RawClustered.h"
 #include "RawAPV.h"
 
+#include "JsonH5.h"
+
 namespace NMX {
 
 File::File(std::string filename, H5CC::Access access)

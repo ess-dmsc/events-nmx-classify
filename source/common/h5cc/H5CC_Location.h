@@ -18,6 +18,8 @@ public:
   std::list<std::string> attributes() const;
   bool has_attribute(std::string name) const;
   void remove_attribute(std::string name);
+  template <typename DT> bool attr_has_type(const std::string& name) const;
+  template <typename DT> bool attr_is_enum(const std::string& name) const;
 
   template <typename DT> void write_attribute(std::string name, DT val);
   template <typename DT> DT read_attribute(std::string name) const;

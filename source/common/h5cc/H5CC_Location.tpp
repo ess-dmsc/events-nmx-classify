@@ -123,6 +123,35 @@ TT TDT Enum<DT> Location<T>::read_enum(std::string name) const
   return ret;
 }
 
+TT TDT bool Location<T>::attr_has_type(const std::string& name) const
+{
+  try
+  {
+    auto attribute = location_.openAttribute(name);
+    return (attribute.getDataType() == type_of(DT()));
+  }
+  catch (...)
+  {
+    Exception::rethrow();
+  }
+  return false;
+}
+
+TT TDT bool Location<T>::attr_is_enum(const std::string& name) const
+{
+  try
+  {
+    auto dtype = location_.openAttribute(name).getDataType();
+    return (dtype.getClass() == H5T_ENUM) &&
+           (dtype.getSuper() == type_of(DT()));
+  }
+  catch (...)
+  {
+    Exception::rethrow();
+  }
+  return false;
+}
+
 TT TDT void Location<T>::attr_write(H5::Attribute& attr, DT val)
 {
   attr.write(type_of(val), &val );
