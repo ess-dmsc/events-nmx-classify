@@ -7,13 +7,11 @@
 #define VMM_EVENT_EMPTY  0x564132
 #define VMM_EQUIPMENT_HEADER 0xda1e5afe
 #define VMM_EQUIPMENT_START 0x50
-#define VMM_TOTAL_CHANNELS 64
-#define VMM_INVALID_STRIP ((uint32_t)(int32_t)(-1))
 
 namespace NMX
 {
 
-ReaderRawVMM::ReaderRawVMM(std::string filename)
+ReaderRawVMM::ReaderRawVMM(std::string filename, Geometry geometry, Time time)
 {
   file_.open(filename, std::ios::binary);
   if (!file_.is_open())
@@ -28,59 +26,11 @@ ReaderRawVMM::ReaderRawVMM(std::string filename)
   file_.close();
   file_.open(filename, std::ios::binary);
 
+  geometry_inerpreter_ = geometry;
+  time_interpreter_ = time;
+
   //  DBG << "Raw/VMM file '" << filename
   //      << "' contains " << event_locations_.size() << " events";
-
-  //Hardcoded for Norway data
-  define_plane(0, { {1,0},  {1,1},  {1,6}, {1,7} });
-  define_plane(1, {{1,10}, {1,11}, {1,14}, {1,15}});
-}
-
-ReaderRawVMM::~ReaderRawVMM()
-{
-}
-
-void ReaderRawVMM::define_plane(uint16_t planeID,
-                                std::initializer_list<std::pair<uint16_t, uint16_t>> chips)
-{
-  int offset = 0;
-  for (auto c : chips)
-  {
-    set_mapping(c.first, c.second, planeID, offset);
-    offset += VMM_TOTAL_CHANNELS;
-  }
-}
-
-
-void ReaderRawVMM::set_mapping(uint16_t fecID, uint16_t vmmID,
-                               uint16_t planeID, uint16_t strip_offset)
-{
-  if (vmmID > 15)
-    return;
-
-  uint32_t offset = planeID;
-  offset = offset << 16;
-  offset |= strip_offset;
-  if (mappings_.size() <= fecID)
-  {
-    for (int i = mappings_.size(); i <= fecID; ++i)
-    {
-      mappings_.resize(i+1);
-      mappings_[i] = std::vector<uint32_t>(16, VMM_INVALID_STRIP);
-    }
-  }
-  mappings_[fecID][vmmID] = offset;
-}
-
-uint32_t ReaderRawVMM::get_strip_ID(uint16_t fecID, uint16_t vmmID,
-                                    uint32_t channelID)
-{
-  if ((fecID < mappings_.size()) &&
-      (vmmID < mappings_.at(fecID).size()) &&
-      (mappings_.at(fecID).at(vmmID) != VMM_INVALID_STRIP))
-    return mappings_.at(fecID).at(vmmID) + channelID;
-  else
-    return VMM_INVALID_STRIP;
 }
 
 size_t ReaderRawVMM::event_count() const
@@ -203,15 +153,22 @@ void ReaderRawVMM::AnalyzeEventWord(const int32_t &data,
     if (wordCountEvent == 2)
     {
       trigger_timestamp_ = interpret_trigger_timestamp(data_before);
+
+      if (trigger_prev_ > trigger_timestamp_)
+      {
+        timestamp_hi_++;
+        //  DBG << "Overflow " << trigger_prev_ << " > " << trigger_timestamp_;
+      }
+      trigger_prev_ = trigger_timestamp_;
+      //  total_timestamp = total_timestamp | (timestamp_hi_ << 36);
+      //  total_timestamp = trigger_timestamp_ | (timestamp_hi_ << 36);
     }
     if ((wordCountEvent > 2) && (wordCountEvent % 2 == 0))
     {
       Eventlet event = parse_event(data_before, data_before_two);
       events_.push_back(event);
-
       /*fRoot->AddHits(unixtimestamp, timestamp_us);*/
     }
-
   }
 }
 
@@ -240,23 +197,23 @@ Eventlet ReaderRawVMM::parse_event(const int32_t &data_before,
 {
   uint32_t data_strip = ReverseBits(data_before);
   uint32_t chan = (data_strip & 0xfc) >> 2;
-  uint32_t stripID = get_strip_ID(fecID_, vmmID_, chan);
-  //uint32_t flags = (data_strip & 0x3) << 16;
+  uint32_t flags = (data_strip & 0x3);
 
-  uint32_t data_time = ReverseBits(data_before_two);
+  uint32_t data_time_adc = ReverseBits(data_before_two);
   //adc: 0-7 14-15
-  uint32_t adc1 = (data_time >> 24) & 0xFF;
-  uint32_t adc2 = (data_time >> 16) & 0x3;
+  uint32_t adc1 = (data_time_adc >> 24) & 0xFF;
+  uint32_t adc2 = (data_time_adc >> 16) & 0x3;
 
   Eventlet event;
-  event.time = make_full_timestamp(data_time);
   event.adc = (adc2 << 8) + adc1;
-  event.flag = (data_strip & 0x1);
-  event.over_threshold = (data_strip & 0x2) >> 1;
-  event.plane_id = stripID << 16;
-  event.strip    = stripID & 0xFFFFFFFF;
-
-  if (stripID == VMM_INVALID_STRIP)
+  event.flag = (flags & 0x1);
+  event.over_threshold = flags >> 1;
+  event.plane_id = geometry_inerpreter_.get_plane_ID(fecID_, vmmID_);
+  event.strip = geometry_inerpreter_.get_strip_ID(fecID_, vmmID_, chan);
+  event.time = time_interpreter_.timestamp(trigger_timestamp_,
+                                           bc(data_time_adc),
+                                           tdc(data_time_adc));
+  if (event.strip == EVENTLET_INVALID_ID)
     ERR << "Bad stripID from fec=" << fecID_
         << " vmm=" << vmmID_
         << " chan=" << chan << "\n";
@@ -284,56 +241,31 @@ uint32_t ReaderRawVMM::interpret_trigger_timestamp(uint32_t data)
   // 3 bit high res are 320 MHz = 3.125 ns
   // high res disabled: 25 ns resolution
   // high res enabled: 3.125 ns resolution
+
+  // clockCycles = data;
+  // triggerCount = (data >> 16);
+  // triggerTimestamp = data & 0xFFFF;
+
   return data;
 }
 
-uint64_t ReaderRawVMM::make_full_timestamp(uint32_t data_time)
+uint32_t ReaderRawVMM::bc(uint32_t data_time)
 {
-  //tdc: 8-13 22-23
   //bcid: 16-21 26-31
-  uint32_t data3 = (data_time >> 18) & 0x3F;
-  uint32_t data4 = (data_time >> 8) & 0x3;
   uint32_t data5 = (data_time >> 10) & 0x3F;
   uint32_t data6 = data_time & 0x3F;
-  //10 bits (8+2)
-  //8 bits (6+2)
-  uint32_t tdc = (data4 << 6) + data3;
-  //***********************************************************
-  //Bunch crossing clock: 2.5 - 160 MHz (400 ns - 6.25 ns)
-  //***********************************************************
   //12 bits (6+6)
-  uint32_t gray_bcid = (data6 << 6) + data5;
-  uint32_t bcid = GrayToBinary32(gray_bcid);
-  //BC time: bcid value * 1/(clock frequency)
-  double bcTime = double(bcid) * (1.0 / bcClock);
-  //TDC time: tacSlope * tdc value (8 bit) * ramp length
-  double tdcTime = tacSlope * (double) tdc / 256.0;
-  //Chip time: bcid plus tdc value
-  //Talk Vinnie: HIT time  = BCIDx25 + ADC*125/256 [ns]
-  double chip_time = bcTime * 1000 + tdcTime;
-
-  //Timestamp overflow magic:
-  double trigger_timestamp_ns = trigger_timestamp_ * 3.125;
-  double total_timestamp_ns = trigger_timestamp_ns + chip_time;
-  uint64_t total_timestamp = total_timestamp_ns * 2;
-
-  if (trigger_prev_ > trigger_timestamp_)
-  {
-    timestamp_hi_++;
-//    DBG << "Overflow " << trigger_prev_ << " > " << trigger_timestamp_;
-  }
-  trigger_prev_ = trigger_timestamp_;
-//      total_timestamp = total_timestamp | (timestamp_hi_ << 36);
-
-//      total_timestamp = trigger_timestamp_ | (timestamp_hi_ << 36);
-
-  total_timestamp = tdc | (bcid << 8) | (uint64_t(trigger_timestamp_) << 20) |
-      (timestamp_hi_ << 52);
-
-  return total_timestamp;
+  return GrayToBinary32((data6 << 6) + data5);
 }
 
-
-
+uint32_t ReaderRawVMM::tdc(uint32_t data_time)
+{
+  //tdc: 8-13 22-23
+  uint32_t data3 = (data_time >> 18) & 0x3F;
+  uint32_t data4 = (data_time >> 8) & 0x3;
+  //10 bits (8+2)
+  //8 bits (6+2)
+  return (data4 << 6) + data3;
+}
 
 }

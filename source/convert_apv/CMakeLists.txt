@@ -28,6 +28,7 @@ link_directories( ${BOOST_LIBRARY_DIRS} )
 set (main_INCLUDE_DIRS "")
 
 file(GLOB_RECURSE Common_SOURCES "../common/*.cpp")
+file(GLOB_RECURSE Common_TEMPLATES "../common/*.tpp")
 file(GLOB_RECURSE Common_HEADERS "../common/*.h")
 foreach (_headerFile ${Common_HEADERS})
     get_filename_component(_dir ${_headerFile} PATH)
@@ -57,6 +58,7 @@ add_executable(
 
   ${main_SOURCES}
   ${Common_SOURCES}
+  ${Common_TEMPLATES}
 )
 
 target_link_libraries(

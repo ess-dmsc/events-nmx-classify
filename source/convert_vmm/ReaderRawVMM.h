@@ -5,20 +5,18 @@
 #include <list>
 #include <vector>
 #include "Eventlet.h"
+#include "Geometry.h"
+#include "Time.h"
 
 namespace NMX {
 
 class ReaderRawVMM
 {
 public:
-  ReaderRawVMM(std::string filename);
-  ~ReaderRawVMM();
+  ReaderRawVMM(std::string filename, Geometry geometry, Time time);
 
   size_t event_count() const;
   std::list<Eventlet> get_entries(size_t);
-
-  void define_plane(uint16_t planeID,
-                    std::initializer_list<std::pair<uint16_t, uint16_t>> chips);
 
 private:
   void surveyFile();
@@ -36,18 +34,15 @@ private:
   uint32_t ReverseBits(uint32_t n);
 
   uint32_t interpret_trigger_timestamp(uint32_t data);
-  uint64_t make_full_timestamp(uint32_t data_time);
+
+  uint32_t bc(uint32_t data_time);
+  uint32_t tdc(uint32_t data_time);
 
   Eventlet parse_event(const int32_t &data_before,
                        const int32_t &data_before_two);
 
-  void set_mapping(uint16_t fecID, uint16_t vmmID,
-                   uint16_t planeID, uint16_t strip_offset);
-
-  uint32_t get_strip_ID(uint16_t fecID, uint16_t vmmID, uint32_t channelID);
-
-  double bcClock {40};
-  double tacSlope {125};
+  Geometry geometry_inerpreter_;
+  Time time_interpreter_;
 
   std::vector<std::vector<uint32_t>> mappings_;
 

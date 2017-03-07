@@ -57,10 +57,23 @@ int main(int argc, char* argv[])
 	// Initialize the reader to read the root-file containing the events
   shared_ptr<NMX::ReaderRawVMM> reader;
 
+  Time time_interpreter;
+  time_interpreter.set_tac_slope(125); /**< @todo get from slow control? */
+  time_interpreter.set_bc_clock(40);   /**< @todo get from slow control? */
+  time_interpreter.set_trigger_resolution(
+      3.125); /**< @todo get from slow control? */
+  time_interpreter.set_target_resolution(0.5); /**< @todo not hardcode */
+
+  Geometry geometry_intepreter; /**< @todo not hardocde chip mappings */
+  geometry_intepreter.define_plane(0, {{1, 0}, {1, 1}, {1, 6}, {1, 7}});
+  geometry_intepreter.define_plane(1, {{1, 10}, {1, 11}, {1, 14}, {1, 15}});
+
 	fs::path input_path(input_file);
   if (boost::iequals(input_path.extension().string(), ".raw"))
 	{
-    reader = make_shared<NMX::ReaderRawVMM>(input_file);
+    reader = make_shared<NMX::ReaderRawVMM>(input_file,
+                                            geometry_intepreter,
+                                            time_interpreter);
 	}
 	else
 	{

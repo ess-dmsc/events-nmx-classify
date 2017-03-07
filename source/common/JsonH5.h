@@ -22,6 +22,10 @@ template<typename T> json attribute_to_json(const H5CC::Groupoid<T>& g,
                                             const std::string& name);
 template<typename T> void attribute_from_json(const json& j, const std::string& name,
                                               H5CC::Groupoid<T>& g);
+template<typename T> void dataset_from_json(const json& j, const std::string& name,
+                                            H5CC::Groupoid<T>& g);
 
 }
+
+#include "JsonH5.tpp"
 
