@@ -5,6 +5,8 @@
 #include "qt_util.h"
 #include "CustomLogger.h"
 
+#include "JsonH5.h"
+
 TableSettings::TableSettings(QObject *parent)
   : QAbstractTableModel(parent)
 {}
@@ -30,7 +32,22 @@ QVariant TableSettings::data(const QModelIndex &index, int role) const
     if (col == 0)
       return names_.at(row);
     else if (col == 1)
-      return QString::fromStdString(settings_.at(row).value.to_string());
+    {
+      nlohmann::json item = settings_.at(row).value;
+      if (item.is_number_integer())
+        return QVariant::fromValue(item.get<int64_t>());
+      else if (item.is_number_unsigned())
+        return QVariant::fromValue(item.get<uint64_t>());
+      else if (item.is_number_float())
+        return QVariant::fromValue(item.get<double>());
+      else if (item.is_boolean())
+        return QVariant::fromValue(item.get<bool>());
+      else if (item.count("___choice") && item.count("___options"))
+      {
+        H5CC::Enum<int16_t> menu = item;
+        return QString::fromStdString(menu.choice());
+      }
+    }
     else
       return QVariant();
   }
@@ -90,28 +107,31 @@ bool TableSettings::setData(const QModelIndex & index, const QVariant & value, i
 
   if (role == Qt::EditRole)
   {
-    auto item = settings_.at(row).value;
+    nlohmann::json item = settings_.at(row).value;
 
-    if ((item.type() == Variant::code::type_int) && (value.canConvert(QMetaType::LongLong)))
+    if (item.is_number_integer() && value.canConvert(QMetaType::LongLong))
     {
-      auto val = item.as_int();
-      val.set_val(value.toLongLong());
-      item = Variant::from_int(val);
+      item = value.toLongLong();
     }
-    else if ((item.type() == Variant::code::type_uint) && (value.canConvert(QMetaType::ULongLong)))
+    else if (item.is_number_unsigned() && value.canConvert(QMetaType::ULongLong))
     {
-      auto val = item.as_uint();
-      val.set_val(value.toULongLong());
-      item = Variant::from_uint(val);
+      item = value.toULongLong();
     }
-    else if ((item.type() == Variant::code::type_float) && (value.canConvert(QMetaType::Double)))
+    else if (item.is_number_float() && value.canConvert(QMetaType::Double))
     {
-      auto val = item.as_float();
-      val.set_val(value.toDouble());
-      item = Variant::from_float(val);
+      item = value.toDouble();
     }
-    else if ((item.type() == Variant::code::type_bool) && (value.canConvert(QMetaType::Bool)))
-      item = Variant::from_bool(value.toBool());
+    else if (item.is_boolean() && value.canConvert(QMetaType::Bool))
+    {
+      item = value.toBool();
+    }
+    else if ((item.count("___options") || item.count("___choice")) &&
+             value.canConvert(QMetaType::QString))
+    {
+      H5CC::Enum<int16_t> menu = item;
+      menu.choose(value.toString().toStdString());
+      item = menu;
+    }
     else
       return false;
 

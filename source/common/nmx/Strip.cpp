@@ -12,12 +12,10 @@ Settings Strip::default_params()
 {
   Settings ret;
   ret.set("threshold",
-      Setting(Variant::from_int(150),
-              "Minimum ADC value for maxima"));
+      Setting(150, "Minimum ADC value for maxima"));
 
   ret.set("over_threshold",
-      Setting(Variant::from_int(3),
-              "Minimum number of bins above threshold for maxima"));
+      Setting(3, "Minimum number of bins above threshold for maxima"));
   return ret;
 }
 
@@ -99,10 +97,10 @@ Strip Strip::suppress_negatives() const
 Strip Strip::subset(std::string name, Settings params) const
 {
   if (name == "maxima")
-    return find_maxima(params.get_value("threshold").as_int(0));
+    return find_maxima(params.get_value("threshold"));
   else if (name == "vmm")
-    return find_vmm_maxima(params.get_value("threshold").as_int(0),
-                           params.get_value("over_threshold").as_int(1));
+    return find_vmm_maxima(params.get_value("threshold"),
+                           params.get_value("over_threshold"));
   else
     return *this;
 }

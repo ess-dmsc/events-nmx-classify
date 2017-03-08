@@ -3,9 +3,9 @@
 #include <QMessageBox>
 
 #include "CustomLogger.h"
-#include "MultipleChoice.h"
-#include "Variant.h"
+#include "H5CC_Enum.h"
 #include "SpecialDelegate.h"
+#include "JsonH5.h"
 
 TestsModel::TestsModel(QObject *parent)
   : QAbstractTableModel(parent)
@@ -36,9 +36,10 @@ QVariant TestsModel::data(const QModelIndex &index, int role) const
   }
   else if ((role == Qt::EditRole) && (col == 1))
   {
-    MultipleChoice m(available_metrics_);
+    H5CC::Enum<int16_t> m(available_metrics_);
     m.choose(tests_.tests.at(row).metric);
-    return QVariant::fromValue(Variant::from_menu(m));
+    nlohmann::json j = m;
+    return QVariant::fromValue(j);
   }
   else if (role == Qt::DisplayRole)
   {

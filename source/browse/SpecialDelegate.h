@@ -6,9 +6,9 @@
 #include <QDoubleSpinBox>
 #include <QComboBox>
 
-#include "Variant.h"
+#include "json.hpp"
 
-Q_DECLARE_METATYPE(Variant)
+Q_DECLARE_METATYPE(nlohmann::json)
 
 class SpecialDelegate : public QStyledItemDelegate
 {

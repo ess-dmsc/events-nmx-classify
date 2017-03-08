@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Strip.h"
+#include "MetricSet.h"
 #include "histogram.h"
 #include <map>
 

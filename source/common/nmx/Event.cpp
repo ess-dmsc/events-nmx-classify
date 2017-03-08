@@ -46,7 +46,7 @@ void Event::set_parameters(Settings vals)
     set_parameter(v.first, v.second.value);
 }
 
-void Event::set_parameter(std::string id, Variant val)
+void Event::set_parameter(std::string id, nlohmann::json val)
 {
   if ((id.size() > 1) && (boost::algorithm::to_lower_copy(id.substr(0,1)) == "x"))
     x_.set_parameter(id.substr(2, id.size() - 2), val);

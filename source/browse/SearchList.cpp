@@ -215,7 +215,6 @@ bool popupSearchDialog(QPushButton* button, QStringList choices,
   popup->setFilterVisible(choices.size() >= 15);
 
   bool result = popup->exec();
-
   auto selection = popup->selection();
   delete popup;
 

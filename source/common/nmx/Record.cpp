@@ -15,16 +15,16 @@ Record::Record()
   parameters_.merge(strip_par, "timebin.");
 
   parameters_.set("gamma_max_width",
-                  Setting(Variant::from_int(6),
-                          "Maximum width for gamma event"));
+                  Setting(6, "Maximum width for gamma event"));
 
   parameters_.set("gamma_max_height",
-                  Setting(Variant::from_int(11),
-                          "Maximum height for gamma event"));
+                  Setting(11, "Maximum height for gamma event"));
 
   parameters_.set("analysis_reduced",
-                  Setting(Variant::from_int(0),
-                          "Fewer metrics"));
+                  Setting({{"___choice", 0},
+                           {"___options", {{"all metrics", 0}, {"fewer metrics", 1},
+                           {"to VMMx", 2}, {"fewer from VMMx", 3}}}},
+                            "Analysis level"));
 }
 
 Record::Record(const std::vector<int16_t>& data, uint16_t timebins)
@@ -86,7 +86,7 @@ HistList1D Record::get_projection(std::string id) const
     return HistList1D();
 }
 
-void Record::set_parameter(std::string id, Variant val)
+void Record::set_parameter(std::string id, nlohmann::json val)
 {
   if (parameters_.contains(id))
     parameters_.set(id, val);
@@ -136,7 +136,12 @@ void Record::analyze()
   for (auto pj : projections_)
     pj.second.clear();
 
-  int reduced = parameters_.get_value("analysis_reduced").as_int();
+  int reduced = 0;
+  nlohmann::json red = parameters_.get_value("analysis_reduced");
+  if (red.is_number_float())
+    reduced = red.get<double>();
+  else if (red.count("___choice"))
+    reduced = red["___choice"];
 
   if (reduced == 3)
     analyze_reduced_from_vmm();
@@ -154,7 +159,11 @@ void Record::analyze_all()
   PlanePerspective timebins("timebin", "strip");
 
   PlanePerspective strips_noneg = strips_.subset("noneg");
-  if (parameters_.get_value("suppress_negatives").as_bool())
+  if ((parameters_.get_value("suppress_negatives").is_boolean() &&
+       parameters_.get_value("suppress_negatives").get<bool>())
+      ||
+      (parameters_.get_value("suppress_negatives").is_number_float() &&
+            parameters_.get_value("suppress_negatives").get<double>()))
   {
     strips = strips_noneg;
     timebins = strips_noneg.subset("orthogonal");
@@ -169,7 +178,7 @@ void Record::analyze_all()
   auto tb_params = parameters_.with_prefix("timebin.");
 
   auto best_params = strip_params;
-  best_params.set("best_max_bincount", Variant::from_int(1));
+  best_params.set("best_max_bincount", 1);
 
   PlanePerspective strips_maxima = strips.subset("maxima", strip_params);
   PlanePerspective strips_vmm = strips.subset("vmm", strip_params);
@@ -220,7 +229,7 @@ void Record::analyze_reduced()
   auto tb_params = parameters_.with_prefix("timebin.");
 
   auto best_params = strip_params;
-  best_params.set("best_max_bincount", Variant::from_int(1));
+  best_params.set("best_max_bincount", 1);
 
   PlanePerspective strips_vmm = strips.subset("vmm", strip_params);
   PlanePerspective strips_better = strips_vmm.subset("best", strip_params);
@@ -257,7 +266,7 @@ void Record::analyze_reduced_from_vmm()
 {
   auto strip_params = parameters_.with_prefix("strip.");
   auto best_params = strip_params;
-  best_params.set("best_max_bincount", Variant::from_int(1));
+  best_params.set("best_max_bincount", 1);
 
   auto timebins = strips_.subset("orthogonal");
 
@@ -289,8 +298,8 @@ void Record::analyze_finalize(const PlanePerspective& strips_best,
 
   auto width  = metrics_.get_value("strips_vmm_span");
   auto height =  strips_vmm.subset("orthogonal").metrics().get_value("span");
-  int max_width = parameters_.get_value("gamma_max_width").as_int();
-  int max_height = parameters_.get_value("gamma_max_height").as_int();
+  int max_width = parameters_.get_value("gamma_max_width");
+  int max_height = parameters_.get_value("gamma_max_height");
 
   int width_gamma = width - max_width;
   if (width_gamma < 0)

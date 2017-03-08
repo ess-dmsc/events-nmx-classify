@@ -6,7 +6,7 @@
 
 #include "Subhist.h"
 #include "qt_util.h"
-#include "Settings.h"
+#include "MetricSet.h"
 
 class TestsModel : public QAbstractTableModel
 {

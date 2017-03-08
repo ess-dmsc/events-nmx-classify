@@ -4,7 +4,6 @@
 #include "ui_Browser.h"
 
 #include "CustomLogger.h"
-#include "Variant.h"
 #include "ExceptionUtil.h"
 #include <QDialog>
 #include <QTableWidget>
@@ -14,7 +13,7 @@ Browser::Browser(QWidget *parent) :
   QMainWindow(parent),
   ui(new Ui::Browser)
 {
-  qRegisterMetaType<Variant>("Variant");
+  qRegisterMetaType<nlohmann::json>("json");
 
 //  CustomLogger::initLogger();
   ui->setupUi(this);

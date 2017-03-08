@@ -13,6 +13,8 @@
 #include "SearchList.h"
 #include <QPushButton>
 
+#include "JsonH5.h"
+
 void SpecialDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
                                const QModelIndex &index) const
 {
@@ -76,17 +78,17 @@ QWidget *SpecialDelegate::createEditor(QWidget *parent,
 {
   emit begin_editing();
 
-  if (index.data(Qt::EditRole).canConvert<Variant>())
+  if (index.data(Qt::EditRole).canConvert<nlohmann::json>())
   {
-    Variant itemData = qvariant_cast<Variant>(index.data(Qt::EditRole));
-    if (itemData.type() == Variant::code::type_bool)
+    nlohmann::json itemData = qvariant_cast<nlohmann::json>(index.data(Qt::EditRole));
+    if (itemData.is_boolean())
     {
       QComboBox *editor = new QComboBox(parent);
       editor->addItem("True", QVariant::fromValue(true));
       editor->addItem("False", QVariant::fromValue(false));
       return editor;
     }
-    else if (itemData.type() == Variant::code::type_int)
+    else if (itemData.is_number_integer())
     {
       QSpinBox *editor = new QSpinBox(parent);
       editor->setMinimum(std::numeric_limits<int>::min());
@@ -96,7 +98,7 @@ QWidget *SpecialDelegate::createEditor(QWidget *parent,
       connect(editor, SIGNAL(valueChanged(int)), this, SLOT(intValueChanged(int)));
       return editor;
     }
-    else if (itemData.type() == Variant::code::type_uint)
+    else if (itemData.is_number_unsigned())
     {
       QSpinBox *editor = new QSpinBox(parent);
       editor->setMinimum(0);
@@ -106,7 +108,7 @@ QWidget *SpecialDelegate::createEditor(QWidget *parent,
       connect(editor, SIGNAL(valueChanged(int)), this, SLOT(intValueChanged(int)));
       return editor;
     }
-    else if (itemData.type() == Variant::code::type_float)
+    else if (itemData.is_number_float())
     {
       QDoubleSpinBox *editor = new QDoubleSpinBox(parent);
       editor->setMinimum(std::numeric_limits<double>::min());
@@ -116,18 +118,11 @@ QWidget *SpecialDelegate::createEditor(QWidget *parent,
 //      connect(editor, SIGNAL(valueChanged(int)), this, SLOT(intValueChanged(int)));
       return editor;
     }
-    else if (itemData.type() == Variant::code::type_menu)
+    else if (itemData.count("___options") || itemData.count("___choice"))
     {
-      auto menu = itemData.as_menu();
-//      QStringList list;
-//      for (auto m : menu.options())
-//        list.push_back(QString::fromStdString(m));
+      H5CC::Enum<int16_t> menu = itemData;
       QPushButton* editor = new QPushButton(parent);
       editor->setText(QString::fromStdString(menu.choice()));
-
-//      QComboBox *editor = new QComboBox(parent);
-//      for (auto m : menu.options())
-//        editor->addItem(QString::fromStdString(m));
       return editor;
     }
   }
@@ -159,46 +154,43 @@ QWidget *SpecialDelegate::createEditor(QWidget *parent,
 void SpecialDelegate::setEditorData ( QWidget *editor, const QModelIndex &index ) const
 {
 
-  if (index.data(Qt::EditRole).canConvert<Variant>())
+  if (index.data(Qt::EditRole).canConvert<nlohmann::json>())
   {
-    Variant itemData = qvariant_cast<Variant>(index.data(Qt::EditRole));
+    nlohmann::json itemData = qvariant_cast<nlohmann::json>(index.data(Qt::EditRole));
 
-    if (itemData.type() == Variant::code::type_bool)
+    if (itemData.is_boolean())
     {
       if (QComboBox *cb = qobject_cast<QComboBox *>(editor))
       {
-        int cbIndex = cb->findData(itemData.as_bool().val());
+        int cbIndex = cb->findData(itemData.get<bool>());
         if(cbIndex >= 0)
           cb->setCurrentIndex(cbIndex);
       }
     }
-    else if (itemData.type() == Variant::code::type_int)
+    else if (itemData.is_number_integer())
     {
       if (QSpinBox *sb = qobject_cast<QSpinBox *>(editor))
-        sb->setValue(itemData.as_int().val());
+        sb->setValue(itemData);
     }
-    else if (itemData.type() == Variant::code::type_uint)
+    else if (itemData.is_number_unsigned())
     {
       if (QSpinBox *sb = qobject_cast<QSpinBox *>(editor))
-        sb->setValue(itemData.as_uint().val());
+        sb->setValue(itemData);
     }
-    else if (itemData.type() == Variant::code::type_float)
+    else if (itemData.is_number_float())
     {
       if (QDoubleSpinBox *sb = qobject_cast<QDoubleSpinBox *>(editor))
-        sb->setValue(itemData.as_float().val());
+        sb->setValue(itemData);
     }
-    else if (itemData.type() == Variant::code::type_menu)
+    else if (itemData.count("___options") || itemData.count("___choice"))
     {
-      auto menu = itemData.as_menu();
+      H5CC::Enum<int16_t> menu = itemData;
       QStringList list;
       for (auto m : menu.options())
-        list.push_back(QString::fromStdString(m));
+        list.push_back(QString::fromStdString(m.second));
 
       if (QPushButton *cb = qobject_cast<QPushButton *>(editor))
         popupSearchDialog(cb, list);
-
-//      if (QComboBox *cb = qobject_cast<QComboBox *>(editor))
-//        cb->setCurrentText(QString::fromStdString(itemData.as_menu().choice()));
     }
   }
   else if (QSpinBox *sb = qobject_cast<QSpinBox *>(editor))
@@ -224,7 +216,7 @@ void SpecialDelegate::setModelData ( QWidget *editor, QAbstractItemModel *model,
     model->setData(index, cb->text(), Qt::EditRole);
   else if (QComboBox *cb = qobject_cast<QComboBox *>(editor))
   {
-    if (index.data(Qt::EditRole).canConvert<Variant>())
+    if (index.data(Qt::EditRole).canConvert<nlohmann::json>())
     {
       model->setData(index, cb->currentText(), Qt::EditRole);
     }

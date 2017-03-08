@@ -30,7 +30,7 @@ public:
   void analyze();
   void clear_metrics();
 
-  void set_parameter(std::string, Variant);
+  void set_parameter(std::string, nlohmann::json);
   Settings parameters() const {return parameters_;}
 
   void set_metric(std::string id, double val, std::string descr);
