@@ -99,7 +99,6 @@ void Browser::open_file(QString fileName)
     }
   }
 
-
   reader_->open_raw();
   int evt_count = reader_->event_count();
 

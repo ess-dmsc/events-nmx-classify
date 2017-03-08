@@ -5,6 +5,8 @@
 #include "Analysis.h"
 #include <memory>
 
+#include "JsonH5.h"
+
 namespace NMX {
 
 class File

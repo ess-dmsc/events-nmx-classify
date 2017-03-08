@@ -11,43 +11,7 @@ template<typename T> void to_json(json& j, const H5CC::Groupoid<T>& g)
     j[dd] = g.open_dataset(dd);
 }
 
-template<typename T> void dataset_from_json(const json& j, const std::string& name,
-                                            H5CC::Groupoid<T>& g)
-{
-  std::vector<hsize_t> shape = j["shape"];
-  std::vector<hsize_t> chunk;
-  if (j.count("extend_to") && j["extends_to"].is_array())
-    shape = j["extends_to"];
-  if (j.count("chunked_as") && j["chunked_as"].is_array())
-    chunk = j["chunked_as"];
-  g.create_dataset(name, shape, chunk);
-}
-
-template<typename T> void from_json(const json& j, H5CC::Groupoid<T>& g)
-{
-  for (json::const_iterator it = j.begin(); it != j.end(); ++it)
-  {
-    if (it.value().count("shape") && it.value()["shape"].is_array())
-    {
-      dataset_from_json(it.value(), it.key(), g);
-    }
-    else if (it.value().is_number() ||
-             it.value().is_boolean() ||
-             it.value().is_string() ||
-             it.value().count("options") ||
-             it.value().count("choice"))
-    {
-      attribute_from_json(it.value(), it.key(), g);
-    }
-    else
-    {
-      auto gg = g.create_group(it.key());
-      from_json(it.value(), gg);
-    }
-  }
-}
-
-template<typename T> json attribute_to_json(const H5CC::Groupoid<T>& g,
+template<typename T> json attribute_to_json(const H5CC::Location<T>& g,
                                             const std::string& name)
 {
   if (g.template attr_has_type<float>(name))
@@ -83,23 +47,63 @@ template<typename T> json attribute_to_json(const H5CC::Groupoid<T>& g,
 }
 
 template<typename T> void attribute_from_json(const json& j, const std::string& name,
-                                              H5CC::Groupoid<T>& g)
+                                              H5CC::Location<T>& g)
 {
-  if (j[name].count("options") && j[name].count("choice"))
+  if (j.count("___options") && j.count("___choice"))
   {
-    Enum<int16_t> e = j[name];
+    Enum<int16_t> e = j;
     g.write_enum(name, e);
   }
-  else if (j[name].is_number_float())
+  else if (j.is_number_float())
     g.write_attribute(name, j.get<double>());
-  else if (j[name].is_number_unsigned())
-    g.write_attribute(name, j.get<uint64_t>());
-  else if (j[name].is_number_integer())
+  else if (j.is_number_unsigned())
+    g.write_attribute(name, j.get<uint32_t>());
+  else if (j.is_number_integer())
     g.write_attribute(name, j.get<int64_t>());
-  else if (j[name].is_boolean())
+  else if (j.is_boolean())
     g.write_attribute(name, j.get<bool>());
-  else if (j[name].is_string())
+  else if (j.is_string())
     g.write_attribute(name, j.get<std::string>());
+}
+
+template<typename T> void dataset_from_json(const json& j, const std::string& name,
+                                            H5CC::Groupoid<T>& g)
+{
+  std::vector<hsize_t> shape = j["___shape"];
+  std::vector<hsize_t> chunk;
+  if (j.count("___extends") && j["___extends"].is_array())
+    shape = j["___extends"].get<std::vector<hsize_t>>();
+  if (j.count("___chunk") && j["___chunk"].is_array())
+    chunk = j["___chunk"].get<std::vector<hsize_t>>();
+  auto dset = g.template create_dataset<int>(name, shape, chunk);
+  for (json::const_iterator it = j.begin(); it != j.end(); ++it)
+  {
+    attribute_from_json(json(it.value()), std::string(it.key()), dset);
+  }
+}
+
+template<typename T> void from_json(const json& j, H5CC::Groupoid<T>& g)
+{
+  for (json::const_iterator it = j.begin(); it != j.end(); ++it)
+  {
+    if (it.value().count("___shape") && it.value()["___shape"].is_array())
+    {
+      dataset_from_json(it.value(), it.key(), g);
+    }
+    else if (it.value().is_number() ||
+             it.value().is_boolean() ||
+             it.value().is_string() ||
+             it.value().count("___options") ||
+             it.value().count("___choice"))
+    {
+      attribute_from_json(it.value(), it.key(), g);
+    }
+    else
+    {
+      auto gg = g.create_group(it.key());
+      from_json(it.value(), gg);
+    }
+  }
 }
 
 }

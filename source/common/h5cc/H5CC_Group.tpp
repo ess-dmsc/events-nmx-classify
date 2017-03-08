@@ -97,9 +97,9 @@ TT void Groupoid<T>::clear()
     this->remove(m);
 }
 
-TT TDT DataSet Groupoid<T>::create_dataset(std::string name,
-                            std::vector<hsize_t> dimensions,
-                            std::vector<hsize_t> chunk_dimensions)
+TT TDT DataSet Groupoid<T>::create_dataset(const std::string& name,
+                            const std::vector<hsize_t>& dimensions,
+                            const std::vector<hsize_t>& chunk_dimensions)
 {
   DataSet ret;
   try
@@ -135,9 +135,9 @@ TT TDT DataSet Groupoid<T>::create_dataset(std::string name,
   return ret;
 }
 
-TT TDT DataSet Groupoid<T>::require_dataset(std::string name, 
-                            std::vector<hsize_t> dims,
-                            std::vector<hsize_t> chunkdims)
+TT TDT DataSet Groupoid<T>::require_dataset(const std::string& name,
+                            const std::vector<hsize_t>& dims,
+                            const std::vector<hsize_t>& chunkdims)
 {
   if (has_dataset(name))
   {

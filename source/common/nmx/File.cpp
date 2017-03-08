@@ -3,8 +3,6 @@
 #include "RawClustered.h"
 #include "RawAPV.h"
 
-#include "JsonH5.h"
-
 namespace NMX {
 
 File::File(std::string filename, H5CC::Access access)
@@ -12,10 +10,6 @@ File::File(std::string filename, H5CC::Access access)
   file_ = H5CC::File(filename, access);
   write_access_ = (file_.status() != H5CC::Access::r_existing) &&
       (file_.status() != H5CC::Access::no_access);
-
-  json j;
-  j[filename] = file_;
-  DBG << "\n" << j.dump(2);
 }
 
 File::~File()
