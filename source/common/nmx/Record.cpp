@@ -27,6 +27,21 @@ Record::Record()
                                        }}, "Analysis level");
 }
 
+Record::Record(const std::list<Eventlet> eventlets)
+  : Record()
+{
+  uint64_t earliest = std::numeric_limits<uint64_t>::max();
+  for (auto e : eventlets)
+    earliest = std::min(earliest, e.time);
+
+  std::map<int16_t , std::map<uint16_t, int16_t>> strips;
+  for (auto e : eventlets)
+    strips[e.strip][static_cast<uint16_t>(e.time - earliest)] = e.adc;
+
+  for (auto s : strips)
+    add_strip(s.first, s.second);
+}
+
 Record::Record(const std::vector<int16_t>& data, uint16_t timebins)
   : Record()
 {
