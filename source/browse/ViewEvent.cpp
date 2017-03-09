@@ -80,7 +80,7 @@ void ViewEvent::populateCombos()
     ui->comboProjection->addItem(QString::fromStdString(name));
   ui->comboProjection->addItem("none");
 
-  NMX::Record rec = evt.x();
+  NMX::Plane rec = evt.x();
   for (auto &name : rec.point_categories())
   {
     ui->comboPlot->addItem(QString::fromStdString(name));

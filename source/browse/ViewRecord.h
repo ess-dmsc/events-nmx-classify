@@ -2,7 +2,7 @@
 
 #include <QWidget>
 
-#include "Record.h"
+#include "Plane.h"
 
 #include "qp_2d.h"
 #include "qp_multi1d.h"
@@ -29,7 +29,7 @@ public:
   void set_title(QString);
 
   void clear();
-  void display_record(const NMX::Record &record);
+  void display_record(const NMX::Plane &record);
   void refresh();
 
   void set_plot_type(QString);
@@ -40,7 +40,7 @@ public:
 private:
   Ui::ViewRecord *ui;
 
-  NMX::Record record_;
+  NMX::Plane record_;
 
   QPlot::Marker1D moving_;
 

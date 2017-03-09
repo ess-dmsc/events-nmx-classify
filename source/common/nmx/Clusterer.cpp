@@ -2,6 +2,8 @@
 
 #include <Clusterer.h>
 
+namespace NMX {
+
 Clusterer::Clusterer(uint64_t min_time_span) : min_time_span_(min_time_span) {}
 
 void Clusterer::insert(const Eventlet &eventlet) {
@@ -13,14 +15,16 @@ bool Clusterer::event_ready() const {
                                  backlog_.begin()->first) > min_time_span_));
 }
 
-EventNMX Clusterer::get_event() {
+SimpleEvent Clusterer::get_event() {
   if (!event_ready())
-    return EventNMX();
-  EventNMX ret;
+    return SimpleEvent();
+  SimpleEvent ret;
   auto latest = backlog_.begin()->first + min_time_span_;
   while (backlog_.begin()->first <= latest) {
     ret.insert_eventlet(backlog_.begin()->second);
     backlog_.erase(backlog_.begin());
   }
   return ret;
+}
+
 }

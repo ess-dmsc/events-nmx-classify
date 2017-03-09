@@ -9,7 +9,7 @@ class RawClustered : public Raw
 {
 public:
   RawClustered(H5CC::File& file);
-  RawClustered(H5CC::File& file, size_t events, size_t chunksize);
+  RawClustered(H5CC::File& file, hsize_t events, size_t chunksize);
   static bool exists_in(const H5CC::File& file);
 
   virtual ~RawClustered() {}
@@ -25,8 +25,8 @@ protected:
 
   RawVMM unclustered_;
 
-  Record read_record(size_t index, size_t plane) const;
-  void write_record(size_t index, size_t plane, const Record&);
+  Plane read_record(size_t index, size_t plane) const;
+  void write_record(size_t index, size_t plane, const Plane&);
 };
 
 }

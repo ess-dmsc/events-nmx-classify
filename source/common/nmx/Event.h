@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Record.h"
+#include "Plane.h"
 
 namespace NMX
 {
@@ -8,10 +8,10 @@ namespace NMX
 struct Event
 {
   Event();
-  Event(Record xx, Record yy);
+  Event(Plane xx, Plane yy);
 
-  Record x() const {return x_;}
-  Record y() const {return y_;}
+  Plane x() const {return x_;}
+  Plane y() const {return y_;}
 
   bool empty() const;
   std::string debug() const;
@@ -30,7 +30,7 @@ struct Event
   HistList1D get_projection(std::string) const;
 
 private:
-  Record x_, y_;
+  Plane x_, y_;
 
   Settings parameters_;
   MetricSet metrics_;

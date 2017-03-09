@@ -7,9 +7,11 @@
 
 #pragma once
 
-#include <EventNMX.h>
+#include <SimpleEvent.h>
 #include <Eventlet.h>
 #include <map>
+
+namespace NMX {
 
 class Clusterer {
 public:
@@ -30,9 +32,11 @@ public:
 
   /** @brief returns a clustered event (if one is ready, else empty event)
    */
-  EventNMX get_event();
+  SimpleEvent get_event();
 
 private:
   std::multimap<uint64_t, Eventlet> backlog_; //stack of chronologically ordered events
   uint64_t min_time_span_{1};
 };
+
+}

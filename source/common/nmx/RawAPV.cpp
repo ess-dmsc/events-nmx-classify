@@ -59,19 +59,19 @@ void RawAPV::write_event(size_t index, const Event& event)
   }
 }
 
-Record RawAPV::read_record(size_t index, size_t plane) const
+Plane RawAPV::read_record(size_t index, size_t plane) const
 {
   if (index < event_count())
   {
     auto timebins = dataset_APV_.shape().dim(3);
-    return Record(dataset_APV_.read<int16_t>({1,1,H5CC::kMax,H5CC::kMax},
+    return Plane(dataset_APV_.read<int16_t>({1,1,H5CC::kMax,H5CC::kMax},
                                              {index, plane, 0, 0}), timebins);
   }
   else
-    return Record();
+    return Plane();
 }
 
-void RawAPV::write_record(size_t index, size_t plane, const Record& record)
+void RawAPV::write_record(size_t index, size_t plane, const Plane& record)
 {
   auto strips = dataset_APV_.shape().dim(2);
   auto timebins = dataset_APV_.shape().dim(3);

@@ -55,7 +55,7 @@ void ViewRecord::clear()
 }
 
 
-void ViewRecord::display_record(const NMX::Record &record)
+void ViewRecord::display_record(const NMX::Plane &record)
 {
   record_ = record;
   refresh();

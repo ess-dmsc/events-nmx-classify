@@ -1,12 +1,11 @@
 /** Copyright (C) 2016, 2017 European Spallation Source ERIC */
 
-#include <EventNMX.h>
+#include <SimpleEvent.h>
 #include <set>
 
+namespace NMX {
 
-// #include <iostream>
-
-void PlaneNMX::insert_eventlet(const Eventlet &e) {
+void SimplePlane::insert_eventlet(const Eventlet &e) {
   if (!e.adc)
     return;
   if (entries.empty())
@@ -17,7 +16,7 @@ void PlaneNMX::insert_eventlet(const Eventlet &e) {
   time_end = std::max(time_start, e.time);
 }
 
-void PlaneNMX::analyze(bool weighted, uint16_t max_timebins,
+void SimplePlane::analyze(bool weighted, uint16_t max_timebins,
                        uint16_t max_timedif) {
   if (entries.empty())
     return;
@@ -59,14 +58,14 @@ void PlaneNMX::analyze(bool weighted, uint16_t max_timebins,
   uncert_upper = uspan_max - uspan_min + 1;
 }
 
-void EventNMX::insert_eventlet(const Eventlet &e) {
+void SimpleEvent::insert_eventlet(const Eventlet &e) {
   if (e.plane_id) /**< @todo deal with multiple panels */
     y.insert_eventlet(e);
   else
     x.insert_eventlet(e);
 }
 
-void EventNMX::analyze(bool weighted, int16_t max_timebins,
+void SimpleEvent::analyze(bool weighted, int16_t max_timebins,
                        int16_t max_timedif) {
   if (x.entries.size()) {
     x.analyze(weighted, max_timebins, max_timedif);
@@ -80,9 +79,11 @@ void EventNMX::analyze(bool weighted, int16_t max_timebins,
   }
 }
 
-bool EventNMX::good() const { return good_; }
+bool SimpleEvent::good() const { return good_; }
 
-uint64_t EventNMX::time_start() const
+uint64_t SimpleEvent::time_start() const
 {
   return time_start_;
+}
+
 }

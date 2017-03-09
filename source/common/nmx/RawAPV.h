@@ -21,8 +21,8 @@ protected:
   H5CC::DataSet  dataset_APV_;
   size_t event_count_ {0};
 
-  Record read_record(size_t index, size_t plane) const;
-  void write_record(size_t index, size_t plane, const Record&);
+  Plane read_record(size_t index, size_t plane) const;
+  void write_record(size_t index, size_t plane, const Plane&);
 };
 
 }

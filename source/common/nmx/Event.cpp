@@ -5,10 +5,10 @@
 namespace NMX {
 
 Event::Event()
-  :Event(Record(), Record())
+  :Event(Plane(), Plane())
 {}
 
-Event::Event(Record xx, Record yy)
+Event::Event(Plane xx, Plane yy)
   : x_(xx)
   , y_(yy)
 {

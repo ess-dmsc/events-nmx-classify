@@ -17,7 +17,7 @@ RawClustered::RawClustered(H5CC::File& file)
     ERR << "<NMX::RawClustered> bad size for raw/VMM cluster indices datset " << indices_VMM_.debug();
 }
 
-RawClustered::RawClustered(H5CC::File& file, size_t events, size_t chunksize)
+RawClustered::RawClustered(H5CC::File& file, hsize_t events, size_t chunksize)
 {
   unclustered_ = RawVMM(file, chunksize);
 
@@ -61,7 +61,7 @@ void RawClustered::write_event(size_t index, const Event& event)
   }
 }
 
-Record RawClustered::read_record(size_t index, size_t plane) const
+Plane RawClustered::read_record(size_t index, size_t plane) const
 {
   if (index < event_count())
   {
@@ -79,16 +79,16 @@ Record RawClustered::read_record(size_t index, size_t plane) const
       strips[evt.strip][evt.time & 0xFF] = evt.adc;
     }
 
-    Record record;
+    Plane record;
     for (const auto& s : strips)
       record.add_strip(s.first, Strip(s.second));
     return record;
   }
   else
-    return Record();
+    return Plane();
 }
 
-void RawClustered::write_record(size_t index, size_t plane, const Record& record)
+void RawClustered::write_record(size_t index, size_t plane, const Plane& record)
 {
   if (write_access_)
   {

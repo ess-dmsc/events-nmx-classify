@@ -1,4 +1,4 @@
-#include "Record.h"
+#include "Plane.h"
 #include "CustomLogger.h"
 
 #include <iomanip>
@@ -7,7 +7,7 @@
 
 namespace NMX {
 
-Record::Record()
+Plane::Plane()
   : strips_("strip", "timebin")
 {
   auto strip_par = PlanePerspective::default_params();
@@ -27,8 +27,8 @@ Record::Record()
                                        }}, "Analysis level");
 }
 
-Record::Record(const std::list<Eventlet> eventlets)
-  : Record()
+Plane::Plane(const std::list<Eventlet> eventlets)
+  : Plane()
 {
   uint64_t earliest = std::numeric_limits<uint64_t>::max();
   for (auto e : eventlets)
@@ -42,8 +42,8 @@ Record::Record(const std::list<Eventlet> eventlets)
     add_strip(s.first, s.second);
 }
 
-Record::Record(const std::vector<int16_t>& data, uint16_t timebins)
-  : Record()
+Plane::Plane(const std::vector<int16_t>& data, uint16_t timebins)
+  : Plane()
 {
   if (timebins < 1)
     return;
@@ -56,7 +56,7 @@ Record::Record(const std::vector<int16_t>& data, uint16_t timebins)
     add_strip(i++, std::vector<int16_t>(data.begin() + j, data.begin() + j + timebins));
 }
 
-void Record::add_strip(uint16_t i, const Strip& strip)
+void Plane::add_strip(uint16_t i, const Strip& strip)
 {
   strips_.add_data(i, strip);
   if (strip.empty())
@@ -68,7 +68,7 @@ void Record::add_strip(uint16_t i, const Strip& strip)
   timebins_end_ = std::max(timebins_end_, strip.end());
 }
 
-std::vector<int16_t> Record::to_buffer(uint16_t max_strips, uint16_t max_timebins) const
+std::vector<int16_t> Plane::to_buffer(uint16_t max_strips, uint16_t max_timebins) const
 {
   std::vector<int16_t> buffer(max_strips * max_timebins, 0);
   for (auto p : get_points())
@@ -77,7 +77,7 @@ std::vector<int16_t> Record::to_buffer(uint16_t max_strips, uint16_t max_timebin
   return buffer;
 }
 
-uint16_t  Record::time_span() const
+uint16_t  Plane::time_span() const
 {
   if (timebins_start_ < 0)
     return 0;
@@ -85,7 +85,7 @@ uint16_t  Record::time_span() const
     return timebins_end_ - timebins_start_ + 1;
 }
 
-HistList2D Record::get_points(std::string id) const
+HistList2D Plane::get_points(std::string id) const
 {
   if (point_lists_.count(id))
     return point_lists_.at(id);
@@ -93,7 +93,7 @@ HistList2D Record::get_points(std::string id) const
     return strips_.points();
 }
 
-HistList1D Record::get_projection(std::string id) const
+HistList1D Plane::get_projection(std::string id) const
 {
   if (projections_.count(id))
     return projections_.at(id);
@@ -101,34 +101,34 @@ HistList1D Record::get_projection(std::string id) const
     return HistList1D();
 }
 
-void Record::set_parameter(std::string id, nlohmann::json val)
+void Plane::set_parameter(std::string id, nlohmann::json val)
 {
   if (parameters_.contains(id))
     parameters_.set(id, val);
 }
 
-void Record::set_metric(std::string id, double val, std::string descr)
+void Plane::set_metric(std::string id, double val, std::string descr)
 {
   metrics_.set(id, MetricVal(val, descr));
 }
 
-void Record::clear_metrics()
+void Plane::clear_metrics()
 {
   metrics_.clear();
 }
 
-bool Record::empty() const
+bool Plane::empty() const
 {
   return (strips_.empty());
 }
 
-std::string Record::debug() const
+std::string Plane::debug() const
 {
   return strips_.debug();
   // other perspectives? metrics?
 }
 
-std::list<std::string> Record::point_categories() const
+std::list<std::string> Plane::point_categories() const
 {
   std::list<std::string> ret;
   for (auto &i : point_lists_)
@@ -136,7 +136,7 @@ std::list<std::string> Record::point_categories() const
   return ret;
 }
 
-std::list<std::string> Record::projection_categories() const
+std::list<std::string> Plane::projection_categories() const
 {
   std::list<std::string> ret;
   for (auto &i : projections_)
@@ -144,7 +144,7 @@ std::list<std::string> Record::projection_categories() const
   return ret;
 }
 
-void Record::analyze()
+void Plane::analyze()
 {
   for (auto pl : point_lists_)
     pl.second.clear();
@@ -168,7 +168,7 @@ void Record::analyze()
     analyze_all();
 }
 
-void Record::analyze_all()
+void Plane::analyze_all()
 {
   PlanePerspective strips("strip", "timebin");
   PlanePerspective timebins("timebin", "strip");
@@ -238,7 +238,7 @@ void Record::analyze_all()
   analyze_finalize(strips_best, strips_vmm);
 }
 
-void Record::analyze_reduced()
+void Plane::analyze_reduced()
 {
   auto strips = strips_;//.subset("noneg");
   auto timebins = strips.subset("orthogonal");
@@ -275,7 +275,7 @@ void Record::analyze_reduced()
   analyze_finalize(strips_best, strips_vmm);
 }
 
-void Record::analyze_to_vmm()
+void Plane::analyze_to_vmm()
 {
   auto strips = strips_;
   auto strip_params = parameters_.with_prefix("strip.");
@@ -286,7 +286,7 @@ void Record::analyze_to_vmm()
   point_lists_["strip_vmm"] = strips_vmm.points();
 }
 
-void Record::analyze_reduced_from_vmm()
+void Plane::analyze_reduced_from_vmm()
 {
   auto strip_params = parameters_.with_prefix("strip.");
   auto best_params = strip_params;
@@ -317,7 +317,7 @@ void Record::analyze_reduced_from_vmm()
   analyze_finalize(strips_best, strips_);
 }
 
-void Record::analyze_finalize(const PlanePerspective& strips_best,
+void Plane::analyze_finalize(const PlanePerspective& strips_best,
                               const PlanePerspective& strips_vmm)
 {
   double tb_entry_c = -1;

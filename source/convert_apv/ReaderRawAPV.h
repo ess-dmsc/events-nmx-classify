@@ -55,7 +55,7 @@ private:
   int32_t apvID = {0};
   std::vector<int16_t> timeBinADCs;
 
-  Record x_, y_;
+  Plane x_, y_;
 };
 
 }

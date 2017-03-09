@@ -63,8 +63,8 @@ Event ReaderRawAPV::get_event(size_t ievent)
     return Event();
 
   file_.seekg(event_locations_.at(ievent), std::ios::beg);
-  x_ = Record();
-  y_ = Record();
+  x_ = Plane();
+  y_ = Plane();
 
   int32_t data_before_two = 0;
   int32_t data_before = 0;

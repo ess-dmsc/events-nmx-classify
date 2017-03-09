@@ -60,7 +60,7 @@ size_t ReaderROOT::event_count() const
 
 Event ReaderROOT::get_event(size_t ievent)
 {
-  Record x, y;
+  Plane x, y;
 
   fTree->GetEntry(ievent);
 

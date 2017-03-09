@@ -9,12 +9,12 @@ namespace NMX
 
 using Histo2D = std::map<std::pair<int32_t,int32_t>, double>;
 
-class Record
+class Plane
 {
 public:
-  Record();
-  Record(const std::vector<int16_t>& data, uint16_t timebins);
-  Record(const std::list<Eventlet> eventlets);
+  Plane();
+  Plane(const std::vector<int16_t>& data, uint16_t timebins);
+  Plane(const std::list<Eventlet> eventlets);
 
   void add_strip(uint16_t, const Strip&);
   std::vector<int16_t> to_buffer(uint16_t max_strips, uint16_t max_timebins) const;
