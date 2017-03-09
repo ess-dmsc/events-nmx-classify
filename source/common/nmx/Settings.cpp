@@ -1,20 +1,16 @@
 #include "Settings.h"
 
-
 #include "JsonH5.h"
 #include <sstream>
 #include "CustomLogger.h"
 
 namespace NMX {
 
-void Settings::set(std::string name, json s, std::string descr)
-{
-  data_[name] = {{"value", s}, {"description", descr}};
-}
-
-void Settings::set(std::string name, json v)
+void Settings::set(std::string name, json v, std::string descr)
 {
   data_[name]["value"] = v;
+  if (!descr.empty())
+    data_[name]["description"] = descr;
 }
 
 nlohmann::json Settings::get(std::string name) const

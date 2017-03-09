@@ -4,7 +4,6 @@
 #include <string>
 #include "json.hpp"
 #include "H5CC_Group.h"
-#include "json.hpp"
 
 namespace NMX
 {
@@ -20,8 +19,7 @@ public:
   nlohmann::json get(std::string name) const;
   nlohmann::json get_value(std::string name) const;
 
-  void set(std::string name, nlohmann::json s, std::string descr);
-  void set(std::string name, nlohmann::json v);
+  void set(std::string name, nlohmann::json v, std::string descr = "");
 
   void clear() { data_.clear(); }
 
