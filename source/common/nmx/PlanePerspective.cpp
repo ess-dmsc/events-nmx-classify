@@ -11,18 +11,10 @@ Settings PlanePerspective::default_params()
 {
   Settings ret;
   ret.merge(Strip::default_params());
-
-  ret.set("suppress_negatives",
-          Setting(true, "Suppress negative ADC values prior to analysis"));
-
-  ret.set("cuness_min_span",
-          Setting(2, "Minimum span of maxima to increment cuness"));
-
-  ret.set("best_max_bincount",
-          Setting(3, "Maximum number of bins for best candidate selection"));
-
-  ret.set("best_max_binspan",
-          Setting(5, "Maximum bin span for best candidate selection"));
+  ret.set("suppress_negatives", true, "Suppress negative ADC values prior to analysis");
+  ret.set("cuness_min_span", 2, "Minimum span of maxima to increment cuness");
+  ret.set("best_max_bincount", 3, "Maximum number of bins for best candidate selection");
+  ret.set("best_max_binspan", 5, "Maximum bin span for best candidate selection");
   return ret;
 }
 
@@ -97,6 +89,7 @@ PlanePerspective PlanePerspective::subset(std::string name, Settings params) con
                      params.get_value("best_max_binspan"));
 
   PlanePerspective ret(axis1_, axis2_);
+
   int cuness_min_span = params.get_value("cuness_min_span");
   for (auto &d : data_)
   {

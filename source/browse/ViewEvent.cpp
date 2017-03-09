@@ -101,7 +101,7 @@ void ViewEvent::parametersModified()
 {
   auto all_params = reader_->parameters();
   for (auto p : params_model_.get_settings().data())
-    all_params.set(p.first, p.second);
+    all_params.set(p.first, p.second["value"], p.second["description"]);
   reader_->set_parameters(all_params);
   saveSettings();
   populateCombos();
@@ -119,7 +119,7 @@ void ViewEvent::update_parameters_model()
     {
       if ((x_visible && QString::fromStdString(s.first).contains("x.")) ||
           (y_visible && QString::fromStdString(s.first).contains("y.")))
-        settings.set(s.first, s.second);
+        settings.set(s.first, s.second["value"], s.second["description"]);
     }
   }
   params_model_.update(settings);

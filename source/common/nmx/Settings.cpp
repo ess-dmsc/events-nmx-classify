@@ -7,48 +7,28 @@
 
 namespace NMX {
 
-void Setting::write_H5(H5CC::Group group, std::string name) const
+void Settings::set(std::string name, json s, std::string descr)
 {
-  auto s_group = group.require_group(name);
-  json j;
-  j["value"] = value;
-  j["description"] = description;
-  H5CC::from_json(j, s_group);
-}
-
-void Setting::read_H5(const H5CC::Group &group, std::string name)
-{
-  if (!group.has_group(name))
-    return;
-  json j = group.open_group(name);
-  value = j["value"];
-  description = j["description"].get<std::string>();
-}
-
-
-
-void Settings::set(std::string name, Setting s)
-{
-  data_[name] = s;
+  data_[name] = {{"value", s}, {"description", descr}};
 }
 
 void Settings::set(std::string name, json v)
 {
-  data_[name].value = v;
+  data_[name]["value"] = v;
 }
 
-Setting Settings::get(std::string name) const
+nlohmann::json Settings::get(std::string name) const
 {
   if (data_.count(name))
     return data_.at(name);
   else
-    return Setting();
+    return nlohmann::json({{"value", 0}, {"description", "undefined setting"}});
 }
 
 json Settings::get_value(std::string name) const
 {
   if (data_.count(name))
-    return data_.at(name).value;
+    return data_.at(name)["value"];
   else
     return json();
 }
@@ -73,7 +53,7 @@ Settings Settings::with_prefix(std::string prefix, bool drop_prefix) const
     {
       if (drop_prefix)
         id = id.substr(prefix.size(), id.size() - prefix.size());
-      ret.set(id, m.second);
+      ret.data_[id] = m.second;
     }
   }
   return ret;
@@ -84,9 +64,9 @@ std::string Settings::debug(std::string prepend) const
   std::string ret;
   for (auto &param : data_)
     ret += prepend + param.first
-        + " (" + param.second.value.type_name() + ")"
-        + " = " + param.second.value.dump() +
-        + "   " + param.second.description + "\n";
+        + " (" + param.second["value"].type_name() + ")"
+        + " = " + param.second["value"].dump() +
+        + "   " + param.second["description"].dump() + "\n";
   return ret;
 }
 
@@ -97,7 +77,10 @@ void Settings::write_H5(H5CC::Group group, std::string name) const
 
   auto params_group = group.require_group(name);
   for (auto d : data_)
-    d.second.write_H5(params_group, d.first);
+  {
+    auto s_group = params_group.require_group(d.first);
+    H5CC::from_json(d.second, s_group);
+  }
 }
 
 void Settings::read_H5(const H5CC::Group &group, std::string name)
@@ -107,7 +90,7 @@ void Settings::read_H5(const H5CC::Group &group, std::string name)
     return;
   auto params_group = group.open_group(name);
   for (auto g : params_group.groups())
-    data_[g].read_H5(params_group, g);
+    data_[g] = params_group.open_group(g);
 }
 
 

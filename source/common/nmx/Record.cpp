@@ -14,17 +14,14 @@ Record::Record()
   parameters_.merge(strip_par, "strip.");
   parameters_.merge(strip_par, "timebin.");
 
-  parameters_.set("gamma_max_width",
-                  Setting(6, "Maximum width for gamma event"));
+  parameters_.set("gamma_max_width", 6, "Maximum width for gamma event");
 
-  parameters_.set("gamma_max_height",
-                  Setting(11, "Maximum height for gamma event"));
+  parameters_.set("gamma_max_height", 11, "Maximum height for gamma event");
 
-  parameters_.set("analysis_reduced",
-                  Setting({{"___choice", 0},
+  parameters_.set("analysis_reduced", {{"___choice", 0},
                            {"___options", {{"all metrics", 0}, {"fewer metrics", 1},
                            {"to VMMx", 2}, {"fewer from VMMx", 3}}}},
-                            "Analysis level"));
+                            "Analysis level");
 }
 
 Record::Record(const std::vector<int16_t>& data, uint16_t timebins)

@@ -33,7 +33,7 @@ QVariant TableSettings::data(const QModelIndex &index, int role) const
       return names_.at(row);
     else if (col == 1)
     {
-      nlohmann::json item = settings_.at(row).value;
+      nlohmann::json item = settings_.at(row)["value"];
       if (item.is_number_integer())
         return QVariant::fromValue(item.get<int64_t>());
       else if (item.is_number_unsigned())
@@ -52,7 +52,7 @@ QVariant TableSettings::data(const QModelIndex &index, int role) const
       return QVariant();
   }
   else if ((role == Qt::EditRole) && (col == 1))
-    return QVariant::fromValue(settings_.at(row).value);
+    return QVariant::fromValue(settings_.at(row)["value"]);
 
   return QVariant();
 }
@@ -107,7 +107,7 @@ bool TableSettings::setData(const QModelIndex & index, const QVariant & value, i
 
   if (role == Qt::EditRole)
   {
-    nlohmann::json item = settings_.at(row).value;
+    nlohmann::json item = settings_.at(row)["value"];
 
     if (item.is_number_integer() && value.canConvert(QMetaType::LongLong))
     {
@@ -135,7 +135,7 @@ bool TableSettings::setData(const QModelIndex & index, const QVariant & value, i
     else
       return false;
 
-    settings_[row].value = item;
+    settings_[row]["value"] = item;
 
     emit settings_changed();
     return true;
@@ -148,7 +148,9 @@ NMX::Settings TableSettings::get_settings() const
 {
   NMX::Settings ret;
   for (int i=0; i < names_.size(); ++i)
-    ret.set(names_.at(i).toStdString(), settings_.at(i));
+    ret.set(names_.at(i).toStdString(),
+            settings_.at(i)["value"],
+            settings_.at(i)["description"]);
   return ret;
 }
 

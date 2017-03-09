@@ -9,7 +9,7 @@ class TableSettings : public QAbstractTableModel
 {
     Q_OBJECT
 private:
-    QVector<NMX::Setting> settings_;
+    QVector<nlohmann::json> settings_;
     QVector<QString> names_;
 
 public:

@@ -11,11 +11,8 @@ namespace NMX {
 Settings Strip::default_params()
 {
   Settings ret;
-  ret.set("threshold",
-      Setting(150, "Minimum ADC value for maxima"));
-
-  ret.set("over_threshold",
-      Setting(3, "Minimum number of bins above threshold for maxima"));
+  ret.set("threshold", 150, "Minimum ADC value for maxima");
+  ret.set("over_threshold", 3, "Minimum number of bins above threshold for maxima");
   return ret;
 }
 

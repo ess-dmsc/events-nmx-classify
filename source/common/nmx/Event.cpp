@@ -43,7 +43,7 @@ void Event::collect_values()
 void Event::set_parameters(Settings vals)
 {
   for (auto &v : vals.data())
-    set_parameter(v.first, v.second.value);
+    set_parameter(v.first, v.second["value"]);
 }
 
 void Event::set_parameter(std::string id, nlohmann::json val)
