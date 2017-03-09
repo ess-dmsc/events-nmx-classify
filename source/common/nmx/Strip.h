@@ -43,6 +43,7 @@ private:
   void add_value(int16_t idx, int16_t val);
   Strip find_maxima(int16_t adc_threshold) const;
   Strip find_vmm_maxima(int16_t adc_threshold, int16_t over_threshold) const;
+  Strip vmm_peak_separation(int16_t minimum_separation) const;
 };
 
 

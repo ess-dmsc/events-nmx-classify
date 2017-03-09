@@ -13,6 +13,7 @@ Settings Strip::default_params()
   Settings ret;
   ret.set("threshold", 150, "Minimum ADC value for maxima");
   ret.set("over_threshold", 3, "Minimum number of bins above threshold for maxima");
+  ret.set("min_peak_separation", 0, "Minimum separation between peaks");
   return ret;
 }
 
@@ -98,6 +99,8 @@ Strip Strip::subset(std::string name, Settings params) const
   else if (name == "vmm")
     return find_vmm_maxima(params.get_value("threshold"),
                            params.get_value("over_threshold"));
+  else if (name == "peak_separation")
+    return vmm_peak_separation(params.get_value("min_peak_separation"));
   else
     return *this;
 }
@@ -178,6 +181,20 @@ Strip Strip::find_vmm_maxima(int16_t adc_threshold, int16_t over_threshold) cons
   }
   return vmm;
 }
+
+Strip Strip::vmm_peak_separation(int16_t minimum_separation) const
+{
+  Strip ret;
+  int32_t prev_tb {-1};
+  for (auto i : data_)
+  {
+    if ((prev_tb == -1) || ((i.first - prev_tb) > minimum_separation))
+      ret.add_value(i.first, i.second);
+    prev_tb = i.first;
+  }
+  return ret;
+}
+
 
 
 
