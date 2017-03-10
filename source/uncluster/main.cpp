@@ -6,9 +6,9 @@
 #include <boost/program_options.hpp>
 #include "custom_timer.h"
 
-#include "RawClustered.h"
+#include <Clusterer.h>
 
-#include "Clusterer.h"
+#include "RawClustered.h"
 
 using namespace NMX;
 using namespace std;
@@ -58,7 +58,8 @@ int main(int argc, char* argv[])
   if (chunksize < 1)
     chunksize = 20;
 
-  cout << "Saving as emulated VMM data using chunksize=" << chunksize << "\n";
+  cout << "Unclustering as VMM data using chunksize=" << chunksize
+       << " and time_separation=" << timesep << "\n";
 
   auto infile = path(target_path);
 
@@ -76,85 +77,84 @@ int main(int argc, char* argv[])
 
 void cluster_eventlets(const path& file, int chunksize, int timesep)
 {
+  timesep += 27;
+
   string filename = file.string();
   string newname = boost::filesystem::change_extension(filename, "").string() +
-      "_clustered.h5";
+      "_unclustered.h5";
 
-  H5CC::File infile;
-  RawVMM reader;
+  std::shared_ptr<NMX::File> reader;
+
   try
   {
-    infile = H5CC::File(filename, H5CC::Access::r_existing);
-    reader = RawVMM(infile);
+    reader = std::make_shared<NMX::File>(filename, H5CC::Access::r_existing);
   }
   catch (...)
   {
     printException();
-    cout << "Could not open file " << filename << "\n";
+    std::cout << "Could not open file " << filename << "\n";
     return;
   }
 
-  if (!reader.entry_count())
+  if (reader->has_APV() || reader->has_clustered())
+    reader->open_raw();
+  else
+  {
+    std::cout << "No clustered dataset found in " << filename << "\n";
+    return;
+  }
+
+  if (!reader->event_count())
   {
     cout << "Dataset in " << filename << " empty\n";
     return;
   }
 
-  size_t nevents = reader.entry_count();
+  size_t nevents = reader->event_count();
 
   H5CC::File outfile(newname, H5CC::Access::rw_truncate);
-  RawClustered writer(outfile, H5CC::kMax, chunksize);
+  RawVMM writer(outfile, chunksize);
 
-  Clusterer clusterer(timesep);
-  uint64_t evcount {0};
-
-  ChronoQ chron;
+  uint64_t eventlet_count {0};
 
   auto prog = progbar(nevents, "  Converting to '" + newname + "'  ");
   CustomTimer timer(true);
   for (size_t eventID = 0; eventID < nevents; ++eventID)
   {
-    chron.push(reader.read_entry(eventID));
+    uint64_t time_offset = eventID * timesep;
+    auto event = reader->get_event(eventID);
+    ChronoQ chron;
 
-    while (chron.ready())
+    for (auto p : event.x().get_points())
     {
-      clusterer.insert(chron.pop());
-
-      while (clusterer.event_ready())
-      {
-        auto event = clusterer.get_event();
-        writer.write_event(evcount,
-                           Event(Plane(event.x.entries), Plane(event.y.entries)));
-        evcount++;
-      }
+      Eventlet evt;
+      evt.time =  time_offset + static_cast<uint64_t>(p.y);
+      evt.plane_id = 0;
+      evt.strip = p.x;
+      evt.adc = p.v;
+      chron.push(evt);
+      eventlet_count++;
     }
+
+    for (auto p : event.y().get_points())
+    {
+      Eventlet evt;
+      evt.time =  time_offset + static_cast<uint64_t>(p.y);
+      evt.plane_id = 1;
+      evt.strip = p.x;
+      evt.adc = p.v;
+      chron.push(evt);
+      eventlet_count++;
+    }
+
+    while (!chron.empty())
+      writer.write_entry(chron.pop());
 
     ++(*prog);
     if (term_flag)
       break;
   }
 
-  while (!chron.empty())
-  {
-    clusterer.insert(chron.pop());
-
-    while (clusterer.event_ready())
-    {
-      auto event = clusterer.get_event();
-      writer.write_event(evcount,
-                         Event(Plane(event.x.entries), Plane(event.y.entries)));
-      evcount++;
-    }
-  }
-
-  if (!clusterer.empty())
-  {
-    auto event = clusterer.dump_all();
-    writer.write_event(evcount,
-                       Event(Plane(event.x.entries), Plane(event.y.entries)));
-    evcount++;
-  }
-
-  cout << "Clustered " << nevents << " eventlets into " << evcount << "events\n";
+  cout << "Unclustered " << nevents << " events into " << eventlet_count << " eventlets\n";
   cout << "Processing time = " << timer.done() << "   secs/1000events=" << timer.s() / nevents * 1000 << "\n";
 }
