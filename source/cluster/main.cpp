@@ -34,13 +34,13 @@ int main(int argc, char* argv[])
   int timesep {0};
 
   // Declare the supported options.
-  po::options_description desc("nmx_convert options:");
+  po::options_description desc("nmx_cluster options:");
   desc.add_options()
       ("help", "produce help message")
       ("p", po::value<string>(), "parent dir of files to be analyzed\n"
                                       "(defaults to current path)")
       ("chunksize", po::value<int>(&chunksize)->default_value(20), "raw/VMM chunksize")
-      ("time_separation", po::value<int>(&timesep)->default_value(30), "raw/VMM chunksize")
+      ("time_separation", po::value<int>(&timesep)->default_value(30), "minimum time separation between events")
       ;
 
   po::variables_map vm;

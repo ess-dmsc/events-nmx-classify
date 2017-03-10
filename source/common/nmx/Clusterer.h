@@ -64,11 +64,9 @@ public:
 private:
   SimpleEvent current_;
   Eventlet recent_;
-//  std::list<Eventlet> backlog_; //chronologically ordered events
   uint64_t min_time_gap_{1};
 
   bool ready_ {false};
-//  uint64_t latest_timebin_ {0};
 };
 
 }

@@ -68,14 +68,6 @@ SimpleEvent Clusterer::get_event() {
   current_ = SimpleEvent();
   ready_ = false;
 
-//  std::cout << "<Clusterer> Returning event\n";
-//  std::cout << "  X:\n";
-//  for (auto a : ret.x.entries)
-//    std::cout << "  " << a.debug() << "\n";
-//  std::cout << "  Y:\n";
-//  for (auto a : ret.y.entries)
-//    std::cout << "  " << a.debug() << "\n";
-
   return ret;
 }
 
