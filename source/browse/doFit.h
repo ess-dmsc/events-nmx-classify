@@ -23,4 +23,10 @@ struct EdgeFitter
   double x_offset2{0}, x_offset2_err{0};
 
   int fits{0}, fite{0};
+
+  double resolution(double units) const;
+  double resolution_error(double units) const;
+  double signal() const;
+  double background() const;
+  double snr() const;
 };

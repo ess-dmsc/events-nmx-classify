@@ -3,6 +3,7 @@
 #include <Clusterer.h>
 
 #include <iostream>
+#include "CustomLogger.h"
 
 namespace NMX {
 
@@ -34,56 +35,131 @@ Eventlet ChronoQ::pop()
 }
 
 
-Clusterer::Clusterer(uint64_t min_time_gap) : min_time_gap_(min_time_gap) {}
+Clusterer::Clusterer(uint64_t min_time_gap, uint16_t min_strip_gap)
+  : min_time_gap_(min_time_gap)
+  , min_strip_gap_(min_strip_gap)
+{}
 
 void Clusterer::insert(const Eventlet &eventlet) {
   if (recent_.adc)
   {
-    current_.insert_eventlet(recent_);
+    push_current();
     ready_ = ((eventlet.time - recent_.time) > min_time_gap_) && !empty();
   }
-  if (eventlet.adc)
-    recent_ = eventlet;
+  recent_ = eventlet;
 }
 
 bool Clusterer::event_ready() const {
-  return ready_ &&
-      !(current_.x.entries.empty() &&
-      current_.y.entries.empty());
+  return ready_ && !(x_.empty() && y_.empty());
 }
 
 bool Clusterer::empty() const {
   return (!recent_.adc &&
-          current_.x.entries.empty() &&
-          current_.y.entries.empty() );
+          x_.empty() &&
+          y_.empty() );
 }
 
-SimpleEvent Clusterer::get_event() {
+std::list<SimpleEvent> Clusterer::get_event() {
   if (!ready_)
-  {
-    return SimpleEvent();
-  }
-
-  SimpleEvent ret = current_;
-  current_ = SimpleEvent();
-  ready_ = false;
-
-  return ret;
+    return std::list<SimpleEvent>();
+  return assemble();
 }
 
-SimpleEvent Clusterer::dump_all() {
-  current_.insert_eventlet(recent_);
-  SimpleEvent ret = current_;
-  clear();
-  return ret;
+std::list<SimpleEvent> Clusterer::dump_all() {
+  if (recent_.adc)
+  {
+    push_current();
+    recent_ = Eventlet();
+  }
+  return assemble();
 }
 
 void Clusterer::clear()
 {
-  current_ = SimpleEvent();
+  x_.clear();
+  y_.clear();
   recent_ = Eventlet();
   ready_ = false;
 }
+
+void Clusterer::push_current()
+{
+  if (recent_.plane_id)
+    y_[recent_.strip][recent_.time] = recent_;
+  else
+    x_[recent_.strip][recent_.time] = recent_;
+}
+
+std::list<SimplePlane> Clusterer::cluster_plane(const clustermap& map)
+{
+  std::list<SimplePlane> ret;
+  if (map.empty())
+    return ret;
+
+  uint16_t last = map.begin()->first;
+  SimplePlane cluster;
+  for (auto strip : map)
+  {
+    if ((strip.first - last) > min_strip_gap_)
+    {
+      ret.push_back(cluster);
+      cluster = SimplePlane();
+    }
+    for (const auto& ev : strip.second)
+      cluster.insert_eventlet(ev.second);
+    last = strip.first;
+  }
+  return ret;
+}
+
+std::list<SimpleEvent> Clusterer::assemble()
+{
+  std::list<SimplePlane> cx = cluster_plane(x_);
+  std::list<SimplePlane> cy = cluster_plane(y_);
+
+  std::list<SimpleEvent> ret;
+
+  if ((cx.size() > 1) && (cy.size() > 1))
+  {
+    std::cout << "Coincicence " << cx.size() << " " << cy.size() << "\n";
+    std::cout << "  X:\n";
+    for (auto c : cx)
+    {
+      std::cout << "    [" << c.time_start << "," << c.time_end << "]";
+      std::cout << " avg=" << c.time_avg() << " cg=" << c.time_center();
+      std::cout << "\n";
+    }
+    std::cout << "  Y:\n";
+    for (auto c : cy)
+    {
+      std::cout << "    [" << c.time_start << "," << c.time_end << "]";
+      std::cout << " avg=" << c.time_avg() << " cg=" << c.time_center();
+      std::cout << "\n";
+    }
+    ret.push_back(assemble_cluster(x_, y_));
+  }
+
+//  ret.push_back(assemble_cluster(x_, y_));
+
+  x_.clear();
+  y_.clear();
+  ready_ = false;
+  return ret;
+}
+
+SimpleEvent Clusterer::assemble_cluster(const clustermap& x, const clustermap& y)
+{
+  SimpleEvent one;
+  for (auto xx : x)
+    for (auto xxx : xx.second)
+      one.insert_eventlet(xxx.second);
+  for (auto yy : y)
+    for (auto yyy : yy.second)
+      one.insert_eventlet(yyy.second);
+  return one;
+}
+
+
 
 
 }

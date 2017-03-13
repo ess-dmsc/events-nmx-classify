@@ -11,9 +11,15 @@ void SimplePlane::insert_eventlet(const Eventlet &e) {
   if (entries.empty())
     time_start = time_end = e.time;
   entries.push_back(e);
+
   integral += e.adc;
+  time_sum += e.time;
+  time_wsum += e.adc * e.time;
+//  strip_sum += e.strip;
+//  strip_wsum += e.adc * e.strip;
+
   time_start = std::min(time_start, e.time);
-  time_end = std::max(time_start, e.time);
+  time_end = std::max(time_end, e.time);
 }
 
 void SimplePlane::analyze(bool weighted, uint16_t max_timebins,
@@ -58,24 +64,54 @@ void SimplePlane::analyze(bool weighted, uint16_t max_timebins,
   uncert_upper = uspan_max - uspan_min + 1;
 }
 
+double SimplePlane::time_avg() const
+{
+  return time_sum / double(entries.size());
+}
+
+double SimplePlane::time_center() const
+{
+  return time_wsum / integral;
+}
+
+double SimplePlane::strip_avg() const
+{
+  return strip_sum / double(entries.size());
+}
+
+double SimplePlane::strip_center() const
+{
+  return strip_wsum / integral;
+}
+
+
+
+SimpleEvent::SimpleEvent()
+{}
+
+SimpleEvent::SimpleEvent(const SimplePlane& x, const SimplePlane& y)
+  : x_(x)
+  , y_(y)
+{}
+
 void SimpleEvent::insert_eventlet(const Eventlet &e) {
   if (e.plane_id) /**< @todo deal with multiple panels */
-    y.insert_eventlet(e);
+    y_.insert_eventlet(e);
   else
-    x.insert_eventlet(e);
+    x_.insert_eventlet(e);
 }
 
 void SimpleEvent::analyze(bool weighted, int16_t max_timebins,
                        int16_t max_timedif) {
-  if (x.entries.size()) {
-    x.analyze(weighted, max_timebins, max_timedif);
+  if (x_.entries.size()) {
+    x_.analyze(weighted, max_timebins, max_timedif);
   }
-  if (y.entries.size()) {
-    y.analyze(weighted, max_timebins, max_timedif);
+  if (y_.entries.size()) {
+    y_.analyze(weighted, max_timebins, max_timedif);
   }
-  good_ = x.entries.size() && y.entries.size();
+  good_ = x_.entries.size() && y_.entries.size();
   if (good_) {
-    time_start_ = std::min(x.time_start, y.time_start);
+    time_start_ = std::min(x_.time_start, y_.time_start);
   }
 }
 
@@ -85,5 +121,6 @@ uint64_t SimpleEvent::time_start() const
 {
   return time_start_;
 }
+
 
 }

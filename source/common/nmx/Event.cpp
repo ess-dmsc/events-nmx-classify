@@ -8,7 +8,11 @@ Event::Event()
   :Event(Plane(), Plane())
 {}
 
-Event::Event(Plane xx, Plane yy)
+Event::Event(const SimpleEvent& e)
+  : Event(Plane(e.x_.entries), Plane(e.y_.entries))
+{}
+
+Event::Event(const Plane &xx, const Plane &yy)
   : x_(xx)
   , y_(yy)
 {

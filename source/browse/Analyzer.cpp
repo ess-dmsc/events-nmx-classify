@@ -6,6 +6,8 @@
 #include "qt_util.h"
 #include "histogram_h5.h"
 
+#include "DialogVary.h"
+
 Analyzer::Analyzer(QWidget *parent)
   : QWidget(parent)
   , ui(new Ui::Analyzer)
@@ -67,6 +69,22 @@ void Analyzer::loadSettings()
   ui->pushMetric1D->setText(settings.value("metric_1d", "none").toString());
   ui->comboFit->setCurrentText(settings.value("fit").toString());
   ui->doubleUnits->setValue(settings.value("units", 400).toDouble());
+
+  auto filter = tests_model_.tests();
+  int size = settings.beginReadArray("Filters");
+  for (int i = 0; i < size; ++i)
+  {
+      settings.setArrayIndex(i);
+      MetricTest t;
+      t.metric = settings.value("metric").toString().toStdString();
+      t.enabled = settings.value("enabled").toBool();
+      t.min = settings.value("min").toDouble();
+      t.max = settings.value("max").toDouble();
+      filter.tests.push_back(t);
+  }
+  settings.endArray();
+
+  tests_model_.set_tests(filter);
 }
 
 void Analyzer::saveSettings()
@@ -79,6 +97,19 @@ void Analyzer::saveSettings()
   settings.setValue("metric_1d", ui->pushMetric1D->text());
   settings.setValue("fit", ui->comboFit->currentText());
   settings.setValue("units", ui->doubleUnits->value());
+
+  settings.remove("Filters");
+  auto filter = tests_model_.tests();
+  settings.beginWriteArray("Filters");
+  for (int i = 0; i < filter.tests.size(); ++i)
+  {
+    settings.setArrayIndex(i);
+    settings.setValue("metric", QString::fromStdString(filter.tests[i].metric));
+    settings.setValue("enabled", filter.tests[i].enabled);
+    settings.setValue("min", filter.tests[i].min);
+    settings.setValue("max", filter.tests[i].max);
+  }
+  settings.endArray();
 }
 
 void Analyzer::set_new_source(std::shared_ptr<NMX::File> r)
@@ -246,9 +277,9 @@ void Analyzer::on_pushFilterFromPlot_clicked()
 {
   auto name = ui->pushMetric1D->text().toStdString();
   auto filter = tests_model_.tests();
-  for (auto f : filter.tests)
-    if (f.metric == name)
-      return;
+//  for (auto f : filter.tests)
+//    if (f.metric == name)
+//      return;
   MetricTest newtest;
   newtest.metric = name;
   if (reader_)
@@ -280,8 +311,9 @@ void Analyzer::on_pushFilterToPlot_clicked()
 void Analyzer::filterSelectionChanged()
 {
   auto rows = ui->tableTests->selectionModel()->selectedRows();
-  ui->pushFilterToPlot->setEnabled(rows.size());
   ui->pushRemoveTest->setEnabled(rows.size());
+  ui->pushFilterToPlot->setEnabled(rows.size() == 1);
+  ui->pushVary->setEnabled(rows.size() == 1);
 }
 
 
@@ -450,4 +482,121 @@ void Analyzer::on_pushSave2D_clicked()
   {
 
   }
+}
+
+void Analyzer::on_pushVary_clicked()
+{
+  auto fit_type = ui->comboFit->currentText().toStdString();
+  if (!reader_ || (fit_type == "none"))
+    return;
+
+  auto filter = tests_model_.tests();
+  int row = -1;
+  auto rows = ui->tableTests->selectionModel()->selectedRows();
+  if (rows.size())
+    row = rows.front().row();
+
+  if ((row < 0) && (row >= filter.tests.size()))
+    return;
+
+  auto original = filter.tests[row];
+  auto total_count = indices_.size();
+
+  auto start = original.min;
+  auto end = original.max;
+
+  DialogVary dv(QString::fromStdString(original.metric), start, end, this);
+
+  if (dv.exec() != QDialog::Accepted)
+  {
+    DBG << "Canceled";
+    return;
+  }
+
+  std::vector<double> val, count, efficiency, res, reserr, signal, back, snr;
+
+  filter.tests[row].enabled = true;
+  for (double i=dv.start(); i <= dv.end(); i+=dv.step())
+  {
+    if (dv.vary_min())
+      filter.tests[row].min = i;
+    if (dv.vary_max())
+      filter.tests[row].max = i;
+
+    tests_model_.set_tests(filter);
+    rebuildFilteredList();
+    EdgeFitter fitter(histogram1d_.map());
+    fitter.analyze(fit_type);
+
+    val.push_back(i);
+    count.push_back(indices_.size());
+    efficiency.push_back(double(indices_.size()) / double(total_count) * 100.0);
+    res.push_back(fitter.resolution(ui->doubleUnits->value()));
+    reserr.push_back(fitter.resolution_error(ui->doubleUnits->value()));
+    signal.push_back(fitter.signal());
+    back.push_back(fitter.background());
+    snr.push_back(fitter.snr());
+  }
+
+  filter.tests[row] = original;
+  tests_model_.set_tests(filter);
+  rebuildFilteredList();
+
+
+  QSettings settings;
+  settings.beginGroup("Program");
+  auto data_directory = settings.value("data_directory", "").toString();
+  QString fileName = CustomSaveFileDialog(this, "Save results",
+                                          data_directory, "hdf5 (*.h5)");
+  if (fileName.isEmpty())
+    return;
+
+  bool ok;
+  QString text = QInputDialog::getText(this, "Name dataset",
+                                       "Dataset name:", QLineEdit::Normal,
+                                       "", &ok);
+  if (!ok || text.isEmpty())
+    return;
+
+  try
+  {
+    H5CC::File file(fileName.toStdString(), H5CC::Access::rw_require);
+    H5CC::Group group = file.require_group(text.toStdString());
+    group.clear();
+//    group.write_attribute("datafile", )
+
+    H5CC::Group baseline = group.require_group("baseline_filters");
+    for (auto t : filter.tests)
+    {
+      if (!t.enabled)
+        continue;
+      auto gparam = baseline.require_group(t.metric);
+      gparam.write_attribute("min", t.min);
+      gparam.write_attribute("max", t.max);
+    }
+
+    H5CC::DataSet dset = group.require_dataset<double>("results",
+                                                      {count.size(),8});
+    dset.write(val, {count.size(), 1}, {0,0});
+    dset.write(count, {count.size(), 1}, {0,1});
+    dset.write(efficiency, {count.size(), 1}, {0,2});
+    dset.write(res, {count.size(), 1}, {0,3});
+    dset.write(reserr, {count.size(), 1}, {0,4});
+    dset.write(signal, {count.size(), 1}, {0,5});
+    dset.write(back, {count.size(), 1}, {0,6});
+    dset.write(snr, {count.size(), 1}, {0,7});
+
+    dset.write_attribute("independent_variable", original.metric);
+    dset.write_attribute("varied_min", dv.vary_min());
+    dset.write_attribute("varied_max", dv.vary_max());
+    dset.write_attribute("value_start", dv.start());
+    dset.write_attribute("value_end", dv.end());
+    dset.write_attribute("value_step", dv.step());
+    dset.write_attribute("baseline_total_count", uint32_t(total_count));
+    dset.write_attribute("resolution_pitch", ui->doubleUnits->value());
+  }
+  catch (...)
+  {
+  }
+
 }

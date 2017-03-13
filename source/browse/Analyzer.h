@@ -76,6 +76,8 @@ private slots:
 
   void on_pushSave2D_clicked();
 
+  void on_pushVary_clicked();
+
 private:
   Ui::Analyzer *ui;
   TestsModel tests_model_;

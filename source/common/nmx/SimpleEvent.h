@@ -32,14 +32,28 @@ struct SimplePlane {
   int16_t uncert_upper{-1}; // upper uncertainty (strip span of eventlets in latest few timebins)
 
   uint64_t time_start{0}; // start of event timestamp
-  uint16_t time_end{0};   // end of event timestamp
+  uint64_t time_end{0};   // end of event timestamp
+
   double integral{0.0};   // sum of adc values
+
+  double time_sum{0.0};
+  double time_wsum{0.0};
+  double time_avg() const;
+  double time_center() const;
+
+  double strip_sum{0.0};
+  double strip_wsum{0.0};
+  double strip_avg() const;
+  double strip_center() const;
 
   std::list<Eventlet> entries; // eventlets in plane
 };
 
 class SimpleEvent {
 public:
+  SimpleEvent();
+  SimpleEvent(const SimplePlane& x, const SimplePlane& y);
+
   /** @brief adds eventlet to event
    * @param eventlet to be added
    */
@@ -60,7 +74,7 @@ public:
    */
   uint64_t time_start() const;
 
-  SimplePlane x, y; // tracks in x and y planes
+  SimplePlane x_, y_; // tracks in x and y planes
 
 private:
   bool good_{false}; // event has valid entry strips in both planes

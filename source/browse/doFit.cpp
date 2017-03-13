@@ -111,22 +111,39 @@ HistMap1D EdgeFitter::get_fit_hist(double granularity) const
   return ret;
 }
 
+double EdgeFitter::resolution(double units) const
+{
+  return slope * units / sqrt(2);
+}
+
+double EdgeFitter::resolution_error(double units) const
+{
+  return slope_err * units / sqrt(2);
+}
+
+double EdgeFitter::signal() const
+{
+  return height * 2;
+}
+
+double EdgeFitter::background() const
+{
+  return y_offset;
+}
+
+double EdgeFitter::snr() const
+{
+  return signal() / background();
+}
 
 std::string EdgeFitter::info(double units) const
 {
-  double resolution = slope * units / sqrt(2);
-  double resolution_error = slope_err * units / sqrt(2);
-
-  double background = y_offset;
-  double signal = height * 2;
-  double snr = signal / background;
-
   std::stringstream ss;
 
-  ss << "Resolution=" << resolution << "+-" << resolution_error
-     << " (" << resolution_error/resolution * 100 << "%)"
-     << "  Signal=" << signal << "  Noise=" << background
-     << "  SNR=" << snr;
+  ss << "Resolution=" << resolution(units) << "+-" << resolution_error(units)
+     << " (" << resolution_error(units)/resolution(units) * 100 << "%)"
+     << "  S=" << signal() << "  N=" << background()
+     << "  S/N=" << snr();
 
   return ss.str();
 }

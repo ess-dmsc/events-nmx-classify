@@ -35,7 +35,7 @@ public:
   /** @brief create an NMX event clusterer
    * @param min_time_gap minimum timebins between clusters
    */
-  Clusterer(uint64_t min_time_gap);
+  Clusterer(uint64_t min_time_gap, uint16_t min_strip_gap);
 
   /** @brief add eventlet onto the clustering stack
    * @param eventlet with valid timestamp and non-zero adc value
@@ -55,18 +55,30 @@ public:
 
   /** @brief returns a clustered event (if one is ready, else empty event)
    */
-  SimpleEvent get_event();
+  std::list<SimpleEvent> get_event();
 
   /** @brief returns a clustered event from all remaining data
    */
-  SimpleEvent dump_all();
+  std::list<SimpleEvent> dump_all();
 
 private:
-  SimpleEvent current_;
+//  SimpleEvent current_;
+  using clustermap = std::map<uint16_t, std::map<uint64_t, Eventlet>>;
+  clustermap x_, y_;
+
   Eventlet recent_;
-  uint64_t min_time_gap_{1};
+  uint64_t min_time_gap_ {1};
+  uint16_t min_strip_gap_ {40};
+
 
   bool ready_ {false};
+
+  void push_current();
+
+  std::list<SimpleEvent> assemble();
+
+  std::list<SimplePlane> cluster_plane(const clustermap&);
+  SimpleEvent assemble_cluster(const clustermap& x, const clustermap& y);
 };
 
 }

@@ -282,7 +282,7 @@ void AggregateReview::on_pushDigDown_clicked()
                    filename);
 }
 
-void AggregateReview::on_pushpushGenColors_clicked()
+void AggregateReview::on_pushGenColors_clicked()
 {
   make_palette();
   render_selection();

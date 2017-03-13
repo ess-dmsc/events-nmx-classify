@@ -23,7 +23,7 @@ void term_key(int /*sig*/)
   term_flag = 1;
 }
 
-void cluster_eventlets(const path& file, int chunksize, int timesep);
+void cluster_eventlets(const path& file, int chunksize, int timesep, int stripsep);
 
 int main(int argc, char* argv[])
 {
@@ -32,6 +32,7 @@ int main(int argc, char* argv[])
   string target_path;
   int chunksize {0};
   int timesep {0};
+  int stripsep {0};
 
   // Declare the supported options.
   po::options_description desc("nmx_cluster options:");
@@ -40,7 +41,8 @@ int main(int argc, char* argv[])
       ("p", po::value<string>(), "parent dir of files to be analyzed\n"
                                       "(defaults to current path)")
       ("chunksize", po::value<int>(&chunksize)->default_value(20), "raw/VMM chunksize")
-      ("time_separation", po::value<int>(&timesep)->default_value(30), "minimum time separation between events")
+      ("tsep", po::value<int>(&timesep)->default_value(30), "minimum time separation between events")
+      ("ssep", po::value<int>(&stripsep)->default_value(40), "minimum strip separation between events")
       ;
 
   po::variables_map vm;
@@ -69,12 +71,12 @@ int main(int argc, char* argv[])
     return 1;
   }
 
-  cluster_eventlets(infile, chunksize, timesep);
+  cluster_eventlets(infile, chunksize, timesep, stripsep);
 
   return 0;
 }
 
-void cluster_eventlets(const path& file, int chunksize, int timesep)
+void cluster_eventlets(const path& file, int chunksize, int timesep, int stripsep)
 {
   string filename = file.string();
   string newname = boost::filesystem::change_extension(filename, "").string() +
@@ -100,36 +102,36 @@ void cluster_eventlets(const path& file, int chunksize, int timesep)
     return;
   }
 
-  size_t nevents = reader.entry_count();
+  size_t eventlet_count = reader.entry_count();
 
   H5CC::File outfile(newname, H5CC::Access::rw_truncate);
   RawClustered writer(outfile, H5CC::kMax, chunksize);
 
-  Clusterer clusterer(timesep);
+  Clusterer clusterer(timesep, stripsep);
   uint64_t evcount {0};
 
   ChronoQ chron;
 
-  auto prog = progbar(nevents, "  Converting to '" + newname + "'  ");
+//  auto prog = progbar(eventlet_count, "  Converting to '" + newname + "'  ");
   CustomTimer timer(true);
-  for (size_t eventID = 0; eventID < nevents; ++eventID)
+  for (size_t i = 0; i < eventlet_count; ++i)
   {
-    chron.push(reader.read_entry(eventID));
+    chron.push(reader.read_entry(i));
 
     while (chron.ready())
     {
       clusterer.insert(chron.pop());
-
       while (clusterer.event_ready())
       {
-        auto event = clusterer.get_event();
-        writer.write_event(evcount,
-                           Event(Plane(event.x.entries), Plane(event.y.entries)));
-        evcount++;
+        auto ll = clusterer.get_event();
+        if (ll.size())
+          std::cout << "  saved as " << evcount << "\n\n";
+        for (auto event : ll)
+          writer.write_event(evcount++, Event(event));
       }
     }
 
-    ++(*prog);
+//    ++(*prog);
     if (term_flag)
       break;
   }
@@ -137,24 +139,15 @@ void cluster_eventlets(const path& file, int chunksize, int timesep)
   while (!chron.empty())
   {
     clusterer.insert(chron.pop());
-
     while (clusterer.event_ready())
-    {
-      auto event = clusterer.get_event();
-      writer.write_event(evcount,
-                         Event(Plane(event.x.entries), Plane(event.y.entries)));
-      evcount++;
-    }
+      for (auto event : clusterer.get_event())
+        writer.write_event(evcount++, Event(event));
   }
 
   if (!clusterer.empty())
-  {
-    auto event = clusterer.dump_all();
-    writer.write_event(evcount,
-                       Event(Plane(event.x.entries), Plane(event.y.entries)));
-    evcount++;
-  }
+    for (auto event : clusterer.get_event())
+      writer.write_event(evcount++, Event(event));
 
-  cout << "Clustered " << nevents << " eventlets into " << evcount << "events\n";
-  cout << "Processing time = " << timer.done() << "   secs/1000events=" << timer.s() / nevents * 1000 << "\n";
+  cout << "Clustered " << eventlet_count << " eventlets into " << evcount << "events\n";
+  cout << "Processing time = " << timer.done() << "   secs/1000events=" << timer.s() / eventlet_count * 1000 << "\n";
 }

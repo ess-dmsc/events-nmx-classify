@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Plane.h"
+#include "SimpleEvent.h"
 
 namespace NMX
 {
@@ -8,7 +9,8 @@ namespace NMX
 struct Event
 {
   Event();
-  Event(Plane xx, Plane yy);
+  Event(const SimpleEvent& e);
+  Event(const Plane& xx, const Plane& yy);
 
   Plane x() const {return x_;}
   Plane y() const {return y_;}
