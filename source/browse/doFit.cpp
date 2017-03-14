@@ -9,6 +9,13 @@
 EdgeFitter::EdgeFitter(HistMap1D data)
 {
   data_ = data;
+  if (data_.size())
+    data_.erase(data_.begin());
+  if (data_.size())
+  {
+    auto it = data_.rbegin();
+    data_.erase(--it.base());
+  }
 }
 
 void EdgeFitter::clear_params()
