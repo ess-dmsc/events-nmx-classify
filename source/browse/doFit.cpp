@@ -128,6 +128,16 @@ double EdgeFitter::resolution_error(double units) const
   return slope_err * units / sqrt(2);
 }
 
+double EdgeFitter::position(double units) const
+{
+  return x_offset1 * units;
+}
+
+double EdgeFitter::position_error(double units) const
+{
+  return x_offset1_err * units;
+}
+
 double EdgeFitter::signal() const
 {
   return height * 2;

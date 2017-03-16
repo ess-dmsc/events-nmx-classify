@@ -7,15 +7,15 @@
     <x>0</x>
     <y>0</y>
     <width>387</width>
-    <height>180</height>
+    <height>215</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Save Spectra</string>
   </property>
   <property name="windowIcon">
-   <iconset>
-    <normaloff>:/new/icons/qpx.xpm</normaloff>:/new/icons/qpx.xpm</iconset>
+   <iconset resource="resources/tpccres.qrc">
+    <normaloff>:/icons/tpcc.xpm</normaloff>:/icons/tpcc.xpm</iconset>
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="0" column="0">
@@ -56,6 +56,19 @@
           <string>Both</string>
          </property>
         </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
        </item>
       </layout>
      </item>
@@ -103,6 +116,20 @@
          </item>
         </layout>
        </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_5">
+         <item>
+          <widget class="QLabel" name="labelWidth">
+           <property name="text">
+            <string>Width</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QDoubleSpinBox" name="doubleWidth"/>
+         </item>
+        </layout>
+       </item>
       </layout>
      </item>
     </layout>
@@ -126,7 +153,9 @@
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="resources/tpccres.qrc"/>
+ </resources>
  <connections>
   <connection>
    <sender>buttonBox</sender>

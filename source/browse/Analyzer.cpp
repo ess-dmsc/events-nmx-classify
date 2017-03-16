@@ -13,6 +13,7 @@ Analyzer::Analyzer(QWidget *parent)
   , ui(new Ui::Analyzer)
 {
   ui->setupUi(this);
+  ui->pushVary->setEnabled(false);
   ui->comboFit->addItem("none");
   ui->comboFit->addItem("left");
   ui->comboFit->addItem("right");
@@ -502,25 +503,29 @@ void Analyzer::on_pushVary_clicked()
   auto original = filter.tests[row];
   auto total_count = indices_.size();
 
-  auto start = original.min;
-  auto end = original.max;
-
-  DialogVary dv(QString::fromStdString(original.metric), start, end, this);
+  DialogVary dv(QString::fromStdString(original.metric),
+                original.min, original.max, this);
 
   if (dv.exec() != QDialog::Accepted)
-  {
-    DBG << "Canceled";
     return;
-  }
 
-  std::vector<double> val, count, efficiency, res, reserr, signal, back, snr;
+  std::vector<double> val_min, val_max, count, efficiency,
+      res, reserr, pos, poserr, signal, back, snr;
 
   filter.tests[row].enabled = true;
-  for (double i=dv.start(); i <= dv.end(); i+=dv.step())
+  auto endp = dv.end();
+  if (dv.vary_min() && dv.vary_max())
+    endp -= dv.window();
+  for (double i=dv.start(); i <= endp; i+=dv.step())
   {
-    if (dv.vary_min())
+    if (dv.vary_min() && dv.vary_max())
+    {
       filter.tests[row].min = i;
-    if (dv.vary_max())
+      filter.tests[row].max = i + dv.window() - 1;
+    }
+    else if (dv.vary_min())
+      filter.tests[row].min = i;
+    else if (dv.vary_max())
       filter.tests[row].max = i;
 
     tests_model_.set_tests(filter);
@@ -528,11 +533,14 @@ void Analyzer::on_pushVary_clicked()
     EdgeFitter fitter(histogram1d_.map());
     fitter.analyze(fit_type);
 
-    val.push_back(i);
+    val_min.push_back(filter.tests[row].min);
+    val_max.push_back(filter.tests[row].max);
     count.push_back(indices_.size());
     efficiency.push_back(double(indices_.size()) / double(total_count) * 100.0);
     res.push_back(fitter.resolution(ui->doubleUnits->value()));
     reserr.push_back(fitter.resolution_error(ui->doubleUnits->value()));
+    pos.push_back(fitter.position(ui->doubleUnits->value()));
+    poserr.push_back(fitter.position_error(ui->doubleUnits->value()));
     signal.push_back(fitter.signal());
     back.push_back(fitter.background());
     snr.push_back(fitter.snr());
@@ -576,15 +584,18 @@ void Analyzer::on_pushVary_clicked()
     }
 
     H5CC::DataSet dset = group.require_dataset<double>("results",
-                                                      {count.size(),8});
-    dset.write(val, {count.size(), 1}, {0,0});
-    dset.write(count, {count.size(), 1}, {0,1});
-    dset.write(efficiency, {count.size(), 1}, {0,2});
-    dset.write(res, {count.size(), 1}, {0,3});
-    dset.write(reserr, {count.size(), 1}, {0,4});
-    dset.write(signal, {count.size(), 1}, {0,5});
-    dset.write(back, {count.size(), 1}, {0,6});
-    dset.write(snr, {count.size(), 1}, {0,7});
+                                                      {count.size(),11});
+    dset.write(val_min, {count.size(), 1}, {0,0});
+    dset.write(val_max, {count.size(), 1}, {0,1});
+    dset.write(count, {count.size(), 1}, {0,2});
+    dset.write(efficiency, {count.size(), 1}, {0,3});
+    dset.write(res, {count.size(), 1}, {0,4});
+    dset.write(reserr, {count.size(), 1}, {0,5});
+    dset.write(pos, {count.size(), 1}, {0,6});
+    dset.write(poserr, {count.size(), 1}, {0,7});
+    dset.write(signal, {count.size(), 1}, {0,8});
+    dset.write(back, {count.size(), 1}, {0,9});
+    dset.write(snr, {count.size(), 1}, {0,10});
 
     dset.write_attribute("independent_variable", original.metric);
     dset.write_attribute("varied_min", dv.vary_min());
@@ -592,8 +603,13 @@ void Analyzer::on_pushVary_clicked()
     dset.write_attribute("value_start", dv.start());
     dset.write_attribute("value_end", dv.end());
     dset.write_attribute("value_step", dv.step());
+    dset.write_attribute("value_width", dv.window());
     dset.write_attribute("baseline_total_count", uint32_t(total_count));
     dset.write_attribute("resolution_pitch", ui->doubleUnits->value());
+    dset.write_attribute("columns", std::string(
+                         "val_min, val_max, count, %count, resolution, "
+                         "resolution_uncert, position, position_uncert, "
+                         "signal, background, snr"));
   }
   catch (...)
   {

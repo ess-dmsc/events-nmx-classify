@@ -18,6 +18,7 @@ public:
   double start() const;
   double end() const;
   double step() const;
+  double window() const;
 
   bool vary_min() const;
   bool vary_max() const;
@@ -25,6 +26,8 @@ public:
 private slots:
   void on_buttonBox_accepted();
   void on_buttonBox_rejected();
+
+  void on_radioBoth_toggled(bool checked);
 
 private:
   Ui::DialogVary *ui;

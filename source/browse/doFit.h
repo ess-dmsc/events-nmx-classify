@@ -26,6 +26,10 @@ struct EdgeFitter
 
   double resolution(double units) const;
   double resolution_error(double units) const;
+
+  double position(double units) const;
+  double position_error(double units) const;
+
   double signal() const;
   double background() const;
   double snr() const;

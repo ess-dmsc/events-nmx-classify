@@ -13,6 +13,10 @@ DialogVary::DialogVary(QString metric, double min, double max, QWidget *parent) 
   ui(new Ui::DialogVary)
 {
   ui->setupUi(this);
+  ui->labelWidth->setVisible(false);
+  ui->doubleWidth->setVisible(false);
+
+
   ui->labelMetric->setText(metric);
   ui->radioMax->setChecked(true);
 
@@ -24,6 +28,9 @@ DialogVary::DialogVary(QString metric, double min, double max, QWidget *parent) 
 
   ui->doubleStep->setRange(0, max-min+1);
   ui->doubleStep->setValue(1);
+
+  ui->doubleWidth->setRange(1, max-min+1);
+  ui->doubleWidth->setValue(1);
 }
 
 DialogVary::~DialogVary()
@@ -56,6 +63,10 @@ double DialogVary::step() const
   return ui->doubleStep->value();
 }
 
+double DialogVary::window() const
+{
+  return ui->doubleWidth->value();
+}
 
 bool DialogVary::vary_min() const
 {
@@ -67,3 +78,9 @@ bool DialogVary::vary_max() const
   return (ui->radioMax->isChecked() || ui->radioBoth->isChecked());
 }
 
+
+void DialogVary::on_radioBoth_toggled(bool checked)
+{
+  ui->labelWidth->setVisible(ui->radioBoth->isChecked());
+  ui->doubleWidth->setVisible(ui->radioBoth->isChecked());
+}
