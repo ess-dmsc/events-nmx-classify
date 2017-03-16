@@ -105,12 +105,12 @@ bool TestsModel::setDataQuietly(const QModelIndex & index, const QVariant & valu
       tests_.tests[row].metric = value.toString().toStdString();
       update();
     }
-    else if (value.canConvert(QMetaType::LongLong))
+    else if (value.canConvert(QMetaType::Double))
     {
       if (col == 2)
-        tests_.tests[row].min = value.toLongLong();
+        tests_.tests[row].min = value.toDouble();
       else if (col == 3)
-        tests_.tests[row].max = value.toLongLong();
+        tests_.tests[row].max = value.toDouble();
       else
         return false;
     }

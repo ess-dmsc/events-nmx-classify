@@ -113,7 +113,7 @@ QWidget *SpecialDelegate::createEditor(QWidget *parent,
       QDoubleSpinBox *editor = new QDoubleSpinBox(parent);
       editor->setMinimum(std::numeric_limits<double>::min());
       editor->setMaximum(std::numeric_limits<double>::max());
-      editor->setSingleStep(1);
+      editor->setSingleStep(0.01);
       edited_idx_ = index;
 //      connect(editor, SIGNAL(valueChanged(int)), this, SLOT(intValueChanged(int)));
       return editor;
@@ -132,6 +132,16 @@ QWidget *SpecialDelegate::createEditor(QWidget *parent,
     QComboBox *editor = new QComboBox(parent);
     editor->addItem("True", QVariant::fromValue(true));
     editor->addItem("False", QVariant::fromValue(false));
+    return editor;
+  }
+  else if (index.data().type() == QVariant::Double)
+  {
+    QDoubleSpinBox *editor = new QDoubleSpinBox(parent);
+    editor->setMinimum(std::numeric_limits<double>::min());
+    editor->setMaximum(std::numeric_limits<double>::max());
+    editor->setSingleStep(0.01);
+    edited_idx_ = index;
+
     return editor;
   }
   else if (index.data().canConvert(QVariant::LongLong))
