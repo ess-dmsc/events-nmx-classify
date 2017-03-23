@@ -143,14 +143,33 @@ double EdgeFitter::signal() const
   return height * 2;
 }
 
+double EdgeFitter::signal_error() const
+{
+  return height_err * 2;
+}
+
 double EdgeFitter::background() const
 {
   return y_offset;
 }
 
+double EdgeFitter::background_error() const
+{
+  return y_offset_err;
+}
+
 double EdgeFitter::snr() const
 {
   return signal() / background();
+}
+
+double EdgeFitter::snr_error() const
+{
+  if (!signal() || !background())
+    return std::numeric_limits<double>::quiet_NaN();
+  double s = signal_error() / signal();
+  double b = background_error() / background();
+  return std::abs(snr()) * sqrt(s*s + b*b);
 }
 
 std::string EdgeFitter::info(double units) const

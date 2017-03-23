@@ -29,7 +29,7 @@ public:
   void set_title(QString);
 
   void clear();
-  void display_record(const NMX::Plane &record);
+  void display_record(const NMX::Plane &record, uint32_t width);
   void refresh();
 
   void set_plot_type(QString);
@@ -45,6 +45,8 @@ private:
   QPlot::Marker1D moving_;
 
   bool show_raw_{true};
+
+  uint32_t width_{0};
 
   QString plot_type_;
   QString overlay_type_;

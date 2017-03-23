@@ -50,6 +50,7 @@ Analyzer::Analyzer(QWidget *parent)
 
   for (auto s : histogram1d_.values())
     ui->comboAverage->addItem(QString::fromStdString(s));
+  ui->comboAverage->addItem("fitted edge");
 
   loadSettings();
 }
@@ -200,14 +201,19 @@ void Analyzer::replot()
 
 void Analyzer::replot1d()
 {
-  double average = histogram1d_.get_value(ui->comboAverage->currentText().toStdString());
+  auto average_type = ui->comboAverage->currentText().toStdString();
+  double average = 0;
 
-  ui->labelAverage->setText(" = " + QString::number(average));
 
   auto fit_type = ui->comboFit->currentText().toStdString();
 
   EdgeFitter fitter(histogram1d_.map());
   fitter.analyze(fit_type);
+
+  if (average_type == "fitted edge")
+    average = fitter.position(1);
+  else
+    average= histogram1d_.get_value(ui->comboAverage->currentText().toStdString());
 
   if (fit_type != "none")
     ui->labelFit->setText("   " + QString::fromStdString(fitter.info(ui->doubleUnits->value())));
@@ -218,8 +224,9 @@ void Analyzer::replot1d()
   //  QPlot::Appearance profile;
   //  profile.default_pen = QPen(palette_[0], 2);
   ui->plotHistogram->addGraph(histogram1d_.map(), QPen(palette_[0], 2));
-  ui->plotHistogram->addGraph(fitter.get_fit_hist(4), QPen(palette_[1], 2));
+  ui->plotHistogram->addGraph(fitter.get_fit_hist(10), QPen(palette_[2], 2));
   QPlot::Marker1D marker(average);
+  ui->labelAverage->setText(" = " + QString::number(average));
   ui->plotHistogram->setHighlight(marker, marker);
   ui->plotHistogram->setAxisLabels(ui->pushMetric1D->text(), "count");
   ui->plotHistogram->replotExtras();
@@ -510,7 +517,8 @@ void Analyzer::on_pushVary_clicked()
     return;
 
   std::vector<double> val_min, val_max, count, efficiency,
-      res, reserr, pos, poserr, signal, back, snr;
+      res, reserr, pos, poserr, signal, signalerr, back, backerr,
+      snr, snrerr;
 
   filter.tests[row].enabled = true;
   auto endp = dv.end();
@@ -542,8 +550,11 @@ void Analyzer::on_pushVary_clicked()
     pos.push_back(fitter.position(ui->doubleUnits->value()));
     poserr.push_back(fitter.position_error(ui->doubleUnits->value()));
     signal.push_back(fitter.signal());
+    signalerr.push_back(fitter.signal_error());
     back.push_back(fitter.background());
+    backerr.push_back(fitter.background_error());
     snr.push_back(fitter.snr());
+    snrerr.push_back(fitter.snr_error());
   }
 
   filter.tests[row] = original;
@@ -584,7 +595,7 @@ void Analyzer::on_pushVary_clicked()
     }
 
     H5CC::DataSet dset = group.require_dataset<double>("results",
-                                                      {count.size(),11});
+                                                      {count.size(),14});
     dset.write(val_min, {count.size(), 1}, {0,0});
     dset.write(val_max, {count.size(), 1}, {0,1});
     dset.write(count, {count.size(), 1}, {0,2});
@@ -594,10 +605,15 @@ void Analyzer::on_pushVary_clicked()
     dset.write(pos, {count.size(), 1}, {0,6});
     dset.write(poserr, {count.size(), 1}, {0,7});
     dset.write(signal, {count.size(), 1}, {0,8});
-    dset.write(back, {count.size(), 1}, {0,9});
-    dset.write(snr, {count.size(), 1}, {0,10});
+    dset.write(signalerr, {count.size(), 1}, {0,9});
+    dset.write(back, {count.size(), 1}, {0,10});
+    dset.write(backerr, {count.size(), 1}, {0,11});
+    dset.write(snr, {count.size(), 1}, {0,12});
+    dset.write(snrerr, {count.size(), 1}, {0,13});
 
     dset.write_attribute("independent_variable", original.metric);
+    dset.write_attribute("independent_variable_description",
+                         reader_->get_metric(original.metric).description());
     dset.write_attribute("varied_min", dv.vary_min());
     dset.write_attribute("varied_max", dv.vary_max());
     dset.write_attribute("value_start", dv.start());

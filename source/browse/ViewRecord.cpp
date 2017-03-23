@@ -11,7 +11,16 @@ ViewRecord::ViewRecord(QWidget *parent) :
 
   ui->plotRecord->setAntialiased(false);
   ui->plotRecord->setScaleType("Linear");
-  ui->plotRecord->setGradient("YlGnBu5");
+
+  ui->plotRecord->addCustomGradient("Tobias1", {"#ffffff",
+                                                "#a1dab4", "#a1dab4",
+                                                "#41b6c4", "#41b6c4", "#41b6c4",
+                                                "#2c7fb8", "#2c7fb8", "#2c7fb8",
+                                                "#253494", "#253494"}
+                                      );
+
+
+  ui->plotRecord->setGradient("Tobias1");
   ui->plotRecord->setShowGradientLegend(true);
   ui->plotRecord->setOrientation(Qt::Horizontal);
 }
@@ -55,9 +64,10 @@ void ViewRecord::clear()
 }
 
 
-void ViewRecord::display_record(const NMX::Plane &record)
+void ViewRecord::display_record(const NMX::Plane &record, uint32_t width)
 {
   record_ = record;
+  width_ = width;
   refresh();
 }
 
@@ -89,6 +99,20 @@ void ViewRecord::refresh()
   ui->plotRecord->setBoxes(overlay);
   ui->plotRecord->replotExtras();
   ui->plotRecord->zoomOut();
+  if (width_)
+  {
+//    DBG << "Width= " << width_ << " instead of " << record_.strip_span();
+    uint32_t center = record_.strip_start() + record_.strip_span() / 2;
+    int32_t min = center - width_/2;
+    int32_t max = center + width_/2;
+    if (min < 0)
+    {
+      max += min;
+      min = 0;
+    }
+    ui->plotRecord->xAxis->setRange(min, max);
+    ui->plotRecord->replot();
+  }
 }
 
 HistList2D ViewRecord::make_list()
@@ -108,11 +132,11 @@ QPlot::MarkerBox2D ViewRecord::make_box(double cx, double cy, double size, QColo
   box.y1  = cy - 0.5 *size;
   box.y2  = cy + 0.5 *size;
   box.border = color;
-  QColor color2 = QColor::fromHsvF(color.hsvHueF(),
-                                   color.hsvSaturationF(),
-                                   color.valueF() * 0.50);
-  color2.setAlpha(90);
-  box.fill = color2;
+//  QColor color2 = QColor::fromHsvF(color.hsvHueF(),
+//                                   color.hsvSaturationF(),
+//                                   color.valueF() * 0.50);
+//  color2.setAlpha(255);
+  box.fill = color;
   return box;
 }
 
@@ -125,11 +149,7 @@ std::list<QPlot::MarkerBox2D> ViewRecord::make_overlay()
     return ret;
 
   for (auto &i : record_.get_points(overlay_type_.toStdString()))
-  {
-    auto box = make_box(i.x, i.y, 0.9, overlay_color_);
-    box.fill.setAlpha(48);
-    ret.push_back(box);
-  }
+    ret.push_back(make_box(i.x, i.y, 0.9, overlay_color_));
 
   return ret;
 }

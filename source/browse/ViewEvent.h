@@ -41,6 +41,8 @@ private slots:
   //change analysis parameters
   void parametersModified();
 
+  void on_doubleBreathingRoom_editingFinished();
+
 private:
   Ui::ViewEvent *ui;
 

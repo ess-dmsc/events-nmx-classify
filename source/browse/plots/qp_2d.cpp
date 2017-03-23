@@ -31,7 +31,10 @@ void Plot2D::initializeGradients()
 
   addCustomGradient("Blues", {"#ffffff","#deebf7","#9ecae1","#3182bd"});
   addCustomGradient("Greens", {"#ffffff","#e5f5e0","#a1d99b","#31a354"});
-  addCustomGradient("Oranges", {"#ffffff","#fee6ce","#fdae6b","#e6550d"});
+  addCustomGradient("Oranges", {"#ffffff",
+                                "#fee6ce",
+                                "#fdae6b",
+                                "#e6550d"});
   addCustomGradient("Purples", {"#ffffff","#efedf5","#bcbddc","#756bb1"});
   addCustomGradient("Reds", {"#ffffff","#fee0d2","#fc9272","#de2d26"});
   addCustomGradient("Greys", {"#ffffff","#f0f0f0","#bdbdbd","#636363"});
@@ -126,7 +129,9 @@ void Plot2D::plotBoxes()
       continue;
     QCPItemRect *box = new QCPItemRect(this);
     box->setSelectable(q.selectable);
-    box->setPen(q.border);
+    QPen borderpen(q.border);
+    borderpen.setWidth(1);
+    box->setPen(borderpen);
 //    box->setSelectedPen(pen);
     box->setBrush(QBrush(q.fill));
     box->setSelected(q.selected);

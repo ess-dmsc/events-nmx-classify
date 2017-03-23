@@ -31,6 +31,11 @@ struct EdgeFitter
   double position_error(double units) const;
 
   double signal() const;
+  double signal_error() const;
+
   double background() const;
+  double background_error() const;
+
   double snr() const;
+  double snr_error() const;
 };

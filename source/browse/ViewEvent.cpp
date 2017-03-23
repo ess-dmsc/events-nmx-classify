@@ -255,8 +255,11 @@ void ViewEvent::plot_current_event()
 
   set_record_options();
 
-  ui->eventX->display_record(event_.x());
-  ui->eventY->display_record(event_.y());
+  uint32_t width = std::max(event_.x().strip_span(), event_.y().strip_span())
+      * ui->doubleBreathingRoom->value();
+
+  ui->eventX->display_record(event_.x(), width);
+  ui->eventY->display_record(event_.y(), width);
 
   if (ui->comboPlanes->currentText() == "X")
     ui->searchBoxMetrics->setList(getMetricsList(event_.x().metrics(), false));
@@ -405,4 +408,9 @@ QStringList ViewEvent::getMetricsList(NMX::MetricSet metric_set, bool include_no
   if (include_none)
     list.push_back("none");
   return list;
+}
+
+void ViewEvent::on_doubleBreathingRoom_editingFinished()
+{
+  plot_current_event();
 }
