@@ -16,6 +16,12 @@ EdgeFitter::EdgeFitter(HistMap1D data)
     auto it = data_.rbegin();
     data_.erase(--it.base());
   }
+
+  if (data_.size())
+  {
+    fits = data_.begin()->first;
+    fite = data_.rbegin()->first;
+  }
 }
 
 void EdgeFitter::clear_params()
@@ -64,9 +70,6 @@ void EdgeFitter::analyze(std::string edge)
       (edge_ != "left" && edge_ != "right" && edge_ != "double"))
     return;
 
-  fits = data_.begin()->first;
-  fite = data_.rbegin()->first;
-
   TH1D* h1 = new TH1D("h1", "h1", data_.size(), fits, fite);
   int i=1;
   for (auto h :data_)
@@ -75,8 +78,8 @@ void EdgeFitter::analyze(std::string edge)
     i++;
   }
 
-  Double_t max1 = h1->GetMaximum();
-  Double_t min1 = h1->GetMinimum();
+  max = h1->GetMaximum();
+  min = h1->GetMinimum();
 
   TF1 * f1;
   if (edge_ == "double")
@@ -87,10 +90,10 @@ void EdgeFitter::analyze(std::string edge)
     f1 = new TF1("f1", "[0]+[1]*TMath::Erfc((x-[2])/[3])");
 
   if (edge_ == "double")
-    f1->SetParameters(min1, 0.5 * max1, (fits + fite) * 1.0 / 4.0,
+    f1->SetParameters(min, 0.5 * max, (fits + fite) * 1.0 / 4.0,
                       2, (fits + fite) * 3.0 / 4.0);
   else
-    f1->SetParameters(min1, 0.5 * max1, (fits + fite) / 2.0, 2);
+    f1->SetParameters(min, 0.5 * max, (fits + fite) / 2.0, 2);
 
   h1->Fit("f1", "same");
   get_params(f1);
@@ -161,6 +164,31 @@ double EdgeFitter::background_error() const
 double EdgeFitter::snr() const
 {
   return signal() / background();
+}
+
+bool EdgeFitter::reasonable() const
+{
+  if (!std::isfinite(slope) || (slope < 0))
+    return false;
+  if (!std::isfinite(height) || (height < 0))
+    return false;
+  if (!std::isfinite(y_offset) || (y_offset < 0))
+    return false;
+  if (!std::isfinite(x_offset1) || (x_offset1 <= 0))
+    return false;
+
+  if (resolution_error(1) > (fite - fits))
+    return false;
+  if (position_error(1) > (fite - fits))
+    return false;
+  if (signal_error() > (max - min))
+    return false;
+  if (background_error() > (max - min))
+    return false;
+
+//  if (std::isfinite(x_offset2) || (x_offset2 < 0))
+//    return false;
+  return true;
 }
 
 double EdgeFitter::snr_error() const

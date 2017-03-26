@@ -18,6 +18,16 @@ File::~File()
     analysis_.save();
 }
 
+const std::string File::dataset_name() const
+{
+  return file_.name();
+}
+
+const std::string File::current_analysis() const
+{
+  return analysis_.name();
+}
+
 bool File::has_APV()
 {
   return RawAPV::exists_in(file_);

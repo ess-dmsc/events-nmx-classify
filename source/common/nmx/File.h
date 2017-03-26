@@ -24,6 +24,8 @@ public:
   size_t event_count() const;
   Event get_event(size_t index) const;
   void write_event(size_t index, const Event& event);
+  const std::string dataset_name() const;
+  const std::string current_analysis() const;
 
   //Metrics
   std::list<std::string> analyses() const;

@@ -541,6 +541,9 @@ void Analyzer::on_pushVary_clicked()
     EdgeFitter fitter(histogram1d_.map());
     fitter.analyze(fit_type);
 
+    if (!fitter.reasonable())
+      continue;
+
     val_min.push_back(filter.tests[row].min);
     val_max.push_back(filter.tests[row].max);
     count.push_back(indices_.size());
@@ -611,6 +614,8 @@ void Analyzer::on_pushVary_clicked()
     dset.write(snr, {count.size(), 1}, {0,12});
     dset.write(snrerr, {count.size(), 1}, {0,13});
 
+    dset.write_attribute("dataset", reader_->dataset_name());
+    dset.write_attribute("analysis", reader_->current_analysis());
     dset.write_attribute("independent_variable", original.metric);
     dset.write_attribute("independent_variable_description",
                          reader_->get_metric(original.metric).description());
@@ -625,7 +630,8 @@ void Analyzer::on_pushVary_clicked()
     dset.write_attribute("columns", std::string(
                          "val_min, val_max, count, %count, resolution, "
                          "resolution_uncert, position, position_uncert, "
-                         "signal, background, snr"));
+                         "signal, signal_uncert, background, background_uncert "
+                         "snr, snr_uncert"));
   }
   catch (...)
   {

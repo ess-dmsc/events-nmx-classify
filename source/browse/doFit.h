@@ -23,6 +23,7 @@ struct EdgeFitter
   double x_offset2{0}, x_offset2_err{0};
 
   int fits{0}, fite{0};
+  double min, max;
 
   double resolution(double units) const;
   double resolution_error(double units) const;
@@ -38,4 +39,6 @@ struct EdgeFitter
 
   double snr() const;
   double snr_error() const;
+
+  bool reasonable() const;
 };
