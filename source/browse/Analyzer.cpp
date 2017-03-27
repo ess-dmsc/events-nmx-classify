@@ -630,8 +630,8 @@ void Analyzer::on_pushVary_clicked()
     dset.write_attribute("columns", std::string(
                          "val_min, val_max, count, %count, resolution, "
                          "resolution_uncert, position, position_uncert, "
-                         "signal, signal_uncert, background, background_uncert "
-                         "snr, snr_uncert"));
+                         "signal, signal_uncert, background, background_uncert, "
+                         "SnR, SnR_uncert"));
   }
   catch (...)
   {
