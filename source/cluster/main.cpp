@@ -9,6 +9,7 @@
 #include "RawClustered.h"
 
 #include "Clusterer.h"
+#include "ChronoQ.h"
 
 using namespace NMX;
 using namespace std;
@@ -107,46 +108,34 @@ void cluster_eventlets(const path& file, int chunksize, int timesep, int stripse
   H5CC::File outfile(newname, H5CC::Access::rw_truncate);
   RawClustered writer(outfile, H5CC::kMax, chunksize);
 
-  Clusterer clusterer(timesep, stripsep);
+  Clusterer clusterer(timesep);
   uint64_t evcount {0};
 
   ChronoQ chron;
 
-//  auto prog = progbar(eventlet_count, "  Converting to '" + newname + "'  ");
+  auto prog = progbar(eventlet_count, "  Clustering '" + newname + "'  ");
   CustomTimer timer(true);
   for (size_t i = 0; i < eventlet_count; ++i)
   {
     chron.push(reader.read_entry(i));
 
     while (chron.ready())
-    {
       clusterer.insert(chron.pop());
-      while (clusterer.event_ready())
-      {
-        auto ll = clusterer.get_event();
-        if (ll.size())
-          std::cout << "  saved as " << evcount << "\n\n";
-        for (auto event : ll)
-          writer.write_event(evcount++, Event(event));
-      }
-    }
 
-//    ++(*prog);
+    while (clusterer.events_ready())
+      for (auto event : clusterer.get_events())
+        writer.write_event(evcount++, Event(event));
+
+    ++(*prog);
     if (term_flag)
       break;
   }
 
   while (!chron.empty())
-  {
     clusterer.insert(chron.pop());
-    while (clusterer.event_ready())
-      for (auto event : clusterer.get_event())
-        writer.write_event(evcount++, Event(event));
-  }
 
-  if (!clusterer.empty())
-    for (auto event : clusterer.get_event())
-      writer.write_event(evcount++, Event(event));
+  for (auto event : clusterer.force_get())
+    writer.write_event(evcount++, Event(event));
 
   cout << "Clustered " << eventlet_count << " eventlets into " << evcount << "events\n";
   cout << "Processing time = " << timer.done() << "   secs/1000events=" << timer.s() / eventlet_count * 1000 << "\n";

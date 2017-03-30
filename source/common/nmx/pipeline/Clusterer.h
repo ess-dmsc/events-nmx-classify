@@ -12,21 +12,18 @@
 #include <list>
 #include <map>
 
+#include <vector>
+#include <set>
+
 namespace NMX {
 
-class ChronoQ {
-public:
-  void push(const Eventlet& e);
-  bool empty() const;
-  bool ready() const;
-  uint64_t span() const;
-  size_t size() const { return backlog_.size(); }
-  Eventlet pop();
+struct MacroCluster
+{
+  void insert(const Eventlet &e);
 
-private:
-  std::multimap<uint64_t, Eventlet> backlog_;
-  uint64_t latest0_ {0};
-  uint64_t latest1_ {0};
+  std::vector<Eventlet> contents;
+  uint64_t time_start{0}; // start of event timestamp
+  uint64_t time_end{0};   // end of event timestamp
 };
 
 class Clusterer {
@@ -35,7 +32,7 @@ public:
   /** @brief create an NMX event clusterer
    * @param min_time_gap minimum timebins between clusters
    */
-  Clusterer(uint64_t min_time_gap, uint16_t min_strip_gap);
+  Clusterer(uint64_t min_time_gap);
 
   /** @brief add eventlet onto the clustering stack
    * @param eventlet with valid timestamp and non-zero adc value
@@ -45,7 +42,7 @@ public:
 
   /** @brief indicates if there is an event ready for clustering
    */
-  bool event_ready() const;
+  bool events_ready() const;
 
   /** @brief indicates if backlog is empty
    */
@@ -55,30 +52,18 @@ public:
 
   /** @brief returns a clustered event (if one is ready, else empty event)
    */
-  std::list<SimpleEvent> get_event();
+  std::list<SimpleEvent> get_events();
 
   /** @brief returns a clustered event from all remaining data
    */
-  std::list<SimpleEvent> dump_all();
+  std::list<SimpleEvent> force_get();
 
 private:
-//  SimpleEvent current_;
-  using clustermap = std::map<uint16_t, std::map<uint64_t, Eventlet>>;
-  clustermap x_, y_;
-
-  Eventlet recent_;
   uint64_t min_time_gap_ {1};
-  uint16_t min_strip_gap_ {40};
 
+  std::list<MacroCluster> clusters_;
 
-  bool ready_ {false};
-
-  void push_current();
-
-  std::list<SimpleEvent> assemble();
-
-  std::list<SimplePlane> cluster_plane(const clustermap&);
-  SimpleEvent assemble_cluster(const clustermap& x, const clustermap& y);
+  SimpleEvent assemble();
 };
 
 }

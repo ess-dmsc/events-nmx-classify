@@ -6,7 +6,7 @@
 #include <boost/program_options.hpp>
 #include "custom_timer.h"
 
-#include <Clusterer.h>
+#include "ChronoQ.h"
 
 #include "RawClustered.h"
 
