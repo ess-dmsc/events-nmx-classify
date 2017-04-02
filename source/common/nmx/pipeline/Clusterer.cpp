@@ -279,7 +279,7 @@ void Clusterer::correlate(uint64_t time_now)
   if ((supercluster.planes.count(0) &&
        supercluster.planes.count(1)) ||
       (!supercluster.contents.empty() && !leftovers.empty() &&
-      (supercluster.time_end + supercluster.time_slack_ < leftovers.begin()->time_start)))
+      (supercluster.time_end + 2*supercluster.time_slack_ < leftovers.begin()->time_start)))
   {
     SimpleEvent event;
     for (auto e: supercluster.contents)
