@@ -125,33 +125,20 @@ void Clusterer::insert(const Eventlet &eventlet) {
   std::list<MacroCluster>::iterator it, itt;
   it = clusters.begin();
   bool matches = false;
-  //  bool was_in_time = false;
-  //  bool out_of_time = false;
   //  DBG << "Adding ===================== " << eventlet.debug() << "\n";
   while (it != clusters.end())
   {
-    //    DBG << "Checking  " << it->debug() << "\n";
-
-
     if (it->time_adjacent(eventlet.time))
     {
-      //      was_in_time = true;
-      //      DBG << "In window\n";
-
       if (it->strip_adjacent(eventlet.strip))
       {
-        //        DBG << "Strips adjacent\n";
-
         if (matches)
         {
-          //          DBG << "Merge\n";
           itt->merge(*it);
           clusters.erase(it++);
         }
         else
         {
-          //          DBG << "First insert\n";
-
           it->insert(eventlet);
           itt = it;
           it++;
@@ -159,23 +146,14 @@ void Clusterer::insert(const Eventlet &eventlet) {
         }
       }
       else
-      {
         it++;
-        //        DBG << "Strips oor\n";
-      }
     }
     else if (eventlet.time >= (it->time_end + it->time_slack_))
-    {
-      //      DBG << "Too late\n";
-      //      out_of_time = true;
       break;
-    }
     else
-    {
-      //      DBG << "Not in time\n";
       it++;
-    }
   }
+
   if (!matches)
   {
     clusters.push_back(MacroCluster(time_slack_, strip_slack_));
@@ -230,7 +208,7 @@ void Clusterer::dump()
     clustered_.insert(c);
   clusters_x_.clear();
   clusters_y_.clear();
-  correlate(std::numeric_limits<uint64_t>::max());
+  correlate(true);
 }
 
 void Clusterer::clear()
@@ -240,17 +218,22 @@ void Clusterer::clear()
   clusters_y_.clear();
 }
 
-void Clusterer::correlate(uint64_t time_now)
+void Clusterer::correlate(bool force)
 {
   //  DBG << "Correlating " << clustered_.size() << "\n";
 
   std::multiset<MacroCluster, MacroCluster::CompareByStartTime> leftovers;
+  std::list<MacroCluster> x, y;
 
   MacroCluster supercluster(time_slack_, strip_slack_);
   std::multiset<MacroCluster, MacroCluster::CompareByStartTime>::iterator it =
       clustered_.begin();
   if (it != clustered_.end())
   {
+    if (it->planes.count(1))
+      y.push_back(*it);
+    else
+      x.push_back(*it);
     supercluster = *it;
     it++;
     //    DBG << "Initial supercluster " << supercluster.debug() << "\n";
@@ -260,6 +243,10 @@ void Clusterer::correlate(uint64_t time_now)
     //    DBG << "Comparing to " << it->debug() << "\n";
     if (supercluster.time_adjacent(*it))
     {
+      if (it->planes.count(1))
+        y.push_back(*it);
+      else
+        x.push_back(*it);
       //      DBG << "  merge to supercluster";
       supercluster.merge_copy(*it);
     }
@@ -271,22 +258,32 @@ void Clusterer::correlate(uint64_t time_now)
     it++;
   }
 
-  if ((supercluster.planes.count(0) &&
-       supercluster.planes.count(1)) ||
+  if (force || /*(supercluster.planes.count(0) &&
+       supercluster.planes.count(1)) ||*/
       (!supercluster.contents.empty() && !leftovers.empty() &&
-       (supercluster.time_end + 2*supercluster.time_slack_ < leftovers.begin()->time_start)))
+       (supercluster.time_end + supercluster.time_slack_ < leftovers.rbegin()->time_start)))
   {
     SimpleEvent event;
     for (auto eventlet: supercluster.contents)
       event.insert_eventlet(eventlet);
     ready_events_.push_back(event);
 
+//    if ((x.size() > 1) && (y.size() > 1))
+//    {
+//      DBG << "Multiplet\n";
+//      for (auto xx : x)
+//        DBG << xx.debug() << "\n";
+//      for (auto yy : y)
+//        DBG << yy.debug() << "\n";
+//      ready_events_.push_back(event);
+//    }
+
     //    DBG << "Made event with " << event.x_.entries.size()
     //        << " " << event.y_.entries.size();
     clustered_ = leftovers;
 
     //recursively correlate leftovers
-    correlate(time_now);
+    correlate(force && !clustered_.empty());
   }
 }
 

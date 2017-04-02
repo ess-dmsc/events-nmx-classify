@@ -96,7 +96,7 @@ private:
 
   std::list<SimpleEvent> ready_events_;
 
-  void correlate(uint64_t time_now);
+  void correlate(bool force = false);
 };
 
 }
