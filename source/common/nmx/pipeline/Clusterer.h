@@ -17,8 +17,12 @@
 
 namespace NMX {
 
+uint64_t sat_subu64(uint64_t x, uint64_t y);
+
 struct MacroCluster
 {
+  MacroCluster(uint16_t time_slack, uint16_t strip_slack);
+
   bool time_adjacent(uint64_t time) const;
   bool time_adjacent(const MacroCluster &e) const;
 
@@ -29,6 +33,9 @@ struct MacroCluster
 
   void insert(const Eventlet &e);
   void merge(MacroCluster &o);
+  void merge_copy(const MacroCluster &o);
+
+  std::string debug() const;
 
   std::list<Eventlet> contents;
   uint64_t time_start{0}; // start of event timestamp
@@ -36,8 +43,14 @@ struct MacroCluster
   uint16_t strip_start{0}; // start of event position
   uint16_t strip_end{0};   // end of event position
 
-  uint16_t time_slack {25};
-  uint16_t strip_slack {15};
+  std::set<uint16_t> planes;
+
+  uint16_t time_slack_ {28};
+  uint16_t strip_slack_ {15};
+
+  struct CompareByStartTime {
+    bool operator()(const MacroCluster &a, const MacroCluster &b);
+  };
 };
 
 class Clusterer {
@@ -46,7 +59,7 @@ public:
   /** @brief create an NMX event clusterer
    * @param min_time_gap minimum timebins between clusters
    */
-  Clusterer(uint64_t min_time_gap);
+  Clusterer(uint16_t time_slack, uint16_t strip_slack);
 
   /** @brief add eventlet onto the clustering stack
    * @param eventlet with valid timestamp and non-zero adc value
@@ -66,27 +79,26 @@ public:
 
   /** @brief returns a clustered event (if one is ready, else empty event)
    */
-  std::list<SimpleEvent> get_events();
+  std::list<SimpleEvent> pop_events();
 
   /** @brief returns a clustered event from all remaining data
    */
   void dump();
 
 private:
-  uint64_t min_time_gap_ {30};
+  uint16_t time_slack_ {28};
+  uint16_t strip_slack_ {18};
 
   std::list<MacroCluster> clusters_x_;
   std::list<MacroCluster> clusters_y_;
 
-  std::list<MacroCluster> clustered_x_;
-  std::list<MacroCluster> clustered_y_;
+  std::multiset<MacroCluster, MacroCluster::CompareByStartTime> clustered_;
 
   std::list<SimpleEvent> ready_events_;
 
-  bool insert(std::list<MacroCluster>& c, std::list<MacroCluster>& final,
-              const Eventlet& e);
+  bool insert(std::list<MacroCluster>& c, const Eventlet& e);
 
-  void correlate();
+  void correlate(uint64_t time_now);
 };
 
 }

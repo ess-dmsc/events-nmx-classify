@@ -42,8 +42,8 @@ int main(int argc, char* argv[])
       ("p", po::value<string>(), "parent dir of files to be analyzed\n"
                                       "(defaults to current path)")
       ("chunksize", po::value<int>(&chunksize)->default_value(20), "raw/VMM chunksize")
-      ("tsep", po::value<int>(&timesep)->default_value(30), "minimum time separation between events")
-      ("ssep", po::value<int>(&stripsep)->default_value(40), "minimum strip separation between events")
+      ("tsep", po::value<int>(&timesep)->default_value(28), "minimum time separation between events")
+      ("ssep", po::value<int>(&stripsep)->default_value(18), "minimum strip separation between events")
       ;
 
   po::variables_map vm;
@@ -108,14 +108,14 @@ void cluster_eventlets(const path& file, int chunksize, int timesep, int stripse
   H5CC::File outfile(newname, H5CC::Access::rw_truncate);
   RawClustered writer(outfile, H5CC::kMax, chunksize);
 
-  Clusterer clusterer(timesep);
+  Clusterer clusterer(timesep, stripsep);
   uint64_t evcount {0};
 
   ChronoQ chron;
 
   auto prog = progbar(eventlet_count, "  Clustering '" + newname + "'  ");
   CustomTimer timer(true);
-  for (size_t i = 0; i < eventlet_count; ++i)
+  for (size_t i = 0; i < /*100*/ eventlet_count; ++i)
   {
     chron.push(reader.read_entry(i));
 
@@ -123,7 +123,7 @@ void cluster_eventlets(const path& file, int chunksize, int timesep, int stripse
       clusterer.insert(chron.pop());
 
     while (clusterer.events_ready())
-      for (auto event : clusterer.get_events())
+      for (auto event : clusterer.pop_events())
         writer.write_event(evcount++, Event(event));
 
     ++(*prog);
@@ -135,7 +135,7 @@ void cluster_eventlets(const path& file, int chunksize, int timesep, int stripse
     clusterer.insert(chron.pop());
   clusterer.dump();
 
-  for (auto event : clusterer.get_events())
+  for (auto event : clusterer.pop_events())
     writer.write_event(evcount++, Event(event));
 
   cout << "Clustered " << eventlet_count << " eventlets into " << evcount << " events\n";
