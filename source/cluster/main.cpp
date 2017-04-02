@@ -133,10 +133,11 @@ void cluster_eventlets(const path& file, int chunksize, int timesep, int stripse
 
   while (!chron.empty())
     clusterer.insert(chron.pop());
+  clusterer.dump();
 
-  for (auto event : clusterer.force_get())
+  for (auto event : clusterer.get_events())
     writer.write_event(evcount++, Event(event));
 
-  cout << "Clustered " << eventlet_count << " eventlets into " << evcount << "events\n";
+  cout << "Clustered " << eventlet_count << " eventlets into " << evcount << " events\n";
   cout << "Processing time = " << timer.done() << "   secs/1000events=" << timer.s() / eventlet_count * 1000 << "\n";
 }

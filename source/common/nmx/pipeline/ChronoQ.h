@@ -8,7 +8,7 @@
 #pragma once
 
 #include <Eventlet.h>
-#include <map>
+#include <set>
 
 namespace NMX {
 
@@ -25,7 +25,7 @@ public:
   uint16_t plane_y_ {1};
 
 private:
-  std::multimap<uint64_t, Eventlet> backlog_;
+  std::multiset<Eventlet, Eventlet::CompareByTimeStrip> backlog_;
 
   uint64_t latest_x_ {0};
   uint64_t latest_y_ {0};

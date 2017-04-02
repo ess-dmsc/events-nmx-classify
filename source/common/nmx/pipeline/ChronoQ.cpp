@@ -6,13 +6,13 @@ namespace NMX {
 
 bool ChronoQ::push(const Eventlet& e)
 {
-  if (e.plane_id == plane_x_)
+  if (e.plane == plane_x_)
     latest_x_ = std::max(latest_x_, e.time);
-  else if (e.plane_id == plane_y_)
+  else if (e.plane == plane_y_)
     latest_y_ = std::max(latest_y_, e.time);
   else
     return false;
-  backlog_.insert(std::pair<uint64_t, Eventlet>(e.time, e));
+  backlog_.insert(e);
   return true;
 }
 
@@ -28,13 +28,13 @@ bool ChronoQ::empty() const
 
 bool ChronoQ::ready() const
 {
-  return ((backlog_.begin()->first < latest_x_) &&
-          (backlog_.begin()->first < latest_y_));
+  return ((backlog_.begin()->time < latest_x_) &&
+          (backlog_.begin()->time < latest_y_));
 }
 
 Eventlet ChronoQ::pop()
 {
-  auto ret = backlog_.begin()->second;
+  auto ret = *backlog_.begin();
   backlog_.erase(backlog_.begin());
   return ret;
 }

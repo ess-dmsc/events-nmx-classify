@@ -208,7 +208,7 @@ Eventlet ReaderRawVMM::parse_event(const int32_t &data_before,
   event.adc = (adc2 << 8) + adc1;
   event.flag = (flags & 0x1);
   event.over_threshold = flags >> 1;
-  event.plane_id = geometry_inerpreter_.get_plane_ID(fecID_, vmmID_);
+  event.plane = geometry_inerpreter_.get_plane_ID(fecID_, vmmID_);
   event.strip = geometry_inerpreter_.get_strip_ID(fecID_, vmmID_, chan);
   event.time = time_interpreter_.timestamp(trigger_timestamp_,
                                            bc(data_time_adc),

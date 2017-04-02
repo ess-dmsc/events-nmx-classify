@@ -95,7 +95,7 @@ SimpleEvent::SimpleEvent(const SimplePlane& x, const SimplePlane& y)
 {}
 
 void SimpleEvent::insert_eventlet(const Eventlet &e) {
-  if (e.plane_id) /**< @todo deal with multiple panels */
+  if (e.plane) /**< @todo deal with multiple panels */
     y_.insert_eventlet(e);
   else
     x_.insert_eventlet(e);

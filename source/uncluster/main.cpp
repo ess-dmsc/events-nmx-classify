@@ -129,7 +129,7 @@ void cluster_eventlets(const path& file, int chunksize, int timesep)
     {
       Eventlet evt;
       evt.time =  time_offset + static_cast<uint64_t>(p.y);
-      evt.plane_id = 0;
+      evt.plane = 0;
       evt.strip = p.x;
       evt.adc = p.v;
       chron.push(evt);
@@ -140,7 +140,7 @@ void cluster_eventlets(const path& file, int chunksize, int timesep)
     {
       Eventlet evt;
       evt.time =  time_offset + static_cast<uint64_t>(p.y);
-      evt.plane_id = 1;
+      evt.plane = 1;
       evt.strip = p.x;
       evt.adc = p.v;
       chron.push(evt);

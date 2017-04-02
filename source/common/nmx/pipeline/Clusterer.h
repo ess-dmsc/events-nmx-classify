@@ -19,11 +19,25 @@ namespace NMX {
 
 struct MacroCluster
 {
-  void insert(const Eventlet &e);
+  bool time_adjacent(uint64_t time) const;
+  bool time_adjacent(const MacroCluster &e) const;
 
-  std::vector<Eventlet> contents;
+  bool strip_adjacent(uint16_t strip) const;
+  bool strip_adjacent(const MacroCluster &e) const;
+
+  bool belongs(const Eventlet &e) const;
+
+  void insert(const Eventlet &e);
+  void merge(MacroCluster &o);
+
+  std::list<Eventlet> contents;
   uint64_t time_start{0}; // start of event timestamp
   uint64_t time_end{0};   // end of event timestamp
+  uint16_t strip_start{0}; // start of event position
+  uint16_t strip_end{0};   // end of event position
+
+  uint16_t time_slack {25};
+  uint16_t strip_slack {15};
 };
 
 class Clusterer {
@@ -56,14 +70,23 @@ public:
 
   /** @brief returns a clustered event from all remaining data
    */
-  std::list<SimpleEvent> force_get();
+  void dump();
 
 private:
-  uint64_t min_time_gap_ {1};
+  uint64_t min_time_gap_ {30};
 
-  std::list<MacroCluster> clusters_;
+  std::list<MacroCluster> clusters_x_;
+  std::list<MacroCluster> clusters_y_;
 
-  SimpleEvent assemble();
+  std::list<MacroCluster> clustered_x_;
+  std::list<MacroCluster> clustered_y_;
+
+  std::list<SimpleEvent> ready_events_;
+
+  bool insert(std::list<MacroCluster>& c, std::list<MacroCluster>& final,
+              const Eventlet& e);
+
+  void correlate();
 };
 
 }

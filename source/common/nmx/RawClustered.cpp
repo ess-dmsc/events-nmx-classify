@@ -97,7 +97,7 @@ void RawClustered::write_record(size_t index, size_t plane, const Plane& record)
     {
       Eventlet evt;
       evt.time = static_cast<uint64_t>(index << 8) | static_cast<uint64_t>(p.y);
-      evt.plane_id = plane;
+      evt.plane = plane;
       evt.strip = p.x;
       evt.adc = p.v;
       unclustered_.write_entry(evt);
