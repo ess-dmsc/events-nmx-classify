@@ -29,9 +29,9 @@ struct MacroCluster
   bool strip_adjacent(uint16_t strip) const;
   bool strip_adjacent(const MacroCluster &e) const;
 
-  bool belongs(const Eventlet &e) const;
+  bool belongs(const Eventlet &eventlet) const;
 
-  void insert(const Eventlet &e);
+  void insert(const Eventlet &eventlet);
   void merge(MacroCluster &o);
   void merge_copy(const MacroCluster &o);
 
@@ -95,8 +95,6 @@ private:
   std::multiset<MacroCluster, MacroCluster::CompareByStartTime> clustered_;
 
   std::list<SimpleEvent> ready_events_;
-
-  bool insert(std::list<MacroCluster>& c, const Eventlet& e);
 
   void correlate(uint64_t time_now);
 };

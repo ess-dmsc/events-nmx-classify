@@ -10,10 +10,10 @@ namespace NMX {
 
 uint64_t sat_subu64(uint64_t x, uint64_t y)
 {
-    uint64_t res = x - y;
-    res &= -(res <= x);
+  uint64_t res = x - y;
+  res &= -(res <= x);
 
-    return res;
+  return res;
 }
 
 MacroCluster::MacroCluster(uint16_t time_slack, uint16_t strip_slack)
@@ -24,8 +24,8 @@ MacroCluster::MacroCluster(uint16_t time_slack, uint16_t strip_slack)
 
 bool MacroCluster::time_adjacent(uint64_t time) const
 {
-  return (time_start < (time + time_slack_)) &&
-      (time < (time_end + time_slack_));
+  return (time_start <= (time + time_slack_)) &&
+      (time <= (time_end + time_slack_));
 }
 
 bool MacroCluster::time_adjacent(const MacroCluster &o) const
@@ -35,8 +35,8 @@ bool MacroCluster::time_adjacent(const MacroCluster &o) const
 
 bool MacroCluster::strip_adjacent(uint16_t strip) const
 {
-  return (strip_start < (strip + strip_slack_)) &&
-      (strip < (strip_end + strip_slack_));
+  return (strip_start <= (strip + strip_slack_)) &&
+      (strip <= (strip_end + strip_slack_));
 }
 
 bool MacroCluster::strip_adjacent(const MacroCluster &o) const
@@ -44,26 +44,26 @@ bool MacroCluster::strip_adjacent(const MacroCluster &o) const
   return strip_adjacent(o.strip_start) || strip_adjacent(o.strip_end);
 }
 
-bool MacroCluster::belongs(const Eventlet &e) const
+bool MacroCluster::belongs(const Eventlet &eventlet) const
 {
-  return time_adjacent(e.time) && strip_adjacent(e.strip);
+  return time_adjacent(eventlet.time) && strip_adjacent(eventlet.strip);
 }
 
-void MacroCluster::insert(const Eventlet &e)
+void MacroCluster::insert(const Eventlet &eventlet)
 {
-  if (!e.adc)
+  if (!eventlet.adc)
     return;
   if (contents.empty())
   {
-    time_start = time_end = e.time;
-    strip_start = strip_end = e.strip;
+    time_start = time_end = eventlet.time;
+    strip_start = strip_end = eventlet.strip;
   }
-  contents.push_back(e);
-  time_start = std::min(time_start, e.time);
-  time_end = std::max(time_end, e.time);
-  strip_start = std::min(strip_start, e.strip);
-  strip_end = std::max(strip_end, e.strip);
-  planes.insert(e.plane);
+  contents.push_back(eventlet);
+  time_start = std::min(time_start, eventlet.time);
+  time_end = std::max(time_end, eventlet.time);
+  strip_start = std::min(strip_start, eventlet.strip);
+  strip_end = std::max(strip_end, eventlet.strip);
+  planes.insert(eventlet.plane);
 }
 
 void MacroCluster::merge(MacroCluster &o)
@@ -94,7 +94,7 @@ std::string MacroCluster::debug() const
   else if (planes.count(0))
     ss << " X  ";
   else if (planes.count(1))
-      ss << " Y ";
+    ss << " Y ";
   ss << "t[" << time_start << "," << time_end << "] ";
   ss << "s[" << strip_start << "," << strip_end << "] ";
   ss << "   evts=" << contents.size();
@@ -119,50 +119,40 @@ Clusterer::Clusterer(uint16_t time_slack, uint16_t strip_slack)
 void Clusterer::insert(const Eventlet &eventlet) {
   if (!eventlet.adc)
     return;
+  
+  std::list<MacroCluster>& clusters = eventlet.plane ? clusters_y_ : clusters_x_;
 
-  bool success = false;
-  if (eventlet.plane == 1)
-    success = insert(clusters_y_, eventlet);
-  else if (eventlet.plane == 0)
-    success = insert(clusters_x_, eventlet);
-  if (success && !clustered_.empty())
-    correlate(eventlet.time);
-}
-
-bool Clusterer::insert(std::list<MacroCluster>& clusters,
-                       const Eventlet& e)
-{
   std::list<MacroCluster>::iterator it, itt;
   it = clusters.begin();
   bool matches = false;
-//  bool was_in_time = false;
-//  bool out_of_time = false;
-//  DBG << "Adding ===================== " << e.debug() << "\n";
+  //  bool was_in_time = false;
+  //  bool out_of_time = false;
+  //  DBG << "Adding ===================== " << eventlet.debug() << "\n";
   while (it != clusters.end())
   {
-//    DBG << "Checking  " << it->debug() << "\n";
+    //    DBG << "Checking  " << it->debug() << "\n";
 
 
-    if (it->time_adjacent(e.time))
+    if (it->time_adjacent(eventlet.time))
     {
-//      was_in_time = true;
-//      DBG << "In window\n";
+      //      was_in_time = true;
+      //      DBG << "In window\n";
 
-      if (it->strip_adjacent(e.strip))
+      if (it->strip_adjacent(eventlet.strip))
       {
-//        DBG << "Strips adjacent\n";
+        //        DBG << "Strips adjacent\n";
 
         if (matches)
         {
-//          DBG << "Merge\n";
+          //          DBG << "Merge\n";
           itt->merge(*it);
           clusters.erase(it++);
         }
         else
         {
-//          DBG << "First insert\n";
+          //          DBG << "First insert\n";
 
-          it->insert(e);
+          it->insert(eventlet);
           itt = it;
           it++;
           matches = true;
@@ -171,42 +161,47 @@ bool Clusterer::insert(std::list<MacroCluster>& clusters,
       else
       {
         it++;
-//        DBG << "Strips oor\n";
+        //        DBG << "Strips oor\n";
       }
     }
-    else if (e.time >= (it->time_end + it->time_slack_))
+    else if (eventlet.time >= (it->time_end + it->time_slack_))
     {
-//      DBG << "Too late\n";
-//      out_of_time = true;
+      //      DBG << "Too late\n";
+      //      out_of_time = true;
       break;
     }
     else
     {
-//      DBG << "Not in time\n";
+      //      DBG << "Not in time\n";
       it++;
     }
   }
   if (!matches)
   {
     clusters.push_back(MacroCluster(time_slack_, strip_slack_));
-    clusters.back().insert(e);
-//    DBG << "Made new cluster " << clusters.back().debug() << "\n";
-//    if (out_of_time)
-//    {
+    clusters.back().insert(eventlet);
+    //    DBG << "Made new cluster " << clusters.back().debug() << "\n";
     bool done_with_some {false};
-      it = clusters.begin();
-      while (it != clusters.end() && !it->time_adjacent(e.time))
-      {
-//        DBG << "Done with cluster " << it->debug() << "\n";
-        clustered_.insert(*it);
-//        DBG << "Number of done clusters " << clustered_.size() << "\n";
-        clusters.erase(it++);
-        done_with_some = true;
-      }
-      return done_with_some;
-//    }
+
+    for (auto it = clusters_x_.begin();
+         it != clusters_x_.end() && !it->time_adjacent(eventlet.time);)
+    {
+      clustered_.insert(*it);
+      clusters_x_.erase(it++);
+      done_with_some = true;
+    }
+
+    for (auto it = clusters_y_.begin();
+         it != clusters_y_.end() && !it->time_adjacent(eventlet.time);)
+    {
+      clustered_.insert(*it);
+      clusters_y_.erase(it++);
+      done_with_some = true;
+    }
+
+    if (done_with_some && !clustered_.empty())
+      correlate(eventlet.time);
   }
-  return false;
 }
 
 
@@ -247,7 +242,7 @@ void Clusterer::clear()
 
 void Clusterer::correlate(uint64_t time_now)
 {
-//  DBG << "Correlating " << clustered_.size() << "\n";
+  //  DBG << "Correlating " << clustered_.size() << "\n";
 
   std::multiset<MacroCluster, MacroCluster::CompareByStartTime> leftovers;
 
@@ -258,19 +253,19 @@ void Clusterer::correlate(uint64_t time_now)
   {
     supercluster = *it;
     it++;
-//    DBG << "Initial supercluster " << supercluster.debug() << "\n";
+    //    DBG << "Initial supercluster " << supercluster.debug() << "\n";
   }
   while (it != clustered_.end())
   {
-//    DBG << "Comparing to " << it->debug() << "\n";
+    //    DBG << "Comparing to " << it->debug() << "\n";
     if (supercluster.time_adjacent(*it))
     {
-//      DBG << "  merge to supercluster";
+      //      DBG << "  merge to supercluster";
       supercluster.merge_copy(*it);
     }
     else
     {
-//      DBG << "  leftover";
+      //      DBG << "  leftover";
       leftovers.insert(*it);
     }
     it++;
@@ -279,15 +274,15 @@ void Clusterer::correlate(uint64_t time_now)
   if ((supercluster.planes.count(0) &&
        supercluster.planes.count(1)) ||
       (!supercluster.contents.empty() && !leftovers.empty() &&
-      (supercluster.time_end + 2*supercluster.time_slack_ < leftovers.begin()->time_start)))
+       (supercluster.time_end + 2*supercluster.time_slack_ < leftovers.begin()->time_start)))
   {
     SimpleEvent event;
-    for (auto e: supercluster.contents)
-      event.insert_eventlet(e);
+    for (auto eventlet: supercluster.contents)
+      event.insert_eventlet(eventlet);
     ready_events_.push_back(event);
 
-//    DBG << "Made event with " << event.x_.entries.size()
-//        << " " << event.y_.entries.size();
+    //    DBG << "Made event with " << event.x_.entries.size()
+    //        << " " << event.y_.entries.size();
     clustered_ = leftovers;
 
     //recursively correlate leftovers
