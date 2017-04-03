@@ -97,8 +97,8 @@ int main(int argc, char* argv[])
     std::cout << "No analyses to clone\n";
 
   // Exit if not enough params
-  if (files.empty() || params_file.empty() ||
-      params.empty() || vm.count("help"))
+  if (files.empty() || /*params_file.empty() ||
+      params.empty() || */vm.count("help"))
   {
     std::cout << desc << "\n";
     return 1;
@@ -145,6 +145,7 @@ void analyze_metrics(const std::set<boost::filesystem::path>& files,
                      const std::map<std::string, NMX::Settings>& params)
 {
   size_t fnum {1};
+  size_t total_events {0};
   for (auto f : files)
   {
     auto filename = f.string();
@@ -152,7 +153,10 @@ void analyze_metrics(const std::set<boost::filesystem::path>& files,
 
     try
     {
-      reader = std::make_shared<NMX::File>(filename, H5CC::Access::rw_existing);
+      if (!params.empty())
+        reader = std::make_shared<NMX::File>(filename, H5CC::Access::rw_existing);
+      else
+        reader = std::make_shared<NMX::File>(filename, H5CC::Access::r_existing);
     }
     catch (...)
     {
@@ -167,6 +171,8 @@ void analyze_metrics(const std::set<boost::filesystem::path>& files,
       continue;
 
     std::cout << "Processing file " << filename << " (" << fnum << "/" << files.size() << ")\n";
+
+    total_events += reader->event_count();
 
     for (auto group : params)
     {
@@ -195,6 +201,8 @@ void analyze_metrics(const std::set<boost::filesystem::path>& files,
     }
     ++fnum;
   }
+
+  std::cout << "Processed " << total_events << " in " << files.size() << " files\n";
 }
 
 void emulate_vmm(const std::set<boost::filesystem::path>& files,

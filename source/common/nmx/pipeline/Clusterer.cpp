@@ -33,6 +33,11 @@ bool MacroCluster::time_adjacent(const MacroCluster &o) const
   return time_adjacent(o.time_start) || time_adjacent(o.time_end);
 }
 
+bool MacroCluster::time_overlap(const MacroCluster &o) const
+{
+  return time_adjacent(o.time_start) || time_adjacent(o.time_end);
+}
+
 bool MacroCluster::strip_adjacent(uint16_t strip) const
 {
   return (strip_start <= (strip + strip_slack_)) &&
@@ -111,9 +116,10 @@ bool MacroCluster::CompareByStartTime::operator()(const MacroCluster &a,
 
 
 
-Clusterer::Clusterer(uint16_t time_slack, uint16_t strip_slack)
+Clusterer::Clusterer(uint16_t time_slack, uint16_t strip_slack, uint16_t cor_time_slack)
   : time_slack_(time_slack)
   , strip_slack_(strip_slack)
+  , correlation_time_slack_(cor_time_slack)
 {}
 
 void Clusterer::insert(const Eventlet &eventlet) {
@@ -148,7 +154,7 @@ void Clusterer::insert(const Eventlet &eventlet) {
       else
         it++;
     }
-    else if (eventlet.time >= (it->time_end + it->time_slack_))
+    else if (eventlet.time >= (it->time_end + time_slack_))
       break;
     else
       it++;
@@ -225,7 +231,7 @@ void Clusterer::correlate(bool force)
   std::multiset<MacroCluster, MacroCluster::CompareByStartTime> leftovers;
   std::list<MacroCluster> x, y;
 
-  MacroCluster supercluster(time_slack_, strip_slack_);
+  MacroCluster supercluster(correlation_time_slack_, strip_slack_);
   std::multiset<MacroCluster, MacroCluster::CompareByStartTime>::iterator it =
       clustered_.begin();
   if (it != clustered_.end())
@@ -261,7 +267,7 @@ void Clusterer::correlate(bool force)
   if (force || /*(supercluster.planes.count(0) &&
        supercluster.planes.count(1)) ||*/
       (!supercluster.contents.empty() && !leftovers.empty() &&
-       (supercluster.time_end + supercluster.time_slack_ < leftovers.rbegin()->time_start)))
+       (supercluster.time_end + time_slack_ < leftovers.rbegin()->time_start)))
   {
     SimpleEvent event;
     for (auto eventlet: supercluster.contents)

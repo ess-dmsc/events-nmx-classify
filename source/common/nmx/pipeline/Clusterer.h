@@ -25,6 +25,7 @@ struct MacroCluster
 
   bool time_adjacent(uint64_t time) const;
   bool time_adjacent(const MacroCluster &e) const;
+  bool time_overlap(const MacroCluster &e) const;
 
   bool strip_adjacent(uint16_t strip) const;
   bool strip_adjacent(const MacroCluster &e) const;
@@ -59,7 +60,7 @@ public:
   /** @brief create an NMX event clusterer
    * @param min_time_gap minimum timebins between clusters
    */
-  Clusterer(uint16_t time_slack, uint16_t strip_slack);
+  Clusterer(uint16_t time_slack, uint16_t strip_slack, uint16_t cor_time_slack);
 
   /** @brief add eventlet onto the clustering stack
    * @param eventlet with valid timestamp and non-zero adc value
@@ -88,6 +89,7 @@ public:
 private:
   uint16_t time_slack_ {28};
   uint16_t strip_slack_ {18};
+  uint16_t correlation_time_slack_ {1};
 
   std::list<MacroCluster> clusters_x_;
   std::list<MacroCluster> clusters_y_;

@@ -24,7 +24,7 @@ void term_key(int /*sig*/)
   term_flag = 1;
 }
 
-void cluster_eventlets(const path& file, int chunksize, int timesep, int stripsep);
+void cluster_eventlets(const path& file, int chunksize, int timesep, int stripsep, int corsep);
 
 int main(int argc, char* argv[])
 {
@@ -34,6 +34,7 @@ int main(int argc, char* argv[])
   int chunksize {0};
   int timesep {0};
   int stripsep {0};
+  int corsep {0};
 
   // Declare the supported options.
   po::options_description desc("nmx_cluster options:");
@@ -44,6 +45,7 @@ int main(int argc, char* argv[])
       ("chunksize", po::value<int>(&chunksize)->default_value(20), "raw/VMM chunksize")
       ("tsep", po::value<int>(&timesep)->default_value(28), "minimum time separation between events")
       ("ssep", po::value<int>(&stripsep)->default_value(18), "minimum strip separation between events")
+      ("csep", po::value<int>(&corsep)->default_value(3), "maximum time separation for cluster correlation")
       ;
 
   po::variables_map vm;
@@ -72,12 +74,12 @@ int main(int argc, char* argv[])
     return 1;
   }
 
-  cluster_eventlets(infile, chunksize, timesep, stripsep);
+  cluster_eventlets(infile, chunksize, timesep, stripsep, corsep);
 
   return 0;
 }
 
-void cluster_eventlets(const path& file, int chunksize, int timesep, int stripsep)
+void cluster_eventlets(const path& file, int chunksize, int timesep, int stripsep, int corsep)
 {
   string filename = file.string();
   string newname = boost::filesystem::change_extension(filename, "").string() +
@@ -108,10 +110,14 @@ void cluster_eventlets(const path& file, int chunksize, int timesep, int stripse
   H5CC::File outfile(newname, H5CC::Access::rw_truncate);
   RawClustered writer(outfile, H5CC::kMax, chunksize);
 
-  Clusterer clusterer(timesep, stripsep);
+  Clusterer clusterer(timesep, stripsep, corsep);
   uint64_t evcount {0};
 
   ChronoQ chron;
+
+  std::cout << "Clustering with timesep=" << timesep
+            << " stripsep=" << stripsep
+            << " corr_timesep=" << corsep << "\n";
 
   auto prog = progbar(eventlet_count, "  Clustering '" + newname + "'  ");
   CustomTimer timer(true);
