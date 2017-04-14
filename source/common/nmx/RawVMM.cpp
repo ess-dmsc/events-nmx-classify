@@ -32,25 +32,43 @@ bool RawVMM::exists_in(const H5CC::File& file)
   return ((shape.rank() == 2) && (shape.dim(1) == 4));
 }
 
-size_t RawVMM::entry_count() const
+size_t RawVMM::eventlet_count() const
 {
   return entry_count_;
 }
 
-void RawVMM::write_entry(const Eventlet &packet)
+void RawVMM::write_eventlet(const Eventlet &packet)
 {
-  dataset_VMM_.write(packet.to_packet(), {1,H5CC::kMax},
+  dataset_VMM_.write(packet.to_h5(), {1,H5CC::kMax},
                                          {dataset_VMM_.shape().dim(0), 0});
   entry_count_ = dataset_VMM_.shape().dim(0);
 }
 
-Eventlet RawVMM::read_entry(size_t i) const
+Eventlet RawVMM::read_eventlet(size_t i) const
 {
   if (i < entry_count_)
-    return Eventlet::from_packet(dataset_VMM_.read<uint32_t>({1,H5CC::kMax}, {i, 0}));
+    return Eventlet::from_h5(dataset_VMM_.read<uint32_t>({1,H5CC::kMax}, {i, 0}));
   else
     return Eventlet();
 }
+
+void RawVMM::write_packet(const EventletPacket& packet)
+{
+  dataset_VMM_.write(packet.to_h5(), {packet.eventlets.size(),H5CC::kMax},
+                                         {dataset_VMM_.shape().dim(0), 0});
+  entry_count_ = dataset_VMM_.shape().dim(0);
+}
+
+void RawVMM::read_packet(size_t i, EventletPacket& packet) const
+{
+  if (i < entry_count_)
+  {
+    size_t num = std::min(packet.eventlets.capacity(), entry_count_ - i);
+    packet.clear_and_keep_capacity();
+    packet.from_h5(dataset_VMM_.read<uint32_t>({num,H5CC::kMax}, {i, 0}));
+  }
+}
+
 
 
 }

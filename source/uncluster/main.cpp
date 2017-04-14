@@ -39,8 +39,8 @@ int main(int argc, char* argv[])
       ("help", "produce help message")
       ("p", po::value<string>(), "parent dir of files to be analyzed\n"
                                       "(defaults to current path)")
-      ("chunksize", po::value<int>(&chunksize)->default_value(20), "raw/VMM chunksize")
-      ("time_separation", po::value<int>(&timesep)->default_value(30), "time separation between events")
+      ("chunk", po::value<int>(&chunksize)->default_value(20), "raw/VMM chunksize")
+      ("tsep", po::value<int>(&timesep)->default_value(30), "time separation between events")
       ;
 
   po::variables_map vm;
@@ -77,8 +77,6 @@ int main(int argc, char* argv[])
 
 void cluster_eventlets(const path& file, int chunksize, int timesep)
 {
-  timesep += 27;
-
   string filename = file.string();
   string newname = boost::filesystem::change_extension(filename, "").string() +
       "_unclustered.h5";
@@ -116,14 +114,16 @@ void cluster_eventlets(const path& file, int chunksize, int timesep)
   RawVMM writer(outfile, chunksize);
 
   uint64_t eventlet_count {0};
+  int64_t time_offset {0};
+  ChronoQ chron(100);
 
   auto prog = progbar(nevents, "  Converting to '" + newname + "'  ");
   CustomTimer timer(true);
   for (size_t eventID = 0; eventID < nevents; ++eventID)
   {
-    uint64_t time_offset = eventID * timesep;
     auto event = reader->get_event(eventID);
-    ChronoQ chron;
+
+    EventletPacket packet(500);
 
     for (auto p : event.x().get_points())
     {
@@ -132,7 +132,7 @@ void cluster_eventlets(const path& file, int chunksize, int timesep)
       evt.plane = 0;
       evt.strip = p.x;
       evt.adc = p.v;
-      chron.push(evt);
+      packet.add(evt);
       eventlet_count++;
     }
 
@@ -143,17 +143,24 @@ void cluster_eventlets(const path& file, int chunksize, int timesep)
       evt.plane = 1;
       evt.strip = p.x;
       evt.adc = p.v;
-      chron.push(evt);
+      packet.add(evt);
       eventlet_count++;
     }
 
-    while (!chron.empty())
-      writer.write_entry(chron.pop());
+    time_offset += std::max(event.x().time_span(), event.y().time_span()) + timesep;
+
+    chron.push(packet);
+
+    while (chron.ready())
+      writer.write_eventlet(chron.pop());
 
     ++(*prog);
     if (term_flag)
       break;
   }
+
+  while (!chron.empty())
+    writer.write_eventlet(chron.pop());
 
   cout << "Unclustered " << nevents << " events into " << eventlet_count << " eventlets\n";
   cout << "Processing time = " << timer.done() << "   secs/1000events=" << timer.s() / nevents * 1000 << "\n";

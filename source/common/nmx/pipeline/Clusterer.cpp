@@ -5,6 +5,7 @@
 #include <iostream>
 #include "CustomLogger.h"
 #include <sstream>
+#include <algorithm>
 
 namespace NMX {
 
@@ -35,7 +36,7 @@ bool MacroCluster::time_adjacent(const MacroCluster &o) const
 
 bool MacroCluster::time_overlap(const MacroCluster &o) const
 {
-  return time_adjacent(o.time_start) || time_adjacent(o.time_end);
+  return time_adjacent(o.time_start) && time_adjacent(o.time_end);
 }
 
 bool MacroCluster::strip_adjacent(uint16_t strip) const
@@ -106,7 +107,7 @@ std::string MacroCluster::debug() const
   return ss.str();
 }
 
-bool MacroCluster::CompareByStartTime::operator()(const MacroCluster &a,
+bool MacroCluster::CompareStartTime::operator()(const MacroCluster &a,
                                                   const MacroCluster &b)
 {
   return (a.time_start < b.time_start);
@@ -130,7 +131,7 @@ void Clusterer::insert(const Eventlet &eventlet) {
 
   std::list<MacroCluster>::iterator it, itt;
   it = clusters.begin();
-  bool matches = false;
+  int matches = 0;
   //  DBG << "Adding ===================== " << eventlet.debug() << "\n";
   while (it != clusters.end())
   {
@@ -148,8 +149,8 @@ void Clusterer::insert(const Eventlet &eventlet) {
           it->insert(eventlet);
           itt = it;
           it++;
-          matches = true;
         }
+        matches++;
       }
       else
         it++;
@@ -159,6 +160,9 @@ void Clusterer::insert(const Eventlet &eventlet) {
     else
       it++;
   }
+
+  if (matches > 1)
+    clusters.sort(MacroCluster::compStartTime);
 
   if (!matches)
   {
@@ -228,12 +232,11 @@ void Clusterer::correlate(bool force)
 {
   //  DBG << "Correlating " << clustered_.size() << "\n";
 
-  std::multiset<MacroCluster, MacroCluster::CompareByStartTime> leftovers;
+  std::multiset<MacroCluster, MacroCluster::CompareStartTime> leftovers;
   std::list<MacroCluster> x, y;
 
   MacroCluster supercluster(correlation_time_slack_, strip_slack_);
-  std::multiset<MacroCluster, MacroCluster::CompareByStartTime>::iterator it =
-      clustered_.begin();
+  auto it = clustered_.begin();
   if (it != clustered_.end())
   {
     if (it->planes.count(1))
@@ -247,7 +250,7 @@ void Clusterer::correlate(bool force)
   while (it != clustered_.end())
   {
     //    DBG << "Comparing to " << it->debug() << "\n";
-    if (supercluster.time_adjacent(*it))
+    if (supercluster.time_overlap(*it))
     {
       if (it->planes.count(1))
         y.push_back(*it);

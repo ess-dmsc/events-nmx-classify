@@ -137,7 +137,7 @@ int main(int argc, char* argv[])
           INFO << "Packet # " << eventID << "  "
                << entry.debug();
         }
-        writer->write_entry(entry);
+        writer->write_eventlet(entry);
       }
     }
     catch (...)

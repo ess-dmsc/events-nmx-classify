@@ -49,9 +49,11 @@ struct MacroCluster
   uint16_t time_slack_ {28};
   uint16_t strip_slack_ {15};
 
-  struct CompareByStartTime {
+  struct CompareStartTime {
     bool operator()(const MacroCluster &a, const MacroCluster &b);
   };
+
+  static CompareStartTime compStartTime;
 };
 
 class Clusterer {
@@ -94,7 +96,7 @@ private:
   std::list<MacroCluster> clusters_x_;
   std::list<MacroCluster> clusters_y_;
 
-  std::multiset<MacroCluster, MacroCluster::CompareByStartTime> clustered_;
+  std::multiset<MacroCluster, MacroCluster::CompareStartTime> clustered_;
 
   std::list<SimpleEvent> ready_events_;
 

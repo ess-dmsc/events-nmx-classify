@@ -13,8 +13,8 @@
 
 namespace NMX {
 
-struct SimplePlane {
-
+struct SimplePlane
+{
   /** @brief adds eventlet to event's plane
    * @param eventlet to be added
    */
@@ -31,10 +31,13 @@ struct SimplePlane {
   int16_t uncert_lower{-1}; // lower uncertainty (strip span of eventlets in latest timebin)
   int16_t uncert_upper{-1}; // upper uncertainty (strip span of eventlets in latest few timebins)
 
-  uint64_t time_start{0}; // start of event timestamp
-  uint64_t time_end{0};   // end of event timestamp
+  uint64_t time_start; // start of event timestamp
+  uint64_t time_end;   // end of event timestamp
+  uint16_t strip_start; // lowest event strip
+  uint16_t strip_end;   // highest event strip
 
   double integral{0.0};   // sum of adc values
+  double density{0.0};
 
   double time_sum{0.0};
   double time_wsum{0.0};
@@ -46,7 +49,7 @@ struct SimplePlane {
   double strip_avg() const;
   double strip_center() const;
 
-  std::list<Eventlet> entries; // eventlets in plane
+  std::vector<Eventlet> entries; // eventlets in plane
 };
 
 class SimpleEvent {

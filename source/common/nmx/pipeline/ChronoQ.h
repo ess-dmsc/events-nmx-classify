@@ -9,26 +9,44 @@
 
 #include <Eventlet.h>
 #include <set>
+#include <list>
 
 namespace NMX {
 
-class ChronoQ {
+class LatencyQueue
+{
 public:
-  bool push(const Eventlet& e);
+  LatencyQueue(uint64_t latency);
+  void push(const EventletPacket& evts);
+  bool ready() const;
   bool empty() const;
+  size_t size() const;
+  EventletPacket pop();
+
+
+private:
+  uint64_t latency_;
+  uint64_t current_latest_{0};
+
+  std::multiset<EventletPacket, EventletPacket::CompareEnd> bag;
+};
+
+class ChronoQ
+{
+public:
+  ChronoQ(uint64_t latency);
+  void push(const EventletPacket& e);
   bool ready() const;
   uint64_t span() const;
+  bool empty() const;
   size_t size() const;
   Eventlet pop();
 
-  uint16_t plane_x_ {0};
-  uint16_t plane_y_ {1};
-
 private:
-  std::multiset<Eventlet, Eventlet::CompareByTimeStrip> backlog_;
+  std::multiset<Eventlet, Eventlet::CompareTimeStrip> backlog_;
 
-  uint64_t latest_x_ {0};
-  uint64_t latest_y_ {0};
+  uint64_t latency_;
+  uint64_t current_latest_{0};
 };
 
 }

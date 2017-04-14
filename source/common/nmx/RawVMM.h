@@ -15,9 +15,12 @@ public:
 
   virtual ~RawVMM() {}
 
-  size_t entry_count() const;
-  void write_entry(const Eventlet& packet);
-  Eventlet read_entry(size_t index) const;
+  size_t eventlet_count() const;
+  void write_eventlet(const Eventlet& packet);
+  Eventlet read_eventlet(size_t index) const;
+
+  void write_packet(const EventletPacket& packet);
+  void read_packet(size_t i, EventletPacket& packet) const;
 
 protected:
   H5CC::DataSet  dataset_VMM_;

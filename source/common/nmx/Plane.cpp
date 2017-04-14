@@ -27,7 +27,7 @@ Plane::Plane()
                                        }}, "Analysis level");
 }
 
-Plane::Plane(const std::list<Eventlet> eventlets)
+Plane::Plane(const std::vector<Eventlet> eventlets)
   : Plane()
 {
   uint64_t earliest = std::numeric_limits<uint64_t>::max();

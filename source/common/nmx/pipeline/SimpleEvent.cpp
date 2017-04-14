@@ -2,6 +2,7 @@
 
 #include <SimpleEvent.h>
 #include <set>
+#include <algorithm>
 
 namespace NMX {
 
@@ -9,7 +10,10 @@ void SimplePlane::insert_eventlet(const Eventlet &e) {
   if (!e.adc)
     return;
   if (entries.empty())
+  {
     time_start = time_end = e.time;
+    strip_start = strip_end = e.strip;
+  }
   entries.push_back(e);
 
   integral += e.adc;
@@ -20,12 +24,17 @@ void SimplePlane::insert_eventlet(const Eventlet &e) {
 
   time_start = std::min(time_start, e.time);
   time_end = std::max(time_end, e.time);
+  strip_start = std::min(strip_start, e.strip);
+  strip_end = std::max(strip_end, e.strip);
 }
 
 void SimplePlane::analyze(bool weighted, uint16_t max_timebins,
                        uint16_t max_timedif) {
   if (entries.empty())
     return;
+
+  std::sort(entries.begin(), entries.end(), Eventlet::compTime);
+
   double center_sum{0};
   double center_count{0};
   int16_t lspan_min = std::numeric_limits<int16_t>::max();
@@ -35,8 +44,10 @@ void SimplePlane::analyze(bool weighted, uint16_t max_timebins,
   uint64_t earliest =
       std::min(time_start, time_end - static_cast<uint64_t>(max_timedif));
   std::set<uint64_t> timebins;
+  std::set<uint64_t> strips;
   for (auto it = entries.rbegin(); it != entries.rend(); ++it) {
-    auto e = *it;
+    auto& e = *it;
+    strips.insert(e.strip);
     if (e.time == time_end) {
       if (weighted) {
         center_sum += (e.strip * e.adc);
@@ -62,6 +73,7 @@ void SimplePlane::analyze(bool weighted, uint16_t max_timebins,
   center = center_sum / center_count;
   uncert_lower = lspan_max - lspan_min + 1;
   uncert_upper = uspan_max - uspan_min + 1;
+  density = double(strips.size()) / double(strip_end - strip_start + 1) * 100.0;
 }
 
 double SimplePlane::time_avg() const

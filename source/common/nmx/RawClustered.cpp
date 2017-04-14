@@ -73,7 +73,7 @@ Plane RawClustered::read_record(size_t index, size_t plane) const
 
     for (size_t i = start; i < stop; ++i)
     {
-      Eventlet evt = unclustered_.read_entry(i);
+      auto evt = unclustered_.read_eventlet(i);
       //if (data.at(0) != index) //assume clustered
       //  continue;
       strips[evt.strip][evt.time & 0xFF] = evt.adc;
@@ -92,7 +92,7 @@ void RawClustered::write_record(size_t index, size_t plane, const Plane& record)
 {
   if (write_access_)
   {
-    size_t start = unclustered_.entry_count();
+    size_t start = unclustered_.eventlet_count();
     for (auto p : record.get_points("strip_vmm"))
     {
       Eventlet evt;
@@ -100,9 +100,9 @@ void RawClustered::write_record(size_t index, size_t plane, const Plane& record)
       evt.plane = plane;
       evt.strip = p.x;
       evt.adc = p.v;
-      unclustered_.write_entry(evt);
+      unclustered_.write_eventlet(evt);
     }
-    std::vector<uint64_t> data {start, unclustered_.entry_count()};
+    std::vector<uint64_t> data {start, unclustered_.eventlet_count()};
     indices_VMM_.write(data, {1,2}, {index, 2 * plane});
   }
 }

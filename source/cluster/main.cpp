@@ -99,13 +99,13 @@ void cluster_eventlets(const path& file, int chunksize, int timesep, int stripse
     return;
   }
 
-  if (!reader.entry_count())
+  if (!reader.eventlet_count())
   {
     cout << "Dataset in " << filename << " empty\n";
     return;
   }
 
-  size_t eventlet_count = reader.entry_count();
+  size_t eventlet_count = reader.eventlet_count();
 
   H5CC::File outfile(newname, H5CC::Access::rw_truncate);
   RawClustered writer(outfile, H5CC::kMax, chunksize);
@@ -113,7 +113,10 @@ void cluster_eventlets(const path& file, int chunksize, int timesep, int stripse
   Clusterer clusterer(timesep, stripsep, corsep);
   uint64_t evcount {0};
 
-  ChronoQ chron;
+  size_t packetsize {500};
+
+  EventletPacket packet(packetsize);
+  LatencyQueue lq(timesep*3);
 
   std::cout << "Clustering with timesep=" << timesep
             << " stripsep=" << stripsep
@@ -121,29 +124,49 @@ void cluster_eventlets(const path& file, int chunksize, int timesep, int stripse
 
   auto prog = progbar(eventlet_count, "  Clustering '" + newname + "'  ");
   CustomTimer timer(true);
-  for (size_t i = 0; i < /*100*/ eventlet_count; ++i)
+  for (size_t i = 0; i < /*100*/ eventlet_count; i+=packetsize)
   {
-    chron.push(reader.read_entry(i));
+    reader.read_packet(i, packet);
+    lq.push(packet);
 
-    while (chron.ready())
-      clusterer.insert(chron.pop());
+    if (lq.ready())
+      for (auto e : lq.pop().eventlets)
+        clusterer.insert(e);
 
     while (clusterer.events_ready())
       for (auto event : clusterer.pop_events())
-        writer.write_event(evcount++, Event(event));
+      {
+        event.analyze(true, 3, 6);
+        if (event.good())
+          writer.write_event(evcount++, Event(event));
+      }
 
-    ++(*prog);
+//    for (int c=0; c < packetsize; ++c)
+//      ++(*prog);
+
+    (*prog)+=packetsize;
+
     if (term_flag)
       break;
   }
 
-  while (!chron.empty())
-    clusterer.insert(chron.pop());
+  if (packet.eventlets.size())
+    lq.push(packet);
+
+  if (!lq.empty())
+    for (auto e : lq.pop().eventlets)
+      clusterer.insert(e);
+
   clusterer.dump();
 
   for (auto event : clusterer.pop_events())
-    writer.write_event(evcount++, Event(event));
+  {
+    event.analyze(true, 3, 6);
+    if (event.good())
+      writer.write_event(evcount++, Event(event));
+  }
 
+  cout << "\n";
   cout << "Clustered " << eventlet_count << " eventlets into " << evcount << " events\n";
   cout << "Processing time = " << timer.done() << "   secs/1000events=" << timer.s() / eventlet_count * 1000 << "\n";
 }
