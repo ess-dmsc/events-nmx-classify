@@ -32,8 +32,6 @@ struct Eventlet
   {
     bool operator()(const Eventlet &a, const Eventlet &b);
   };
-
-  static CompareTime compTime;
 };
 
 struct EventletPacket

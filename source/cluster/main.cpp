@@ -9,6 +9,7 @@
 #include "RawClustered.h"
 
 #include "Clusterer.h"
+#include "LatencyQ.h"
 #include "ChronoQ.h"
 
 using namespace NMX;
@@ -117,6 +118,7 @@ void cluster_eventlets(const path& file, int chunksize, int timesep, int stripse
 
   EventletPacket packet(packetsize);
   LatencyQueue lq(timesep*3);
+  ChronoQ cq(timesep*3);
 
   std::cout << "Clustering with timesep=" << timesep
             << " stripsep=" << stripsep
@@ -129,9 +131,11 @@ void cluster_eventlets(const path& file, int chunksize, int timesep, int stripse
     reader.read_packet(i, packet);
     lq.push(packet);
 
-    if (lq.ready())
-      for (auto e : lq.pop().eventlets)
-        clusterer.insert(e);
+    while (lq.ready())
+      cq.push(lq.pop());
+
+    while (cq.ready())
+      clusterer.insert(cq.pop());
 
     while (clusterer.events_ready())
       for (auto event : clusterer.pop_events())
@@ -153,9 +157,11 @@ void cluster_eventlets(const path& file, int chunksize, int timesep, int stripse
   if (packet.eventlets.size())
     lq.push(packet);
 
-  if (!lq.empty())
-    for (auto e : lq.pop().eventlets)
-      clusterer.insert(e);
+  while (!lq.empty())
+    cq.push(lq.pop());
+
+  while (!cq.empty())
+    clusterer.insert(cq.pop());
 
   clusterer.dump();
 

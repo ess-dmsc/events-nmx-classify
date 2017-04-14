@@ -33,7 +33,7 @@ void SimplePlane::analyze(bool weighted, uint16_t max_timebins,
   if (entries.empty())
     return;
 
-  std::sort(entries.begin(), entries.end(), Eventlet::compTime);
+  std::sort(entries.begin(), entries.end(), Eventlet::CompareTime());
 
   double center_sum{0};
   double center_count{0};

@@ -12,22 +12,22 @@
 
 namespace NMX {
 
-class ChronoQ
+class LatencyQueue
 {
 public:
-  ChronoQ(uint64_t latency);
-  void push(const EventletPacket& e);
+  LatencyQueue(uint64_t latency);
+  void push(const EventletPacket& evts);
   bool ready() const;
-  uint64_t span() const;
   bool empty() const;
   size_t size() const;
-  Eventlet pop();
+  EventletPacket pop();
+
 
 private:
-  std::multiset<Eventlet, Eventlet::CompareTimeStrip> backlog_;
-
   uint64_t latency_;
   uint64_t current_latest_{0};
+
+  std::multiset<EventletPacket, EventletPacket::CompareEnd> bag;
 };
 
 }
