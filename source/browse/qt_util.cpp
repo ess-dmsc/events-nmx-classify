@@ -10,7 +10,9 @@
 QString CustomSaveFileDialog(QWidget *parent,
                              const QString &title,
                              const QString &directory,
-                             const QString &filter) {
+                             const QString &filter)
+{
+
 #if defined(Q_WS_WIN) || defined(Q_WS_MAC)
   return QFileDialog::getSaveFileName(parent,
                                       title,
@@ -18,27 +20,28 @@ QString CustomSaveFileDialog(QWidget *parent,
                                       filter);
 #else
   QFileDialog dialog(parent, title, directory, filter);
-  if (parent) {
+  if (parent)
     dialog.setWindowModality(Qt::WindowModal);
-  }
+
   QRegExp filter_regex(QLatin1String("(?:^\\*\\.(?!.*\\()|\\(\\*\\.)(\\w+)"));
   QStringList filters = filter.split(QLatin1String(";;"));
-  if (!filters.isEmpty()) {
+  if (!filters.isEmpty())
+  {
     dialog.setNameFilter(filters.first());
-    if (filter_regex.indexIn(filters.first()) != -1) {
+    if (filter_regex.indexIn(filters.first()) != -1)
       dialog.setDefaultSuffix(filter_regex.cap(1));
-    }
   }
   dialog.setAcceptMode(QFileDialog::AcceptSave);
-  if (dialog.exec() == QDialog::Accepted) {
+  if (dialog.exec() == QDialog::Accepted)
+  {
     QString file_name = dialog.selectedFiles().first();
     QFileInfo info(file_name);
-    if (info.suffix().isEmpty() && !dialog.selectedNameFilter().isEmpty()) {
-      if (filter_regex.indexIn(dialog.selectedNameFilter()) != -1) {
+    if (info.suffix().isEmpty() && !dialog.selectedNameFilter().isEmpty())
+      if (filter_regex.indexIn(dialog.selectedNameFilter()) != -1)
+      {
         QString extension = filter_regex.cap(1);
         file_name += QLatin1String(".") + extension;
       }
-    }
 
     //    QFile file(file_name);
     //    if (file.exists()) {
@@ -52,32 +55,40 @@ QString CustomSaveFileDialog(QWidget *parent,
     //    }
 
     return file_name;
-  } else {
-    return QString();
   }
+  else
+    return QString();
 #endif  // Q_WS_MAC || Q_WS_WIN
 }
 
-bool validateFile(QWidget* parent, QString name, bool write) {
+bool validateFile(QWidget* parent, QString name, bool write)
+{
   QFile file(name);
   if (name.isEmpty())
     return false;
 
-  if (!write) {
-    if (!file.exists()) {
+  if (!write)
+  {
+    if (!file.exists())
+    {
       QMessageBox::warning(parent, "Failed", "File does not exist.");
       return false;
     }
-    if (!file.open(QIODevice::ReadOnly)) {
+    if (!file.open(QIODevice::ReadOnly))
+    {
       QMessageBox::warning(parent, "Failed", "Could not open file for reading.");
       return false;
     }
-  } else {
-    if (file.exists() && !file.remove()) {
+  }
+  else
+  {
+    if (file.exists() && !file.remove())
+    {
       QMessageBox::warning(parent, "Failed", "Could not delete file.");
       return false;
     }
-    if (!file.open(QIODevice::WriteOnly)) {
+    if (!file.open(QIODevice::WriteOnly))
+    {
       QMessageBox::warning(parent, "Failed", "Could not open file for writing.");
       return false;
     }
@@ -87,17 +98,20 @@ bool validateFile(QWidget* parent, QString name, bool write) {
 }
 
 
-QColor generateColor() {
+QColor generateColor()
+{
   int H = rand() % 359;
-  int S = rand() % 64 + 191;
+//  int S = rand() % 64 + 191;
   int V = rand() % 54 + 181;
   int A = 128;
   return QColor::fromHsv(H, 255, V, A);
 }
 
-QString catExtensions(std::list<std::string> exts) {
+QString catExtensions(std::list<std::string> exts)
+{
   QString ret;
-  for (auto &p : exts) {
+  for (auto &p : exts)
+  {
     ret += "*." + QString::fromStdString(p);
     if (p != exts.back())
       ret += " ";
@@ -105,9 +119,11 @@ QString catExtensions(std::list<std::string> exts) {
   return ret;
 }
 
-QString catFileTypes(QStringList types) {
+QString catFileTypes(QStringList types)
+{
   QString ret;
-  for (auto &q : types) {
+  for (auto &q : types)
+  {
     if (q != types.front())
       ret += ";;";
     ret += q;
@@ -143,13 +159,10 @@ void clearLayout(QLayout* layout, bool deleteWidgets)
   while (layout->count() && (item = layout->takeAt(0)))
   {
     QWidget* widget;
-    if (  (deleteWidgets)
-          && (widget = item->widget())  ) {
+    if ( (deleteWidgets) && (widget = item->widget()))
       delete widget;
-    }
-    if (QLayout* childLayout = item->layout()) {
+    if (QLayout* childLayout = item->layout())
       clearLayout(childLayout, deleteWidgets);
-    }
     delete item;
   }
 }

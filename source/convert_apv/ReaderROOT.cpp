@@ -66,12 +66,12 @@ Event ReaderROOT::get_event(size_t ievent)
 
   for (int istrip = 0; istrip < current_event_.hit_strips_count; istrip++)
   {
-    int stripnum =  current_event_.strip_number[istrip];
+    uint32_t stripnum = current_event_.strip_number[istrip];
     if ((stripnum < 0) || (stripnum >= strip_count()))
       continue;
 
     std::vector<int16_t> data(timebin_count(), 0);
-    for (int itb = 0; itb < timebin_count(); itb++)
+    for (size_t itb = 0; itb < timebin_count(); itb++)
       data[itb] = current_event_.getADC(istrip, itb);
 
     if (current_event_.planeID[istrip] == 0)

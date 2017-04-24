@@ -1,9 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 project(nmx_convert_apv CXX)
 
-# Set C++11 flag.
-set (CMAKE_CXX_STANDARD 11)
-
 #root
 list(APPEND CMAKE_PREFIX_PATH $ENV{ROOTSYS})
 find_package(ROOT REQUIRED COMPONENTS RIO Net)

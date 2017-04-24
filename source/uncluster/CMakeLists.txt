@@ -1,9 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 project(nmx_uncluster CXX)
 
-# Set C++11 flag.
-set (CMAKE_CXX_STANDARD 11)
-
 file(GLOB_RECURSE ${PROJECT_NAME}_SOURCES "*.cpp")
 
 include_directories(

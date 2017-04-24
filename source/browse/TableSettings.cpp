@@ -103,7 +103,7 @@ Qt::ItemFlags TableSettings::flags(const QModelIndex &index) const
 bool TableSettings::setData(const QModelIndex & index, const QVariant & value, int role)
 {
   int row = index.row();
-  int col = index.column();
+  //int col = index.column();
 
   if (role == Qt::EditRole)
   {

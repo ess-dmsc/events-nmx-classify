@@ -2,10 +2,10 @@
 #include <sstream>
 #include "CustomLogger.h"
 
-#define VMM_EVENT_END 0xfafafafa
+#define VMM_EVENT_END int32_t(0xfafafafa)
 #define VMM_EVENT_HEADER 0x564d32
 #define VMM_EVENT_EMPTY  0x564132
-#define VMM_EQUIPMENT_HEADER 0xda1e5afe
+#define VMM_EQUIPMENT_HEADER int32_t(0xda1e5afe)
 #define VMM_EQUIPMENT_START 0x50
 
 namespace NMX

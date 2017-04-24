@@ -138,7 +138,7 @@ void GenericPlot::setShowGradientLegend(bool show)
 
   QCPColorMap *colorMap {nullptr};
   for (int i=0; i < plottableCount(); ++i)
-    if (colorMap = qobject_cast<QCPColorMap*>(plottable(i)))
+    if ((colorMap = qobject_cast<QCPColorMap*>(plottable(i))))
       break;
 
   if (show_gradient_legend_ && colorMap)
@@ -331,18 +331,24 @@ QSize GenericPlot::sizeHint() const
     previous_height_ = s.height();
 
     int extra_width = 0, extra_height = 0;
-    for (int i=0; i < layerCount(); i++) {
+    for (int i=0; i < layerCount(); i++)
+    {
       QCPLayer *this_layer = layer(i);
-      for (auto &q : this_layer->children()) {
-        if (QCPColorScale *le = qobject_cast<QCPColorScale*>(q)) {
-          QRect ler = le->outerRect();
+      for (auto &q : this_layer->children())
+      {
+        if (QCPColorScale *le = qobject_cast<QCPColorScale*>(q))
+        {
+          Q_UNUSED(le);
+          //QRect ler = le->outerRect();
           //extra_width += ler.width();
           /*} else if (QCPAxis *le = qobject_cast<QCPAxis*>(q)) {
           if (le->axisType() == QCPAxis::atBottom)
             extra_height += le->axisRect()->height();
           else if (le->axisType() == QCPAxis::atLeft)
             extra_width += le->axisRect()->width();*/
-        } else if (QCPAxisRect *le = qobject_cast<QCPAxisRect*>(q)) {
+        }
+        else if (QCPAxisRect *le = qobject_cast<QCPAxisRect*>(q))
+        {
           QMargins mar = le->margins();
           extra_width += (mar.left() + mar.right());
           extra_height += (mar.top() + mar.bottom());

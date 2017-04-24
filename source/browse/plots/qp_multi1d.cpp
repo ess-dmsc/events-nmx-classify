@@ -149,7 +149,7 @@ QCPRange Multi1D::getRange(QCPRange domain)
     if ((domain.lower <= marker.pos) && (marker.pos <= domain.upper))
     {
       markers_in_range = true;
-      if (marker.alignment = Qt::AlignAbsolute)
+      if (marker.alignment == Qt::AlignAbsolute)
         markers_with_val = true;
     }
 

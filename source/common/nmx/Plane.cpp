@@ -48,7 +48,8 @@ Plane::Plane(const std::vector<int16_t>& data, uint16_t timebins)
   if (timebins < 1)
     return;
   uint16_t strips = data.size() / timebins;
-  if ((strips * timebins) != data.size())
+  size_t expected_size = strips * timebins;
+  if (expected_size != data.size())
     return;
 
   uint16_t i {0};

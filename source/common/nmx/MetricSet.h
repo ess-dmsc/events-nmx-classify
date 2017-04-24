@@ -10,7 +10,7 @@ struct MetricVal
 {
   MetricVal() {}
   MetricVal(double v, std::string descr)
-    : description(descr), value(v) {}
+    : value(v), description(descr) {}
 
   double value;
   std::string description;

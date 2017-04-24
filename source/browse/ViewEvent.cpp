@@ -6,10 +6,10 @@
 #include "ViewRecord.h"
 
 
-ViewEvent::ViewEvent(QWidget *parent) :
-  QWidget(parent),
-  params_model_(this),
-  ui(new Ui::ViewEvent)
+ViewEvent::ViewEvent(QWidget *parent)
+  : QWidget(parent)
+  , ui(new Ui::ViewEvent)
+  , params_model_(this)
 {
   ui->setupUi(this);
   ui->eventX->set_title("X plane");
@@ -230,7 +230,7 @@ void ViewEvent::recordOptionsChanged()
 
 void ViewEvent::plot_current_event()
 {
-  int evt_count {0};
+  size_t evt_count {0};
   if (reader_)
     evt_count = reader_->event_count();
 
@@ -296,7 +296,7 @@ void ViewEvent::set_indices(std::set<size_t> indices)
   if (indices_.size() < evt_count)
     evt_count = indices_.size();
 
-  auto current_val = ui->spinEventIdx->value();
+  size_t current_val = ui->spinEventIdx->value();
   ui->spinEventIdx->setEnabled(indices_.size() > 0);
   ui->spinEventIdx->setRange(1, indices_.size());
   if (current_val <= indices_.size())

@@ -1,17 +1,16 @@
 cmake_minimum_required(VERSION 2.8)
 project(nmx_common CXX)
 
-# Set C++11 flag.
-set (CMAKE_CXX_STANDARD 11)
-
-#Locate packages
-set(HDF5_USE_SHARED_LIBRARIES ON)
-find_package(HDF5 COMPONENTS CXX REQUIRED)
+# HDF5
+#set (HDF5_USE_STATIC_LIBRARIES ON)
+set (HDF5_USE_SHARED_LIBRARIES ON)
+FIND_PACKAGE (HDF5 COMPONENTS CXX HL REQUIRED)
+link_directories ( ${HDF5_LIBRARY_DIRS} )
 
 # Boost
 find_package(Boost COMPONENTS system filesystem timer program_options REQUIRED)
-#add_definitions(-DBOOST_LOG_DYN_LINK)
 link_directories( ${BOOST_LIBRARY_DIRS} )
+#add_definitions(-DBOOST_LOG_DYN_LINK)
 
 file(GLOB_RECURSE common_SOURCES "*.cpp")
 file(GLOB_RECURSE common_TEMPLATES "*.tpp")
@@ -30,14 +29,12 @@ include_directories(
 
 add_library(
   ${PROJECT_NAME}
-
   ${common_SOURCES}
   ${common_TEMPLATES}
 )
 
 target_link_libraries(
   ${PROJECT_NAME}
-
   ${HDF5_LIBRARIES}
   ${Boost_LIBRARIES}
 )

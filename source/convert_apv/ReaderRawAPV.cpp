@@ -1,9 +1,9 @@
 ﻿#include "ReaderRawAPV.h"
 #include <sstream>
 
-#define APV_EVENT_END 0xfafafafa
+#define APV_EVENT_END int32_t(0xfafafafa)
 #define APV_EVENT_HEADER 0x41505a
-#define APV_EQUIPMENT_HEADER 0xda1e5afe
+#define APV_EQUIPMENT_HEADER int32_t(0xda1e5afe)
 #define APV_EQUIPMENT_START 0x50
 
 namespace NMX

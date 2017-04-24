@@ -12,7 +12,7 @@ struct Marker1D
 {
   Marker1D() {}
   Marker1D(double p, Appearance app = Appearance(), bool vis = true)
-    : pos(p), visible(vis), appearance(app) {}
+    : visible(vis), pos(p), appearance(app) {}
 
   bool operator!= (const Marker1D& other) const { return (!operator==(other)); }
   bool operator== (const Marker1D& other) const { return (pos == other.pos); }
