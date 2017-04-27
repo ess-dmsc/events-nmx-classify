@@ -28,6 +28,7 @@ add_executable(
 target_link_libraries(
   ${PROJECT_NAME}
   ${nmx_common_LIBRARIES}
+  ${h5cc_LIBRARIES}
   ${ROOT_LIBRARIES}
 )
 
