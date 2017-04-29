@@ -4,14 +4,16 @@
 
 int main(int argc, char *argv[])
 {
-    QApplication a(argc, argv);
-    a.setWindowIcon(QIcon(":/icons/tpcc.xpm"));
+  H5CC::exceptions_off();
 
-    QCoreApplication::setOrganizationName("ESS");
-    QCoreApplication::setApplicationName("tpcClassify");
+  QApplication a(argc, argv);
+  a.setWindowIcon(QIcon(":/icons/tpcc.xpm"));
 
-    Browser w;
-    w.show();
+  QCoreApplication::setOrganizationName("ESS");
+  QCoreApplication::setApplicationName("tpcClassify");
 
-    return a.exec();
+  Browser w;
+  w.show();
+
+  return a.exec();
 }

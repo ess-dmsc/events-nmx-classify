@@ -30,6 +30,7 @@ void cluster_eventlets(const path& file, int chunksize, int timesep, int stripse
 int main(int argc, char* argv[])
 {
   signal(SIGINT, term_key);
+  H5CC::exceptions_off();
 
   string target_path;
   int chunksize {0};

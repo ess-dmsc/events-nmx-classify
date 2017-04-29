@@ -31,7 +31,8 @@ const string options_text =
 int main(int argc, char* argv[])
 {
 	signal(SIGINT, term_key);
-  H5::Exception::dontPrint();
+  H5CC::exceptions_off();
+
 //  CustomLogger::initLogger();
 
 	// Parse the command line arguments

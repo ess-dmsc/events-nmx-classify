@@ -49,7 +49,7 @@ void term_key(int /*sig*/)
 int main(int argc, char* argv[])
 {
   signal(SIGINT, term_key);
-  H5::Exception::dontPrint();
+  H5CC::exceptions_off();
 
   std::string target_path, params_file;
   int chunksize {0};
