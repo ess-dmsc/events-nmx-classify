@@ -53,7 +53,7 @@ int main(int argc, char* argv[])
 	// Initialize the reader to read the root-file containing the events
   shared_ptr<NMX::ReaderRawVMM> reader;
 
-  Time time_interpreter;
+  NMX::Time time_interpreter;
   time_interpreter.set_tac_slope(125); /**< @todo get from slow control? */
   time_interpreter.set_bc_clock(40);   /**< @todo get from slow control? */
   time_interpreter.set_trigger_resolution(

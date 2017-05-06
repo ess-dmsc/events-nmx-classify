@@ -2,14 +2,15 @@
 
 #include <string>
 #include <cstdint>
+#include <cmath>
 
 #include <boost/timer/timer.hpp>
 
 class CustomTimer : public boost::timer::cpu_timer {
 private:
-  const double secs = pow(10, 9);
-  const double msecs = pow(10, 6);
-  const double usecs = pow(10, 3);
+  const double secs = std::pow(10, 9);
+  const double msecs = std::pow(10, 6);
+  const double usecs = std::pow(10, 3);
   uint64_t timeout_limit;
 public:
   CustomTimer(bool start = false)

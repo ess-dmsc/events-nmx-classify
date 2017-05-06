@@ -1,6 +1,8 @@
 /** Copyright (C) 2016, 2017 European Spallation Source ERIC */
 
-#include <Time.h>
+#include <TimeStamp.h>
+
+namespace NMX {
 
 void Time::set_bc_clock(double bc_clock) { bc_clock_ = bc_clock; }
 
@@ -37,4 +39,6 @@ double Time::timestamp_ns(uint32_t trigger, uint16_t bc, uint16_t tdc) const {
 uint64_t Time::timestamp(uint32_t trigger, uint16_t bc, uint16_t tdc) const {
   return static_cast<uint64_t>(timestamp_ns(trigger, bc, tdc) *
                                target_resolution_ns_);
+}
+
 }

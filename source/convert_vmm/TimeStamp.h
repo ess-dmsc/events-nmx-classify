@@ -9,6 +9,8 @@
 
 #include <inttypes.h>
 
+namespace NMX {
+
 class Time {
 public:
   void set_bc_clock(double bc_clock);
@@ -31,3 +33,5 @@ private:
 
   double target_resolution_ns_{0.5};
 };
+
+}

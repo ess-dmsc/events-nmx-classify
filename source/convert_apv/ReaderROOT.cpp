@@ -66,8 +66,8 @@ Event ReaderROOT::get_event(size_t ievent)
 
   for (int istrip = 0; istrip < current_event_.hit_strips_count; istrip++)
   {
-    uint32_t stripnum = current_event_.strip_number[istrip];
-    if ((stripnum < 0) || (stripnum >= strip_count()))
+    int32_t stripnum = current_event_.strip_number[istrip];
+    if ((stripnum < 0) || (stripnum >= static_cast<int32_t>(strip_count())))
       continue;
 
     std::vector<int16_t> data(timebin_count(), 0);

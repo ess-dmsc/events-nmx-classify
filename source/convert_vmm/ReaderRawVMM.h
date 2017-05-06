@@ -6,7 +6,7 @@
 #include <vector>
 #include "Eventlet.h"
 #include "Geometry.h"
-#include "Time.h"
+#include "TimeStamp.h"
 
 namespace NMX {
 

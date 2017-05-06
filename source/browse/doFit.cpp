@@ -81,7 +81,7 @@ void EdgeFitter::analyze(std::string edge)
   max = h1->GetMaximum();
   min = h1->GetMinimum();
 
-  TF1 * f1;
+  TF1 * f1 {nullptr};
   if (edge_ == "double")
     f1 = new TF1("f1", "[0]+[1]*(TMath::Erfc(-(x-[2])/[3])*TMath::Erfc((x-[4])/[3]))");
   else if (edge_ == "right")
@@ -92,13 +92,16 @@ void EdgeFitter::analyze(std::string edge)
   if (edge_ == "double")
     f1->SetParameters(min, 0.5 * max, (fits + fite) * 1.0 / 4.0,
                       2, (fits + fite) * 3.0 / 4.0);
-  else
+  else if (f1)
     f1->SetParameters(min, 0.5 * max, (fits + fite) / 2.0, 2);
 
-  h1->Fit("f1", "same");
-  get_params(f1);
+  if (f1)
+  {
+    h1->Fit("f1", "same");
+    get_params(f1);
+    f1->Delete();
+  }
 
-  f1->Delete();
   h1->Delete();
 }
 
