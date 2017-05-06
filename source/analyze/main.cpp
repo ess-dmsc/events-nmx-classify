@@ -1,44 +1,26 @@
-#include "File.h"
 #include <signal.h>
 #include "Filesystem.h"
 #include "ExceptionUtil.h"
 #include "progbar.h"
-#include <boost/program_options.hpp>
 #include "custom_timer.h"
+#include "docopt.h"
 
+#include "File.h"
 #include "RawClustered.h"
 
-namespace fs = boost::filesystem;
-namespace po = boost::program_options;
+using namespace boost::filesystem;
 
-std::set<boost::filesystem::path> find_files(std::string path, bool recurse)
-{
-  std::set<boost::filesystem::path> ret;
-  if (!path.empty())
-  {
-    ret = files_in(path, ".h5", recurse);
-    if (ret.empty())
-      std::cout << "No *.h5 files found in " << path << "\n";
-  }
+std::map<std::string, NMX::Settings> collect_params
+    (std::string file_path);
 
-  if (ret.empty())
-  {
-    ret = files_in(fs::current_path(), ".h5", recurse);
-    if (ret.empty())
-      std::cout << "No *.h5 files found in " << fs::current_path() << "\n";
-  }
-  return ret;
-}
+void analyze_metrics
+    (const std::set<path>& files,
+     const std::map<std::string, NMX::Settings>& params);
 
-std::map<std::string, NMX::Settings> collect_params(std::string file_path);
-
-void analyze_metrics(const std::set<boost::filesystem::path>& files,
-                     const std::map<std::string, NMX::Settings>& params);
-
-void emulate_vmm(const std::set<boost::filesystem::path>& files,
-                 const std::map<std::string, NMX::Settings>& params,
-                 int chunksize);
-
+void emulate_vmm
+    (const std::set<path>& files,
+     const std::map<std::string, NMX::Settings>& params,
+     int chunksize);
 
 volatile sig_atomic_t term_flag = 0;
 void term_key(int /*sig*/)
@@ -46,63 +28,45 @@ void term_key(int /*sig*/)
   term_flag = 1;
 }
 
+static const char USAGE[] =
+    R"(nmx analyze
+
+    Usage:
+    nmx_analyze PATH PARAMS [-r]
+    nmx_analyze PATH PARAMS [-r] --tovmm [--chunk size]
+    nmx_analyze (-h | --help)
+
+    Options:
+    -h --help    Show this screen.
+    -r           Recursive file search
+    --tovmm      Convert to emulated vmm data
+    --chunk      raw/VMM size [default: 20]
+    )";
+
 int main(int argc, char* argv[])
 {
   signal(SIGINT, term_key);
   H5CC::exceptions_off();
 
-  std::string target_path, params_file;
-  int chunksize {0};
-  bool to_vmm {false};
-  bool recurse {false};
+  auto args = docopt::docopt(USAGE, {argv+1,argv+argc}, true);
 
-  // Declare the supported options.
-  po::options_description desc("nmx_convert options:");
-  desc.add_options()
-      ("help", "produce help message")
-      ("p", po::value<std::string>(), "parent dir of files to be analyzed\n"
-                                      "(defaults to current path)")
-      ("s", po::value<std::string>(), "path to analysis settings file")
-      ("tovmm", "save emulated VMM data")
-      ("chunksize", po::value<int>(&chunksize)->default_value(20), "raw/VMM chunksize")
-      ("r", "recursive file search")
-      ;
+  auto files = find_files(args["PATH"].asString(), args.count("-r"));
+  if (files.empty())
+    return 1;
 
-  po::variables_map vm;
-  try
-  {
-    po::store(po::parse_command_line(argc, argv, desc), vm);
-    po::notify(vm);
-  }
-  catch (...)
-  {}
-
-  if (vm.count("p"))
-    target_path = vm["p"].as<std::string>();
-  if (vm.count("s"))
-    params_file = vm["s"].as<std::string>();
-
-  if (chunksize < 1)
-    chunksize = 20;
-
-  recurse = vm.count("r");
-  to_vmm  = vm.count("tovmm");
-  if (to_vmm)
-    std::cout << "Saving as emulated VMM data using chunksize=" << chunksize << "\n";
-
-  auto files = find_files(target_path, recurse);
-  auto params = collect_params(params_file);
-
+  auto params = collect_params(args["PARAMS"].asString());
   if (params.empty())
     std::cout << "No analyses to clone\n";
 
-  // Exit if not enough params
-  if (files.empty() || /*params_file.empty() ||
-      params.empty() || */vm.count("help"))
-  {
-    std::cout << desc << "\n";
-    return 1;
-  }
+  int chunksize {0};
+  if (args.count("--chunk"))
+    chunksize = args["--chunk"].asLong();
+  if (chunksize < 1)
+    chunksize = 20;
+
+  bool to_vmm = args.count("--tovmm");
+  if (to_vmm)
+    std::cout << "Saving as emulated VMM data using chunksize=" << chunksize << "\n";
 
   std::cout << "Will analyse the following files:\n";
   for (auto p : files)
@@ -141,7 +105,7 @@ std::map<std::string, NMX::Settings> collect_params(std::string file_path)
   return params;
 }
 
-void analyze_metrics(const std::set<boost::filesystem::path>& files,
+void analyze_metrics(const std::set<path>& files,
                      const std::map<std::string, NMX::Settings>& params)
 {
   size_t fnum {1};
@@ -205,7 +169,7 @@ void analyze_metrics(const std::set<boost::filesystem::path>& files,
   std::cout << "Processed " << total_events << " in " << files.size() << " files\n";
 }
 
-void emulate_vmm(const std::set<boost::filesystem::path>& files,
+void emulate_vmm(const std::set<path>& files,
                  const std::map<std::string, NMX::Settings>& params,
                  int chunksize)
 {
@@ -240,7 +204,7 @@ void emulate_vmm(const std::set<boost::filesystem::path>& files,
     {
       size_t nevents = reader->event_count();
       std::string newname =
-          boost::filesystem::change_extension(filename, "").string() +
+          change_extension(filename, "").string() +
           "_" + group.first + ".h5";
 
       H5CC::File outfile(newname, H5CC::Access::rw_require);

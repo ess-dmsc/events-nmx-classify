@@ -3,8 +3,8 @@
 #include "Filesystem.h"
 #include "ExceptionUtil.h"
 #include "progbar.h"
-#include <boost/program_options.hpp>
 #include "custom_timer.h"
+#include "docopt.h"
 
 #include "RawClustered.h"
 
@@ -15,9 +15,12 @@
 using namespace NMX;
 using namespace std;
 using namespace boost::filesystem;
-namespace po = boost::program_options;
 
 void cluster(const path& file, int chunksize);
+
+void cluster_eventlets(const path& file,
+                       int chunksize, int timesep,
+                       int stripsep, int corsep);
 
 volatile sig_atomic_t term_flag = 0;
 void term_key(int /*sig*/)
@@ -25,56 +28,51 @@ void term_key(int /*sig*/)
   term_flag = 1;
 }
 
-void cluster_eventlets(const path& file, int chunksize, int timesep, int stripsep, int corsep);
+static const char USAGE[] =
+    R"(nmx analyze
+
+    Usage:
+    nmx_analyze PATH [-s settings] [-chunk size] [-tsep tb] [-ssep strips] [-csep tb]
+    nmx_analyze (-h | --help)
+
+    Options:
+    -h --help    Show this screen.
+    --chunk      raw/VMM chunk size [default: 20]
+    --tsep       minimum time separation between events [default: 28]
+    --ssep       minimum strip separation between events  [default: 18]
+    --csep       minimum time separation correlation [default: 3]
+    )";
 
 int main(int argc, char* argv[])
 {
   signal(SIGINT, term_key);
   H5CC::exceptions_off();
 
-  string target_path;
+  auto args = docopt::docopt(USAGE, {argv+1,argv+argc}, true);
+
+  auto infile = path(args["PATH"].asString());
+  if (infile.empty())
+    return 1;
+
   int chunksize {0};
-  int timesep {0};
-  int stripsep {0};
-  int corsep {0};
-
-  // Declare the supported options.
-  po::options_description desc("nmx_cluster options:");
-  desc.add_options()
-      ("help", "produce help message")
-      ("p", po::value<string>(), "parent dir of files to be analyzed\n"
-                                      "(defaults to current path)")
-      ("chunksize", po::value<int>(&chunksize)->default_value(20), "raw/VMM chunksize")
-      ("tsep", po::value<int>(&timesep)->default_value(28), "minimum time separation between events")
-      ("ssep", po::value<int>(&stripsep)->default_value(18), "minimum strip separation between events")
-      ("csep", po::value<int>(&corsep)->default_value(3), "maximum time separation for cluster correlation")
-      ;
-
-  po::variables_map vm;
-  try
-  {
-    po::store(po::parse_command_line(argc, argv, desc), vm);
-    po::notify(vm);
-  }
-  catch (...)
-  {}
-
-  if (vm.count("p"))
-    target_path = vm["p"].as<string>();
-
+  if (args.count("--chunk"))
+    chunksize = args["--chunk"].asLong();
   if (chunksize < 1)
     chunksize = 20;
 
+  int timesep {0};
+  if (args.count("--tsep"))
+    timesep = args["--tsep"].asLong();
+
+  int stripsep {0};
+  if (args.count("--ssep"))
+    stripsep = args["--ssep"].asLong();
+
+  int corsep {0};
+  if (args.count("--csep"))
+    corsep = args["--csep"].asLong();
+
   cout << "Saving as emulated VMM data using chunksize=" << chunksize << "\n";
-
-  auto infile = path(target_path);
-
-  // Exit if not enough params
-  if (infile.empty() || vm.count("help"))
-  {
-    cout << desc << "\n";
-    return 1;
-  }
 
   cluster_eventlets(infile, chunksize, timesep, stripsep, corsep);
 

@@ -3,8 +3,8 @@
 #include "Filesystem.h"
 #include "ExceptionUtil.h"
 #include "progbar.h"
-#include <boost/program_options.hpp>
 #include "custom_timer.h"
+#include "docopt.h"
 
 #include "ChronoQ.h"
 
@@ -13,9 +13,10 @@
 using namespace NMX;
 using namespace std;
 using namespace boost::filesystem;
-namespace po = boost::program_options;
 
 void cluster(const path& file, int chunksize);
+void cluster_eventlets(const path& file,
+                       int chunksize, int timesep);
 
 volatile sig_atomic_t term_flag = 0;
 void term_key(int /*sig*/)
@@ -23,53 +24,42 @@ void term_key(int /*sig*/)
   term_flag = 1;
 }
 
-void cluster_eventlets(const path& file, int chunksize, int timesep);
+static const char USAGE[] =
+    R"(nmx analyze
+
+    Usage:
+    nmx_analyze PATH [-s settings] [-chunk size] [-tsep tb] [-ssep strips] [-csep tb]
+    nmx_analyze (-h | --help)
+
+    Options:
+    -h --help    Show this screen.
+    --chunk      raw/VMM chunk size [default: 20]
+    --tsep       minimum time separation between events [default: 28]
+    )";
 
 int main(int argc, char* argv[])
 {
   signal(SIGINT, term_key);
   H5CC::exceptions_off();
 
-  string target_path;
+  auto args = docopt::docopt(USAGE, {argv+1,argv+argc}, true);
+
+  auto infile = path(args["PATH"].asString());
+  if (infile.empty())
+    return 1;
+
   int chunksize {0};
-  int timesep {0};
-
-  // Declare the supported options.
-  po::options_description desc("nmx_uncluster options:");
-  desc.add_options()
-      ("help", "produce help message")
-      ("p", po::value<string>(), "parent dir of files to be analyzed\n"
-                                      "(defaults to current path)")
-      ("chunk", po::value<int>(&chunksize)->default_value(20), "raw/VMM chunksize")
-      ("tsep", po::value<int>(&timesep)->default_value(30), "time separation between events")
-      ;
-
-  po::variables_map vm;
-  try
-  {
-    po::store(po::parse_command_line(argc, argv, desc), vm);
-    po::notify(vm);
-  }
-  catch (...)
-  {}
-
-  if (vm.count("p"))
-    target_path = vm["p"].as<string>();
-
+  if (args.count("--chunk"))
+    chunksize = args["--chunk"].asLong();
   if (chunksize < 1)
     chunksize = 20;
 
+  int timesep {0};
+  if (args.count("--tsep"))
+    timesep = args["--tsep"].asLong();
+
   cout << "Unclustering as VMM data using chunksize=" << chunksize
        << " and time_separation=" << timesep << "\n";
-
-  auto infile = path(target_path);
-
-  // Exit if not enough params
-  if (infile.empty() || vm.count("help"))
-  {
-    cout << desc << "\n";
-    return 1;
-  }
 
   cluster_eventlets(infile, chunksize, timesep);
 

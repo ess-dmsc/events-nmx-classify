@@ -1,5 +1,4 @@
 #include "CustomLogger.h"
-#include "CLParser.h"
 #include "File.h"
 #include "RawVMM.h"
 #include <signal.h>
@@ -7,6 +6,7 @@
 #include "Filesystem.h"
 #include "ExceptionUtil.h"
 #include "progbar.h"
+#include "docopt.h"
 
 #include "ReaderRawVMM.h"
 
@@ -19,41 +19,36 @@ void term_key(int /*sig*/)
 namespace fs = boost::filesystem;
 using namespace std;
 
-const string options_text =
-		"NMX data conversion program for ROOT/Raw to HDF5. Available options:\n"
-        "    -i [path/input.raw] Must be specified\n"
-				"    -o [path/oputput.h5] Output file - defaults to input.h5\n"
-				"    -s [int] Number of event to start with   - default 0\n"
-				"    -n [int] Number of event to be processed - default all\n"
-				"    -v verbose - default false\n"
-				"    --help/-h prints this list of options\n";
+static const char USAGE[] =
+    R"(nmx analyze
+
+    Usage:
+    nmx_analyze INFILE OUTFILE [-v | --verbose]
+    nmx_analyze (-h | --help)
+
+    Options:
+    -h --help      Show this screen.
+    -v --verbose   Verbose
+    -s             Number of event to start with [default: 0]
+    -n             Number of event to be processed [default: max]
+    )";
+
 
 int main(int argc, char* argv[])
 {
 	signal(SIGINT, term_key);
   H5CC::exceptions_off();
-
 //  CustomLogger::initLogger();
 
-	// Parse the command line arguments
-	CLParser cmd_line(argc, argv);
+  auto args = docopt::docopt(USAGE, {argv+1,argv+argc}, true);
 
-	// Files
-	string input_file = cmd_line.get_value("-i");
-	string output_file = cmd_line.get_value("-o");
+  auto input_file = args["INFILE"].asString();
+  auto output_file = args["OUTFILE"].asString();
+  if (input_file.empty() || output_file.empty())
+    return 1;
 
 	// Other options
-	bool verbose = cmd_line.has_switch("-v");
-
-	// Exit if not enough arguments
-	if (input_file.empty())
-		INFO<< "Error: Please specify an input file!\n\n";
-	if (input_file.empty() || cmd_line.has_switch("-h")
-			|| cmd_line.has_switch("--help"))
-	{
-		cout << options_text;
-		return 1;
-	}
+  bool verbose = args.count("-v");
 
 	// Initialize the reader to read the root-file containing the events
   shared_ptr<NMX::ReaderRawVMM> reader;
@@ -84,15 +79,15 @@ int main(int argc, char* argv[])
 
 	size_t total = reader->event_count();
 	size_t start = 0;
-	if (cmd_line.has_value("-s"))
-		start = stoi(cmd_line.get_value("-s"));
+  if (args.count("-s"))
+    start = args["-s"].asLong();
 	if (start >= total)
 		start = 0;
 
 	size_t nevents = reader->event_count(); // default - analyzes all
-	if (cmd_line.has_value("-n"))
-		nevents = min(stoi(cmd_line.get_value("-n")),
-				static_cast<int>(total - start));
+  if (args.count("-n") && (args["-n"].asString() != "max"))
+    nevents = min(args["-n"].asLong(),
+        static_cast<long>(total - start));
 
   INFO << "Source      '" << input_file << "'  contains "
 	<< reader->event_count() << " events of which "

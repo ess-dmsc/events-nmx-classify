@@ -1,43 +1,63 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.11 FATAL_ERROR)
 project(nmx_common CXX)
 
 # Boost
-find_package(Boost COMPONENTS system filesystem timer program_options REQUIRED)
-link_directories( ${BOOST_LIBRARY_DIRS} )
-#add_definitions(-DBOOST_LOG_DYN_LINK)
+SET(Boost_USE_STATIC_LIBS ON)
+find_package(Boost COMPONENTS
+  system filesystem thread timer date_time log log_setup
+  REQUIRED)
 
-file(GLOB_RECURSE common_SOURCES "*.cpp")
-file(GLOB_RECURSE common_HEADERS "*.h")
-foreach (_headerFile ${common_HEADERS})
-    get_filename_component(_dir ${_headerFile} PATH)
-    list (APPEND common_INCLUDE_DIRS ${_dir})
-endforeach()
-list(REMOVE_DUPLICATES common_INCLUDE_DIRS)
+# h5cc
+add_subdirectory(
+  ${CMAKE_CURRENT_SOURCE_DIR}/external/h5cc/source/h5cc)
 
-include_directories(
-  ${common_INCLUDE_DIRS}
-  ${Boost_INCLUDE_DIRS}
-  ${h5cc_INCLUDE_DIRS}
-)
+# docopt
+add_subdirectory(
+  ${CMAKE_CURRENT_SOURCE_DIR}/external/docopt.cpp)
+list(APPEND docopt_LIBRARIES docopt)
+list(APPEND docopt_INCLUDE_DIRS
+  ${CMAKE_CURRENT_SOURCE_DIR}/external/docopt.cpp)
+
+# json++
+list (APPEND json_INCLUDE_DIRS
+  ${CMAKE_CURRENT_SOURCE_DIR}/external/json/src)
+
+message(STATUS "h5ccdir " ${h5cc_INCLUDE_DIRS})
+
+file(GLOB ${PROJECT_NAME}_SOURCES *.cpp)
+file(GLOB_RECURSE nmx_SOURCES nmx/*.cpp)
+set(${PROJECT_NAME}_SOURCES
+  ${${PROJECT_NAME}_SOURCES} ${nmx_SOURCES})
+
+file(GLOB ${PROJECT_NAME}_HEADERS *.h *.tpp)
+file(GLOB_RECURSE nmx_HEADERS nmx/*.h)
+set(${PROJECT_NAME}_HEADERS
+  ${${PROJECT_NAME}_HEADERS} ${nmx_HEADERS})
+
+dirs_of(${PROJECT_NAME}_INCLUDE_DIRS "${${PROJECT_NAME}_HEADERS}")
 
 add_library(
   ${PROJECT_NAME}
-  ${common_SOURCES}
+  ${${PROJECT_NAME}_SOURCES}
+  ${${PROJECT_NAME}_HEADERS}
+)
+
+target_include_directories(
+  ${PROJECT_NAME}
+  PUBLIC ${${PROJECT_NAME}_INCLUDE_DIRS}
+  PUBLIC ${Boost_INCLUDE_DIRS}
+  PUBLIC ${h5cc_INCLUDE_DIRS}
+  PUBLIC ${json_INCLUDE_DIRS}
+  PUBLIC ${docopt_INCLUDE_DIRS}
 )
 
 target_link_libraries(
   ${PROJECT_NAME}
   ${Boost_LIBRARIES}
+  ${h5cc_LIBRARIES}
+  ${docopt_LIBRARIES}
 )
-
-# Expose public includes
-set(${PROJECT_NAME}_INCLUDE_DIRS
-    ${common_INCLUDE_DIRS}
-    ${Boost_INCLUDE_DIRS}
-    ${h5cc_INCLUDE_DIRS}
-    CACHE INTERNAL "${PROJECT_NAME}: Include Directories" FORCE)
 
 set(${PROJECT_NAME}_LIBRARIES
     ${PROJECT_NAME}
-    ${Boost_LIBRARIES}
     PARENT_SCOPE)

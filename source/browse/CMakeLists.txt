@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.11 FATAL_ERROR)
 project(nmx_browse CXX)
 
 # ROOT
@@ -16,30 +16,25 @@ find_package(OpenGL REQUIRED)
 
 file(GLOB_RECURSE ${PROJECT_NAME}_SOURCES *.cpp *.h *.ui *.qrc)
 file(GLOB_RECURSE ${PROJECT_NAME}_HEADERS *.h ${PROJECT_BINARY_DIR}/*.h)
-foreach (_headerFile ${${PROJECT_NAME}_HEADERS})
-    get_filename_component(_dir ${_headerFile} PATH)
-    list (APPEND ${PROJECT_NAME}_INCLUDE_DIRS ${_dir})
-endforeach()
-list(REMOVE_DUPLICATES ${PROJECT_NAME}_INCLUDE_DIRS)
-
-include_directories(
-  ${${PROJECT_NAME}_INCLUDE_DIRS}
-  ${nmx_common_INCLUDE_DIRS}
-  ${ROOT_INCLUDE_DIRS}
-  ${OPENGL_INCLUDE_DIR}
-)
+dirs_of(${PROJECT_NAME}_INCLUDE_DIRS "${${PROJECT_NAME}_HEADERS}")
 
 add_executable(
   ${PROJECT_NAME}
   ${${PROJECT_NAME}_SOURCES}
-#  resources/tpccres.qrc
-#  ColorWidgets/color_widgets.qrc
+  ${${PROJECT_NAME}_HEADERS}
+)
+
+target_include_directories(
+  ${PROJECT_NAME}
+  PRIVATE ${${PROJECT_NAME}_INCLUDE_DIRS}
+  PRIVATE ${nmx_common_INCLUDE_DIRS}
+  PRIVATE ${ROOT_INCLUDE_DIRS}
+  PRIVATE ${OPENGL_INCLUDE_DIR}
 )
 
 target_link_libraries(
   ${PROJECT_NAME}
   ${nmx_common_LIBRARIES}
-  ${h5cc_LIBRARIES}
   ${ROOT_LIBRARIES}
   ${OPENGL_LIBRARIES}
 )

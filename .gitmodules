@@ -1,0 +1,9 @@
+[submodule "source/common/external/h5cc"]
+	path = source/common/external/h5cc
+	url = git@github.com:ess-dmsc/h5cc.git
+[submodule "source/common/external/docopt.cpp"]
+	path = source/common/external/docopt.cpp
+	url = git@github.com:docopt/docopt.cpp.git
+[submodule "source/common/external/json"]
+	path = source/common/external/json
+	url = git@github.com:nlohmann/json.git

@@ -1,9 +1,12 @@
 #include "Filesystem.h"
+#include <iostream>
 
-std::set<boost::filesystem::path> files_in(boost::filesystem::path path,
-                                           std::string ext, bool recurse)
+namespace fs = boost::filesystem;
+
+std::set<fs::path> files_in(fs::path path,
+                            std::string ext, bool recurse)
 {
-  namespace fs = boost::filesystem;
+  namespace fs = fs;
 
   fs::directory_iterator end_iter;
   std::set<fs::path> ret;
@@ -21,10 +24,10 @@ std::set<boost::filesystem::path> files_in(boost::filesystem::path path,
   return ret;
 }
 
-boost::filesystem::path relative_to(boost::filesystem::path from,
-                                    boost::filesystem::path to)
+fs::path relative_to(fs::path from,
+                     fs::path to)
 {
-  namespace fs = boost::filesystem;
+  namespace fs = fs;
   // Start at the root path and while they are the same then do nothing then when they first
   // diverge take the remainder of the two path and replace the entire from path with ".."
   // segments.
@@ -54,3 +57,21 @@ boost::filesystem::path relative_to(boost::filesystem::path from,
   return finalPath;
 }
 
+std::set<fs::path> find_files(std::string path, bool recurse)
+{
+  std::set<fs::path> ret;
+  if (!path.empty())
+  {
+    ret = files_in(path, ".h5", recurse);
+    if (ret.empty())
+      std::cout << "No *.h5 files found in " << path << "\n";
+  }
+
+  if (ret.empty())
+  {
+    ret = files_in(fs::current_path(), ".h5", recurse);
+    if (ret.empty())
+      std::cout << "No *.h5 files found in " << fs::current_path() << "\n";
+  }
+  return ret;
+}

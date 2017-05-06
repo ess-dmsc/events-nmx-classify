@@ -1,11 +1,11 @@
 #include "CustomLogger.h"
-#include "CLParser.h"
 #include "RawAPV.h"
 #include <signal.h>
 #include <boost/algorithm/string.hpp>
 #include "Filesystem.h"
 #include "ExceptionUtil.h"
 #include "progbar.h"
+#include "docopt.h"
 
 #include "ReaderRawAPV.h"
 #include "ReaderROOT.h"
@@ -19,35 +19,29 @@ void term_key(int /*sig*/)
 namespace fs = boost::filesystem;
 using namespace std;
 
-const string options_text =
-		"NMX data conversion program for ROOT/Raw to HDF5. Available options:\n"
-				"    -i [path/input.root or .raw] Must be specified\n"
-				"    -o [path/oputput.h5] Output file - defaults to input.h5\n"
-				"    --help/-h prints this list of options\n";
+static const char USAGE[] =
+    R"(nmx analyze
+
+    Usage:
+    nmx_analyze INFILE OUTFILE
+    nmx_analyze (-h | --help)
+
+    Options:
+    -h --help    Show this screen.
+    )";
 
 int main(int argc, char* argv[])
 {
 	signal(SIGINT, term_key);
   H5CC::exceptions_off();
-
 //  CustomLogger::initLogger();
 
-	// Parse the command line arguments
-	CLParser cmd_line(argc, argv);
+  auto args = docopt::docopt(USAGE, {argv+1,argv+argc}, true);
 
-	// Files
-	string input_file = cmd_line.get_value("-i");
-	string output_file = cmd_line.get_value("-o");
-
-	// Exit if not enough arguments
-	if (input_file.empty())
-		INFO<< "Error: Please specify an input file!\n\n";
-	if (input_file.empty() || cmd_line.has_switch("-h")
-			|| cmd_line.has_switch("--help"))
-	{
-		cout << options_text;
-		return 1;
-	}
+  auto input_file = args["INFILE"].asString();
+  auto output_file = args["OUTFILE"].asString();
+  if (input_file.empty() || output_file.empty())
+    return 1;
 
 	// Initialize the reader to read the root-file containing the events
 	shared_ptr<NMX::Reader> reader;

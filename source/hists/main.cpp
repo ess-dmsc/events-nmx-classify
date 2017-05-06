@@ -1,10 +1,10 @@
 #include "CustomLogger.h"
-#include "CLParser.h"
 #include "File.h"
 #include <signal.h>
 #include "Filesystem.h"
 #include "histogram_h5.h"
 #include "progbar.h"
+#include "docopt.h"
 
 volatile sig_atomic_t term_flag = 0;
 void term_key(int /*sig*/)
@@ -14,51 +14,30 @@ void term_key(int /*sig*/)
 
 namespace fs = boost::filesystem;
 
-const std::string options_text =
-    "NMX metrics histogram generation tool. Available options:\n"
-    "    -p [path] Path to analyzed data files. Defaults to current path\n"
-    "    -r Recursive file search. Default=false\n"
-    "    -o [path/file.h5] Output file\n"
-    "    --help/-h prints this list of options\n";
+static const char USAGE[] =
+    R"(nmx analyze
+
+    Usage:
+    nmx_analyze INFILE OUTFILE [-r]
+    nmx_analyze (-h | --help)
+
+    Options:
+    -h --help    Show this screen.
+    -r           Recursive file search
+    )";
 
 int main(int argc, char* argv[])
 {
   signal(SIGINT, term_key);
   H5CC::exceptions_off();
+  //  CustomLogger::initLogger();
 
-//  CustomLogger::initLogger();
+  auto args = docopt::docopt(USAGE, {argv+1,argv+argc}, true);
 
-  // Parse the command line aguments
-  CLParser cmd_line(argc, argv);
-
-  // Input file
-  std::string input_path  = cmd_line.get_value("-p");
-  std::string output_file = cmd_line.get_value("-o");
-  bool recurse = cmd_line.has_switch("-r");
-
-  std::set<boost::filesystem::path> files;
-
-  if (!input_path.empty())
-  {
-    files = files_in(input_path, ".h5", recurse);
-    if (files.empty())
-      WARN << "No *.h5 files found in " << input_path;
-  }
-
-  if (files.empty())
-  {
-    files = files_in(fs::current_path(), ".h5", recurse);
-    if (files.empty())
-      ERR << "No *.h5 files found in " << fs::current_path();
-  }
-
-  // Exit if not enough params
-  if (files.empty() || output_file.empty() ||
-      cmd_line.has_switch("-h") || cmd_line.has_switch("--help"))
-  {
-    std::cout << options_text;
+  auto files = find_files(args["INFILE"].asString(), args.count("-r"));
+  auto output_file = args["OUTFILE"].asString();
+  if (files.empty() || output_file.empty())
     return 1;
-  }
 
   std::cout << "Will analyse the following files:\n";
   for (auto p : files)
