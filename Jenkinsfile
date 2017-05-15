@@ -4,8 +4,10 @@
 
 node ("qt && boost && root && fedora") {
 
-    stage("Checkout projects") {
-        checkout scm
+    dir("code") {
+        stage("Checkout projects") {
+            checkout scm
+        }
     }
 
     dir("build") {
