@@ -6,7 +6,18 @@ node ("qt && boost && root && fedora") {
 
     dir("code") {
         stage("Checkout projects") {
-            checkout scm
+            checkout([
+                $class: 'GitSCM',
+                extensions: [[
+                    $class: 'SubmoduleOption',
+                    disableSubmodules: false,
+                    parentCredentials: false,
+                    recursiveSubmodules: true,
+                    reference: '',
+                    trackingSubmodules: false
+                ]],
+                submoduleCfg: []
+            ])
         }
     }
 
