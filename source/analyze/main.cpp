@@ -37,10 +37,10 @@ static const char USAGE[] =
     nmx_analyze (-h | --help)
 
     Options:
-    -h --help    Show this screen.
-    -r           Recursive file search
-    --tovmm      Convert to emulated vmm data
-    --chunk      raw_VMM size [default: 20]
+    -h --help      Show this screen.
+    -r             Recursive file search
+    --tovmm        Convert to emulated vmm data
+    --chunk SIZE   raw/VMM size [default: 20]
     )";
 
 int main(int argc, char* argv[])
@@ -60,8 +60,8 @@ int main(int argc, char* argv[])
 
   bool to_vmm = args["--tovmm"].asBool();
   int chunksize {0};
-  if (to_vmm && args["--chunk"].isLong())
-    chunksize = args["--chunk"].asLong();
+  if (to_vmm && args["SIZE"].isLong())
+    chunksize = args["SIZE"].asLong();
   if (chunksize < 1)
     chunksize = 20;
 

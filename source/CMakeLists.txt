@@ -31,6 +31,7 @@ function(dirs_of retname file_list)
   set (${retname} ${dlist} PARENT_SCOPE)
 endfunction(dirs_of)
 
+add_definitions(-DBOOST_LOG_DYN_LINK)
 
 add_subdirectory(common)
 

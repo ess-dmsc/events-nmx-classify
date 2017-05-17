@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8.11 FATAL_ERROR)
 project(nmx_browse CXX)
 
+add_definitions(-DBOOST_LOG_DYN_LINK)
+
 # ROOT
 list(APPEND CMAKE_PREFIX_PATH $ENV{ROOTSYS})
 find_package(ROOT REQUIRED COMPONENTS RIO Net)

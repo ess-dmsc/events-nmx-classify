@@ -1,11 +1,12 @@
 cmake_minimum_required(VERSION 2.8.11 FATAL_ERROR)
 project(nmx_common CXX)
 
+FIND_PACKAGE ( Threads REQUIRED )
+
 # Boost
-SET(Boost_USE_STATIC_LIBS ON)
-find_package(Boost COMPONENTS
-  system filesystem thread timer date_time log log_setup
-  REQUIRED)
+find_package(Boost COMPONENTS system filesystem thread timer date_time
+             log log_setup REQUIRED)
+link_directories( ${BOOST_LIBRARY_DIRS} )
 
 # h5cc
 add_subdirectory(
@@ -56,6 +57,7 @@ target_link_libraries(
   ${Boost_LIBRARIES}
   ${h5cc_LIBRARIES}
   ${docopt_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
 )
 
 message(STATUS "H5CC LIBS ===== " ${h5cc_INCLUDE_DIRS})

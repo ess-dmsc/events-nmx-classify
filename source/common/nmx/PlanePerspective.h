@@ -35,16 +35,21 @@ private:
 
   int16_t start_ {-1};
   int16_t end_   {-1};
+  int16_t max_adc_idx_ {-1};
+  int16_t min_adc_idx_ {-1};
 
-  HistList2D point_list;
+  HistList2D point_list_;
 
-  int32_t integral {0};
-  int32_t sum_idx {0};
-  double sum_idx_val {0};
-  double sum_idx_ortho {0};
-  double sum_ortho {0};
-  int16_t cuness {0};
-  int16_t cuness2 {0};
+  int32_t integral_ {0};
+  int32_t sum_idx_ {0};
+  double sum_idx_val_ {0};
+  double sum_idx_ortho_ {0};
+  double sum_ortho_ {0};
+  int16_t cuness_ {0};
+  int16_t cuness2_ {0};
+
+  int64_t min_adc_   {std::numeric_limits<int64_t>::max()};
+  int64_t max_adc_   {std::numeric_limits<int64_t>::min()};
 
   PlanePerspective pick_best(int max_count, int max_span) const;
   PlanePerspective suppress_negatives() const;

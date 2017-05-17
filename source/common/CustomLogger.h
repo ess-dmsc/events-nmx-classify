@@ -4,7 +4,7 @@
 
 #include "boost/version.hpp"
 
-#ifndef BOOST_VERSIONN
+#ifndef BOOST_VERSION
 #define TRC std::cout  "\n[TRC] "
 #define DBG std::cout << "\n[DBG] "
 #define INFO std::cout << "\n"

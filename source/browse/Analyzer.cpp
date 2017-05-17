@@ -216,9 +216,11 @@ void Analyzer::replot1d()
     average= histogram1d_.get_value(ui->comboAverage->currentText().toStdString());
 
   if (fit_type != "none")
-    ui->labelFit->setText("   " + QString::fromStdString(fitter.info(ui->doubleUnits->value())));
+    ui->labelFit->setText(QString::fromStdString(fitter.info(ui->doubleUnits->value())));
   else
     ui->labelFit->setText("   No edge fit model selected");
+
+  DBG << fitter.info(ui->doubleUnits->value());
 
   ui->plotHistogram->clearAll();
   //  QPlot::Appearance profile;

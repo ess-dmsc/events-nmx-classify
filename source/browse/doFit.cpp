@@ -205,14 +205,18 @@ double EdgeFitter::snr_error() const
 
 std::string EdgeFitter::info(double units) const
 {
-  std::stringstream ss;
+  std::stringstream ss1;
 
-  ss << "Resolution=" << resolution(units) << "+-" << resolution_error(units)
-     << " (" << resolution_error(units)/resolution(units) * 100 << "%)"
-     << "  S=" << signal() << "  N=" << background()
-     << "  S/N=" << snr();
+  ss1 << " Res=" << resolution(units) << "+-" << resolution_error(units)
+      << " (" << resolution_error(units)/resolution(units) * 100 << "%)"
+      << "  S=" << signal() << "+-" << signal_error()
+      << " (" << signal_error()/signal() * 100 << "%)"
+      << "\n N=" << background() << "+-" << background_error()
+      << " (" << background_error()/background() * 100 << "%)"
+      << "  SNR=" << snr() << "+-" << snr_error()
+      << " (" << snr_error()/snr() * 100 << "%)";
 
-  return ss.str();
+  return ss1.str();
 }
 
 

@@ -30,22 +30,6 @@ void Strip::add_value(int16_t idx, int16_t val)
     end_ = idx;
 }
 
-uint16_t Strip::span() const
-{
-  if ((start_ < 0) || (end_ < start_))
-    return 0;
-  else
-    return end_ - start_ + 1;
-}
-
-int16_t Strip::value(int16_t idx) const
-{
-  if (data_.count(idx))
-    return data_.at(idx);
-  else
-    return 0;
-}
-
 std::vector<int16_t>  Strip::as_vector() const
 {
   std::vector<int16_t> ret;

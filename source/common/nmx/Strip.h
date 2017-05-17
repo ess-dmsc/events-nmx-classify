@@ -19,17 +19,29 @@ public:
 
   static Settings default_params();
 
-  int16_t value(int16_t idx) const;
   std::vector<int16_t>  as_vector() const;
   std::map<uint16_t, int16_t> as_tree() const {return data_;}
 
-  //return analytical values
-  bool empty() const {return data_.empty();}
-  int16_t num_valid() const {return data_.size();}
-  int16_t start() const {return start_;}
-  int16_t end() const {return end_;}
-  uint16_t span() const;
-  int64_t integral() const {return integral_;}
+  //return values
+  inline bool empty() const {return data_.empty();}
+  inline int16_t num_valid() const {return data_.size();}
+  inline int16_t start() const {return start_;}
+  inline int16_t end() const {return end_;}
+  inline int64_t integral() const {return integral_;}
+  inline uint16_t span() const
+  {
+    if ((start_ < 0) || (end_ < start_))
+      return 0;
+    else
+      return end_ - start_ + 1;
+  }
+  inline int16_t value(int16_t idx) const
+  {
+    if (data_.count(idx))
+      return data_.at(idx);
+    else
+      return 0;
+  }
 
   std::string debug() const;
 
