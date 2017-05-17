@@ -58,6 +58,8 @@ target_link_libraries(
   ${docopt_LIBRARIES}
 )
 
+message(STATUS "H5CC LIBS ===== " ${h5cc_INCLUDE_DIRS})
+
 set(${PROJECT_NAME}_LIBRARIES
     ${PROJECT_NAME}
     PARENT_SCOPE)

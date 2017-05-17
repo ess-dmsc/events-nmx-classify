@@ -40,7 +40,7 @@ static const char USAGE[] =
     -h --help    Show this screen.
     -r           Recursive file search
     --tovmm      Convert to emulated vmm data
-    --chunk      raw/VMM size [default: 20]
+    --chunk      raw_VMM size [default: 20]
     )";
 
 int main(int argc, char* argv[])
@@ -58,13 +58,13 @@ int main(int argc, char* argv[])
   if (params.empty())
     std::cout << "No analyses to clone\n";
 
+  bool to_vmm = args["--tovmm"].asBool();
   int chunksize {0};
-  if (args.count("--chunk"))
+  if (to_vmm && args["--chunk"].isLong())
     chunksize = args["--chunk"].asLong();
   if (chunksize < 1)
     chunksize = 20;
 
-  bool to_vmm = args.count("--tovmm");
   if (to_vmm)
     std::cout << "Saving as emulated VMM data using chunksize=" << chunksize << "\n";
 
@@ -166,7 +166,7 @@ void analyze_metrics(const std::set<path>& files,
     ++fnum;
   }
 
-  std::cout << "Processed " << total_events << " in " << files.size() << " files\n";
+  std::cout << "Processed " << total_events << " events in " << files.size() << " files\n";
 }
 
 void emulate_vmm(const std::set<path>& files,
