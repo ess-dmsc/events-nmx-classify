@@ -7,6 +7,7 @@ node ("qt && boost && root && fedora") {
     dir("code") {
         stage("Checkout projects") {
             checkout scm
+            sh "git submodule update --init"
         }
     }
 
