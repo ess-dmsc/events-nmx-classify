@@ -12,6 +12,7 @@ node ("qt && boost && root && fedora") {
 
     dir("build") {
         stage("Run CMake") {
+            sh 'git submodule update --init --recursive'
             sh 'rm -rf ./*'
             sh '/opt/cmake/cmake-3.7.1-Linux-x86_64/bin/cmake --version'
             sh "source /opt/cern/root/bin/thisroot.sh && \
