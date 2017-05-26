@@ -54,29 +54,20 @@ signals:
   void select_indices(std::set<size_t>);
 
 private slots:
-
   void on_pushAddTest_clicked();
   void on_pushRemoveTest_clicked();
-
   void on_comboFit_currentTextChanged(const QString &arg1);
   void on_doubleUnits_editingFinished();
+  void on_pushFilterFromPlot_clicked();
+  void on_pushFilterToPlot_clicked();
+  void on_comboAverage_currentIndexChanged(int index);
+  void on_pushSave1D_clicked();
+  void on_pushSave2D_clicked();
+  void on_pushVary_clicked();
 
   void rebuildFilteredList();
-  void replot();
-
-  void on_pushFilterFromPlot_clicked();
-
-  void on_pushFilterToPlot_clicked();
-
   void filterSelectionChanged();
-
-  void on_comboAverage_currentIndexChanged(int index);
-
-  void on_pushSave1D_clicked();
-
-  void on_pushSave2D_clicked();
-
-  void on_pushVary_clicked();
+  void replot();
 
 private:
   Ui::Analyzer *ui;

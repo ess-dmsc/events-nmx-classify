@@ -19,7 +19,7 @@ int TestsModel::rowCount(const QModelIndex & /*parent*/) const
 
 int TestsModel::columnCount(const QModelIndex & /*parent*/) const
 {
-  return 5;
+  return 6;
 }
 
 QVariant TestsModel::data(const QModelIndex &index, int role) const
@@ -49,8 +49,10 @@ QVariant TestsModel::data(const QModelIndex &index, int role) const
     case 1:
       return QString::fromStdString(tests_.tests.at(row).metric);
     case 2:
-      return QVariant::fromValue(tests_.tests.at(row).min);
+      return QVariant::fromValue(tests_.tests.at(row).round_before_compare);
     case 3:
+      return QVariant::fromValue(tests_.tests.at(row).min);
+    case 4:
       return QVariant::fromValue(tests_.tests.at(row).max);
 //    case 4:
 //      return QString::fromStdString(tests_.tests.at(row).description);
@@ -71,8 +73,10 @@ QVariant TestsModel::headerData(int section, Qt::Orientation orientation, int ro
       case 1:
         return QString("Metric");
       case 2:
-        return QString("min");
+        return QString("Round intermediate");
       case 3:
+        return QString("min");
+      case 4:
         return QString("max");
       }
     } else if (orientation == Qt::Vertical) {
@@ -90,7 +94,8 @@ bool TestsModel::setData(const QModelIndex & index, const QVariant & value, int 
 }
 
 
-bool TestsModel::setDataQuietly(const QModelIndex & index, const QVariant & value, int role)
+bool TestsModel::setDataQuietly(const QModelIndex & index,
+                                const QVariant & value, int role)
 {
   int row = index.row();
   int col = index.column();
@@ -105,11 +110,16 @@ bool TestsModel::setDataQuietly(const QModelIndex & index, const QVariant & valu
       tests_.tests[row].metric = value.toString().toStdString();
       update();
     }
+    else if ((col == 2) && value.canConvert(QVariant::Bool))
+    {
+      tests_.tests[row].round_before_compare = value.toBool();
+      update();
+    }
     else if (value.canConvert(QMetaType::Double))
     {
-      if (col == 2)
+      if (col == 3)
         tests_.tests[row].min = value.toDouble();
-      else if (col == 3)
+      else if (col == 4)
         tests_.tests[row].max = value.toDouble();
       else
         return false;
@@ -133,7 +143,7 @@ void TestsModel::update()
 Qt::ItemFlags TestsModel::flags(const QModelIndex &index) const
 {
   Qt::ItemFlags myflags = Qt::ItemIsEnabled | Qt::ItemIsSelectable | QAbstractTableModel::flags(index);
-  if ((index.column() >= 0) && (index.column() < 4))
+  if ((index.column() >= 0) && (index.column() < 5))
     myflags |= Qt::ItemIsEditable;
   return myflags;
 }

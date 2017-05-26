@@ -7,6 +7,7 @@
 #include "histogram_h5.h"
 
 #include "DialogVary.h"
+#include "JsonH5.h"
 
 Analyzer::Analyzer(QWidget *parent)
   : QWidget(parent)
@@ -72,20 +73,8 @@ void Analyzer::loadSettings()
   ui->comboFit->setCurrentText(settings.value("fit").toString());
   ui->doubleUnits->setValue(settings.value("units", 400).toDouble());
 
-  auto filter = tests_model_.tests();
-  int size = settings.beginReadArray("Filters");
-  for (int i = 0; i < size; ++i)
-  {
-      settings.setArrayIndex(i);
-      MetricTest t;
-      t.metric = settings.value("metric").toString().toStdString();
-      t.enabled = settings.value("enabled").toBool();
-      t.min = settings.value("min").toDouble();
-      t.max = settings.value("max").toDouble();
-      filter.tests.push_back(t);
-  }
-  settings.endArray();
-
+  MetricFilter filter;
+  filter.load(settings, "Filters");
   tests_model_.set_tests(filter);
 }
 
@@ -100,18 +89,7 @@ void Analyzer::saveSettings()
   settings.setValue("fit", ui->comboFit->currentText());
   settings.setValue("units", ui->doubleUnits->value());
 
-  settings.remove("Filters");
-  auto filter = tests_model_.tests();
-  settings.beginWriteArray("Filters");
-  for (int i = 0; i < filter.tests.size(); ++i)
-  {
-    settings.setArrayIndex(i);
-    settings.setValue("metric", QString::fromStdString(filter.tests[i].metric));
-    settings.setValue("enabled", filter.tests[i].enabled);
-    settings.setValue("min", filter.tests[i].min);
-    settings.setValue("max", filter.tests[i].max);
-  }
-  settings.endArray();
+  tests_model_.tests().save(settings, "Filters");
 }
 
 void Analyzer::set_new_source(std::shared_ptr<NMX::File> r)
@@ -589,15 +567,9 @@ void Analyzer::on_pushVary_clicked()
     group.clear();
 //    group.write_attribute("datafile", )
 
+    json j = filter;
     H5CC::Group baseline = group.require_group("baseline_filters");
-    for (auto t : filter.tests)
-    {
-      if (!t.enabled)
-        continue;
-      auto gparam = baseline.require_group(t.metric);
-      gparam.write_attribute("min", t.min);
-      gparam.write_attribute("max", t.max);
-    }
+    H5CC::from_json(j, baseline);
 
     H5CC::DataSet dset = group.require_dataset<double>("results",
                                                       {count.size(),14});
