@@ -4,7 +4,7 @@
 #include <QAbstractTableModel>
 #include <QItemSelectionModel>
 
-#include "Subhist.h"
+#include "Filter.h"
 #include "qt_util.h"
 #include "MetricSet.h"
 

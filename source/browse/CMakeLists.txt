@@ -3,11 +3,6 @@ project(nmx_browse CXX)
 
 add_definitions(-DBOOST_LOG_DYN_LINK)
 
-# ROOT
-list(APPEND CMAKE_PREFIX_PATH $ENV{ROOTSYS})
-find_package(ROOT REQUIRED COMPONENTS RIO Net)
-include(${ROOT_USE_FILE})
-
 # Qt
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
@@ -30,14 +25,12 @@ target_include_directories(
   ${PROJECT_NAME}
   PRIVATE ${${PROJECT_NAME}_INCLUDE_DIRS}
   PRIVATE ${nmx_common_INCLUDE_DIRS}
-  PRIVATE ${ROOT_INCLUDE_DIRS}
   PRIVATE ${OPENGL_INCLUDE_DIR}
 )
 
 target_link_libraries(
   ${PROJECT_NAME}
   ${nmx_common_LIBRARIES}
-  ${ROOT_LIBRARIES}
   ${OPENGL_LIBRARIES}
 )
 

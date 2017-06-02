@@ -169,6 +169,14 @@ MetricSet PlanePerspective::metrics() const
 {
   MetricSet metrics;
 
+  metrics.set("min_c",
+      MetricVal(start_,
+              "minimum " + axis1_ + " with "));
+
+  metrics.set("max_c",
+      MetricVal(end_,
+              "maximum " + axis1_ + " with "));
+
   metrics.set("valid",
       MetricVal(data_.size(),
               "number of " + axis1_ + "s with "));

@@ -2,38 +2,13 @@
 
 #include <QWidget>
 #include <QItemSelection>
+#include <QSettings>
 #include <memory>
 
 #include "File.h"
 
 #include "BoxesModel.h"
 #include "SpecialDelegate.h"
-
-class Histogram1D
-{
-public:
-  HistMap1D map() const;
-  HistList1D list() const;
-
-  void clear();
-  void add_one(double bin);
-
-  static std::list<std::string> values();
-  double get_value(std::string) const;
-
-  double mean() const;
-  double harmonic_mean() const;
-  double RMS() const;
-
-  double midrange() const;
-  double median() const;
-  double mode() const;
-
-private:
-  HistMap1D map_;
-  uint64_t count_ {0};
-};
-
 
 namespace Ui {
 class Analyzer;
@@ -94,3 +69,9 @@ private:
 
   QStringList getMetricsList(std::list<std::string> metric_set);
 };
+
+void save(const MetricTest& f, QSettings& s);
+void load(MetricTest& f, const QSettings& s);
+
+void save(const MetricFilter& f, QSettings& s, QString name);
+void load(MetricFilter& f, QSettings &s, QString name);

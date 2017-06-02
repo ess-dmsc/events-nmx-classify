@@ -74,7 +74,7 @@ void Analyzer::loadSettings()
   ui->doubleUnits->setValue(settings.value("units", 400).toDouble());
 
   MetricFilter filter;
-  filter.load(settings, "Filters");
+  load(filter, settings, "Filters");
   tests_model_.set_tests(filter);
 }
 
@@ -89,7 +89,7 @@ void Analyzer::saveSettings()
   settings.setValue("fit", ui->comboFit->currentText());
   settings.setValue("units", ui->doubleUnits->value());
 
-  tests_model_.tests().save(settings, "Filters");
+  save(tests_model_.tests(), settings, "Filters");
 }
 
 void Analyzer::set_new_source(std::shared_ptr<NMX::File> r)
@@ -133,7 +133,7 @@ void Analyzer::rebuildFilteredList()
   ui->labelFilterResults->setText(
         "   Filtered events: " + QString::number(percent) +
         "% (" + QString::number(indices_.size()) + "/" +
-               QString::number(reader_->event_count()) + ")");
+        QString::number(reader_->event_count()) + ")");
   replot();
   emit select_indices(indices_);
 }
@@ -234,10 +234,8 @@ void Analyzer::on_pushRemoveTest_clicked()
   if (rows.size())
   {
     int row = rows.front().row();
-    if ((row >= 0) && (row < filter.tests.size()))
-    {
-      filter.tests.remove(row);
-    }
+    if ((row >= 0) && (row < int(filter.tests.size())))
+      filter.tests.erase(filter.tests.begin() + row);
   }
   tests_model_.set_tests(filter);
 }
@@ -265,9 +263,9 @@ void Analyzer::on_pushFilterFromPlot_clicked()
 {
   auto name = ui->pushMetric1D->text().toStdString();
   auto filter = tests_model_.tests();
-//  for (auto f : filter.tests)
-//    if (f.metric == name)
-//      return;
+  //  for (auto f : filter.tests)
+  //    if (f.metric == name)
+  //      return;
   MetricTest newtest;
   newtest.metric = name;
   if (reader_)
@@ -288,7 +286,7 @@ void Analyzer::on_pushFilterToPlot_clicked()
   if (rows.size())
     row = rows.front().row();
 
-  if ((row < 0) && (row >= filter.tests.size()))
+  if ((row < 0) && (row >= int(filter.tests.size())))
     return;
 
   auto name = tests_model_.tests().tests.at(row).metric;
@@ -305,108 +303,6 @@ void Analyzer::filterSelectionChanged()
 }
 
 
-HistMap1D Histogram1D::map() const
-{
-  return map_;
-}
-
-HistList1D Histogram1D::list() const
-{
-  return to_list(map_);
-}
-
-void Histogram1D::add_one(double bin)
-{
-  map_[bin]++;
-  count_++;
-}
-
-void Histogram1D::clear()
-{
-  map_.clear();
-  count_ = 0;
-}
-
-std::list<std::string> Histogram1D::values()
-{
-  return {"mean", "median", "mode", "midrange", "RMS", "harmonic mean"};
-}
-
-double Histogram1D::get_value(std::string t) const
-{
-  if (t == "mean")
-    return mean();
-  else if (t == "median")
-    return median();
-  else if (t == "mode")
-    return mode();
-  else if (t == "midrange")
-    return midrange();
-  else if (t == "RMS")
-    return RMS();
-  else if (t == "harmonic mean")
-    return harmonic_mean();
-  return std::numeric_limits<double>::quiet_NaN();
-}
-
-double Histogram1D::mean() const
-{
-  double sum {0};
-  for (const auto& m : map_)
-    sum += m.first * m.second;
-  return sum / static_cast<double>(count_);
-}
-
-double Histogram1D::median() const
-{
-  double med_count = static_cast<double>(count_) / 2.0;
-  double mcount {0};
-  double prev = std::numeric_limits<double>::quiet_NaN();
-  for (const auto& m : map_)
-  {
-    mcount += m.second;
-    if (mcount > med_count)
-      break;
-    prev = m.first;
-  }
-  return prev;
-}
-
-double Histogram1D::mode() const
-{
-  double maxcount = std::numeric_limits<double>::min();
-  double maxbin = std::numeric_limits<double>::quiet_NaN();
-  for (const auto& m : map_)
-    if (m.second > maxcount)
-    {
-      maxcount = m.second;
-      maxbin = m.first;
-    }
-  return maxbin;
-}
-
-double Histogram1D::harmonic_mean() const
-{
-  double sum {0};
-  for (const auto& m : map_)
-    sum += m.second / m.first;
-  return static_cast<double>(count_) / sum;
-}
-
-double Histogram1D::RMS() const
-{
-  double sum {0};
-  for (const auto& m : map_)
-    sum += m.first * m.first * m.second;
-  return sqrt(sum / static_cast<double>(count_));
-}
-
-double Histogram1D::midrange() const
-{
-  if (map_.empty())
-    return std::numeric_limits<double>::quiet_NaN();
-  return (map_.begin()->first + map_.rbegin()->first) / 2.0;
-}
 
 void Analyzer::on_comboAverage_currentIndexChanged(int index)
 {
@@ -484,66 +380,21 @@ void Analyzer::on_pushVary_clicked()
   if (rows.size())
     row = rows.front().row();
 
-  if ((row < 0) && (row >= filter.tests.size()))
+  if ((row < 0) && (row >= int(filter.tests.size())))
     return;
 
-  auto original = filter.tests[row];
-  auto total_count = indices_.size();
-
-  DialogVary dv(QString::fromStdString(original.metric),
-                original.min, original.max, this);
+  DialogVary dv(filter.tests[row], this);
 
   if (dv.exec() != QDialog::Accepted)
     return;
 
-  std::vector<double> val_min, val_max, count, efficiency,
-      res, reserr, pos, poserr, signal, signalerr, back, backerr,
-      snr, snrerr;
-
-  filter.tests[row].enabled = true;
-  auto endp = dv.end();
-  if (dv.vary_min() && dv.vary_max())
-    endp -= dv.window();
-  for (double i=dv.start(); i <= endp; i+=dv.step())
-  {
-    if (dv.vary_min() && dv.vary_max())
-    {
-      filter.tests[row].min = i;
-      filter.tests[row].max = i + dv.window() - 1;
-    }
-    else if (dv.vary_min())
-      filter.tests[row].min = i;
-    else if (dv.vary_max())
-      filter.tests[row].max = i;
-
-    tests_model_.set_tests(filter);
-    rebuildFilteredList();
-    EdgeFitter fitter(histogram1d_.map());
-    fitter.analyze(fit_type);
-
-    if (!fitter.reasonable())
-      continue;
-
-    val_min.push_back(filter.tests[row].min);
-    val_max.push_back(filter.tests[row].max);
-    count.push_back(indices_.size());
-    efficiency.push_back(double(indices_.size()) / double(total_count) * 100.0);
-    res.push_back(fitter.resolution(ui->doubleUnits->value()));
-    reserr.push_back(fitter.resolution_error(ui->doubleUnits->value()));
-    pos.push_back(fitter.position(ui->doubleUnits->value()));
-    poserr.push_back(fitter.position_error(ui->doubleUnits->value()));
-    signal.push_back(fitter.signal());
-    signalerr.push_back(fitter.signal_error());
-    back.push_back(fitter.background());
-    backerr.push_back(fitter.background_error());
-    snr.push_back(fitter.snr());
-    snrerr.push_back(fitter.snr_error());
-  }
-
-  filter.tests[row] = original;
-  tests_model_.set_tests(filter);
-  rebuildFilteredList();
-
+  FilterMerits results;
+  results.filter = filter;
+  results.filter.tests[row].enabled = false; //or remove
+  results.indvar = dv.params();
+  results.fit_type = fit_type;
+  results.units = ui->doubleUnits->value();
+  results.doit(*reader_, ui->pushMetric1D->text().toStdString());
 
   QSettings settings;
   settings.beginGroup("Program");
@@ -560,55 +411,57 @@ void Analyzer::on_pushVary_clicked()
   if (!ok || text.isEmpty())
     return;
 
-  try
+
+  H5CC::File file(fileName.toStdString(), H5CC::Access::rw_require);
+  H5CC::Group group = file.require_group(text.toStdString());
+
+  //    group.write_attribute("datafile", )
+  group.write_attribute("dataset", reader_->dataset_name());
+  group.write_attribute("analysis", reader_->current_analysis());
+
+  results.save(group);
+}
+
+void save(const MetricTest& f, QSettings& s)
+{
+  s.setValue("metric", QString::fromStdString(f.metric));
+  s.setValue("enabled", f.enabled);
+  s.setValue("round", f.round_before_compare);
+  s.setValue("min", f.min);
+  s.setValue("max", f.max);
+}
+
+void load(MetricTest& f, const QSettings& s)
+{
+  f.metric = s.value("metric").toString().toStdString();
+  f.enabled = s.value("enabled").toBool();
+  f.round_before_compare = s.value("round").toBool();
+  f.min = s.value("min").toDouble();
+  f.max = s.value("max").toDouble();
+}
+
+void save(const MetricFilter& f, QSettings& s, QString name)
+{
+  s.remove(name);
+  s.beginWriteArray(name);
+  for (size_t i = 0; i < f.tests.size(); ++i)
   {
-    H5CC::File file(fileName.toStdString(), H5CC::Access::rw_require);
-    H5CC::Group group = file.require_group(text.toStdString());
-    group.clear();
-//    group.write_attribute("datafile", )
-
-    json j = filter;
-    H5CC::Group baseline = group.require_group("baseline_filters");
-    H5CC::from_json(j, baseline);
-
-    H5CC::DataSet dset = group.require_dataset<double>("results",
-                                                      {count.size(),14});
-    dset.write(val_min, {count.size(), 1}, {0,0});
-    dset.write(val_max, {count.size(), 1}, {0,1});
-    dset.write(count, {count.size(), 1}, {0,2});
-    dset.write(efficiency, {count.size(), 1}, {0,3});
-    dset.write(res, {count.size(), 1}, {0,4});
-    dset.write(reserr, {count.size(), 1}, {0,5});
-    dset.write(pos, {count.size(), 1}, {0,6});
-    dset.write(poserr, {count.size(), 1}, {0,7});
-    dset.write(signal, {count.size(), 1}, {0,8});
-    dset.write(signalerr, {count.size(), 1}, {0,9});
-    dset.write(back, {count.size(), 1}, {0,10});
-    dset.write(backerr, {count.size(), 1}, {0,11});
-    dset.write(snr, {count.size(), 1}, {0,12});
-    dset.write(snrerr, {count.size(), 1}, {0,13});
-
-    dset.write_attribute("dataset", reader_->dataset_name());
-    dset.write_attribute("analysis", reader_->current_analysis());
-    dset.write_attribute("independent_variable", original.metric);
-    dset.write_attribute("independent_variable_description",
-                         reader_->get_metric(original.metric).description());
-    dset.write_attribute("varied_min", dv.vary_min());
-    dset.write_attribute("varied_max", dv.vary_max());
-    dset.write_attribute("value_start", dv.start());
-    dset.write_attribute("value_end", dv.end());
-    dset.write_attribute("value_step", dv.step());
-    dset.write_attribute("value_width", dv.window());
-    dset.write_attribute("baseline_total_count", uint32_t(total_count));
-    dset.write_attribute("resolution_pitch", ui->doubleUnits->value());
-    dset.write_attribute("columns", std::string(
-                         "val_min, val_max, count, %count, resolution, "
-                         "resolution_uncert, position, position_uncert, "
-                         "signal, signal_uncert, background, background_uncert, "
-                         "SnR, SnR_uncert"));
+    s.setArrayIndex(i);
+    save(f.tests[i], s);
   }
-  catch (...)
+  s.endArray();
+}
+
+void load(MetricFilter& f, QSettings& s, QString name)
+{
+  f.tests.clear();
+  int size = s.beginReadArray(name);
+  for (int i = 0; i < size; ++i)
   {
+    s.setArrayIndex(i);
+    MetricTest t;
+    load(t, s);
+    f.tests.push_back(t);
   }
-
+  s.endArray();
 }

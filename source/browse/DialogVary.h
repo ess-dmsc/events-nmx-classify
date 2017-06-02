@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <QDialog>
+#include "Filter.h"
 
 namespace Ui {
 class DialogVary;
@@ -12,8 +13,10 @@ class DialogVary : public QDialog
   Q_OBJECT
 
 public:
-  explicit DialogVary(QString metric, double min, double max, QWidget *parent = 0);
+  explicit DialogVary(IndepVariable pars, QWidget *parent = 0);
   ~DialogVary();
+
+  IndepVariable params() const;
 
   double start() const;
   double end() const;

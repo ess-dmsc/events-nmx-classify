@@ -8,6 +8,11 @@ find_package(Boost COMPONENTS system filesystem thread timer date_time
              log log_setup REQUIRED)
 link_directories( ${BOOST_LIBRARY_DIRS} )
 
+# ROOT
+list(APPEND CMAKE_PREFIX_PATH $ENV{ROOTSYS})
+find_package(ROOT REQUIRED COMPONENTS RIO Net)
+include(${ROOT_USE_FILE})
+
 # h5cc
 add_subdirectory(
   ${CMAKE_CURRENT_SOURCE_DIR}/external/h5cc/source/h5cc)
@@ -47,6 +52,7 @@ target_include_directories(
   ${PROJECT_NAME}
   PUBLIC ${${PROJECT_NAME}_INCLUDE_DIRS}
   PUBLIC ${Boost_INCLUDE_DIRS}
+  PUBLIC ${ROOT_INCLUDE_DIRS}
   PUBLIC ${h5cc_INCLUDE_DIRS}
   PUBLIC ${json_INCLUDE_DIRS}
   PUBLIC ${docopt_INCLUDE_DIRS}
@@ -55,6 +61,7 @@ target_include_directories(
 target_link_libraries(
   ${PROJECT_NAME}
   ${Boost_LIBRARIES}
+  ${ROOT_LIBRARIES}
   ${h5cc_LIBRARIES}
   ${docopt_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}

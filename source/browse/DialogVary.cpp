@@ -8,7 +8,7 @@
 #include <boost/filesystem/operations.hpp>
 #include <boost/algorithm/string.hpp>
 
-DialogVary::DialogVary(QString metric, double min, double max, QWidget *parent) :
+DialogVary::DialogVary(IndepVariable pars, QWidget *parent) :
   QDialog(parent),
   ui(new Ui::DialogVary)
 {
@@ -16,20 +16,19 @@ DialogVary::DialogVary(QString metric, double min, double max, QWidget *parent) 
   ui->labelWidth->setVisible(false);
   ui->doubleWidth->setVisible(false);
 
-
-  ui->labelMetric->setText(metric);
+  ui->labelMetric->setText(QString::fromStdString(pars.metric));
   ui->radioMax->setChecked(true);
 
-  ui->doubleMin->setRange(min, max);
-  ui->doubleMin->setValue(min);
+  ui->doubleMin->setRange(pars.start, pars.end);
+  ui->doubleMin->setValue(pars.start);
 
-  ui->doubleMax->setRange(min, max);
-  ui->doubleMax->setValue(max);
+  ui->doubleMax->setRange(pars.start, pars.end);
+  ui->doubleMax->setValue(pars.end);
 
-  ui->doubleStep->setRange(0, max-min+1);
+  ui->doubleStep->setRange(0, pars.end-pars.start+1);
   ui->doubleStep->setValue(1);
 
-  ui->doubleWidth->setRange(1, max-min+1);
+  ui->doubleWidth->setRange(1, pars.end-pars.start+1);
   ui->doubleWidth->setValue(1);
 }
 
@@ -48,36 +47,18 @@ void DialogVary::on_buttonBox_rejected()
   emit accepted();
 }
 
-double DialogVary::start() const
+IndepVariable DialogVary::params() const
 {
-  return ui->doubleMin->value();
+  IndepVariable ret;
+  ret.metric = ui->labelMetric->text().toStdString();
+  ret.start = ui->doubleMin->value();
+  ret.end = ui->doubleMax->value();
+  ret.step = ui->doubleStep->value();
+  ret.width = ui->doubleStep->value();
+  ret.vary_min = (ui->radioMin->isChecked() || ui->radioBoth->isChecked());
+  ret.vary_max = (ui->radioMax->isChecked() || ui->radioBoth->isChecked());
+  return ret;
 }
-
-double DialogVary::end() const
-{
-  return ui->doubleMax->value();
-}
-
-double DialogVary::step() const
-{
-  return ui->doubleStep->value();
-}
-
-double DialogVary::window() const
-{
-  return ui->doubleWidth->value();
-}
-
-bool DialogVary::vary_min() const
-{
-  return (ui->radioMin->isChecked() || ui->radioBoth->isChecked());
-}
-
-bool DialogVary::vary_max() const
-{
-  return (ui->radioMax->isChecked() || ui->radioBoth->isChecked());
-}
-
 
 void DialogVary::on_radioBoth_toggled(bool checked)
 {
