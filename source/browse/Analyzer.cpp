@@ -420,14 +420,6 @@ void Analyzer::on_pushVary_clicked()
   if (dv.exec() != QDialog::Accepted)
     return;
 
-  FilterMerits results;
-  results.filter = filter;
-  results.filter.remove(row);
-  results.indvar = dv.params();
-  results.fit_type = fit_type;
-  results.units = ui->doubleUnits->value();
-  results.doit(*reader_, ui->pushMetric1D->text().toStdString());
-
   QSettings settings;
   settings.beginGroup("Program");
   auto data_directory = settings.value("data_directory", "").toString();
@@ -443,11 +435,18 @@ void Analyzer::on_pushVary_clicked()
   if (!ok || text.isEmpty())
     return;
 
+  FilterMerits results;
+  results.filter = filter;
+  results.filter.remove(row);
+  results.indvar = dv.params();
+  results.fit_type = fit_type;
+  results.units = ui->doubleUnits->value();
+  results.doit(*reader_, ui->pushMetric1D->text().toStdString());
 
   H5CC::File file(fileName.toStdString(), H5CC::Access::rw_require);
   H5CC::Group group = file.require_group(text.toStdString());
 
-  //    group.write_attribute("datafile", )
+  group.write_attribute("datafile", reader_->file_name());
   group.write_attribute("dataset", reader_->dataset_name());
   group.write_attribute("analysis", reader_->current_analysis());
 

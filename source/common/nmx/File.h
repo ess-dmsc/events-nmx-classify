@@ -15,6 +15,8 @@ public:
   File(std::string filename, H5CC::Access access);
   ~File();
 
+  std::string file_name() const;
+
   //Raw data
   bool has_APV();
   bool has_clustered();
@@ -45,6 +47,7 @@ private:
   H5CC::File     file_;
   std::shared_ptr<Raw> raw_;
   bool write_access_ {false};
+  std::string file_name_;
 
   Analysis       analysis_;
 
