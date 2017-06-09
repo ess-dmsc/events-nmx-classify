@@ -463,6 +463,40 @@
           </widget>
          </item>
          <item>
+          <widget class="QPushButton" name="pushUpTest">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="toolTip">
+            <string>Move up</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset resource="resources/tpccres.qrc">
+             <normaloff>:/icons/oxy/16/up.png</normaloff>:/icons/oxy/16/up.png</iconset>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="pushDownTest">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="toolTip">
+            <string>Move down</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset resource="resources/tpccres.qrc">
+             <normaloff>:/icons/oxy/16/down.png</normaloff>:/icons/oxy/16/down.png</iconset>
+           </property>
+          </widget>
+         </item>
+         <item>
           <widget class="QPushButton" name="pushFilterFromPlot">
            <property name="toolTip">
             <string>From plot</string>

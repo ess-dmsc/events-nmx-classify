@@ -44,6 +44,10 @@ private slots:
   void filterSelectionChanged();
   void replot();
 
+  void on_pushUpTest_clicked();
+
+  void on_pushDownTest_clicked();
+
 private:
   Ui::Analyzer *ui;
   TestsModel tests_model_;

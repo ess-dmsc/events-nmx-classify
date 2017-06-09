@@ -156,7 +156,7 @@ bool MetricFilter::validate(
     const std::map<std::string, NMX::Metric>& metrics,
     size_t index) const
 {
-  for (auto f : tests)
+  for (auto f : tests_)
   {
     if (!f.enabled)
       continue;
@@ -169,10 +169,62 @@ bool MetricFilter::validate(
   return true;
 }
 
+void MetricFilter::clear()
+{
+  tests_.clear();
+}
+
+size_t MetricFilter::size() const
+{
+  return tests_.size();
+}
+
+MetricTest MetricFilter::test(size_t i) const
+{
+  if (i >= tests_.size())
+    return MetricTest();
+  return tests_.at(i);
+}
+
+void MetricFilter::set_test(size_t i, MetricTest t)
+{
+  if (tests_.size() <= i)
+    tests_.resize(i+1);
+  tests_[i] = t;
+}
+
+void MetricFilter::remove(size_t i)
+{
+  if (i < tests_.size())
+    tests_.erase(tests_.begin() + i);
+}
+
+void MetricFilter::up(size_t i)
+{
+  if ((i < tests_.size()) && (i > 0))
+    std::swap(tests_[i-1], tests_[i]);
+}
+
+void MetricFilter::down(size_t i)
+{
+  if ((i +1 ) < tests_.size())
+    std::swap(tests_[i+1], tests_[i]);
+}
+
+std::vector<MetricTest> MetricFilter::tests() const
+{
+  return tests_;
+}
+
+void MetricFilter::add(MetricTest t)
+{
+  tests_.push_back(t);
+}
+
 std::list<std::string> MetricFilter::required_metrics() const
 {
   std::list<std::string> ret;
-  for (auto t : tests)
+  for (auto t : tests_)
     if (t.enabled)
       ret.push_back(t.metric);
   return ret;
@@ -216,14 +268,14 @@ Histogram1D MetricFilter::get_projection(const NMX::File& file,
 
 void to_json(json& j, const MetricFilter &s)
 {
-  j["tests"] = s.tests;
+  j["tests"] = s.tests_;
 }
 
 void from_json(const json& j, MetricFilter &s)
 {
-  s.tests.clear();
+  s.tests_.clear();
   if (j.count("tests") && j["tests"].is_array())
-    s.tests = j["tests"].get<std::vector<MetricTest>>();
+    s.tests_ = j["tests"].get<std::vector<MetricTest>>();
 }
 
 IndepVariable::IndepVariable(MetricTest m)
@@ -286,7 +338,7 @@ void FilterMerits::doit(const NMX::File& f, std::string proj)
       iv.max = i;
 
     MetricFilter filter2 = filter;
-    filter.tests.push_back(iv);
+    filter2.add(iv);
 
     auto hist = filter2.get_projection(f, proj);
     EdgeFitter fitter(hist.map());

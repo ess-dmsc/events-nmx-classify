@@ -223,7 +223,7 @@ void Analyzer::set_metric_z(QString str)
 void Analyzer::on_pushAddTest_clicked()
 {
   auto filter = tests_model_.tests();
-  filter.tests.push_back(MetricTest());
+  filter.add(MetricTest());
   tests_model_.set_tests(filter);
 }
 
@@ -234,8 +234,8 @@ void Analyzer::on_pushRemoveTest_clicked()
   if (rows.size())
   {
     int row = rows.front().row();
-    if ((row >= 0) && (row < int(filter.tests.size())))
-      filter.tests.erase(filter.tests.begin() + row);
+    if (row >= 0)
+      filter.remove(row);
   }
   tests_model_.set_tests(filter);
 }
@@ -274,8 +274,40 @@ void Analyzer::on_pushFilterFromPlot_clicked()
     newtest.min = metric_info.min();
     newtest.max = metric_info.max();
   }
-  filter.tests.push_back(newtest);
+  filter.add(newtest);
   tests_model_.set_tests(filter);
+}
+
+void Analyzer::on_pushUpTest_clicked()
+{
+  auto filter = tests_model_.tests();
+  int row = -1;
+  auto rows = ui->tableTests->selectionModel()->selectedRows();
+  if (rows.size())
+    row = rows.front().row();
+
+  if ((row < 1) && (row >= int(filter.size())))
+    return;
+
+  filter.up(row);
+  tests_model_.set_tests(filter);
+  ui->tableTests->selectRow(row-1);
+}
+
+void Analyzer::on_pushDownTest_clicked()
+{
+  auto filter = tests_model_.tests();
+  int row = -1;
+  auto rows = ui->tableTests->selectionModel()->selectedRows();
+  if (rows.size())
+    row = rows.front().row();
+
+  if ((row < 0) && ((row+1) >= int(filter.size())))
+    return;
+
+  filter.down(row);
+  tests_model_.set_tests(filter);
+  ui->tableTests->selectRow(row+1);
 }
 
 void Analyzer::on_pushFilterToPlot_clicked()
@@ -286,10 +318,10 @@ void Analyzer::on_pushFilterToPlot_clicked()
   if (rows.size())
     row = rows.front().row();
 
-  if ((row < 0) && (row >= int(filter.tests.size())))
+  if ((row < 0) && (row >= int(filter.size())))
     return;
 
-  auto name = tests_model_.tests().tests.at(row).metric;
+  auto name = tests_model_.tests().test(row).metric;
   ui->pushMetric1D->setText(QString::fromStdString(name));
   replot();
 }
@@ -380,17 +412,17 @@ void Analyzer::on_pushVary_clicked()
   if (rows.size())
     row = rows.front().row();
 
-  if ((row < 0) && (row >= int(filter.tests.size())))
+  if ((row < 0) && (row >= int(filter.size())))
     return;
 
-  DialogVary dv(filter.tests[row], this);
+  DialogVary dv(filter.test(row), this);
 
   if (dv.exec() != QDialog::Accepted)
     return;
 
   FilterMerits results;
   results.filter = filter;
-  results.filter.tests[row].enabled = false; //or remove
+  results.filter.remove(row);
   results.indvar = dv.params();
   results.fit_type = fit_type;
   results.units = ui->doubleUnits->value();
@@ -444,24 +476,24 @@ void save(const MetricFilter& f, QSettings& s, QString name)
 {
   s.remove(name);
   s.beginWriteArray(name);
-  for (size_t i = 0; i < f.tests.size(); ++i)
+  for (size_t i = 0; i < f.size(); ++i)
   {
     s.setArrayIndex(i);
-    save(f.tests[i], s);
+    save(f.test(i), s);
   }
   s.endArray();
 }
 
 void load(MetricFilter& f, QSettings& s, QString name)
 {
-  f.tests.clear();
+  f.clear();
   int size = s.beginReadArray(name);
   for (int i = 0; i < size; ++i)
   {
     s.setArrayIndex(i);
     MetricTest t;
     load(t, s);
-    f.tests.push_back(t);
+    f.add(t);
   }
   s.endArray();
 }

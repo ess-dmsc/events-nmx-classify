@@ -48,8 +48,9 @@ private:
   uint64_t count_ {0};
 };
 
-struct MetricFilter
+class MetricFilter
 {
+public:
   Histogram1D get_projection(const NMX::File& file,
                              std::string proj_metric) const;
   std::set<size_t> get_indices(const NMX::File& file) const;
@@ -57,10 +58,21 @@ struct MetricFilter
                 size_t index) const;
   std::list<std::string> required_metrics() const;
 
+  size_t size() const;
+  void add(MetricTest t);
+  std::vector<MetricTest> tests() const;
+  MetricTest test(size_t i) const;
+  void set_test(size_t i, MetricTest t);
+  void remove(size_t i);
+  void up(size_t i);
+  void down(size_t i);
+  void clear();
+
   friend void to_json(json& j, const MetricFilter &s);
   friend void from_json(const json& j, MetricFilter &s);
 
-  std::vector<MetricTest> tests;
+private:
+  std::vector<MetricTest> tests_;
 };
 
 struct IndepVariable

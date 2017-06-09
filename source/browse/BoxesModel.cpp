@@ -14,7 +14,7 @@ TestsModel::TestsModel(QObject *parent)
 
 int TestsModel::rowCount(const QModelIndex & /*parent*/) const
 {
-  return tests_.tests.size();
+  return tests_.size();
 }
 
 int TestsModel::columnCount(const QModelIndex & /*parent*/) const
@@ -37,7 +37,7 @@ QVariant TestsModel::data(const QModelIndex &index, int role) const
   else if ((role == Qt::EditRole) && (col == 1))
   {
     H5CC::Enum<int16_t> m(available_metrics_);
-    m.choose(tests_.tests.at(row).metric);
+    m.choose(tests_.tests().at(row).metric);
     nlohmann::json j = m;
     return QVariant::fromValue(j);
   }
@@ -45,15 +45,15 @@ QVariant TestsModel::data(const QModelIndex &index, int role) const
   {
     switch (col) {
     case 0:
-      return QVariant::fromValue(tests_.tests.at(row).enabled);
+      return QVariant::fromValue(tests_.test(row).enabled);
     case 1:
-      return QString::fromStdString(tests_.tests.at(row).metric);
+      return QString::fromStdString(tests_.test(row).metric);
     case 2:
-      return QVariant::fromValue(tests_.tests.at(row).round_before_compare);
+      return QVariant::fromValue(tests_.test(row).round_before_compare);
     case 3:
-      return QVariant::fromValue(tests_.tests.at(row).min);
+      return QVariant::fromValue(tests_.test(row).min);
     case 4:
-      return QVariant::fromValue(tests_.tests.at(row).max);
+      return QVariant::fromValue(tests_.test(row).max);
 //    case 4:
 //      return QString::fromStdString(tests_.tests.at(row).description);
     }
@@ -104,23 +104,39 @@ bool TestsModel::setDataQuietly(const QModelIndex & index,
       && (col >= 0) && (col < columnCount()))
   {
     if ((col == 0) && value.canConvert(QVariant::Bool))
-      tests_.tests[row].enabled = value.toBool();
+    {
+      auto t = tests_.test(row);
+      t.enabled = value.toBool();
+      tests_.set_test(row, t);
+    }
     else if ((col == 1) && value.canConvert(QVariant::String))
     {
-      tests_.tests[row].metric = value.toString().toStdString();
+      auto t = tests_.test(row);
+      t.metric = value.toString().toStdString();
+      tests_.set_test(row, t);
       update();
     }
     else if ((col == 2) && value.canConvert(QVariant::Bool))
     {
-      tests_.tests[row].round_before_compare = value.toBool();
+      auto t = tests_.test(row);
+      t.round_before_compare = value.toBool();
+      tests_.set_test(row, t);
       update();
     }
     else if (value.canConvert(QMetaType::Double))
     {
       if (col == 3)
-        tests_.tests[row].min = value.toDouble();
+      {
+        auto t = tests_.test(row);
+        t.min = value.toDouble();
+        tests_.set_test(row, t);
+      }
       else if (col == 4)
-        tests_.tests[row].max = value.toDouble();
+      {
+        auto t = tests_.test(row);
+        t.max = value.toDouble();
+        tests_.set_test(row, t);
+      }
       else
         return false;
     }
@@ -135,7 +151,7 @@ bool TestsModel::setDataQuietly(const QModelIndex & index,
 void TestsModel::update()
 {
   QModelIndex start_ix = createIndex( 0, 0 );
-  QModelIndex end_ix = createIndex(tests_.tests.size(), columnCount());
+  QModelIndex end_ix = createIndex(tests_.size(), columnCount());
   emit dataChanged( start_ix, end_ix );
   emit layoutChanged();
 }
