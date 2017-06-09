@@ -97,7 +97,7 @@ void EdgeFitter::analyze(std::string edge)
 
   if (f1)
   {
-    h1->Fit("f1", "same");
+    h1->Fit("f1", "NQ");
     get_params(f1);
     f1->Delete();
   }

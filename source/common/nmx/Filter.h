@@ -14,6 +14,8 @@ struct MetricTest
   friend void to_json(json& j, const MetricTest &s);
   friend void from_json(const json& j, MetricTest &s);
 
+  bool operator == (const MetricTest& other) const;
+
   bool enabled {false};
   bool round_before_compare {false};
   std::string metric;
@@ -60,6 +62,8 @@ public:
                 size_t index) const;
   std::list<std::string> required_metrics() const;
 
+  bool operator == (const MetricFilter& other) const;
+
   size_t size() const;
   void add(MetricTest t);
   std::vector<MetricTest> tests() const;
@@ -82,6 +86,8 @@ struct IndepVariable
   IndepVariable() {}
   IndepVariable(MetricTest m);
 
+  bool operator == (const IndepVariable& other) const;
+
   std::string metric;
   double start {0};
   double end {0};
@@ -96,9 +102,12 @@ struct IndepVariable
 
 struct FilterMerits
 {
+  bool operator == (const FilterMerits& other) const;
+
   void doit(const NMX::File& f, std::string proj);
 
   void save(H5CC::Group& group) const;
+  void load(const H5CC::Group& group);
 
   MetricFilter filter;
   IndepVariable indvar;

@@ -1,6 +1,15 @@
 #include "Filter.h"
 #include "doFit.h"
 
+bool MetricTest::operator == (const MetricTest& other) const
+{
+  return (enabled == other.enabled) &&
+      (round_before_compare  == other.round_before_compare) &&
+      (metric == other.metric) &&
+      (min == other.min) &&
+      (max == other.max);
+}
+
 MetricTest::MetricTest(std::string name, const NMX::Metric& m)
 {
   min = m.min();
@@ -161,6 +170,10 @@ MetricFilter MetricFilter::cull_disabled() const
   return ret;
 }
 
+bool MetricFilter::operator == (const MetricFilter& other) const
+{
+  return (tests_ == other.tests_);
+}
 
 bool MetricFilter::validate(
     const std::map<std::string, NMX::Metric>& metrics,
@@ -260,8 +273,6 @@ Histogram1D MetricFilter::get_projection(const NMX::File& file,
                                          std::string proj_metric) const
 {
   Histogram1D ret;
-  if (!file.event_count())
-    return ret;
 
   std::map<std::string, NMX::Metric> metrics;
   for (auto m : required_metrics())
@@ -284,8 +295,10 @@ void to_json(json& j, const MetricFilter &s)
 void from_json(const json& j, MetricFilter &s)
 {
   s.tests_.clear();
-  if (j.count("tests") && j["tests"].is_array())
-    s.tests_ = j["tests"].get<std::vector<MetricTest>>();
+  if (!j.count("tests"))
+    return;
+  for (auto k : j["tests"])
+    s.tests_.push_back(k.get<MetricTest>());
 }
 
 IndepVariable::IndepVariable(MetricTest m)
@@ -294,6 +307,18 @@ IndepVariable::IndepVariable(MetricTest m)
   start = m.min;
   end = m.max;
 }
+
+bool IndepVariable::operator == (const IndepVariable& other) const
+{
+  return (metric == other.metric) &&
+      (start == other.start) &&
+      (end == other.end) &&
+      (step == other.step) &&
+      (width == other.width) &&
+      (vary_min == other.vary_min) &&
+      (vary_max == other.vary_max);
+}
+
 
 void to_json(json& j, const IndepVariable &s)
 {
@@ -404,10 +429,33 @@ void FilterMerits::save(H5CC::Group& group) const
 
   dset.write_attribute("baseline_total_count", uint32_t(total_count));
   dset.write_attribute("resolution_pitch", units);
+  dset.write_attribute("fit_type", fit_type);
   dset.write_attribute("columns", std::string(
                          "val_min, val_max, count, %count, resolution, "
                          "resolution_uncert, position, position_uncert, "
                          "signal, signal_uncert, background, background_uncert, "
                          "SnR, SnR_uncert"));
 }
+
+void FilterMerits::load(const H5CC::Group& group)
+{
+  json jf = group.open_group("baseline_filters");
+  filter = jf;
+  json ji = group.open_group("independent_variable");
+  indvar = ji;
+
+  auto dset = group.open_dataset("results");
+  units = dset.read_attribute<uint32_t>("resolution_pitch");
+  fit_type = dset.read_attribute<std::string>("fit_type");
+}
+
+bool FilterMerits::operator == (const FilterMerits& other) const
+{
+  return (filter == other.filter) &&
+      (indvar == other.indvar) &&
+      (fit_type == other.fit_type) &&
+      (units == other.units);
+}
+
+
 
