@@ -51,6 +51,8 @@ private:
 class MetricFilter
 {
 public:
+  MetricFilter cull_disabled() const;
+
   Histogram1D get_projection(const NMX::File& file,
                              std::string proj_metric) const;
   std::set<size_t> get_indices(const NMX::File& file) const;

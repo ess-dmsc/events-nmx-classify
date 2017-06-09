@@ -152,6 +152,16 @@ double Histogram1D::midrange() const
 }
 
 
+MetricFilter MetricFilter::cull_disabled() const
+{
+  MetricFilter ret;
+  for (auto t : tests_)
+    if (t.enabled)
+      ret.tests_.push_back(t);
+  return ret;
+}
+
+
 bool MetricFilter::validate(
     const std::map<std::string, NMX::Metric>& metrics,
     size_t index) const
@@ -322,6 +332,8 @@ void FilterMerits::doit(const NMX::File& f, std::string proj)
 
   MetricTest iv;
   iv.enabled = true;
+  iv.metric = indvar.metric;
+  iv.min = iv.max = 0; // not quite general enough...
   auto endp = indvar.end;
   if (indvar.vary_min && indvar.vary_max)
     endp -= indvar.width;
@@ -337,7 +349,7 @@ void FilterMerits::doit(const NMX::File& f, std::string proj)
     else if (indvar.vary_max)
       iv.max = i;
 
-    MetricFilter filter2 = filter;
+    MetricFilter filter2 = filter.cull_disabled();
     filter2.add(iv);
 
     auto hist = filter2.get_projection(f, proj);
@@ -369,8 +381,8 @@ void FilterMerits::save(H5CC::Group& group) const
   group.clear();
 
   auto bgroup = group.require_group("baseline_filters");
-  H5CC::from_json(filter, bgroup);
-  auto igroup = group.require_group("indpendent_variable");
+  H5CC::from_json(filter.cull_disabled(), bgroup);
+  auto igroup = group.require_group("independent_variable");
   H5CC::from_json(indvar, igroup);
 
   H5CC::DataSet dset

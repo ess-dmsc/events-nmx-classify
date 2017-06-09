@@ -431,7 +431,8 @@ void Analyzer::on_pushVary_clicked()
   bool ok;
   QString text = QInputDialog::getText(this, "Name dataset",
                                        "Dataset name:", QLineEdit::Normal,
-                                       "", &ok);
+                                       QString::fromStdString(dv.params().metric),
+                                       &ok);
   if (!ok || text.isEmpty())
     return;
 
@@ -446,7 +447,6 @@ void Analyzer::on_pushVary_clicked()
   H5CC::File file(fileName.toStdString(), H5CC::Access::rw_require);
   H5CC::Group group = file.require_group(text.toStdString());
 
-  group.write_attribute("datafile", reader_->file_name());
   group.write_attribute("dataset", reader_->dataset_name());
   group.write_attribute("analysis", reader_->current_analysis());
 

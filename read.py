@@ -48,7 +48,7 @@ for metric in f.keys():
 	dset = f[metric + "/results"]
 
 	domain = "val_max"
-	if dset.attrs['varied_min'] != 0: 
+	if f[metric + "/independent_variable"].attrs['vary_min'] != 0: 
 		domain = "val_min"
 
 	plt.suptitle(metric)
