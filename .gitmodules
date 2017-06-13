@@ -9,4 +9,4 @@
 	url = https://github.com/nlohmann/json.git
 [submodule "source/browse/qplot"]
 	path = source/browse/qplot
-	url = git@github.com:ess-dmsc/qplot.git
+	url = https://github.com/ess-dmsc/qplot.git
