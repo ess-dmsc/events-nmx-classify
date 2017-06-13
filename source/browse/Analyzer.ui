@@ -578,19 +578,19 @@
   <customwidget>
    <class>QPlot::Multi1D</class>
    <extends>QWidget</extends>
-   <header>qp_multi1d.h</header>
+   <header>QPlot1D.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>QPlot::Plot2D</class>
+   <extends>QWidget</extends>
+   <header>QPlot2D.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>FilterCombo</class>
    <extends>QPushButton</extends>
    <header>SearchList.h</header>
-  </customwidget>
-  <customwidget>
-   <class>QPlot::Plot2D</class>
-   <extends>QWidget</extends>
-   <header>qp_2d.h</header>
-   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources>

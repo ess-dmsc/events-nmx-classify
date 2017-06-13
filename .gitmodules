@@ -7,3 +7,6 @@
 [submodule "source/common/external/json"]
 	path = source/common/external/json
 	url = https://github.com/nlohmann/json.git
+[submodule "source/browse/qplot"]
+	path = source/browse/qplot
+	url = git@github.com:ess-dmsc/qplot.git

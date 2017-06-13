@@ -80,7 +80,9 @@ void ViewRecord::refresh()
                           "Charge");
 
   if (plot_type_ != "none")
-    ui->plotRecord->updatePlot(record_.strip_span(), record_.time_end() + 1, make_list());
+    ui->plotRecord->updatePlot(record_.strip_span(),
+                               record_.time_end() + 1,
+                               make_list());
 
   auto metrics = record_.metrics();
 
@@ -115,12 +117,12 @@ void ViewRecord::refresh()
   }
 }
 
-HistList2D ViewRecord::make_list()
+QPlot::HistList2D ViewRecord::make_list()
 {
-  HistList2D data;
+  QPlot::HistList2D data;
   auto start = record_.strip_start();
   for (auto &p : record_.get_points(plot_type_.toStdString()))
-    data.push_back(p2d{p.x - start, p.y, p.v});
+    data.push_back(QPlot::p2d{p.x - start, p.y, p.v});
   return data;
 }
 
@@ -141,9 +143,9 @@ QPlot::MarkerBox2D ViewRecord::make_box(double cx, double cy, double size, QColo
 }
 
 
-std::list<QPlot::MarkerBox2D> ViewRecord::make_overlay()
+QList<QPlot::MarkerBox2D> ViewRecord::make_overlay()
 {
-  std::list<QPlot::MarkerBox2D> ret;
+  QList<QPlot::MarkerBox2D> ret;
 
   if (overlay_type_ == "none")
     return ret;

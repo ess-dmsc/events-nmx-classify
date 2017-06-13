@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1504</width>
+    <width>1562</width>
     <height>952</height>
    </rect>
   </property>
@@ -876,8 +876,13 @@
   <customwidget>
    <class>QPlot::Multi1D</class>
    <extends>QWidget</extends>
-   <header>qp_multi1d.h</header>
+   <header>QPlot1D.h</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>FilterCombo</class>
+   <extends>QPushButton</extends>
+   <header>SearchList.h</header>
   </customwidget>
   <customwidget>
    <class>SearchBox</class>
@@ -890,11 +895,6 @@
    <extends>QWidget</extends>
    <header>ViewRecord.h</header>
    <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>FilterCombo</class>
-   <extends>QPushButton</extends>
-   <header>SearchList.h</header>
   </customwidget>
   <customwidget>
    <class>PreviewHue</class>

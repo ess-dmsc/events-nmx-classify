@@ -4,8 +4,8 @@
 
 #include "Plane.h"
 
-#include "qp_2d.h"
-#include "qp_multi1d.h"
+#include "QPlot2D.h"
+#include "QPlot1D.h"
 
 namespace Ui {
 class ViewRecord;
@@ -52,11 +52,12 @@ private:
   QString overlay_type_;
   QVector<PointMetrics> point_metrics_;
 
-  HistList2D make_list();
-  std::list<QPlot::MarkerBox2D> make_overlay();
+  QPlot::HistList2D make_list();
+  QList<QPlot::MarkerBox2D> make_overlay();
 
   QColor overlay_color_ {Qt::red};
 
   QPlot::MarkerBox2D make_box(double cx, double cy, double size, QColor color);
+
 };
 

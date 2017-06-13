@@ -11,19 +11,28 @@ set(CMAKE_AUTOUIC ON)
 find_package(Qt5Widgets REQUIRED)
 find_package(OpenGL REQUIRED)
 
-file(GLOB_RECURSE ${PROJECT_NAME}_SOURCES *.cpp *.h *.ui *.qrc)
-file(GLOB_RECURSE ${PROJECT_NAME}_HEADERS *.h ${PROJECT_BINARY_DIR}/*.h)
+file(GLOB ${PROJECT_NAME}_RESOURCES resources/*.qrc ColorWidgets/*.qrc)
+file(GLOB ${PROJECT_NAME}_SOURCES *.cpp *.ui ColorWidgets/*.cpp)
+file(GLOB ${PROJECT_NAME}_HEADERS *.h ${PROJECT_BINARY_DIR}/*.h ColorWidgets/*.hpp)
 dirs_of(${PROJECT_NAME}_INCLUDE_DIRS "${${PROJECT_NAME}_HEADERS}")
+
+file(GLOB_RECURSE QPLOT_SOURCES qplot/src/qplot/*.cpp)
+file(GLOB_RECURSE QPLOT_HEADERS qplot/src/qplot/*.h)
+dirs_of(QPLOT_INCLUDE_DIRS "${QPLOT_HEADERS}")
 
 add_executable(
   ${PROJECT_NAME}
+  ${${PROJECT_NAME}_RESOURCES}
   ${${PROJECT_NAME}_SOURCES}
   ${${PROJECT_NAME}_HEADERS}
+  ${QPLOT_SOURCES}
+  ${QPLOT_HEADERS}
 )
 
 target_include_directories(
   ${PROJECT_NAME}
   PRIVATE ${${PROJECT_NAME}_INCLUDE_DIRS}
+  PRIVATE ${QPLOT_INCLUDE_DIRS}
   PRIVATE ${nmx_common_INCLUDE_DIRS}
   PRIVATE ${OPENGL_INCLUDE_DIR}
 )

@@ -161,8 +161,8 @@ void Analyzer::replot()
       (xx.data().size() == zz.data().size()))
     for (auto eventID : indices_)
     {
-      histogram2d_[c2d(int32_t( (xx.data().at(eventID) - xx.min()) / xx_norm),
-                       int32_t( (yy.data().at(eventID) - yy.min()) / yy_norm))] ++;
+      histogram2d_[QPlot::c2d(int32_t( (xx.data().at(eventID) - xx.min()) / xx_norm),
+                              int32_t( (yy.data().at(eventID) - yy.min()) / yy_norm))] ++;
 
       histogram1d_.add_one(int( zz.data().at(eventID) / zz_norm) * zz_norm);
     }
@@ -392,12 +392,21 @@ void Analyzer::on_pushSave2D_clicked()
   try
   {
     H5CC::File file(fileName.toStdString(), H5CC::Access::rw_require);
-    write(file.require_group("histograms2d"), text.toStdString(), histogram2d_);
+    write(file.require_group("histograms2d"),
+          text.toStdString(), hm2d(histogram2d_));
   }
   catch (...)
   {
 
   }
+}
+
+HistMap2D Analyzer::hm2d(const QPlot::HistMap2D& h)
+{
+  HistMap2D ret;
+  for (auto hh : h)
+    ret[c2d(hh.first.x, hh.first.y)] = hh.second;
+  return ret;
 }
 
 void Analyzer::on_pushVary_clicked()

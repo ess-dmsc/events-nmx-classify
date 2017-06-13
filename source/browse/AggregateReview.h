@@ -4,8 +4,7 @@
 #include <QItemSelection>
 #include <memory>
 
-#include "qp_2d.h"
-#include "qp_multi1d.h"
+#include "QPlot1D.h"
 #include "histogram.h"
 
 namespace Ui {

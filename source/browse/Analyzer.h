@@ -9,6 +9,7 @@
 
 #include "BoxesModel.h"
 #include "SpecialDelegate.h"
+#include "QHist.h"
 
 namespace Ui {
 class Analyzer;
@@ -57,7 +58,7 @@ private:
   std::set<size_t> indices_;
   Histogram1D histogram1d_;
 
-  HistMap2D histogram2d_;
+  QPlot::HistMap2D histogram2d_;
 
   QVector<QColor> palette_ {Qt::black, Qt::darkRed, Qt::darkGreen,
                             Qt::darkYellow, Qt::darkMagenta,
@@ -72,6 +73,8 @@ private:
   void populate_combos();
 
   QStringList getMetricsList(std::list<std::string> metric_set);
+
+  static HistMap2D hm2d(const QPlot::HistMap2D& h);
 };
 
 void save(const MetricTest& f, QSettings& s);
