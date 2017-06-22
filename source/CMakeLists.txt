@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.8.11 FATAL_ERROR)
 project(nmx_util CXX)
+option(GUI "Build nmx_browse GUI" ON)
 
 # Must use GNUInstallDirs to install libraries into correct
 # locations on all platforms.
@@ -39,8 +40,11 @@ add_subdirectory(analyze)
 add_subdirectory(cluster)
 add_subdirectory(uncluster)
 add_subdirectory(hists)
-add_subdirectory(browse)
 add_subdirectory(convert_apv)
 add_subdirectory(convert_vmm)
 add_subdirectory(merits)
 add_subdirectory(dump)
+
+if(${GUI})
+  add_subdirectory(browse)
+endif()
