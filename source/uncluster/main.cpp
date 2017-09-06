@@ -25,16 +25,16 @@ void term_key(int /*sig*/)
 }
 
 static const char USAGE[] =
-    R"(nmx analyze
+    R"(nmx_uncluster
 
     Usage:
-    nmx_analyze PATH [-s settings] [-chunk size] [-tsep tb] [-ssep strips] [-csep tb]
-    nmx_analyze (-h | --help)
+    nmx_uncluster PATH [--chunk <size>] [--tsep <bins>]
+    nmx_uncluster (-h | --help)
 
     Options:
-    -h --help    Show this screen.
-    --chunk      raw/VMM chunk size [default: 20]
-    --tsep       minimum time separation between events [default: 28]
+    -h --help       show this screen
+    --chunk <size>  raw/VMM chunk size [default: 562]
+    --tsep <bins>   minimum time separation between events [default: 35]
     )";
 
 int main(int argc, char* argv[])
@@ -52,7 +52,7 @@ int main(int argc, char* argv[])
   if (args.count("--chunk"))
     chunksize = args["--chunk"].asLong();
   if (chunksize < 1)
-    chunksize = 20;
+    chunksize = 562;
 
   int timesep {0};
   if (args.count("--tsep"))
@@ -138,7 +138,9 @@ void cluster_eventlets(const path& file, int chunksize, int timesep)
       eventlet_count++;
     }
 
-    time_offset += std::max(event.x().time_span(), event.y().time_span()) + timesep;
+    time_offset +=
+        std::max(event.x().time_span(), event.y().time_span())
+        + timesep;
 
     chron.push(packet);
 
