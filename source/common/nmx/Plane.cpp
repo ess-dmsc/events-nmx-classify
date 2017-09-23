@@ -199,7 +199,7 @@ void Plane::analyze_all()
   PlanePerspective strips_maxima = strips.subset("maxima", strip_params);
   PlanePerspective strips_vmm = strips.subset("vmm", strip_params);
   if (strip_params.contains("min_peak_separation") &&
-      (strip_params.get_value("min_peak_separation") > 0))
+      (strip_params.get_value("min_peak_separation").get<int>() > 0))
     strips_vmm = strips_vmm.subset("peak_separation", strip_params);
   PlanePerspective strips_better = strips_vmm.subset("best", strip_params);
   PlanePerspective strips_best = strips_vmm.subset("best", best_params);
@@ -252,7 +252,7 @@ void Plane::analyze_reduced()
 
   PlanePerspective strips_vmm = strips.subset("vmm", strip_params);
   if (strip_params.contains("min_peak_separation") &&
-      (strip_params.get_value("min_peak_separation") > 0))
+      (strip_params.get_value("min_peak_separation").get<int>() > 0))
     strips_vmm = strips_vmm.subset("peak_separation", strip_params);
   PlanePerspective strips_better = strips_vmm.subset("best", strip_params);
   PlanePerspective strips_best = strips_vmm.subset("best", best_params);
@@ -282,7 +282,7 @@ void Plane::analyze_to_vmm()
   auto strip_params = parameters_.with_prefix("strip.");
   PlanePerspective strips_vmm = strips.subset("vmm", strip_params);
   if (strip_params.contains("min_peak_separation") &&
-      (strip_params.get_value("min_peak_separation") > 0))
+      (strip_params.get_value("min_peak_separation").get<int>() > 0))
     strips_vmm = strips_vmm.subset("peak_separation", strip_params);
   point_lists_["strip_vmm"] = strips_vmm.points();
 }
@@ -295,7 +295,7 @@ void Plane::analyze_reduced_from_vmm()
 
   auto strips = strips_;
   if (strip_params.contains("min_peak_separation") &&
-      (strip_params.get_value("min_peak_separation") > 0))
+      (strip_params.get_value("min_peak_separation").get<int>() > 0))
     strips = strips.subset("peak_separation", strip_params);
 
   auto timebins = strips.subset("orthogonal");
