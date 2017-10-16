@@ -1,12 +1,12 @@
-[submodule "source/common/external/h5cc"]
-	path = source/common/external/h5cc
+[submodule "src/common/external/h5cc"]
+	path = src/common/external/h5cc
 	url = https://github.com/ess-dmsc/h5cc.git
-[submodule "source/common/external/docopt.cpp"]
-	path = source/common/external/docopt.cpp
+[submodule "src/common/external/docopt.cpp"]
+	path = src/common/external/docopt.cpp
 	url = https://github.com/docopt/docopt.cpp.git
-[submodule "source/common/external/json"]
-	path = source/common/external/json
+[submodule "src/common/external/json"]
+	path = src/common/external/json
 	url = https://github.com/nlohmann/json.git
-[submodule "source/browse/qplot"]
-	path = source/browse/qplot
+[submodule "src/browse/qplot"]
+	path = src/browse/qplot
 	url = https://github.com/ess-dmsc/qplot.git

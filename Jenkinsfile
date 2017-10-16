@@ -29,7 +29,7 @@ node ("qt && boost && root && fedora") {
                 sh "source /opt/cern/root/bin/thisroot.sh && \
                     HDF5_ROOT=$HDF5_ROOT \
                     CMAKE_PREFIX_PATH=$HDF5_ROOT \
-                    /opt/cmake/cmake-3.7.1-Linux-x86_64/bin/cmake ../code"
+                    /opt/cmake/cmake-3.7.1-Linux-x86_64/bin/cmake -DCOV=on ../code"
             }
         } catch (e) {
             failure_function(e, 'CMake failed')
@@ -37,9 +37,25 @@ node ("qt && boost && root && fedora") {
 
         try {
             stage("Build project") {
-                sh "make VERBOSE=1"
+                sh "make VERBOSE=1 runtest"
+                junit 'tests/results/*_test.xml'
+                sh "make coverage"
+                sh "make memcheck"
+                step([
+                    $class: 'CoberturaPublisher',
+                    autoUpdateHealth: true,
+                    autoUpdateStability: true,
+                    coberturaReportFile: 'tests/coverage/coverage.xml',
+                    failUnhealthy: false,
+                    failUnstable: false,
+                    maxNumberOfBuilds: 0,
+                    onlyStable: false,
+                    sourceEncoding: 'ASCII',
+                    zoomCoverageChart: false
+                ])
             }
         } catch (e) {
+            junit 'tests/results/*_test.xml'
             failure_function(e, 'Build failed')
         }
     }
