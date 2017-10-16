@@ -1,4 +1,5 @@
 #include "EventletTest.hpp"
+#include "MicroclusterTest.hpp"
 
 int main(int argc, char **argv)
 {

@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <Eventlet.h>
+#include <EventletPacket.h>
 #include <set>
 
 namespace NMX {

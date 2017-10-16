@@ -1,7 +1,7 @@
 #pragma once
 
 #include "H5CC_File.h"
-#include "Eventlet.h"
+#include "EventletPacket.h"
 
 namespace NMX {
 
