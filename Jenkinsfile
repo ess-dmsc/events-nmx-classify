@@ -37,6 +37,14 @@ node ("qt && boost && root && fedora") {
 
         try {
             stage("Build project") {
+                sh "make VERBOSE=1"
+            }
+        } catch (e) {
+            failure_function(e, 'Build failed')
+        }
+
+        try {
+            stage("Run tests") {
                 sh "make VERBOSE=1 coverage"
                 sh "make VERBOSE=1 memcheck"
                 junit 'tests/results/*_test.xml'
@@ -55,7 +63,7 @@ node ("qt && boost && root && fedora") {
             }
         } catch (e) {
             junit 'tests/results/*_test.xml'
-            failure_function(e, 'Build failed')
+            failure_function(e, 'Unit tests failed')
         }
     }
 }
