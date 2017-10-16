@@ -21,3 +21,4 @@ include(${EXTRA_MODULES_DIR}/BoostLibraryConfig.cmake)
 include(${EXTRA_MODULES_DIR}/DirsOf.cmake)
 
 add_subdirectory(src)
+add_subdirectory(test)
