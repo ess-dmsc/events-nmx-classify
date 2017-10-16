@@ -6,10 +6,14 @@ include(${EXTRA_MODULES_DIR}/TestCoverage.cmake)
 set(Common_SRC main.cpp
   EventletTest.cpp
   MicroclusterTest.cpp
+  MicroclusterPoolTest.cpp
   ../src/common/nmx/pipeline/Eventlet.cpp
   ../src/common/nmx/pipeline/Eventlet.h
   ../src/common/nmx/pipeline/Microcluster.cpp
-  ../src/common/nmx/pipeline/Microcluster.h)
+  ../src/common/nmx/pipeline/Microcluster.h
+  ../src/common/nmx/pipeline/MicroclusterPool.cpp
+  ../src/common/nmx/pipeline/MicroclusterPool.h
+  )
 set(Common_INC
   ${nmx_common_HEADERS})
 set(Common_DIRS

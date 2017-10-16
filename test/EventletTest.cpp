@@ -1,6 +1,6 @@
 /** Copyright (C) 2016, 2017 European Spallation Source ERIC */
 
-#include "../src/common/nmx/pipeline/Eventlet.h"
+#include "Eventlet.h"
 #include <gtest/gtest.h>
 
 using namespace NMX;
