@@ -1,21 +1,24 @@
 cmake_minimum_required(VERSION 2.8.11 FATAL_ERROR)
-project(nmx_util CXX)
+project(events-nmx-classify CXX)
 option(GUI "Build nmx_browse GUI" ON)
 
-# Must use GNUInstallDirs to install libraries into correct
-# locations on all platforms.
-include(GNUInstallDirs)
+set(EXTRA_MODULES_DIR ${PROJECT_SOURCE_DIR}/cmake)
+list(APPEND CMAKE_MODULE_PATH ${EXTRA_MODULES_DIR})
 
-#===========================================================
-# Internal compiler options
-#===========================================================
-# C++ standard
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-if(NOT CMAKE_CXX_STANDARD OR CMAKE_CXX_STANDARD LESS 11)
-  set(CMAKE_CXX_STANDARD 11)
-endif()
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+#=============================================================================
+# some general configuration
+#=============================================================================
+
+include(${EXTRA_MODULES_DIR}/InstallConfig.cmake)
+include(${EXTRA_MODULES_DIR}/OutputDirConfig.cmake)
+include(${EXTRA_MODULES_DIR}/EnsureBuildType.cmake)
+include(${EXTRA_MODULES_DIR}/PackageConfig.cmake)
+
+#=============================================================================
+# compiler and library configuration
+#=============================================================================
+include(${EXTRA_MODULES_DIR}/CompilerConfig.cmake)
+include(${EXTRA_MODULES_DIR}/BoostLibraryConfig.cmake)
 
 #=========================================================
 # Function for deducing include dirs
