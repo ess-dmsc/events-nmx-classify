@@ -21,7 +21,7 @@ find_package(Threads)
 find_package(GTest)
 
 set(coverage_flags "-coverage -fprofile-generate")
-set(gcovr_excl_opts "-e .*_test.cpp -e .*gtest.*.h" )
+set(gcovr_excl_opts "-e .*main.cpp -e .*Test.cpp -e .*gtest.*.h" )
 separate_arguments(gcovr_excl_opts)
 
 
@@ -64,7 +64,7 @@ function(create_test_executable test_name link_libraries)
   set(exec_name ${test_name}_test)
 
   add_executable(${exec_name} EXCLUDE_FROM_ALL ${${test_name}_SRC} ${${test_name}_INC} )
-  target_include_directories(${exec_name} PRIVATE ${GTEST_INCLUDE_DIRS})
+  target_include_directories(${exec_name} PRIVATE ${GTEST_INCLUDE_DIRS} ${${test_name}_DIRS})
   set_target_properties(${exec_name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${TEST_BINARIES_PATH}")
   if(DO_COV)
     set_target_properties(${exec_name} PROPERTIES LINK_FLAGS ${coverage_flags})

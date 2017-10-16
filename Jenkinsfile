@@ -37,10 +37,9 @@ node ("qt && boost && root && fedora") {
 
         try {
             stage("Build project") {
-                sh "make VERBOSE=1 runtest"
+                sh "make VERBOSE=1 coverage"
+                sh "make VERBOSE=1 memcheck"
                 junit 'tests/results/*_test.xml'
-                sh "make coverage"
-                sh "make memcheck"
                 step([
                     $class: 'CoberturaPublisher',
                     autoUpdateHealth: true,
