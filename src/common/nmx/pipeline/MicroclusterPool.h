@@ -8,35 +8,21 @@ namespace NMX {
 
 class MicroclusterPool
 {
-  private:
-    struct entry
-    {
-        entry() {}
-        Microcluster cluster;
-        bool used {false};
-
-        void requisition()  { used = true; }
-        void release() { used = false; cluster.reset(); }
-    };
-
   public:
     MicroclusterPool() : MicroclusterPool(1, Microcluster()) {}
     MicroclusterPool(size_t s, Microcluster prototype);
 
     size_t size() const;
-    size_t free_count() const;
+    size_t free() const;
 
     void release(size_t i);
     size_t requisition();
 
-    bool ensure_available();
-
     Microcluster& operator [] (size_t i);
 
   private:
-    std::vector<entry> data_;
-    size_t current_ {0};
-    size_t free_count_ {0};
+    std::vector<Microcluster> data_;
+    std::vector<size_t> free_;
 };
 
 
