@@ -1,8 +1,0 @@
-export OLD_PS1="$PS1"
-export PS1="(conanrunenv) $PS1"
-DYLD_LIBRARY_PATH="/home/martinshetty/.conan/data/h5cpp/0.0.5/ess-dmsc/stable/package/485c38981996db847b6ae4e6a5365f0faa405115/lib":"/home/martinshetty/.conan/data/Boost/1.62.0/ess-dmsc/stable/package/160b4bac5177b0f9a5f4857d00317fe0862a8a02/lib":"/home/martinshetty/.conan/data/gtest/3121b20-dm2/ess-dmsc/stable/package/160b4bac5177b0f9a5f4857d00317fe0862a8a02/lib":"/home/martinshetty/.conan/data/hdf5/1.10.1-dm3/ess-dmsc/stable/package/b4c13947ef1aaff644f2f813658e39917975a88d/lib":"/home/martinshetty/.conan/data/zlib/1.2.11/conan/stable/package/6ae331b72e7e265ca2a3d1d8246faf73aa030238/lib":$DYLD_LIBRARY_PATH
-export DYLD_LIBRARY_PATH
-LD_LIBRARY_PATH="/home/martinshetty/.conan/data/h5cpp/0.0.5/ess-dmsc/stable/package/485c38981996db847b6ae4e6a5365f0faa405115/lib":"/home/martinshetty/.conan/data/Boost/1.62.0/ess-dmsc/stable/package/160b4bac5177b0f9a5f4857d00317fe0862a8a02/lib":"/home/martinshetty/.conan/data/gtest/3121b20-dm2/ess-dmsc/stable/package/160b4bac5177b0f9a5f4857d00317fe0862a8a02/lib":"/home/martinshetty/.conan/data/hdf5/1.10.1-dm3/ess-dmsc/stable/package/b4c13947ef1aaff644f2f813658e39917975a88d/lib":"/home/martinshetty/.conan/data/zlib/1.2.11/conan/stable/package/6ae331b72e7e265ca2a3d1d8246faf73aa030238/lib":$LD_LIBRARY_PATH
-export LD_LIBRARY_PATH
-PATH="/home/martinshetty/.conan/data/cmake_installer/3.10.0/conan/stable/package/44fcf6b9a7fb86b2586303e3db40189d3b511830/bin":"/home/martinshetty/.conan/data/hdf5/1.10.1-dm3/ess-dmsc/stable/package/b4c13947ef1aaff644f2f813658e39917975a88d/bin":$PATH
-export PATH
