@@ -23,7 +23,7 @@ public:
   void read_packet(size_t i, EventletPacket& packet) const;
 
 protected:
-  H5CC::DataSet  dataset_VMM_;
+  H5CC::Dataset  dataset_VMM_;
   size_t entry_count_ {0};
 };
 

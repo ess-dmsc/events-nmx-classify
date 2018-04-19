@@ -2,8 +2,8 @@
 
 #include <map>
 #include <string>
-#include "json.hpp"
-#include "H5CC_Group.h"
+#include <nlohmann/json.hpp>
+#include <h5cpp/hdf5.hpp>
 
 namespace NMX
 {
@@ -29,8 +29,8 @@ public:
 
   std::string debug(std::string prepend = "") const;
 
-  void write_H5(H5CC::Group group, std::string name) const;
-  void read_H5(const H5CC::Group &group, std::string name);
+  void write_H5(hdf5::node::Group group, std::string name) const;
+  void read_H5(const hdf5::node::Group &group, std::string name);
 
 private:
   std::map<std::string, nlohmann::json> data_;

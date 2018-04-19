@@ -18,7 +18,7 @@ public:
 
 protected:
   bool write_access_ {false};
-  H5CC::DataSet  dataset_APV_;
+  H5CC::Dataset  dataset_APV_;
   size_t event_count_ {0};
 
   Plane read_record(size_t index, size_t plane) const;

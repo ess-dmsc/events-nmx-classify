@@ -3,48 +3,55 @@
 
 namespace NMX {
 
-Analysis::Analysis(H5CC::Group group, uint32_t eventnum)
+Analysis::Analysis(hdf5::node::Group group, uint32_t eventnum)
 {
   group_ = group;
-  if (group_.name().empty())
+  if (group_.link().path().name().empty())
     return;
 
   max_num_ = eventnum;
   num_analyzed_ = 0;
 
-  if (group_.has_attribute("num_analyzed"))
-    num_analyzed_ = group_.read_attribute<uint32_t>("num_analyzed");
+  if (group_.attributes.exists("num_analyzed"))
+    group_.attributes["num_analyzed"].read(num_analyzed_);
 
   if (group_.has_group("parameters"))
     params_.read_H5(group_, "parameters");
 
-  for (auto &d : group_.datasets())
+  for (auto d : group_.nodes)
   {
-    datasets_[d] = group_.open_dataset(d);
-    metrics_[d].read_H5(datasets_[d]);
+    if (d.type() != hdf5::node::Type::DATASET)
+      continue;
+    datasets_[d.link().path().name()] = hdf5::node::Dataset(d);
+    metrics_[d.link().path().name()].read_H5(datasets_[d.link().path().name()]);
   }
 }
 
 void Analysis::save()
 {
-  if (group_.name().empty() || !modified_)
+  if (group_.link().path().name().empty() || !modified_)
     return;
 
-  group_.write_attribute("num_analyzed", num_analyzed_);
+  group_.attributes["num_analyzed"].write(num_analyzed_);
   params_.write_H5(group_, "parameters");
-  for (auto &d : group_.datasets())
-    metrics_.at(d).write_H5(datasets_.at(d));
+
+  for (auto d : group_.nodes)
+  {
+    if (d.type() != hdf5::node::Type::DATASET)
+      continue;
+    metrics_.at(d.link().path().name()).write_H5(hdf5::node::Dataset(d));
+  }
 }
 
 
 void Analysis::set_parameters(const Settings& params)
 {
-  if (!group_.name().empty() && (num_analyzed_ > 0))
+  if (!group_.link().path().name().empty() && (num_analyzed_ > 0))
     return;
 
   modified_ = true;
   params_ = params;
-  if (!group_.name().empty())
+  if (!group_.link().path().name().empty())
     params_.write_H5(group_, "parameters");
 }
 
@@ -59,12 +66,12 @@ std::list<std::string> Analysis::metrics() const
 Metric Analysis::metric(std::string name, bool with_data) const
 {
   Metric ret;
-  if (group_.name().empty() || !group_.has_dataset(name))
+  if (group_.link().path().name().empty() || !hdf5::node::is_dataset(group_.nodes[name]))
     return ret;
   if (with_data)
-    ret.read_H5_data(group_.open_dataset(name));
+    ret.read_H5_data(hdf5::node::get_dataset(group_, name));
   else
-    ret.read_H5(group_.open_dataset(name));
+    ret.read_H5(hdf5::node::get_dataset(group_, name));
   return ret;
 }
 
@@ -76,11 +83,21 @@ void Analysis::analyze_event(uint32_t index, Event event)
   event.set_parameters(params_);
   event.analyze();
 
-  if (group_.datasets().empty())
+  bool has_datasets = false;
+  for (auto d : group_.nodes)
+    if (d.type() == hdf5::node::Type::DATASET)
+    {
+      has_datasets = true;
+      break;
+    }
+
+  if (!has_datasets)
   {
     for (auto &a : event.metrics().data())
     {
-      datasets_[a.first] = group_.create_dataset<double>(a.first, {max_num_});
+      datasets_[a.first] = group_.create_dataset(a.first,
+          hdf5::datatype::create<double>(),
+              hdf5::dataspace::Simple({max_num_}));
       metrics_[a.first] = Metric(a.second.description);
     }
   }
@@ -89,7 +106,8 @@ void Analysis::analyze_event(uint32_t index, Event event)
   {
     double d = a.second.value;
     metrics_[a.first].calc(d);
-    datasets_[a.first].write(d, {index});
+    hdf5::dataspace::Hyperslab slab({index}, {1});
+    datasets_[a.first].write(d, slab);
   }
 
   if (index >= num_analyzed_)
@@ -112,7 +130,8 @@ Event Analysis::gather_metrics(uint32_t index, Event event) const
     double d {0.0};
     try
     {
-      d = datasets_.at(m.first).read<double>({index});
+      hdf5::dataspace::Hyperslab slab({index}, {1});
+      datasets_.at(m.first).read(d, slab);
     }
     catch (...)
     {

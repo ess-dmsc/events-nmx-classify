@@ -1,6 +1,6 @@
 #include "Settings.h"
 
-#include "JsonH5.h"
+#include "h5json.h"
 #include <sstream>
 #include "CustomLogger.h"
 
@@ -66,7 +66,7 @@ std::string Settings::debug(std::string prepend) const
   return ret;
 }
 
-void Settings::write_H5(H5CC::Group group, std::string name) const
+void Settings::write_H5(hdf5::node::Group group, std::string name) const
 {
   if (data_.empty())
     return;
@@ -75,11 +75,11 @@ void Settings::write_H5(H5CC::Group group, std::string name) const
   for (auto d : data_)
   {
     auto s_group = params_group.require_group(d.first);
-    H5CC::from_json(d.second, s_group);
+    hdf5::node::from_json(d.second, s_group);
   }
 }
 
-void Settings::read_H5(const H5CC::Group &group, std::string name)
+void Settings::read_H5(const hdf5::node::Group &group, std::string name)
 {
   data_.clear();
   if (!group.has_group(name))

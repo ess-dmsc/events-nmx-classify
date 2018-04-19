@@ -23,7 +23,7 @@ void Metric::add_and_calc(double val)
   data_.push_back(val);
 }
 
-void Metric::write_H5(H5CC::DataSet dataset) const
+void Metric::write_H5(hdf5::node::Dataset dataset) const
 {
   dataset.write_attribute("description", description_);
   dataset.write_attribute("min", min_);
@@ -31,7 +31,7 @@ void Metric::write_H5(H5CC::DataSet dataset) const
   dataset.write_attribute("sum", sum_);
 }
 
-void Metric::read_H5(const H5CC::DataSet &dataset)
+void Metric::read_H5(const hdf5::node::Dataset &dataset)
 {
   description_ = dataset.read_attribute<std::string>("description");
   min_ = dataset.read_attribute<double>("min");
@@ -39,7 +39,7 @@ void Metric::read_H5(const H5CC::DataSet &dataset)
   sum_ = dataset.read_attribute<double>("sum");
 }
 
-void Metric::read_H5_data(const H5CC::DataSet &dataset)
+void Metric::read_H5_data(const hdf5::node::Dataset &dataset)
 {
   read_H5(dataset);
   data_ = dataset.read<double>();

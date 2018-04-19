@@ -20,7 +20,7 @@ public:
 
 protected:
   bool write_access_ {false};
-  H5CC::DataSet  indices_VMM_;
+  H5CC::Dataset  indices_VMM_;
   size_t event_count_ {0};
 
   RawVMM unclustered_;

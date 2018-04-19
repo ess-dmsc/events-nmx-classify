@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../../../../lib/libdocopt.a  CMakeFiles/docopt_o.dir/docopt.cpp.o
+/usr/bin/ranlib ../../../../lib/libdocopt.a

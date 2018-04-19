@@ -1,0 +1,579 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CMakeRunConfigurationManager" shouldGenerate="true" shouldDeleteObsolete="true" buildAllGenerated="true">
+    <generated>
+      <config projectName="nmx-classify" targetName="nmx-classify_core" />
+      <config projectName="nmx-classify" targetName="docopt" />
+      <config projectName="nmx-classify" targetName="docopt_s" />
+      <config projectName="nmx-classify" targetName="docopt_o" />
+    </generated>
+  </component>
+  <component name="CMakeSettings">
+    <configurations>
+      <configuration PROFILE_NAME="Debug" CONFIG_NAME="Debug" />
+    </configurations>
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="56857d8b-65db-4fc5-a593-68daed00bb9c" name="Default" comment="">
+      <change beforePath="$PROJECT_DIR$/.gitmodules" beforeDir="false" afterPath="$PROJECT_DIR$/.gitmodules" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake/BoostLibraryConfig.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/cmake/BoostLibraryConfig.cmake" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake/EnsureBuildType.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/cmake/EnsureBuildType.cmake" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake/PackageConfig.cmake" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/CMakeLists.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/common/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/common/CMakeLists.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/common/JsonH5.cpp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/common/JsonH5.h" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/common/JsonH5.tpp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/common/external/h5cc" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/common/external/json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/common/histogram_h5.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/common/histogram_h5.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/common/histogram_h5.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/common/histogram_h5.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/common/nmx/Analysis.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/common/nmx/Analysis.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/common/nmx/Analysis.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/common/nmx/Analysis.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/common/nmx/Filter.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/common/nmx/Filter.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/common/nmx/Metric.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/common/nmx/Metric.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/common/nmx/Metric.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/common/nmx/Metric.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/common/nmx/RawAPV.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/common/nmx/RawAPV.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/common/nmx/RawClustered.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/common/nmx/RawClustered.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/common/nmx/RawVMM.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/common/nmx/RawVMM.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/common/nmx/Settings.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/common/nmx/Settings.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/common/nmx/Settings.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/common/nmx/Settings.h" afterDir="false" />
+    </list>
+    <ignored path="$PROJECT_DIR$/cmake-build-debug/" />
+    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
+    <option name="TRACKING_ENABLED" value="true" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:Debug" />
+  <component name="FileEditorManager">
+    <splitter split-orientation="horizontal" split-proportion="0.5">
+      <split-first>
+        <leaf>
+          <file leaf-file-name="h5json.h" pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/src/common/h5json.h">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="60">
+                  <caret line="4" selection-start-line="2" selection-end-line="4" />
+                  <folding>
+                    <element signature="e#14#42#0" expanded="true" />
+                  </folding>
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="Settings.h" pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/src/common/nmx/Settings.h">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="150">
+                  <caret line="10" column="14" selection-start-line="10" selection-start-column="14" selection-end-line="10" selection-end-column="14" />
+                  <folding>
+                    <element signature="e#14#28#0" expanded="true" />
+                  </folding>
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="Analysis.cpp" pinned="false" current-in-tab="true">
+            <entry file="file://$PROJECT_DIR$/src/common/nmx/Analysis.cpp">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="1009">
+                  <caret line="135" column="6" lean-forward="true" selection-start-line="135" selection-start-column="6" selection-end-line="135" selection-end-column="6" />
+                  <folding>
+                    <element signature="e#0#21#0" expanded="true" />
+                  </folding>
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="Settings.cpp" pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/src/common/nmx/Settings.cpp">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="60">
+                  <caret line="4" column="16" selection-start-line="4" selection-start-column="16" selection-end-line="4" selection-end-column="16" />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="Metric.h" pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/src/common/nmx/Metric.h">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="150">
+                  <caret line="10" column="1" selection-start-line="10" selection-start-column="1" selection-end-line="10" selection-end-column="1" />
+                  <folding>
+                    <element signature="e#14#39#0" expanded="true" />
+                  </folding>
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="Metric.cpp" pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/src/common/nmx/Metric.cpp">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="139">
+                  <caret line="13" column="29" selection-start-line="13" selection-start-column="29" selection-end-line="13" selection-end-column="29" />
+                  <folding>
+                    <element signature="e#0#19#0" expanded="true" />
+                  </folding>
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="h5json.cpp" pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/src/common/h5json.cpp">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="315">
+                  <caret line="171" column="1" selection-start-line="171" selection-start-column="1" selection-end-line="171" selection-end-column="1" />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="histogram_h5.h" pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/src/common/histogram_h5.h">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="135">
+                  <caret line="9" column="45" selection-start-line="9" selection-start-column="45" selection-end-line="9" selection-end-column="45" />
+                  <folding>
+                    <element signature="e#14#39#0" expanded="true" />
+                  </folding>
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="histogram_h5.cpp" pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/src/common/histogram_h5.cpp">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="304">
+                  <caret line="63" column="56" selection-start-line="63" selection-start-column="56" selection-end-line="63" selection-end-column="56" />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="Analysis.h" pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/src/common/nmx/Analysis.h">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="360">
+                  <caret line="24" column="58" selection-start-line="24" selection-start-column="58" selection-end-line="24" selection-end-column="58" />
+                  <folding>
+                    <element signature="e#14#39#0" expanded="true" />
+                  </folding>
+                </state>
+              </provider>
+            </entry>
+          </file>
+        </leaf>
+      </split-first>
+      <split-second>
+        <leaf>
+          <file leaf-file-name="h5json.cpp" pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/src/common/h5json.cpp">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="360">
+                  <caret line="46" column="29" selection-start-line="46" selection-start-column="29" selection-end-line="46" selection-end-column="29" />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="histogram_h5.cpp" pinned="false" current-in-tab="true">
+            <entry file="file://$PROJECT_DIR$/src/common/histogram_h5.cpp">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="330">
+                  <caret line="22" lean-forward="true" selection-start-line="21" selection-end-line="22" />
+                </state>
+              </provider>
+            </entry>
+          </file>
+        </leaf>
+      </split-second>
+    </splitter>
+  </component>
+  <component name="FindInProjectRecents">
+    <findStrings>
+      <find>_option</find>
+      <find>group.name().empty() ||</find>
+      <find>DataSet</find>
+      <find>H5CC::File</find>
+      <find>has_attribute</find>
+      <find>H5CC::</find>
+    </findStrings>
+    <replaceStrings>
+      <replace>Dataset</replace>
+      <replace>hdf5::node::</replace>
+    </replaceStrings>
+    <dirStrings>
+      <dir>$PROJECT_DIR$/src/common</dir>
+    </dirStrings>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="IdeDocumentHistory">
+    <option name="CHANGED_PATHS">
+      <list>
+        <option value="$PROJECT_DIR$/cmake/EnsureBuildType.cmake" />
+        <option value="$PROJECT_DIR$/CMakeLists.txt" />
+        <option value="$PROJECT_DIR$/cmake/BoostLibraryConfig.cmake" />
+        <option value="$PROJECT_DIR$/conanfile.txt" />
+        <option value="$PROJECT_DIR$/src/CMakeLists.txt" />
+        <option value="$PROJECT_DIR$/src/common/CMakeLists.txt" />
+        <option value="$PROJECT_DIR$/src/common/h5json.h" />
+        <option value="$PROJECT_DIR$/src/common/h5json.cpp" />
+        <option value="$PROJECT_DIR$/src/common/histogram_h5.h" />
+        <option value="$PROJECT_DIR$/src/common/histogram_h5.cpp" />
+        <option value="$PROJECT_DIR$/src/common/nmx/Analysis.h" />
+        <option value="$PROJECT_DIR$/src/common/nmx/Settings.h" />
+        <option value="$PROJECT_DIR$/src/common/nmx/Settings.cpp" />
+        <option value="$PROJECT_DIR$/src/common/nmx/Metric.h" />
+        <option value="$PROJECT_DIR$/src/common/nmx/Metric.cpp" />
+        <option value="$PROJECT_DIR$/src/common/nmx/Analysis.cpp" />
+      </list>
+    </option>
+  </component>
+  <component name="JsBuildToolGruntFileManager" detection-done="true" sorting="DEFINITION_ORDER" />
+  <component name="JsBuildToolPackageJson" detection-done="true" sorting="DEFINITION_ORDER" />
+  <component name="JsGulpfileManager">
+    <detection-done>true</detection-done>
+    <sorting>DEFINITION_ORDER</sorting>
+  </component>
+  <component name="NodePackageJsonFileManager">
+    <packageJsonPaths />
+  </component>
+  <component name="ProjectFrameBounds" extendedState="6">
+    <option name="x" value="-1" />
+    <option name="y" value="25" />
+    <option name="width" value="2562" />
+    <option name="height" value="1416" />
+  </component>
+  <component name="ProjectView">
+    <navigator proportions="" version="1">
+      <foldersAlwaysOnTop value="true" />
+    </navigator>
+    <panes>
+      <pane id="Scope" />
+      <pane id="ProjectPane">
+        <subPane>
+          <expand>
+            <path>
+              <item name="nmx-classify" type="b2602c69:ProjectViewProjectNode" />
+              <item name="events-nmx-classify" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="nmx-classify" type="b2602c69:ProjectViewProjectNode" />
+              <item name="events-nmx-classify" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="nmx-classify" type="b2602c69:ProjectViewProjectNode" />
+              <item name="events-nmx-classify" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="common" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="nmx-classify" type="b2602c69:ProjectViewProjectNode" />
+              <item name="events-nmx-classify" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="common" type="462c0819:PsiDirectoryNode" />
+              <item name="external" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="nmx-classify" type="b2602c69:ProjectViewProjectNode" />
+              <item name="events-nmx-classify" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="common" type="462c0819:PsiDirectoryNode" />
+              <item name="nmx" type="462c0819:PsiDirectoryNode" />
+            </path>
+          </expand>
+          <select />
+        </subPane>
+      </pane>
+    </panes>
+  </component>
+  <component name="PropertiesComponent">
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
+    <property name="nodejs_npm_path_reset_for_default_project" value="true" />
+    <property name="settings.editor.selected.configurable" value="CMakeSettings" />
+  </component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/src/common" />
+      <recent name="$PROJECT_DIR$/cmake" />
+      <recent name="$PROJECT_DIR$" />
+    </key>
+  </component>
+  <component name="RunDashboard">
+    <option name="ruleStates">
+      <list>
+        <RuleState>
+          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
+        </RuleState>
+        <RuleState>
+          <option name="name" value="StatusDashboardGroupingRule" />
+        </RuleState>
+      </list>
+    </option>
+  </component>
+  <component name="RunManager" selected="Application.nmx-classify_core">
+    <configuration name="Build All" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" CONFIG_NAME="Debug" EXPLICIT_BUILD_TARGET_NAME="all" />
+    <configuration name="docopt" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="nmx-classify" TARGET_NAME="docopt" CONFIG_NAME="Debug" />
+    <configuration name="docopt_o" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="nmx-classify" TARGET_NAME="docopt_o" CONFIG_NAME="Debug" />
+    <configuration name="docopt_s" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="nmx-classify" TARGET_NAME="docopt_s" CONFIG_NAME="Debug" />
+    <configuration name="nmx-classify_core" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="nmx-classify" TARGET_NAME="nmx-classify_core" CONFIG_NAME="Debug" />
+    <list>
+      <item itemvalue="Application.Build All" />
+      <item itemvalue="Application.nmx-classify_core" />
+      <item itemvalue="Application.docopt" />
+      <item itemvalue="Application.docopt_o" />
+      <item itemvalue="Application.docopt_s" />
+    </list>
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="56857d8b-65db-4fc5-a593-68daed00bb9c" name="Default" comment="" />
+      <created>1524148690844</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1524148690844</updated>
+      <workItem from="1524148692162" duration="9519000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TimeTrackingManager">
+    <option name="totallyTimeSpent" value="9519000" />
+  </component>
+  <component name="ToolWindowManager">
+    <frame x="-1" y="25" width="2562" height="1416" extended-state="6" />
+    <editor active="true" />
+    <layout>
+      <window_info active="true" content_ui="combo" id="Project" order="1" visible="true" weight="0.14023438" />
+      <window_info anchor="bottom" id="TODO" order="10" />
+      <window_info anchor="bottom" id="CMake" order="3" weight="0.32952815" />
+      <window_info anchor="right" id="LuaJ" order="0" />
+      <window_info anchor="bottom" id="Event Log" order="1" side_tool="true" />
+      <window_info anchor="bottom" id="Find" order="5" />
+      <window_info anchor="bottom" id="Run" order="6" />
+      <window_info anchor="bottom" id="Version Control" order="2" />
+      <window_info id="Structure" order="2" side_tool="true" weight="0.25" />
+      <window_info anchor="bottom" id="Terminal" order="0" weight="0.32952815" />
+      <window_info anchor="bottom" id="Debug" order="7" weight="0.4" />
+      <window_info id="Favorites" order="0" side_tool="true" />
+      <window_info anchor="right" id="Commander" order="1" weight="0.4" />
+      <window_info anchor="right" id="Ant Build" order="2" weight="0.25" />
+      <window_info anchor="bottom" id="Inspection" order="9" weight="0.4" />
+      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="3" weight="0.25" />
+      <window_info anchor="bottom" id="Message" order="4" />
+      <window_info anchor="bottom" id="Cvs" order="8" weight="0.25" />
+    </layout>
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="1" />
+  </component>
+  <component name="VcsContentAnnotationSettings">
+    <option name="myLimit" value="2678400000" />
+  </component>
+  <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/cmake/EnsureBuildType.cmake">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="90">
+          <caret line="6" selection-start-line="6" selection-end-line="6" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/cmake/conan.cmake">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="240">
+          <caret line="16" column="77" lean-forward="true" selection-start-line="16" selection-start-column="77" selection-end-line="16" selection-end-column="77" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/cmake/DirsOf.cmake">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="150">
+          <caret line="10" column="14" selection-start-line="10" selection-start-column="14" selection-end-line="10" selection-end-column="14" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/cmake/InstallConfig.cmake">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="330">
+          <caret line="22" column="5" selection-start-line="22" selection-start-column="5" selection-end-line="22" selection-end-column="5" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/cmake/OutputDirConfig.cmake">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="180">
+          <caret line="12" selection-start-line="12" selection-end-line="12" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/cmake/PackageConfig.cmake">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/cmake/BuildInfo.cmake">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="75">
+          <caret line="5" column="35" selection-start-line="5" selection-start-column="35" selection-end-line="5" selection-end-column="35" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/cmake/BoostLibraryConfig.cmake">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="165">
+          <caret line="11" column="15" selection-start-line="11" selection-start-column="15" selection-end-line="11" selection-end-column="15" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/CMakeLists.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="390">
+          <caret line="26" column="1" selection-start-line="26" selection-start-column="1" selection-end-line="26" selection-end-column="1" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/common/CMakeLists.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="508">
+          <caret line="36" selection-start-line="36" selection-end-line="36" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/conanfile.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="75">
+          <caret line="5" selection-start-line="5" selection-end-line="5" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/cmake/CompilerConfig.cmake">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/cmake/CoverageReports.cmake">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="345">
+          <caret line="23" column="21" selection-start-line="23" selection-start-column="21" selection-end-line="23" selection-end-column="21" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/CMakeLists.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="450">
+          <caret line="30" column="41" selection-start-line="30" selection-start-column="41" selection-end-line="30" selection-end-column="41" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/common/JsonH5.cpp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="270">
+          <caret line="18" column="37" lean-forward="true" selection-start-line="18" selection-start-column="37" selection-end-line="18" selection-end-column="37" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/common/JsonH5.h">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/common/JsonH5.tpp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-332" />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/common/histogram_h5.h">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="135">
+          <caret line="9" column="45" selection-start-line="9" selection-start-column="45" selection-end-line="9" selection-end-column="45" />
+          <folding>
+            <element signature="e#14#39#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/common/h5json.cpp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="315">
+          <caret line="171" column="1" selection-start-line="171" selection-start-column="1" selection-end-line="171" selection-end-column="1" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/common/nmx/Analysis.h">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="360">
+          <caret line="24" column="58" selection-start-line="24" selection-start-column="58" selection-end-line="24" selection-end-column="58" />
+          <folding>
+            <element signature="e#14#39#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/common/nmx/Settings.h">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="150">
+          <caret line="10" column="14" selection-start-line="10" selection-start-column="14" selection-end-line="10" selection-end-column="14" />
+          <folding>
+            <element signature="e#14#28#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/common/nmx/Settings.cpp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="60">
+          <caret line="4" column="16" selection-start-line="4" selection-start-column="16" selection-end-line="4" selection-end-column="16" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/common/h5json.h">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="60">
+          <caret line="4" selection-start-line="2" selection-end-line="4" />
+          <folding>
+            <element signature="e#14#42#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/common/nmx/Metric.h">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="150">
+          <caret line="10" column="1" selection-start-line="10" selection-start-column="1" selection-end-line="10" selection-end-column="1" />
+          <folding>
+            <element signature="e#14#39#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/common/nmx/Metric.cpp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="139">
+          <caret line="13" column="29" selection-start-line="13" selection-start-column="29" selection-end-line="13" selection-end-column="29" />
+          <folding>
+            <element signature="e#0#19#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/common/histogram_h5.cpp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="304">
+          <caret line="63" column="56" selection-start-line="63" selection-start-column="56" selection-end-line="63" selection-end-column="56" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/common/nmx/Analysis.cpp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1009">
+          <caret line="135" column="6" lean-forward="true" selection-start-line="135" selection-start-column="6" selection-end-line="135" selection-end-column="6" />
+          <folding>
+            <element signature="e#0#21#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+  </component>
+</project>

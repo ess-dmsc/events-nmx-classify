@@ -1,7 +1,8 @@
 #pragma once
 
-#include "H5CC_DataSet.h"
+#include <h5cpp/hdf5.hpp>
 #include <map>
+#include <vector>
 #include <limits>
 
 namespace NMX {
@@ -18,9 +19,9 @@ public:
 
   void add_and_calc(double val);
   void calc(double val);
-  void write_H5(H5CC::DataSet dataset) const;
-  void read_H5(const H5CC::DataSet &dataset);
-  void read_H5_data(const H5CC::DataSet &dataset);
+  void write_H5(hdf5::node::Dataset dataset) const;
+  void read_H5(const hdf5::node::Dataset &dataset);
+  void read_H5_data(const hdf5::node::Dataset &dataset);
 
   std::vector<double>& data() { return data_; }
   const std::vector<double>& const_data() const { return data_; }

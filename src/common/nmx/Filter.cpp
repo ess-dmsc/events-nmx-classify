@@ -410,7 +410,7 @@ void FilterMerits::save(H5CC::Group& group) const
   auto igroup = group.require_group("independent_variable");
   H5CC::from_json(indvar, igroup);
 
-  H5CC::DataSet dset
+  H5CC::Dataset dset
       = group.require_dataset<double>("results", {count.size(),14});
   dset.write(val_min, {count.size(), 1}, {0,0});
   dset.write(val_max, {count.size(), 1}, {0,1});
