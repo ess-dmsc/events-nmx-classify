@@ -1,4 +1,4 @@
-project = "nmx-classify"
+project = "events-nmx-classify"
 coverage_on = "ubuntu1710"
 
 images = [
@@ -165,11 +165,11 @@ def get_pipeline(image_key) {
 
                     docker_build(image_key)
 
-                    if (image_key == coverage_on) {
-                        docker_tests_coverage(image_key)
-                    } else {
-                        docker_tests(image_key)
-                    }
+//                    if (image_key == coverage_on) {
+//                        docker_tests_coverage(image_key)
+//                    } else {
+//                        docker_tests(image_key)
+//                    }
 
                 } finally {
                     sh "docker stop ${container_name(image_key)}"
@@ -211,9 +211,9 @@ def get_macos_pipeline() {
 
                     try {
                         sh "make VERBOSE=1"
-                        sh "make run_tests && make unit_tests"
-                        sh "source ./activate_run.sh && ./bin/unit_tests"
-                        sh "source ./activate_run.sh && ./bin/systest"
+                        //sh "make run_tests && make unit_tests"
+                        //sh "source ./activate_run.sh && ./bin/unit_tests"
+                        //sh "source ./activate_run.sh && ./bin/systest"
                     } catch (e) {
                         failure_function(e, 'MacOSX / build+test failed')
                     }
