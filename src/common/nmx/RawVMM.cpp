@@ -1,74 +1,83 @@
 #include "RawVMM.h"
 #include "CustomLogger.h"
 
+using namespace hdf5;
+
 namespace NMX {
 
-RawVMM::RawVMM(H5CC::File& file)
-{
-  if (exists_in(file))
-  {
-    dataset_VMM_ = file.open_dataset("RawVMM/points");
-    entry_count_ = dataset_VMM_.shape().dim(0);
-  }
-  else
-    ERR << "<NMX::RawVMM> bad size for raw/VMM datset " << dataset_VMM_.debug();
+RawVMM::RawVMM(node::Group &file) {
+  if (exists_in(file)) {
+    dataset_ = file.get_dataset("RawVMM/points");
+    auto shape = dataspace::Simple(dataset_.dataspace()).current_dimensions();
+    entry_count_ = shape[0];
+  } else
+    ERR << "<NMX::RawVMM> bad size for raw/VMM datset " << dataset_.link().path().name();
 }
 
-RawVMM::RawVMM(H5CC::File& file, size_t chunksize)
-{
-  auto grp = file.require_group("RawVMM");
+RawVMM::RawVMM(node::Group &file, size_t chunksize) {
+  auto grp = file.create_group("RawVMM");
 
-  dataset_VMM_ = grp.require_dataset<uint32_t>("points",
-                                               {H5CC::kMax, 4},
-                                               {chunksize , 4});
+  property::LinkCreationList lcpl;
+  property::DatasetCreationList dcpl;
+  dcpl.layout(property::DatasetLayout::CHUNKED);
+  dcpl.chunk({chunksize, 4});
+
+  auto dspace = dataspace::Simple({chunksize, 4},
+                                  {dataspace::Simple::UNLIMITED, 4});
+
+  dataset_ = grp.create_dataset("points", datatype::create<uint32_t>(),
+                                    dspace, lcpl, dcpl);
   entry_count_ = 0;
 }
 
-bool RawVMM::exists_in(const H5CC::File& file)
-{
-  if (!file.has_dataset("RawVMM/points"))
+bool RawVMM::exists_in(const node::Group &f) {
+  node::Group file = f;
+  if (!file.has_group("RawVMM") || !file.get_group("RawVMM").has_dataset("points"))
     return false;
-  auto shape = file.open_dataset("RawVMM/points").shape();
-  return ((shape.rank() == 2) && (shape.dim(1) == 4));
+  auto ds = file.get_group("RawVMM").get_dataset("points");
+  auto shape = dataspace::Simple(ds.dataspace()).current_dimensions();
+  return ((shape.size() == 2) && (shape[1] == 4));
 }
 
-size_t RawVMM::eventlet_count() const
-{
+size_t RawVMM::eventlet_count() const {
   return entry_count_;
 }
 
-void RawVMM::write_eventlet(const Eventlet &packet)
-{
-  dataset_VMM_.write(packet.to_h5(), {1,H5CC::kMax},
-                                         {dataset_VMM_.shape().dim(0), 0});
-  entry_count_ = dataset_VMM_.shape().dim(0);
+void RawVMM::write_eventlet(const Eventlet &packet) {
+  auto shape = dataspace::Simple(dataset_.dataspace()).current_dimensions();
+  slab_.offset({shape[0], 0});
+  dataset_.write(packet.to_h5(), slab_);
+  entry_count_ = shape[0] + 1;
 }
 
-Eventlet RawVMM::read_eventlet(size_t i) const
-{
-  if (i < entry_count_)
-    return Eventlet::from_h5(dataset_VMM_.read<uint32_t>({1,H5CC::kMax}, {i, 0}));
+Eventlet RawVMM::read_eventlet(size_t i) const {
+  if (i < entry_count_) {
+    slab_.offset({i, 0});
+    dataset_.read(data_, slab_);
+    return Eventlet::from_h5(data_);
+  }
   else
     return Eventlet();
 }
 
-void RawVMM::write_packet(const EventletPacket& packet)
-{
-  dataset_VMM_.write(packet.to_h5(), {packet.eventlets.size(),H5CC::kMax},
-                                         {dataset_VMM_.shape().dim(0), 0});
-  entry_count_ = dataset_VMM_.shape().dim(0);
+void RawVMM::write_packet(const EventletPacket &packet) {
+  slab_.offset({entry_count_,0});
+  slab_.block({packet.eventlets.size(), 4});
+  dataset_.write(packet.to_h5(), slab_);
+  entry_count_ += packet.eventlets.size();
 }
 
-void RawVMM::read_packet(size_t i, EventletPacket& packet) const
-{
+void RawVMM::read_packet(size_t i, EventletPacket &packet) const {
   if (i < entry_count_)
   {
     size_t num = std::min(packet.eventlets.capacity(), entry_count_ - i);
     packet.clear_and_keep_capacity();
-    packet.from_h5(dataset_VMM_.read<uint32_t>({num,H5CC::kMax}, {i, 0}));
+    slab_.offset({i,0});
+    slab_.block({num, 4});
+    data_.resize(num*4);
+    dataset_.read(data_, slab_);
+    packet.from_h5(data_);
   }
 }
-
-
 
 }

@@ -1,25 +1,24 @@
 #include "Filter.h"
 #include "doFit.h"
 
-bool MetricTest::operator == (const MetricTest& other) const
-{
+using namespace hdf5;
+
+bool MetricTest::operator==(const MetricTest &other) const {
   return (enabled == other.enabled) &&
-      (round_before_compare  == other.round_before_compare) &&
+      (round_before_compare == other.round_before_compare) &&
       (metric == other.metric) &&
       (min == other.min) &&
       (max == other.max);
 }
 
-MetricTest::MetricTest(std::string name, const NMX::Metric& m)
-{
+MetricTest::MetricTest(std::string name, const NMX::Metric &m) {
   min = m.min();
   max = m.max();
   metric = name;
   enabled = true;
 }
 
-bool MetricTest::validate(const NMX::Metric& m, size_t index) const
-{
+bool MetricTest::validate(const NMX::Metric &m, size_t index) const {
   if (index >= m.const_data().size())
     return false;
   double val = m.const_data().at(index);
@@ -28,8 +27,7 @@ bool MetricTest::validate(const NMX::Metric& m, size_t index) const
   return (min <= val) && (val <= max);
 }
 
-void to_json(json& j, const MetricTest &s)
-{
+void to_json(json &j, const MetricTest &s) {
   j["metric"] = s.metric;
   j["enabled"] = s.enabled;
   j["round_before_compare"] = s.round_before_compare;
@@ -37,8 +35,7 @@ void to_json(json& j, const MetricTest &s)
   j["max"] = s.max;
 }
 
-void from_json(const json& j, MetricTest &s)
-{
+void from_json(const json &j, MetricTest &s) {
   if (j.count("metric") && j["metric"].is_string())
     s.metric = j["metric"];
   if (j.count("enabled") && j["enabled"].is_boolean())
@@ -52,40 +49,33 @@ void from_json(const json& j, MetricTest &s)
     s.max = j["max"];
 }
 
-HistMap1D Histogram1D::map() const
-{
+HistMap1D Histogram1D::map() const {
   return map_;
 }
 
-uint64_t Histogram1D::count() const
-{
+uint64_t Histogram1D::count() const {
   return count_;
 }
 
-HistList1D Histogram1D::list() const
-{
+HistList1D Histogram1D::list() const {
   return to_list(map_);
 }
 
-void Histogram1D::add_one(double bin)
-{
+void Histogram1D::add_one(double bin) {
   map_[bin]++;
   count_++;
 }
 
-void Histogram1D::clear()
-{
+void Histogram1D::clear() {
   map_.clear();
   count_ = 0;
 }
 
-std::list<std::string> Histogram1D::values()
-{
+std::list<std::string> Histogram1D::values() {
   return {"mean", "median", "mode", "midrange", "RMS", "harmonic mean"};
 }
 
-double Histogram1D::get_value(std::string t) const
-{
+double Histogram1D::get_value(std::string t) const {
   if (t == "mean")
     return mean();
   else if (t == "median")
@@ -101,21 +91,18 @@ double Histogram1D::get_value(std::string t) const
   return std::numeric_limits<double>::quiet_NaN();
 }
 
-double Histogram1D::mean() const
-{
-  double sum {0};
-  for (const auto& m : map_)
+double Histogram1D::mean() const {
+  double sum{0};
+  for (const auto &m : map_)
     sum += m.first * m.second;
   return sum / static_cast<double>(count_);
 }
 
-double Histogram1D::median() const
-{
+double Histogram1D::median() const {
   double med_count = static_cast<double>(count_) / 2.0;
-  double mcount {0};
+  double mcount{0};
   double prev = std::numeric_limits<double>::quiet_NaN();
-  for (const auto& m : map_)
-  {
+  for (const auto &m : map_) {
     mcount += m.second;
     if (mcount > med_count)
       break;
@@ -124,45 +111,38 @@ double Histogram1D::median() const
   return prev;
 }
 
-double Histogram1D::mode() const
-{
+double Histogram1D::mode() const {
   double maxcount = std::numeric_limits<double>::min();
   double maxbin = std::numeric_limits<double>::quiet_NaN();
-  for (const auto& m : map_)
-    if (m.second > maxcount)
-    {
+  for (const auto &m : map_)
+    if (m.second > maxcount) {
       maxcount = m.second;
       maxbin = m.first;
     }
   return maxbin;
 }
 
-double Histogram1D::harmonic_mean() const
-{
-  double sum {0};
-  for (const auto& m : map_)
+double Histogram1D::harmonic_mean() const {
+  double sum{0};
+  for (const auto &m : map_)
     sum += m.second / m.first;
   return static_cast<double>(count_) / sum;
 }
 
-double Histogram1D::RMS() const
-{
-  double sum {0};
-  for (const auto& m : map_)
+double Histogram1D::RMS() const {
+  double sum{0};
+  for (const auto &m : map_)
     sum += m.first * m.first * m.second;
   return sqrt(sum / static_cast<double>(count_));
 }
 
-double Histogram1D::midrange() const
-{
+double Histogram1D::midrange() const {
   if (map_.empty())
     return std::numeric_limits<double>::quiet_NaN();
   return (map_.begin()->first + map_.rbegin()->first) / 2.0;
 }
 
-
-MetricFilter MetricFilter::cull_disabled() const
-{
+MetricFilter MetricFilter::cull_disabled() const {
   MetricFilter ret;
   for (auto t : tests_)
     if (t.enabled)
@@ -170,82 +150,69 @@ MetricFilter MetricFilter::cull_disabled() const
   return ret;
 }
 
-bool MetricFilter::operator == (const MetricFilter& other) const
-{
+bool MetricFilter::operator==(const MetricFilter &other) const {
   return (tests_ == other.tests_);
 }
 
 bool MetricFilter::validate(
-    const std::map<std::string, NMX::Metric>& metrics,
-    size_t index) const
-{
-  for (auto f : tests_)
-  {
+    const std::map<std::string, NMX::Metric> &metrics,
+    size_t index) const {
+  for (auto f : tests_) {
     if (!f.enabled)
       continue;
     if (!metrics.count(f.metric))
       return false;
-    const auto& metric = metrics.at(f.metric);
+    const auto &metric = metrics.at(f.metric);
     if (!f.validate(metric, index))
       return false;
   }
   return true;
 }
 
-void MetricFilter::clear()
-{
+void MetricFilter::clear() {
   tests_.clear();
 }
 
-size_t MetricFilter::size() const
-{
+size_t MetricFilter::size() const {
   return tests_.size();
 }
 
-MetricTest MetricFilter::test(size_t i) const
-{
+MetricTest MetricFilter::test(size_t i) const {
   if (i >= tests_.size())
     return MetricTest();
   return tests_.at(i);
 }
 
-void MetricFilter::set_test(size_t i, MetricTest t)
-{
+void MetricFilter::set_test(size_t i, MetricTest t) {
   if (tests_.size() <= i)
-    tests_.resize(i+1);
+    tests_.resize(i + 1);
   tests_[i] = t;
 }
 
-void MetricFilter::remove(size_t i)
-{
+void MetricFilter::remove(size_t i) {
   if (i < tests_.size())
     tests_.erase(tests_.begin() + i);
 }
 
-void MetricFilter::up(size_t i)
-{
+void MetricFilter::up(size_t i) {
   if ((i < tests_.size()) && (i > 0))
-    std::swap(tests_[i-1], tests_[i]);
+    std::swap(tests_[i - 1], tests_[i]);
 }
 
-void MetricFilter::down(size_t i)
-{
-  if ((i +1 ) < tests_.size())
-    std::swap(tests_[i+1], tests_[i]);
+void MetricFilter::down(size_t i) {
+  if ((i + 1) < tests_.size())
+    std::swap(tests_[i + 1], tests_[i]);
 }
 
-std::vector<MetricTest> MetricFilter::tests() const
-{
+std::vector<MetricTest> MetricFilter::tests() const {
   return tests_;
 }
 
-void MetricFilter::add(MetricTest t)
-{
+void MetricFilter::add(MetricTest t) {
   tests_.push_back(t);
 }
 
-std::list<std::string> MetricFilter::required_metrics() const
-{
+std::list<std::string> MetricFilter::required_metrics() const {
   std::list<std::string> ret;
   for (auto t : tests_)
     if (t.enabled)
@@ -253,8 +220,7 @@ std::list<std::string> MetricFilter::required_metrics() const
   return ret;
 }
 
-std::set<size_t> MetricFilter::get_indices(const NMX::File &file) const
-{
+std::set<size_t> MetricFilter::get_indices(const NMX::File &file) const {
   std::set<size_t> ret;
   if (!file.event_count())
     return ret;
@@ -269,9 +235,8 @@ std::set<size_t> MetricFilter::get_indices(const NMX::File &file) const
   return ret;
 }
 
-Histogram1D MetricFilter::get_projection(const NMX::File& file,
-                                         std::string proj_metric) const
-{
+Histogram1D MetricFilter::get_projection(const NMX::File &file,
+                                         std::string proj_metric) const {
   Histogram1D ret;
 
   std::map<std::string, NMX::Metric> metrics;
@@ -282,18 +247,16 @@ Histogram1D MetricFilter::get_projection(const NMX::File& file,
 
   for (size_t i = 0; i < file.num_analyzed(); ++i)
     if (validate(metrics, i))
-      ret.add_one(int( projection.data().at(i) / norm) * norm);
+      ret.add_one(int(projection.data().at(i) / norm) * norm);
 
   return ret;
 }
 
-void to_json(json& j, const MetricFilter &s)
-{
+void to_json(json &j, const MetricFilter &s) {
   j["tests"] = s.tests_;
 }
 
-void from_json(const json& j, MetricFilter &s)
-{
+void from_json(const json &j, MetricFilter &s) {
   s.tests_.clear();
   if (!j.count("tests"))
     return;
@@ -301,15 +264,13 @@ void from_json(const json& j, MetricFilter &s)
     s.tests_.push_back(k.get<MetricTest>());
 }
 
-IndepVariable::IndepVariable(MetricTest m)
-{
+IndepVariable::IndepVariable(MetricTest m) {
   metric = m.metric;
   start = m.min;
   end = m.max;
 }
 
-bool IndepVariable::operator == (const IndepVariable& other) const
-{
+bool IndepVariable::operator==(const IndepVariable &other) const {
   return (metric == other.metric) &&
       (start == other.start) &&
       (end == other.end) &&
@@ -319,9 +280,7 @@ bool IndepVariable::operator == (const IndepVariable& other) const
       (vary_max == other.vary_max);
 }
 
-
-void to_json(json& j, const IndepVariable &s)
-{
+void to_json(json &j, const IndepVariable &s) {
   j["metric"] = s.metric;
   j["vary_min"] = s.vary_min;
   j["vary_max"] = s.vary_max;
@@ -331,8 +290,7 @@ void to_json(json& j, const IndepVariable &s)
   j["width"] = s.width;
 }
 
-void from_json(const json& j, IndepVariable &s)
-{
+void from_json(const json &j, IndepVariable &s) {
   if (j.count("metric") && j["metric"].is_string())
     s.metric = j["metric"];
   if (j.count("start") && j["start"].is_number_float())
@@ -349,8 +307,7 @@ void from_json(const json& j, IndepVariable &s)
     s.vary_max = j["vary_max"];
 }
 
-void FilterMerits::doit(const NMX::File& f, std::string proj)
-{
+void FilterMerits::doit(const NMX::File &f, std::string proj) {
   total_count = filter.get_projection(f, proj).count();
   if (!total_count)
     return;
@@ -362,14 +319,11 @@ void FilterMerits::doit(const NMX::File& f, std::string proj)
   auto endp = indvar.end;
   if (indvar.vary_min && indvar.vary_max)
     endp -= indvar.width;
-  for (double i=indvar.start; i <= endp; i+=indvar.step)
-  {
-    if (indvar.vary_min && indvar.vary_max)
-    {
+  for (double i = indvar.start; i <= endp; i += indvar.step) {
+    if (indvar.vary_min && indvar.vary_max) {
       iv.min = i;
       iv.max = i + indvar.width - 1;
-    }
-    else if (indvar.vary_min)
+    } else if (indvar.vary_min)
       iv.min = i;
     else if (indvar.vary_max)
       iv.max = i;
@@ -401,56 +355,77 @@ void FilterMerits::doit(const NMX::File& f, std::string proj)
   }
 }
 
-void FilterMerits::save(H5CC::Group& group) const
-{
-  group.clear();
+void FilterMerits::save(node::Group &group) const {
+  //group.clear();
 
-  auto bgroup = group.require_group("baseline_filters");
-  H5CC::from_json(filter.cull_disabled(), bgroup);
-  auto igroup = group.require_group("independent_variable");
-  H5CC::from_json(indvar, igroup);
+  auto bgroup = group.create_group("baseline_filters");
+  hdf5::from_json(filter.cull_disabled(), bgroup);
+  auto igroup = group.create_group("independent_variable");
+  hdf5::from_json(indvar, igroup);
 
-  H5CC::Dataset dset
-      = group.require_dataset<double>("results", {count.size(),14});
-  dset.write(val_min, {count.size(), 1}, {0,0});
-  dset.write(val_max, {count.size(), 1}, {0,1});
-  dset.write(count, {count.size(), 1}, {0,2});
-  dset.write(efficiency, {count.size(), 1}, {0,3});
-  dset.write(res, {count.size(), 1}, {0,4});
-  dset.write(reserr, {count.size(), 1}, {0,5});
-  dset.write(pos, {count.size(), 1}, {0,6});
-  dset.write(poserr, {count.size(), 1}, {0,7});
-  dset.write(signal, {count.size(), 1}, {0,8});
-  dset.write(signalerr, {count.size(), 1}, {0,9});
-  dset.write(back, {count.size(), 1}, {0,10});
-  dset.write(backerr, {count.size(), 1}, {0,11});
-  dset.write(snr, {count.size(), 1}, {0,12});
-  dset.write(snrerr, {count.size(), 1}, {0,13});
+  node::Dataset dset
+      = group.create_dataset("results", datatype::create<double>(),
+                             dataspace::Simple({count.size(), 14}));
 
-  dset.write_attribute("baseline_total_count", uint32_t(total_count));
-  dset.write_attribute("resolution_pitch", units);
-  dset.write_attribute("fit_type", fit_type);
-  dset.write_attribute("columns", std::string(
-                         "val_min, val_max, count, %count, resolution, "
-                         "resolution_uncert, position, position_uncert, "
-                         "signal, signal_uncert, background, background_uncert, "
-                         "SnR, SnR_uncert"));
+  dataspace::Hyperslab slab({0, 0}, {count.size(), 1});
+
+  slab.offset({0, 0});
+  dset.write(val_min, slab);
+  slab.offset({0, 1});
+  dset.write(val_max, slab);
+  slab.offset({0, 2});
+  dset.write(count, slab);
+  slab.offset({0, 3});
+  dset.write(efficiency, slab);
+  slab.offset({0, 4});
+  dset.write(res, slab);
+  slab.offset({0, 5});
+  dset.write(reserr, slab);
+  slab.offset({0, 6});
+  dset.write(pos, slab);
+  slab.offset({0, 7});
+  dset.write(poserr, slab);
+  slab.offset({0, 8});
+  dset.write(signal, slab);
+  slab.offset({0, 9});
+  dset.write(signalerr, slab);
+  slab.offset({0, 10});
+  dset.write(back, slab);
+  slab.offset({0, 11});
+  dset.write(backerr, slab);
+  slab.offset({0, 12});
+  dset.write(snr, slab);
+  slab.offset({0, 13});
+  dset.write(snrerr, slab);
+
+  dset.attributes.create<uint32_t>("baseline_total_count").write(total_count);
+  dset.attributes.create<double>("resolution_pitch").write(units);
+  dset.attributes.create<std::string>("fit_type").write(fit_type);
+  dset.attributes.create<std::string>("columns").write(std::string(
+      "val_min, val_max, count, %count, resolution, "
+      "resolution_uncert, position, position_uncert, "
+      "signal, signal_uncert, background, background_uncert, "
+      "SnR, SnR_uncert"));
 }
 
-void FilterMerits::load(const H5CC::Group& group)
-{
-  json jf = group.open_group("baseline_filters");
+void FilterMerits::load(const node::Group &g) {
+  node::Group group = g;
+
+  auto f = group.get_group("baseline_filters");
+  json jf;
+  hdf5::to_json(jf, f);
   filter = jf;
-  json ji = group.open_group("independent_variable");
+  auto i = group.get_group("independent_variable");
+  json ji;
+  hdf5::to_json(ji, i);
   indvar = ji;
 
-  auto dset = group.open_dataset("results");
-  units = dset.read_attribute<uint32_t>("resolution_pitch");
-  fit_type = dset.read_attribute<std::string>("fit_type");
+  auto dset = group.get_dataset("results");
+  dset.attributes["resolution_pitch"].read(units);
+  dset.attributes["fit_type"].read(fit_type);
 }
 
-bool FilterMerits::operator == (const FilterMerits& other) const
-{
+bool FilterMerits::operator==(const FilterMerits &other) const {
   return (filter == other.filter) &&
       (indvar == other.indvar) &&
       (fit_type == other.fit_type) &&

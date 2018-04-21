@@ -3,13 +3,19 @@
 #include "RawClustered.h"
 #include "RawAPV.h"
 
+using namespace hdf5;
+
 namespace NMX {
 
-File::File(std::string filename, H5CC::Access access)
+File::File(std::string filename, file::AccessFlags access)
 {
-  file_ = H5CC::File(filename, access);
-  write_access_ = (file_.status() != H5CC::Access::r_existing) &&
-      (file_.status() != H5CC::Access::no_access);
+  try {
+    file_ = file::open(filename, access);
+    write_access_ = (file_.intent() != file::AccessFlags::READONLY);
+  }
+  catch (...) {
+    write_access_ = false;
+  }
 }
 
 File::~File()
@@ -20,7 +26,7 @@ File::~File()
 
 const std::string File::dataset_name() const
 {
-  return file_.name();
+  return file_.path().string();
 }
 
 const std::string File::current_analysis() const
@@ -30,21 +36,21 @@ const std::string File::current_analysis() const
 
 bool File::has_APV()
 {
-  return RawAPV::exists_in(file_);
+  return RawAPV::exists_in(file_.root());
 }
 
 bool File::has_clustered()
 {
-  return RawClustered::exists_in(file_);
+  return RawClustered::exists_in(file_.root());
 }
 
 void File::open_raw()
 {
   close_raw();
   if (has_APV())
-    raw_ = std::make_shared<RawAPV>(file_);
+    raw_ = std::make_shared<RawAPV>(file_.root(), write_access_);
   else if (has_clustered())
-    raw_ = std::make_shared<RawClustered>(file_);
+    raw_ = std::make_shared<RawClustered>(file_.root(), write_access_);
 }
 
 void File::close_raw()
@@ -76,29 +82,37 @@ void File::write_event(size_t index, const Event& event)
 
 std::list<std::string> File::analyses() const
 {
-  if (file_.is_open() && file_.has_group("Analyses"))
-    return file_.open_group("Analyses").groups();
-  else
-    return std::list<std::string>();
+  std::list<std::string> ret;
+  if (file_.root().has_group("Analyses"))
+    for (auto g : file_.root().get_group("Analyses").nodes)
+      if (g.type() == node::Type::GROUP)
+        ret.push_back(g.link().path().name());
+  return ret;
 }
 
 void File::create_analysis(std::string name)
 {
-  if (write_access_ && !file_.require_group("Analyses").has_group(name))
+  if (!write_access_)
+    return;
+  if (!file_.root().has_group("Analyses"))
+    file_.root().create_group("Analyses");
+  auto ag = file_.root().get_group("Analyses");
+
+  if (!ag.has_group(name))
   {
-    file_.open_group("Analyses").create_group(name);
-    file_.open_group("Analyses").open_group(name).write_attribute("num_analyzed", 0);
+    auto aag = ag.create_group(name);
+    aag.attributes.create<uint32_t>("num_analyzed").write(0);
   }
 }
 
 void File::delete_analysis(std::string name)
 {
-  if (write_access_ && file_.require_group("Analyses").has_group(name))
-  {
-    file_.require_group("Analyses").remove(name);
-    if (name == analysis_.name())
-      analysis_ = Analysis();
-  }
+  if (!write_access_ || !file_.root().has_group("Analyses") ||
+      !file_.root().get_group("Analyses").has_group(name))
+    return;
+  file_.root().get_group("Analyses").remove(name);
+  if (name == analysis_.name())
+    analysis_ = Analysis();
 }
 
 void File::load_analysis(std::string name)
@@ -109,10 +123,11 @@ void File::load_analysis(std::string name)
   if (!analysis_.name().empty() && write_access_)
     analysis_.save();
 
-  if (file_.has_group("Analyses") && file_.open_group("Analyses").has_group(name))
-    analysis_ = Analysis(file_.open_group("Analyses").open_group(name), event_count());
-  else
+  if (!file_.root().has_group("Analyses") ||
+      !file_.root().get_group("Analyses").has_group(name))
     analysis_ = Analysis();
+  else
+    analysis_ = Analysis(file_.root().get_group("Analyses").get_group(name), event_count());
 }
 
 size_t File::num_analyzed() const

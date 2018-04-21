@@ -1,43 +1,54 @@
 #include "RawAPV.h"
 #include "CustomLogger.h"
 
+using namespace hdf5;
+
 namespace NMX {
 
-RawAPV::RawAPV(H5CC::File& file)
+RawAPV::RawAPV(node::Group file, bool write_access)
 {
   if (exists_in(file))
   {
-    dataset_APV_ = file.open_dataset("RawAPV");
-    auto shape = dataset_APV_.shape();
-    event_count_ = shape.dim(0);
-    write_access_ = (file.status() != H5CC::Access::r_existing) &&
-                    (file.status() != H5CC::Access::no_access);
+    dataset_ = file.get_dataset("RawAPV");
+    auto shape = hdf5::dataspace::Simple(dataset_.dataspace()).current_dimensions();
+    event_count_ = shape[0];
+    slab_.block({1,1, shape[2], shape[3]});
+    data_.resize(shape[2] * shape[3]);
+    write_access_ = write_access;
   }
   else
-    ERR << "<NMX::RawAPV> bad size for raw/APV datset " << dataset_APV_.debug();
+    ERR << "<NMX::RawAPV> raw/APV dataset does not exist";
 }
 
-RawAPV::RawAPV(H5CC::File& file, size_t strips, size_t timebins)
+RawAPV::RawAPV(node::Group file, size_t strips, size_t timebins, bool write_access)
 {
-  bool write = (file.status() != H5CC::Access::r_existing) &&
-               (file.status() != H5CC::Access::no_access);
-  if (write)
+  write_access_ = write_access;
+  if (write_access)
   {
-    dataset_APV_ = file.require_dataset<int16_t>("RawAPV",
-                                                {H5CC::kMax, 2, strips, timebins},
-                                                {1,          2, strips, timebins});
-    write_access_ = write;
+    property::LinkCreationList lcpl;
+    property::DatasetCreationList dcpl;
+    dcpl.layout(property::DatasetLayout::CHUNKED);
+    dcpl.chunk({1, 2, strips, timebins});
+
+    slab_.block({1,1, strips, timebins});
+    data_.resize(strips, timebins);
+
+    auto dspace = dataspace::Simple({1, 2, strips, timebins},
+                                    {dataspace::Simple::UNLIMITED, 2, strips, timebins});
+
+    dataset_ = file.create_dataset("RawAPV", datatype::create<int16_t>(), dspace);
   }
 }
 
-bool RawAPV::exists_in(const H5CC::File &file)
+bool RawAPV::exists_in(const node::Group &f)
 {
+  node::Group file = f;
   if (!file.has_dataset("RawAPV"))
     return false;
-  auto shape = file.open_dataset("RawAPV").shape();
-  return ((shape.rank() == 4) &&
-          (shape.dim(1) == 2) &&
-          (shape.data_size() > 0));
+
+  auto shape = hdf5::dataspace::Simple(file.get_dataset("RawAPV").dataspace()).current_dimensions();
+  return ((shape.size() == 4) &&
+          (shape[1] == 2));
 }
 
 size_t RawAPV::event_count() const
@@ -61,11 +72,11 @@ void RawAPV::write_event(size_t index, const Event& event)
 
 Plane RawAPV::read_record(size_t index, size_t plane) const
 {
-  if (index < event_count())
+  if (index < event_count_)
   {
-    auto timebins = dataset_APV_.shape().dim(3);
-    return Plane(dataset_APV_.read<int16_t>({1,1,H5CC::kMax,H5CC::kMax},
-                                             {index, plane, 0, 0}), timebins);
+    slab_.offset({index,plane,0,0});
+    dataset_.read(data_, slab_);
+    return Plane(data_, slab_.block()[3]);
   }
   else
     return Plane();
@@ -73,10 +84,10 @@ Plane RawAPV::read_record(size_t index, size_t plane) const
 
 void RawAPV::write_record(size_t index, size_t plane, const Plane& record)
 {
-  auto strips = dataset_APV_.shape().dim(2);
-  auto timebins = dataset_APV_.shape().dim(3);
-  dataset_APV_.write(record.to_buffer(strips, timebins),
-  {1,1,H5CC::kMax,H5CC::kMax}, {index, plane, 0, 0});
+  auto strips = slab_.block()[2];
+  auto timebins = slab_.block()[3];
+  slab_.offset({index,plane,0,0});
+  dataset_.write(record.to_buffer(strips, timebins), slab_);
   event_count_ = std::max(event_count_, index+1);
 }
 

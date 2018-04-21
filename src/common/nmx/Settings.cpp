@@ -4,6 +4,8 @@
 #include <sstream>
 #include "CustomLogger.h"
 
+using namespace hdf5;
+
 namespace NMX {
 
 void Settings::set(std::string name, json v, std::string descr)
@@ -66,27 +68,38 @@ std::string Settings::debug(std::string prepend) const
   return ret;
 }
 
-void Settings::write_H5(hdf5::node::Group group, std::string name) const
+void Settings::write_H5(node::Group group, std::string name) const
 {
   if (data_.empty())
     return;
 
-  auto params_group = group.require_group(name);
+  if (!group.has_group(name))
+    group.create_group(name);
+
+  auto params_group = group.get_group(name);
   for (auto d : data_)
   {
-    auto s_group = params_group.require_group(d.first);
-    hdf5::node::from_json(d.second, s_group);
+    if (!params_group.has_group(d.first))
+      params_group.create_group(d.first);
+    auto s_group = params_group.get_group(d.first);
+    hdf5::from_json(d.second, s_group);
   }
 }
 
-void Settings::read_H5(const hdf5::node::Group &group, std::string name)
+void Settings::read_H5(const node::Group &g, std::string name)
 {
+  node::Group group = g;
+
   data_.clear();
   if (!group.has_group(name))
     return;
-  auto params_group = group.open_group(name);
-  for (auto g : params_group.groups())
-    data_[g] = params_group.open_group(g);
+  auto params_group = group.get_group(name);
+  for (auto g : params_group.nodes) {
+    if (g.type() == node::Type::GROUP) {
+      auto gg = node::Group(g);
+      hdf5::to_json(data_[g.link().path().name()], gg);
+    }
+  }
 }
 
 

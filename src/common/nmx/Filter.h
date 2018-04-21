@@ -106,8 +106,8 @@ struct FilterMerits
 
   void doit(const NMX::File& f, std::string proj);
 
-  void save(H5CC::Group& group) const;
-  void load(const H5CC::Group& group);
+  void save(hdf5::node::Group& group) const;
+  void load(const hdf5::node::Group& group);
 
   MetricFilter filter;
   IndepVariable indvar;

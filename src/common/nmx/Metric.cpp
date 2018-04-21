@@ -25,24 +25,24 @@ void Metric::add_and_calc(double val)
 
 void Metric::write_H5(hdf5::node::Dataset dataset) const
 {
-  dataset.write_attribute("description", description_);
-  dataset.write_attribute("min", min_);
-  dataset.write_attribute("max", max_);
-  dataset.write_attribute("sum", sum_);
+  dataset.attributes.create<std::string>("description").write(description_);
+  dataset.attributes.create<double>("min").write(min_);
+  dataset.attributes.create<double>("max").write(max_);
+  dataset.attributes.create<double>("sum").write(sum_);
 }
 
 void Metric::read_H5(const hdf5::node::Dataset &dataset)
 {
-  description_ = dataset.read_attribute<std::string>("description");
-  min_ = dataset.read_attribute<double>("min");
-  max_ = dataset.read_attribute<double>("max");
-  sum_ = dataset.read_attribute<double>("sum");
+  dataset.attributes["description"].read(description_);
+  dataset.attributes["min"].read(min_);
+  dataset.attributes["max"].read(max_);
+  dataset.attributes["sum"].read(sum_);
 }
 
 void Metric::read_H5_data(const hdf5::node::Dataset &dataset)
 {
   read_H5(dataset);
-  data_ = dataset.read<double>();
+  dataset.read(data_);
 }
 
 double Metric::normalizer() const

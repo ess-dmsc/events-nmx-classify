@@ -1,45 +1,59 @@
 #include "RawClustered.h"
 #include "CustomLogger.h"
 
+using namespace hdf5;
+
 namespace NMX {
 
-RawClustered::RawClustered(H5CC::File& file)
+RawClustered::RawClustered(hdf5::node::Group file, bool write_access)
 {
   if (exists_in(file))
   {
-    unclustered_ = RawVMM(file);
-    indices_VMM_ = file.open_dataset("RawVMM/indices");
-    event_count_ = indices_VMM_.shape().dim(0);
-    write_access_ = (file.status() != H5CC::Access::r_existing) &&
-                    (file.status() != H5CC::Access::no_access);
+    unclustered_ = RawVMM(file, write_access);
+    indices_ = file.get_group("RawVMM").get_dataset("indices");
+    auto shape = hdf5::dataspace::Simple(indices_.dataspace()).current_dimensions();
+    event_count_ = shape[0];
+    write_access_ = write_access;
   }
   else
-    ERR << "<NMX::RawClustered> bad size for raw/VMM cluster indices datset " << indices_VMM_.debug();
+    ERR << "<NMX::RawClustered> could not open raw/VMM cluster indices";
 }
 
-RawClustered::RawClustered(H5CC::File& file, hsize_t events, size_t chunksize)
+RawClustered::RawClustered(hdf5::node::Group file, hsize_t events, size_t chunksize, bool write_access)
 {
   unclustered_ = RawVMM(file, chunksize);
 
-  bool write = (file.status() != H5CC::Access::r_existing) &&
-               (file.status() != H5CC::Access::no_access);
-  if (write && events > 0)
+  write_access_ = write_access;
+  if (write_access && events > 0)
   {
-    indices_VMM_ = file.require_group("RawVMM").require_dataset<uint64_t>("indices",
-                                                {events, 4},
-                                                {1,      4});
-    write_access_ = write;
+    property::LinkCreationList lcpl;
+    property::DatasetCreationList dcpl;
+    dcpl.layout(property::DatasetLayout::CHUNKED);
+    dcpl.chunk({1, 4});
+
+    auto dspace = dataspace::Simple({1, 4},
+                                    {events, 4});
+
+    if (!file.has_group("RawVMM"))
+      file.create_group("RawVMM");
+    auto gg = file.get_group("RawVMM");
+
+    indices_ = gg.create_dataset("indices", datatype::create<uint64_t>(), dspace);
+
     event_count_ = 0;
   }
 }
 
-bool RawClustered::exists_in(const H5CC::File& file)
+bool RawClustered::exists_in(const hdf5::node::Group& f)
 {
-  if (!RawVMM::exists_in(file) ||
-      !file.has_dataset("RawVMM/indices"))
+  node::Group file = f;
+  if (!file.has_group("RawVMM") || !file.get_group("RawVMM").has_dataset("indices"))
     return false;
-  auto shape = file.open_dataset("RawVMM/indices").shape();
-  return ((shape.rank() == 2) && (shape.dim(1) == 4));
+
+  auto ds = file.get_group("RawVMM").get_dataset("indices");
+
+  auto shape = hdf5::dataspace::Simple(ds.dataspace()).current_dimensions();
+  return ((shape.size() == 2) && (shape[1] == 4));
 }
 
 size_t RawClustered::event_count() const
@@ -65,8 +79,10 @@ Plane RawClustered::read_record(size_t index, size_t plane) const
 {
   if (index < event_count())
   {
-    size_t start = indices_VMM_.read<uint64_t>({index, 2*plane});
-    size_t stop = indices_VMM_.read<uint64_t>({index, 2*plane + 1});
+    slab_.offset({index, 2*plane});
+    indices_.read(data_, slab_);
+    size_t start = data_.at(0);
+    size_t stop = data_.at(1);
 
     //strip->(timebin->adc)
     std::map<int16_t, std::map<uint16_t, int16_t>> strips;
@@ -102,8 +118,10 @@ void RawClustered::write_record(size_t index, size_t plane, const Plane& record)
       evt.adc = p.v;
       unclustered_.write_eventlet(evt);
     }
-    std::vector<uint64_t> data {start, unclustered_.eventlet_count()};
-    indices_VMM_.write(data, {1,2}, {index, 2 * plane});
+    slab_.offset({index, 2*plane});
+    data_[0] = start;
+    data_[1] = unclustered_.eventlet_count();
+    indices_.write(data_, slab_);
   }
 }
 

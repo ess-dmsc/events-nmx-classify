@@ -8,9 +8,9 @@ namespace NMX {
 class RawClustered : public Raw
 {
 public:
-  RawClustered(H5CC::File& file);
-  RawClustered(H5CC::File& file, hsize_t events, size_t chunksize);
-  static bool exists_in(const H5CC::File& file);
+  RawClustered(hdf5::node::Group file, bool write_access);
+  RawClustered(hdf5::node::Group file, hsize_t events, size_t chunksize, bool write_access);
+  static bool exists_in(const hdf5::node::Group& file);
 
   virtual ~RawClustered() {}
 
@@ -20,8 +20,11 @@ public:
 
 protected:
   bool write_access_ {false};
-  H5CC::Dataset  indices_VMM_;
+  hdf5::node::Dataset  indices_;
   size_t event_count_ {0};
+
+  mutable hdf5::dataspace::Hyperslab slab_{{0, 0}, {1, 2}};
+  mutable std::vector<uint64_t> data_ {2};
 
   RawVMM unclustered_;
 

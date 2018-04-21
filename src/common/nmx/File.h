@@ -1,18 +1,17 @@
 #pragma once
 
-#include "H5CC_File.h"
 #include "Raw.h"
 #include "Analysis.h"
 #include <memory>
 
-#include "JsonH5.h"
+#include "h5json.h"
 
 namespace NMX {
 
 class File
 {
 public:
-  File(std::string filename, H5CC::Access access);
+  File(std::string filename, hdf5::file::AccessFlags access);
   ~File();
 
   //Raw data
@@ -42,7 +41,7 @@ public:
   Metric get_metric(std::string cat, bool with_data = true) const;
 
 private:
-  H5CC::File     file_;
+  hdf5::file::File file_;
   std::shared_ptr<Raw> raw_;
   bool write_access_ {false};
 
