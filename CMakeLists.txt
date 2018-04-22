@@ -41,4 +41,3 @@ endif()
 include(${EXTRA_MODULES_DIR}/OutputDirConfig.cmake)
 
 add_subdirectory(src)
-#add_subdirectory(test)

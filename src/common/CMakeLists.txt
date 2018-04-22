@@ -35,10 +35,4 @@ target_link_libraries(
   PRIVATE Threads::Threads
 )
 
-#set(${PROJECT_NAME}_LIBRARIES
-#    ${PROJECT_NAME}
-#    PARENT_SCOPE)
-#
-#set(${PROJECT_NAME}_HEADERS "${${PROJECT_NAME}_HEADERS}" CACHE INTERNAL "")
-#set(${PROJECT_NAME}_SOURCES "${${PROJECT_NAME}_SOURCES}" CACHE INTERNAL "")
-#set(${PROJECT_NAME}_INCLUDE_DIRS "${${PROJECT_NAME}_INCLUDE_DIRS}" CACHE INTERNAL "")
+enable_coverage(${this_target})
