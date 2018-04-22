@@ -1,3 +1,5 @@
+#ifdef USE_ROOT
+
 #include "ReaderROOT.h"
 
 namespace NMX {
@@ -85,3 +87,5 @@ Event ReaderROOT::get_event(size_t ievent)
 }
 
 }
+
+#endif

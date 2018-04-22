@@ -8,7 +8,10 @@
 #include "docopt.h"
 
 #include "ReaderRawAPV.h"
+
+#ifdef USE_ROOT
 #include "ReaderROOT.h"
+#endif
 
 volatile sig_atomic_t term_flag = 0;
 void term_key(int /*sig*/)
@@ -33,7 +36,7 @@ static const char USAGE[] =
 int main(int argc, char* argv[])
 {
 	signal(SIGINT, term_key);
-  H5CC::exceptions_off();
+	hdf5::error::Singleton::instance().auto_print(false);
 //  CustomLogger::initLogger();
 
   auto args = docopt::docopt(USAGE, {argv+1,argv+argc}, true);
@@ -47,11 +50,14 @@ int main(int argc, char* argv[])
 	shared_ptr<NMX::Reader> reader;
 
 	fs::path input_path(input_file);
+#ifdef USE_ROOT
   if (boost::iequals(input_path.extension().string(), ".root"))
   {
 		reader = make_shared < NMX::ReaderROOT > (input_file);
   }
-  else if (boost::iequals(input_path.extension().string(), ".raw"))
+  else
+#endif
+	if (boost::iequals(input_path.extension().string(), ".raw"))
 	{
     reader = make_shared<NMX::ReaderRawAPV>(input_file);
 	}
@@ -77,12 +83,13 @@ int main(int argc, char* argv[])
 
   INFO << "Destination '" << output_file << "'\n";
 
-  H5CC::File outfile;
+	hdf5::file::File outfile;
   shared_ptr<NMX::RawAPV> writer;
 	try
 	{
-    outfile.open(output_file, H5CC::Access::rw_truncate);
-    writer = make_shared<NMX::RawAPV>(outfile, reader->strip_count(), reader->timebin_count());
+		outfile = hdf5::file::create(output_file, hdf5::file::AccessFlags::TRUNCATE);
+		writer = make_shared<NMX::RawAPV>(outfile.root(),
+				reader->strip_count(), reader->timebin_count(), true);
   }
   catch (...)
 	{
