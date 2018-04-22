@@ -125,7 +125,7 @@ HistMap1D EdgeFitter::get_fit_hist(double granularity) const
       ret[x] = y_offset + height*TMath::Erfc((x-x_offset1)/slope);
 
 #endif
-  
+
   return ret;
 }
 

@@ -2,7 +2,7 @@ set(this_target ${PROJECT_NAME}_core)
 
 # ROOT
 list(APPEND CMAKE_PREFIX_PATH $ENV{ROOTSYS})
-find_package(ROOT REQUIRED COMPONENTS RIO Net)
+find_package(ROOT COMPONENTS RIO Net)
 if (${ROOT_FOUND})
     include(${ROOT_USE_FILE})
     add_definitions(-DWITH_ROOT)
