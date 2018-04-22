@@ -1,6 +1,7 @@
 #pragma once
 
 #include "histogram.h"
+#include <string>
 
 struct EdgeFitter
 {
