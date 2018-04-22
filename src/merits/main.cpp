@@ -26,7 +26,7 @@ static const char USAGE[] =
 
 int main(int argc, char* argv[])
 {
-  H5CC::exceptions_off();
+  hdf5::error::Singleton::instance().auto_print(false);
 
   auto args = docopt::docopt(USAGE, {argv+1,argv+argc}, true);
 
@@ -36,11 +36,15 @@ int main(int argc, char* argv[])
 
   std::map<std::string,FilterMerits> fm_templates;
   auto tfile = path(args["TEMPLATE"].asString());
-  H5CC::File tf(tfile.string(), H5CC::Access::r_existing);
-  for (auto t : tf.groups())
+  auto tf = hdf5::file::open(tfile.string(), hdf5::file::AccessFlags::READONLY);
+
+  for (auto t : tf.root().nodes)
   {
+    if (t.type() != hdf5::node::Type::GROUP)
+      continue;
+
     FilterMerits fm;
-    fm.load(tf.open_group(t));
+    fm.load(hdf5::node::Group(t));
 
     bool have {false};
     for (auto l : fm_templates)
@@ -50,7 +54,7 @@ int main(int argc, char* argv[])
         break;
       }
     if (!have)
-      fm_templates[t] = fm;
+      fm_templates[t.link().path().name()] = fm;
   }
 
   std::cout << "Got " << fm_templates.size() << " templates to do\n";
@@ -59,7 +63,8 @@ int main(int argc, char* argv[])
   for (auto p : files)
     std::cout << "   " << p << "\n";
 
-  H5CC::File outfile(args["OUTFILE"].asString(), H5CC::Access::rw_require);
+  auto outfile = hdf5::file::create(args["OUTFILE"].asString(),
+      hdf5::file::AccessFlags::TRUNCATE);
 
   auto proj = args["METRIC"].asString();
   std::cout << "metric: " << proj << "\n";
@@ -70,7 +75,7 @@ int main(int argc, char* argv[])
     try
     {
       reader = std::make_shared<NMX::File>(p.string(),
-                                           H5CC::Access::r_existing);
+                                           hdf5::file::AccessFlags::READONLY);
     }
     catch (...)
     {
@@ -100,9 +105,9 @@ int main(int argc, char* argv[])
 
         ff.doit(*reader, proj);
 
-        H5CC::Group group = outfile.require_group(gname);
-        group.write_attribute("dataset", reader->dataset_name());
-        group.write_attribute("analysis", reader->current_analysis());
+        auto group = outfile.root().create_group(gname);
+        group.attributes.create<std::string>("dataset").write(reader->dataset_name());
+        group.attributes.create<std::string>("analysis").write(reader->current_analysis());
         ff.save(group);
       }
 

@@ -37,8 +37,7 @@ static const char USAGE[] =
 int main(int argc, char* argv[])
 {
 	signal(SIGINT, term_key);
-  H5CC::exceptions_off();
-//  CustomLogger::initLogger();
+  hdf5::error::Singleton::instance().auto_print(false);
 
   auto args = docopt::docopt(USAGE, {argv+1,argv+argc}, true);
 
@@ -104,12 +103,13 @@ int main(int argc, char* argv[])
 
   INFO << "Destination '" << output_file << "'\n";
 
-  H5CC::File outfile;
+  hdf5::file::File outfile;
   shared_ptr<NMX::RawVMM> writer;
 	try
 	{
-    outfile.open(output_file, H5CC::Access::rw_truncate);
-    writer = make_shared<NMX::RawVMM>(outfile, 20);
+    outfile = hdf5::file::create(output_file, hdf5::file::AccessFlags::TRUNCATE);
+    auto og = outfile.root();
+    writer = make_shared<NMX::RawVMM>(og, 20);
   }
   catch (...)
 	{

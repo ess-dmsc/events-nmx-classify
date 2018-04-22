@@ -27,7 +27,7 @@ static const char USAGE[] =
 
 int main(int argc, char* argv[])
 {
-  H5CC::exceptions_off();
+  hdf5::error::Singleton::instance().auto_print(false);
 
   auto args = docopt::docopt(USAGE, {argv+1,argv+argc}, true);
 
@@ -41,7 +41,7 @@ int main(int argc, char* argv[])
   try
   {
     reader = std::make_shared<NMX::File>(infile.string(),
-                                         H5CC::Access::r_existing);
+                                         hdf5::file::AccessFlags::READONLY);
   }
   catch (...)
   {

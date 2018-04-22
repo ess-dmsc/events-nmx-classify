@@ -40,7 +40,7 @@ static const char USAGE[] =
 int main(int argc, char* argv[])
 {
   signal(SIGINT, term_key);
-  H5CC::exceptions_off();
+  hdf5::error::Singleton::instance().auto_print(false);
 
   auto args = docopt::docopt(USAGE, {argv+1,argv+argc}, true);
 
@@ -76,7 +76,7 @@ void cluster_eventlets(const path& file, int chunksize, int timesep)
 
   try
   {
-    reader = std::make_shared<NMX::File>(filename, H5CC::Access::r_existing);
+    reader = std::make_shared<NMX::File>(filename, hdf5::file::AccessFlags::READONLY);
   }
   catch (...)
   {
@@ -101,8 +101,9 @@ void cluster_eventlets(const path& file, int chunksize, int timesep)
 
   size_t nevents = reader->event_count();
 
-  H5CC::File outfile(newname, H5CC::Access::rw_truncate);
-  RawVMM writer(outfile, chunksize);
+  auto outfile = hdf5::file::create(newname, hdf5::file::AccessFlags::TRUNCATE);
+  auto og = outfile.root();
+  RawVMM writer(og, chunksize);
 
   uint64_t eventlet_count {0};
   int64_t time_offset {0};

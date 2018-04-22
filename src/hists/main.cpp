@@ -29,7 +29,7 @@ static const char USAGE[] =
 int main(int argc, char* argv[])
 {
   signal(SIGINT, term_key);
-  H5CC::exceptions_off();
+  hdf5::error::Singleton::instance().auto_print(false);
   //  CustomLogger::initLogger();
 
   auto args = docopt::docopt(USAGE, {argv+1,argv+argc}, true);
@@ -48,7 +48,8 @@ int main(int argc, char* argv[])
   auto prog = progbar(files.size(), "  Indexing metrics  ");
   for (auto filename : files)
   {
-    auto reader = std::make_shared<NMX::File>(filename.string(), H5CC::Access::r_existing);
+    auto reader = std::make_shared<NMX::File>(filename.string(),
+        hdf5::file::AccessFlags::READONLY);
 
     for (auto analysis : reader->analyses())
     {
@@ -69,7 +70,8 @@ int main(int argc, char* argv[])
     return 0;
   }
 
-  H5CC::File outfile(fs::path(output_file).string(), H5CC::Access::rw_truncate);
+  auto outfile = hdf5::file::create(fs::path(output_file).string(),
+      hdf5::file::AccessFlags::TRUNCATE);
   std::map<std::string, double> minima;
   std::map<std::string, double> maxima;
 
@@ -80,7 +82,7 @@ int main(int argc, char* argv[])
 
     for (auto filename : files)
     {
-      auto reader = std::make_shared<NMX::File>(filename.string(), H5CC::Access::r_existing);
+      auto reader = std::make_shared<NMX::File>(filename.string(), hdf5::file::AccessFlags::READONLY);
       for (auto analysis : reader->analyses())
       {
         reader->load_analysis(analysis);
@@ -93,7 +95,8 @@ int main(int argc, char* argv[])
 
     for (auto a : aggregates)
     {
-      write(outfile.require_group(a.first).require_group(metric), "aggregate", a.second.make_histogram(a.second.normalizer()));
+      write(outfile.root().create_group(a.first).create_group(metric),
+            "aggregate", a.second.make_histogram(a.second.normalizer()));
       if (minima.count(metric))
         minima[metric] = std::min(minima.at(metric), a.second.min());
       else
@@ -112,7 +115,8 @@ int main(int argc, char* argv[])
   size_t fnum {0};
   for (auto filename : files)
   {
-    auto reader = std::make_shared<NMX::File>(filename.string(), H5CC::Access::r_existing);
+    auto reader = std::make_shared<NMX::File>(filename.string(),
+        hdf5::file::AccessFlags::READONLY);
 
     std::string dataset = filename.stem().string();
     auto relpath = relative_to(ofilepath, filename.relative_path());
@@ -136,8 +140,9 @@ int main(int argc, char* argv[])
         double norm = NMX::Metric::normalizer(minima.at(metric), maxima.at(metric));
         auto hist = reader->get_metric(metric).make_histogram(norm);
 
-        write(outfile.require_group(analysis).require_group(metric), dataset, hist);
-        outfile.open_group(analysis).open_group(metric).open_dataset(dataset).write_attribute("relpath", relpath.string());
+        write(outfile.root().create_group(analysis).create_group(metric), dataset, hist);
+        outfile.root().get_group(analysis).get_group(metric).get_dataset(dataset).attributes.
+            create<std::string>("relpath").write(relpath.string());
 
         ++(*prog);
         if (term_flag)
