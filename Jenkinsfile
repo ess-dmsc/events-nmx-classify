@@ -80,7 +80,7 @@ def docker_cmake(image_key, xtra_flags) {
         cd ${project}/build
         . ./activate_run.sh
         cmake --version
-        cmake -DGUI=OFF -DCONAN=MANUAL ..
+        cmake -DGUI=OFF -DCONAN=MANUAL ${xtra_flags} ..
         """
 
     sh "docker exec ${container_name(image_key)} ${custom_sh} -c \"${configure_script}\""
