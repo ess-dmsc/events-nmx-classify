@@ -2,6 +2,7 @@
 
 #include "CustomLogger.h"
 #include <sstream>
+#include <cmath>
 
 #ifdef WITH_ROOT
 #include "TF1.h"
