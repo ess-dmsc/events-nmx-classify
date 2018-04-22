@@ -10,7 +10,7 @@ find_package(Threads REQUIRED)
 add_subdirectory(common)
 
 add_subdirectory(analyze)
-#add_subdirectory(cluster)
+add_subdirectory(cluster)
 #add_subdirectory(uncluster)
 #add_subdirectory(hists)
 #add_subdirectory(convert_apv)

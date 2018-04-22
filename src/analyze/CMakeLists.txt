@@ -1,5 +1,7 @@
 set(this_target nmx_analyze)
 
+include(${EXTRA_MODULES_DIR}/BoostLibraryConfig.cmake)
+
 add_executable(
   ${this_target}
   main.cpp

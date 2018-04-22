@@ -46,7 +46,7 @@ static const char USAGE[] =
 int main(int argc, char* argv[])
 {
   signal(SIGINT, term_key);
-  H5CC::exceptions_off();
+  hdf5::error::Singleton::instance().auto_print(false);
 
   auto args = docopt::docopt(USAGE, {argv+1,argv+argc}, true);
 
@@ -85,12 +85,13 @@ void cluster_eventlets(const path& file, int chunksize, int timesep, int stripse
   string newname = boost::filesystem::change_extension(filename, "").string() +
       "_clustered.h5";
 
-  H5CC::File infile;
+  hdf5::file::File infile;
   RawVMM reader;
   try
   {
-    infile = H5CC::File(filename, H5CC::Access::r_existing);
-    reader = RawVMM(infile);
+    infile = hdf5::file::open(filename, hdf5::file::AccessFlags::READONLY);
+    auto fr = infile.root();
+    reader = RawVMM(fr, false);
   }
   catch (...)
   {
@@ -107,8 +108,8 @@ void cluster_eventlets(const path& file, int chunksize, int timesep, int stripse
 
   size_t eventlet_count = reader.eventlet_count();
 
-  H5CC::File outfile(newname, H5CC::Access::rw_truncate);
-  RawClustered writer(outfile, H5CC::kMax, chunksize);
+  auto outfile = hdf5::file::open(newname, hdf5::file::AccessFlags::TRUNCATE);
+  RawClustered writer(outfile.root(), hdf5::dataspace::Simple::UNLIMITED, chunksize, true);
 
   Clusterer clusterer(timesep, stripsep, corsep);
   uint64_t evcount {0};
