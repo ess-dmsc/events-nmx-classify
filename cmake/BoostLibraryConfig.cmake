@@ -8,7 +8,6 @@ set(Boost_USE_SHARED_LIBS ON)
 add_definitions(-DBOOST_LOG_DYN_LINK)
 
 find_package(Boost COMPONENTS
-  system filesystem thread timer date_time
-  log log_setup
+  system thread timer date_time log log_setup
   REQUIRED)
 

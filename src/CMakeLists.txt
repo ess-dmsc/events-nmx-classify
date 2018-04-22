@@ -1,11 +1,7 @@
-cmake_minimum_required(VERSION 2.8.11 FATAL_ERROR)
-
 include(${EXTRA_MODULES_DIR}/CompilerConfig.cmake)
 include(${EXTRA_MODULES_DIR}/DirsOf.cmake)
 include(${EXTRA_MODULES_DIR}/InstallConfig.cmake)
 include(${EXTRA_MODULES_DIR}/BuildInfo.cmake)
-
-include(${EXTRA_MODULES_DIR}/OutputDirConfig.cmake)
 
 include(${EXTRA_MODULES_DIR}/BoostLibraryConfig.cmake)
 find_package(h5cpp 0.0.5 REQUIRED)
@@ -13,7 +9,7 @@ find_package(Threads REQUIRED)
 
 add_subdirectory(common)
 
-#add_subdirectory(analyze)
+add_subdirectory(analyze)
 #add_subdirectory(cluster)
 #add_subdirectory(uncluster)
 #add_subdirectory(hists)

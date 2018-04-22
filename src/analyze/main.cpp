@@ -46,7 +46,7 @@ static const char USAGE[] =
 int main(int argc, char* argv[])
 {
   signal(SIGINT, term_key);
-  H5CC::exceptions_off();
+  hdf5::error::Singleton::instance().auto_print(false);
 
   auto args = docopt::docopt(USAGE, {argv+1,argv+argc}, true);
 
@@ -91,7 +91,7 @@ std::map<std::string, NMX::Settings> collect_params(std::string file_path)
     return params;
   try
   {
-    auto reader = std::make_shared<NMX::File>(file_path, H5CC::Access::r_existing);
+    auto reader = std::make_shared<NMX::File>(file_path, hdf5::file::AccessFlags::READONLY);
     for (auto a : reader->analyses())
     {
       reader->load_analysis(a);
@@ -118,9 +118,9 @@ void analyze_metrics(const std::set<path>& files,
     try
     {
       if (!params.empty())
-        reader = std::make_shared<NMX::File>(filename, H5CC::Access::rw_existing);
+        reader = std::make_shared<NMX::File>(filename, hdf5::file::AccessFlags::READWRITE);
       else
-        reader = std::make_shared<NMX::File>(filename, H5CC::Access::r_existing);
+        reader = std::make_shared<NMX::File>(filename, hdf5::file::AccessFlags::READONLY);
     }
     catch (...)
     {
@@ -181,7 +181,7 @@ void emulate_vmm(const std::set<path>& files,
 
     try
     {
-      reader = std::make_shared<NMX::File>(filename, H5CC::Access::r_existing);
+      reader = std::make_shared<NMX::File>(filename, hdf5::file::AccessFlags::READONLY);
     }
     catch (...)
     {
@@ -207,8 +207,8 @@ void emulate_vmm(const std::set<path>& files,
           change_extension(filename, "").string() +
           "_" + group.first + ".h5";
 
-      H5CC::File outfile(newname, H5CC::Access::rw_require);
-      NMX::RawClustered writer(outfile, nevents, chunksize);
+      auto outfile = hdf5::file::create(newname, hdf5::file::AccessFlags::TRUNCATE);
+      NMX::RawClustered writer(outfile.root(), nevents, chunksize, true);
 
       auto prog = progbar(nevents, "  Converting to '" + newname + "'  ");
 

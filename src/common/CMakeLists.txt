@@ -3,10 +3,10 @@ set(this_target ${PROJECT_NAME}_core)
 # ROOT
 list(APPEND CMAKE_PREFIX_PATH $ENV{ROOTSYS})
 find_package(ROOT COMPONENTS RIO Net)
-if (${ROOT_FOUND})
-    include(${ROOT_USE_FILE})
-    add_definitions(-DWITH_ROOT)
-endif ()
+if(${ROOT_FOUND})
+  include(${ROOT_USE_FILE})
+  add_definitions(-DWITH_ROOT)
+endif()
 
 # docopt
 add_subdirectory(
@@ -20,7 +20,7 @@ file(GLOB ${this_target}_HEADERS *.h nmx/*.h nmx/pipeline/*.cpp)
 dirs_of(${this_target}_INCLUDE_DIRS "${${this_target}_HEADERS}")
 
 add_library(
-  ${this_target} STATIC
+  ${this_target}
   ${${this_target}_SOURCES}
   ${${this_target}_HEADERS}
 )
