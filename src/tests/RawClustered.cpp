@@ -1,6 +1,6 @@
 /** Copyright (C) 2016, 2017 European Spallation Source ERIC */
 
-#include "RawAPV.h"
+#include "RawClustered.h"
 #include <gtest/gtest.h>
 
 using namespace NMX;
@@ -26,7 +26,8 @@ Event spoof_event() {
 
 }
 
-class RawAPVTest : public testing::Test
+
+class RawClusteredTest : public testing::Test
 {
 protected:
   hdf5::file::File file_;
@@ -38,36 +39,36 @@ protected:
     root_ = file_.root();
   }
 
-  virtual ~RawAPVTest() {}
+  virtual ~RawClusteredTest() {}
 };
 
-TEST_F(RawAPVTest, Create) {
-  RawAPV f(root_, 10, 10);
+TEST_F(RawClusteredTest, Create) {
+  RawClustered f(root_, 10);
   EXPECT_EQ(f.event_count(), 0);
 
   file::create("test_file2.h5",file::AccessFlags::TRUNCATE);
   auto f2 = file::open("test_file2.h5",file::AccessFlags::READONLY);
-  EXPECT_THROW(RawAPV(f2.root(), 10, 10), std::runtime_error);
+  EXPECT_THROW(RawClustered(f2.root(), 10), std::runtime_error);
 }
 
-TEST_F(RawAPVTest, Exists) {
-  EXPECT_FALSE(RawAPV::exists_in(root_));
-  RawAPV f(root_, 10, 10);
-  EXPECT_TRUE(RawAPV::exists_in(root_));
+TEST_F(RawClusteredTest, Exists) {
+  EXPECT_FALSE(RawClustered::exists_in(root_));
+  RawClustered f(root_, 10);
+  EXPECT_TRUE(RawClustered::exists_in(root_));
 }
 
-TEST_F(RawAPVTest, OpenExisting) {
-  EXPECT_THROW(RawAPV(file_.root()), std::runtime_error);
+TEST_F(RawClusteredTest, OpenExisting) {
+  EXPECT_THROW(RawClustered(file_.root()), std::runtime_error);
 
-  auto ex = std::make_shared<RawAPV>(root_, 10, 10);
+  auto ex = std::make_shared<RawClustered>(root_, 10);
   ex.reset();
 
-  RawAPV f(root_);
+  RawClustered f(root_);
   EXPECT_EQ(f.event_count(), 0);
 }
 
-TEST_F(RawAPVTest, Write) {
-  RawAPV f(root_, 10, 10);
+TEST_F(RawClusteredTest, Write) {
+  RawClustered f(root_, 10);
   f.write_event(0, spoof_event());
   EXPECT_EQ(f.event_count(), 1);
 
@@ -75,16 +76,16 @@ TEST_F(RawAPVTest, Write) {
   EXPECT_EQ(f.event_count(), 6);
 
   auto f1 = file::create("test_file2.h5",file::AccessFlags::TRUNCATE);
-  auto ex = std::make_shared<RawAPV>(f1.root(), 10, 10);
+  auto ex = std::make_shared<RawClustered>(f1.root(), 10);
   ex.reset();
   f1 = file::File();
   auto f2 = file::open("test_file2.h5",file::AccessFlags::READONLY);
-  RawAPV r2(f2.root());
+  RawClustered r2(f2.root());
   EXPECT_THROW(r2.write_event(10, spoof_event()), std::runtime_error);
 }
 
-TEST_F(RawAPVTest, Read) {
-  RawAPV f(root_, 10, 10);
+TEST_F(RawClusteredTest, Read) {
+  RawClustered f(root_, 10);
 
   f.write_event(0, spoof_event());
   auto e = f.get_event(0);

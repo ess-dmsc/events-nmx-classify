@@ -208,7 +208,7 @@ void emulate_vmm(const std::set<path>& files,
           "_" + group.first + ".h5";
 
       auto outfile = hdf5::file::create(newname, hdf5::file::AccessFlags::TRUNCATE);
-      NMX::RawClustered writer(outfile.root(), nevents, chunksize, true);
+      NMX::RawClustered writer(outfile.root(), chunksize);
 
       auto prog = progbar(nevents, "  Converting to '" + newname + "'  ");
 

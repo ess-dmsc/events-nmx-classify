@@ -109,7 +109,7 @@ void cluster_eventlets(const path& file, int chunksize, int timesep, int stripse
   size_t eventlet_count = reader.eventlet_count();
 
   auto outfile = hdf5::file::create(newname, hdf5::file::AccessFlags::TRUNCATE);
-  RawClustered writer(outfile.root(), hdf5::dataspace::Simple::UNLIMITED, chunksize, true);
+  RawClustered writer(outfile.root(), chunksize);
 
   Clusterer clusterer(timesep, stripsep, corsep);
   uint64_t evcount {0};

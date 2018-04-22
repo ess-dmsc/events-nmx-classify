@@ -54,8 +54,7 @@ bool RawAPV::exists_in(const node::Group &f) {
     return false;
 
   auto shape = hdf5::dataspace::Simple(file.get_dataset("RawAPV").dataspace()).maximum_dimensions();
-  return ((shape.size() == 4) &&
-      (shape[1] == 2));
+  return ((shape.size() == 4) && (shape[1] == 2));
 }
 
 size_t RawAPV::event_count() const {
