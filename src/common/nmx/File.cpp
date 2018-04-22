@@ -48,7 +48,7 @@ void File::open_raw()
 {
   close_raw();
   if (has_APV())
-    raw_ = std::make_shared<RawAPV>(file_.root(), write_access_);
+    raw_ = std::make_shared<RawAPV>(file_.root());
   else if (has_clustered())
     raw_ = std::make_shared<RawClustered>(file_.root(), write_access_);
 }

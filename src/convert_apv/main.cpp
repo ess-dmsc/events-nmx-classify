@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
 	{
 		outfile = hdf5::file::create(output_file, hdf5::file::AccessFlags::TRUNCATE);
 		writer = make_shared<NMX::RawAPV>(outfile.root(),
-				reader->strip_count(), reader->timebin_count(), true);
+				reader->strip_count(), reader->timebin_count());
   }
   catch (...)
 	{

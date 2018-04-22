@@ -8,8 +8,8 @@ namespace NMX {
 class RawAPV : public Raw
 {
 public:
-  RawAPV(hdf5::node::Group file, bool write_access);
-  RawAPV(hdf5::node::Group file, size_t strips, size_t timebins, bool write_access);
+  RawAPV(const hdf5::node::Group& parent);
+  RawAPV(const hdf5::node::Group& parent, size_t strips, size_t timebins);
   static bool exists_in(const hdf5::node::Group& file);
 
   size_t event_count() const override;
@@ -17,7 +17,6 @@ public:
   void write_event(size_t index, const Event& event) override;
 
 protected:
-  bool write_access_ {false};
   hdf5::node::Dataset dataset_;
   size_t event_count_ {0};
 
