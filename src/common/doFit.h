@@ -1,7 +1,6 @@
 #pragma once
 
 #include "histogram.h"
-#include "TF1.h"
 
 struct EdgeFitter
 {
@@ -9,7 +8,6 @@ struct EdgeFitter
 
   void analyze(std::string edge);
   void clear_params();
-  void get_params(TF1* f);
 
   HistMap1D get_fit_hist(double granularity = 4) const;
   std::string info(double units) const;

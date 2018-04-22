@@ -1,10 +1,13 @@
 #include "doFit.h"
-#include "TH1D.h"
-#include "TMath.h"
 
 #include "CustomLogger.h"
-
 #include <sstream>
+
+#ifdef WITH_ROOT
+#include "TF1.h"
+#include "TH1D.h"
+#include "TMath.h"
+#endif
 
 EdgeFitter::EdgeFitter(HistMap1D data)
 {
@@ -38,29 +41,6 @@ void EdgeFitter::clear_params()
   x_offset2_err = 0;
 }
 
-void EdgeFitter::get_params(TF1* f)
-{
-  y_offset     = f->GetParameter(0);
-  y_offset_err = f->GetParError(0);
-
-  height     = f->GetParameter(1);
-  height_err = f->GetParError(1);
-
-  x_offset1     = f->GetParameter(2);
-  x_offset1_err = f->GetParError(2);
-
-  slope     = f->GetParameter(3);
-  slope_err = f->GetParError(3);
-
-  if (edge_ == "double")
-  {
-    x_offset2     = f->GetParameter(4);
-    x_offset2_err = f->GetParError(4);
-  }
-}
-
-
-
 void EdgeFitter::analyze(std::string edge)
 {
   edge_ = edge;
@@ -69,6 +49,8 @@ void EdgeFitter::analyze(std::string edge)
   if (data_.empty() ||
       (edge_ != "left" && edge_ != "right" && edge_ != "double"))
     return;
+
+#ifdef WITH_ROOT
 
   TH1D* h1 = new TH1D("h1", "h1", data_.size(), fits, fite);
   int i=1;
@@ -98,16 +80,37 @@ void EdgeFitter::analyze(std::string edge)
   if (f1)
   {
     h1->Fit("f1", "NQ");
-    get_params(f1);
+
+    y_offset     = f1->GetParameter(0);
+    y_offset_err = f1->GetParError(0);
+
+    height     = f1->GetParameter(1);
+    height_err = f1->GetParError(1);
+
+    x_offset1     = f1->GetParameter(2);
+    x_offset1_err = f1->GetParError(2);
+
+    slope     = f1->GetParameter(3);
+    slope_err = f1->GetParError(3);
+
+    if (edge_ == "double")
+    {
+      x_offset2     = f1->GetParameter(4);
+      x_offset2_err = f1->GetParError(4);
+    }
+
     f1->Delete();
   }
 
   h1->Delete();
+#endif
 }
 
 HistMap1D EdgeFitter::get_fit_hist(double granularity) const
 {
   HistMap1D ret;
+
+#ifdef WITH_ROOT
 
   double step = 1.0 / granularity;  //double(fite - fits) / (4.0 * hist.size());
   if (edge_ == "double")
@@ -121,6 +124,8 @@ HistMap1D EdgeFitter::get_fit_hist(double granularity) const
     for (double x = fits; x <= fite; x+= step)
       ret[x] = y_offset + height*TMath::Erfc((x-x_offset1)/slope);
 
+#endif
+  
   return ret;
 }
 
