@@ -54,8 +54,6 @@ def docker_clone(image_key) {
         git clone \
             --branch ${env.BRANCH_NAME} \
             https://github.com/ess-dmsc/${project}.git /home/jenkins/${project}
-        cd ${project}
-        git submodule update --init
         """
     sh "docker exec ${container_name(image_key)} ${custom_sh} -c \"${clone_script}\""
 }
@@ -64,8 +62,10 @@ def docker_dependencies(image_key) {
     def custom_sh = images[image_key]['sh']
     def conan_remote = "ess-dmsc-local"
     def dependencies_script = """
-        mkdir ${project}/build
-        cd ${project}/build
+        cd ${project}
+        git submodule update --init
+        mkdir build
+        cd build
         conan remote add \\
             --insert 0 \\
             ${conan_remote} ${local_conan_server}
@@ -231,7 +231,6 @@ node('docker') {
         stage('Checkout') {
             try {
                 scm_vars = checkout scm
-                sh "git submodule update --init"
             } catch (e) {
                 failure_function(e, 'Checkout failed')
             }
