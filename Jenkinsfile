@@ -103,7 +103,6 @@ def docker_tests(image_key) {
                 cd ${project}/build
                 . ./activate_run.sh
                 make run_tests
-                ./bin/systest
                     """
     sh "docker exec ${container_name(image_key)} ${custom_sh} -c \"${test_script}\""
 }
@@ -118,7 +117,6 @@ def docker_tests_coverage(image_key) {
                 . ./activate_run.sh
                 make VERBOSE=ON
                 make coverage VERBOSE=ON
-                ./bin/systest
             \""""
         sh "docker cp ${container_name(image_key)}:/home/jenkins/${project} ./"
     } catch(e) {
@@ -213,7 +211,6 @@ def get_macos_pipeline() {
                         sh "make VERBOSE=1"
                         sh "make && make unit_tests"
                         sh "source ./activate_run.sh && ./bin/unit_tests"
-                        //sh "source ./activate_run.sh && ./bin/systest"
                     } catch (e) {
                         failure_function(e, 'MacOSX / build+test failed')
                     }
