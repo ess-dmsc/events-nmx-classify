@@ -8,8 +8,8 @@ namespace NMX {
 class RawVMM {
 public:
   RawVMM() {}
-  RawVMM(hdf5::node::Group &file);
-  RawVMM(hdf5::node::Group &file, size_t chunksize);
+  RawVMM(const hdf5::node::Group& parent);
+  RawVMM(const hdf5::node::Group& parent, size_t chunksize);
   static bool exists_in(const hdf5::node::Group &file);
 
   virtual ~RawVMM() {}
@@ -29,7 +29,7 @@ protected:
   size_t max_in_buf_{9000 / (sizeof(uint32_t) * 4)};
 
   mutable hdf5::dataspace::Hyperslab slab_{{0, 0}, {1, 4}};
-  mutable std::vector<uint32_t> data_ {4};
+  mutable std::vector<uint32_t> data_;
 };
 
 }
