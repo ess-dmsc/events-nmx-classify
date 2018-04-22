@@ -13,7 +13,7 @@
 #include "SearchList.h"
 #include <QPushButton>
 
-#include "JsonH5.h"
+#include "h5json.h"
 
 void SpecialDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
                                const QModelIndex &index) const
@@ -120,9 +120,9 @@ QWidget *SpecialDelegate::createEditor(QWidget *parent,
     }
     else if (itemData.count("___options") || itemData.count("___choice"))
     {
-      H5CC::Enum<int16_t> menu = itemData;
       QPushButton* editor = new QPushButton(parent);
-      editor->setText(QString::fromStdString(menu.choice()));
+//      H5CC::Enum<int16_t> menu = itemData;
+//      editor->setText(QString::fromStdString(menu.choice()));
       return editor;
     }
   }
@@ -194,10 +194,10 @@ void SpecialDelegate::setEditorData ( QWidget *editor, const QModelIndex &index 
     }
     else if (itemData.count("___options") || itemData.count("___choice"))
     {
-      H5CC::Enum<int16_t> menu = itemData;
       QStringList list;
-      for (auto m : menu.options())
-        list.push_back(QString::fromStdString(m.second));
+//      H5CC::Enum<int16_t> menu = itemData;
+//      for (auto m : menu.options())
+//        list.push_back(QString::fromStdString(m.second));
 
       if (QPushButton *cb = qobject_cast<QPushButton *>(editor))
         popupSearchDialog(cb, list);

@@ -75,7 +75,7 @@ void Browser::open_file(QString fileName)
   bool failed {false};
   try
   {
-    reader_ = std::make_shared<NMX::File>(fileName.toStdString(), H5CC::Access::rw_existing);
+    reader_ = std::make_shared<NMX::File>(fileName.toStdString(), hdf5::file::AccessFlags::READWRITE);
   }
   catch (...)
   {
@@ -88,7 +88,7 @@ void Browser::open_file(QString fileName)
   {
     try
     {
-      reader_ = std::make_shared<NMX::File>(fileName.toStdString(), H5CC::Access::r_existing);
+      reader_ = std::make_shared<NMX::File>(fileName.toStdString(), hdf5::file::AccessFlags::READONLY);
     }
     catch (...)
     {

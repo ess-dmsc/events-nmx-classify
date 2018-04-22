@@ -6,7 +6,7 @@
 #include <QDoubleSpinBox>
 #include <QComboBox>
 
-#include "json.hpp"
+#include <nlohmann/json.hpp>
 
 Q_DECLARE_METATYPE(nlohmann::json)
 

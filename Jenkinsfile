@@ -80,7 +80,7 @@ def docker_cmake(image_key, xtra_flags) {
         cd ${project}/build
         . ./activate_run.sh
         cmake --version
-        cmake -DCONAN=MANUAL ..
+        cmake -DGUI=OFF -DCONAN=MANUAL ..
         """
 
     sh "docker exec ${container_name(image_key)} ${custom_sh} -c \"${configure_script}\""
@@ -204,7 +204,7 @@ def get_macos_pipeline() {
                     }
 
                     try {
-                        sh "cmake -DCONAN=MANUAL ../code"
+                        sh "cmake -DGUI=OFF -DCONAN=MANUAL ../code"
                     } catch (e) {
                         failure_function(e, 'MacOSX / CMake failed')
                     }

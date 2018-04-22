@@ -5,7 +5,7 @@
 #include "qt_util.h"
 #include "CustomLogger.h"
 
-#include "JsonH5.h"
+#include "h5json.h"
 
 TableSettings::TableSettings(QObject *parent)
   : QAbstractTableModel(parent)
@@ -42,11 +42,11 @@ QVariant TableSettings::data(const QModelIndex &index, int role) const
         return QVariant::fromValue(item.get<double>());
       else if (item.is_boolean())
         return QVariant::fromValue(item.get<bool>());
-      else if (item.count("___choice") && item.count("___options"))
-      {
-        H5CC::Enum<int16_t> menu = item;
-        return QString::fromStdString(menu.choice());
-      }
+//      else if (item.count("___choice") && item.count("___options"))
+//      {
+//        H5CC::Enum<int16_t> menu = item;
+//        return QString::fromStdString(menu.choice());
+//      }
     }
     else
       return QVariant();
@@ -125,13 +125,13 @@ bool TableSettings::setData(const QModelIndex & index, const QVariant & value, i
     {
       item = value.toBool();
     }
-    else if ((item.count("___options") || item.count("___choice")) &&
-             value.canConvert(QMetaType::QString))
-    {
-      H5CC::Enum<int16_t> menu = item;
-      menu.choose(value.toString().toStdString());
-      item = menu;
-    }
+//    else if ((item.count("___options") || item.count("___choice")) &&
+//             value.canConvert(QMetaType::QString))
+//    {
+//      H5CC::Enum<int16_t> menu = item;
+//      menu.choose(value.toString().toStdString());
+//      item = menu;
+//    }
     else
       return false;
 

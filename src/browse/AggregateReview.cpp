@@ -4,8 +4,6 @@
 #include "CustomLogger.h"
 #include "ExceptionUtil.h"
 
-
-#include "H5CC_File.h"
 #include "histogram_h5.h"
 #include "qt_util.h"
 
@@ -190,24 +188,33 @@ void AggregateReview::openFile(QString fileName)
   QSet<QString> list1, list2, list3;
   try
   {
-    H5CC::File file(fileName.toStdString(), H5CC::Access::r_existing);
+    auto file = hdf5::file::open(fileName.toStdString(), hdf5::file::AccessFlags::READONLY);
 
-    for (auto g1 : file.groups())
+    for (auto g1 : file.root().nodes)
     {
-      list1.insert(QString::fromStdString(g1));
-      auto group1 = file.open_group(g1);
-      for (auto g2 : group1.groups())
+      if (g1.type() != hdf5::node::Type::GROUP)
+        continue;
+
+      list1.insert(QString::fromStdString(g1.link().path().name()));
+      auto group1 = hdf5::node::Group(g1);
+      for (auto g2 : group1.nodes)
       {
-        list2.insert(QString::fromStdString(g2));
-        auto group2 = group1.open_group(g2);
-        for (auto dset : group2.datasets())
+        if (g2.type() != hdf5::node::Type::GROUP)
+          continue;
+
+        list2.insert(QString::fromStdString(g2.link().path().name()));
+        auto group2 = hdf5::node::Group(g2);
+        for (auto dset : group2.nodes)
         {
-          auto dataset = group2.open_dataset(dset);
-          std::string dset_name = dset;
-          if (dataset.has_attribute("relpath"))
-            dset_name = dataset.read_attribute<std::string>("relpath");
+          if (g2.type() != hdf5::node::Type::DATASET)
+            continue;
+
+          auto dataset = hdf5::node::Dataset(dset);
+          std::string dset_name = dset.link().path().name();
+          if (dataset.attributes.exists("relpath"))
+            dataset.attributes["relpath"].read(dset_name);
           list3.insert(QString::fromStdString(dset_name));
-          data_[g1][g2][dset_name] = read(dataset);
+          data_[g1.link().path().name()][g2.link().path().name()][dset_name] = read(dataset);
         }
       }
     }

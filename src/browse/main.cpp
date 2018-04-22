@@ -4,7 +4,7 @@
 
 int main(int argc, char *argv[])
 {
-  H5CC::exceptions_off();
+  hdf5::error::Singleton::instance().auto_print(false);
 
   QApplication a(argc, argv);
   a.setWindowIcon(QIcon(":/icons/tpcc.xpm"));

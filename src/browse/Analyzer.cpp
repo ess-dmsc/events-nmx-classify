@@ -7,7 +7,7 @@
 #include "histogram_h5.h"
 
 #include "DialogVary.h"
-#include "JsonH5.h"
+#include "h5json.h"
 
 Analyzer::Analyzer(QWidget *parent)
   : QWidget(parent)
@@ -360,11 +360,12 @@ void Analyzer::on_pushSave1D_clicked()
 
   try
   {
-    H5CC::File file(fileName.toStdString(), H5CC::Access::rw_require);
-    write(file.require_group("histograms1d"), text.toStdString(), histogram1d_.map());
-    auto dset = file.require_group("histograms1d").open_dataset(text.toStdString());
+    auto file = hdf5::file::create(fileName.toStdString(), hdf5::file::AccessFlags::TRUNCATE);
+
+    write(file.root().create_group("histograms1d"), text.toStdString(), histogram1d_.map());
+    auto dset = file.root().get_group("histograms1d").get_dataset(text.toStdString());
     for (auto s : histogram1d_.values())
-      dset.write_attribute<double>(s, histogram1d_.get_value(s));
+      dset.attributes.create<double>(s).write(histogram1d_.get_value(s));
   }
   catch (...)
   {
@@ -391,9 +392,8 @@ void Analyzer::on_pushSave2D_clicked()
 
   try
   {
-    H5CC::File file(fileName.toStdString(), H5CC::Access::rw_require);
-    write(file.require_group("histograms2d"),
-          text.toStdString(), hm2d(histogram2d_));
+    auto file = hdf5::file::create(fileName.toStdString(), hdf5::file::AccessFlags::TRUNCATE);
+    write(file.root().create_group("histograms2d"), text.toStdString(), hm2d(histogram2d_));
   }
   catch (...)
   {
@@ -453,11 +453,11 @@ void Analyzer::on_pushVary_clicked()
   results.units = ui->doubleUnits->value();
   results.doit(*reader_, ui->pushMetric1D->text().toStdString());
 
-  H5CC::File file(fileName.toStdString(), H5CC::Access::rw_require);
-  H5CC::Group group = file.require_group(text.toStdString());
+  auto file = hdf5::file::create(fileName.toStdString(), hdf5::file::AccessFlags::TRUNCATE);
+  auto group = file.root().create_group(text.toStdString());
 
-  group.write_attribute("dataset", reader_->dataset_name());
-  group.write_attribute("analysis", reader_->current_analysis());
+  group.attributes.create<std::string>("dataset").write(reader_->dataset_name());
+  group.attributes.create<std::string>("analysis").write(reader_->current_analysis());
 
   results.save(group);
 }
