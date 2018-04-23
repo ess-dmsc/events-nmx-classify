@@ -26,16 +26,13 @@ Event spoof_event() {
 
 }
 
-
-class RawClusteredTest : public testing::Test
-{
+class RawClusteredTest : public testing::Test {
 protected:
   hdf5::file::File file_;
   hdf5::node::Group root_;
 
-  virtual void SetUp()
-  {
-    file_ = file::create("test_file.h5",file::AccessFlags::TRUNCATE);
+  virtual void SetUp() {
+    file_ = file::create("test_file.h5", file::AccessFlags::TRUNCATE);
     root_ = file_.root();
   }
 
@@ -46,8 +43,8 @@ TEST_F(RawClusteredTest, Create) {
   RawClustered f(root_, 10);
   EXPECT_EQ(f.event_count(), 0);
 
-  file::create("test_file2.h5",file::AccessFlags::TRUNCATE);
-  auto f2 = file::open("test_file2.h5",file::AccessFlags::READONLY);
+  file::create("test_file2.h5", file::AccessFlags::TRUNCATE);
+  auto f2 = file::open("test_file2.h5", file::AccessFlags::READONLY);
   EXPECT_THROW(RawClustered(f2.root(), 10), std::runtime_error);
 }
 
@@ -75,11 +72,11 @@ TEST_F(RawClusteredTest, Write) {
   f.write_event(5, spoof_event());
   EXPECT_EQ(f.event_count(), 6);
 
-  auto f1 = file::create("test_file2.h5",file::AccessFlags::TRUNCATE);
+  auto f1 = file::create("test_file2.h5", file::AccessFlags::TRUNCATE);
   auto ex = std::make_shared<RawClustered>(f1.root(), 10);
   ex.reset();
   f1 = file::File();
-  auto f2 = file::open("test_file2.h5",file::AccessFlags::READONLY);
+  auto f2 = file::open("test_file2.h5", file::AccessFlags::READONLY);
   RawClustered r2(f2.root());
   EXPECT_THROW(r2.write_event(10, spoof_event()), std::runtime_error);
 }
