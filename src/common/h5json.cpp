@@ -12,27 +12,6 @@ std::string vector_idx_minlen(size_t idx, size_t max)
 
 namespace hdf5 {
 
-node::Group require_group(node::Group& g, std::string name)
-{
-  if (g.exists(name))
-    node::remove(g[name]);
-  return g.create_group(name);
-}
-
-bool has_group(const node::Group& g, std::string name)
-{
-  return (g.exists(name) &&
-      (g[name].type() == node::Type::GROUP));
-
-}
-
-bool has_dataset(const node::Group& g, std::string name)
-{
-  return (g.exists(name) &&
-      (g[name].type() == node::Type::DATASET));
-
-}
-
 //void to_json(json& j, const Enum<int16_t>& e)
 //{
 //  j["___choice"] = e.val();
@@ -71,13 +50,6 @@ void to_json(json &j, const node::Group &g)
 
   for (auto a : g.attributes)
     attr_to_json(j, a);
-
-//  for (auto gg : g.groups())
-//    to_json(j[gg], g.open_group(gg));
-//  for (auto aa : g.attributes())
-//    j[aa] = attribute_to_json(g, aa);
-//  for (auto dd : g.datasets())
-//    j[dd] = g.open_dataset(dd);
 }
 
 void attr_to_json(json &j, const attribute::Attribute &a)

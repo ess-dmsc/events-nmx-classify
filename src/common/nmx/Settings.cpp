@@ -52,11 +52,14 @@ Settings Settings::with_prefix(std::string prefix, bool drop_prefix) const {
 
 std::string Settings::debug(std::string prepend) const {
   std::string ret;
-  for (auto &param : data_)
+  for (auto &param : data_) {
     ret += prepend + param.first
         + " (" + param.second["value"].type_name() + ")"
-        + " = " + param.second["value"].dump() +
-        +"   " + param.second["description"].dump() + "\n";
+        + " = " + param.second["value"].dump() + "   ";
+    if (param.second.count("description"))
+      ret += param.second["description"].dump();
+    ret += "\n";
+  }
   return ret;
 }
 

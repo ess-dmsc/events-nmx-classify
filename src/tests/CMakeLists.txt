@@ -9,19 +9,22 @@ if (NOT GTest_FOUND)
 endif ()
 
 set(dir ${CMAKE_CURRENT_SOURCE_DIR})
-file(GLOB ${this_target}_sources ${dir}/*.cpp)
-file(GLOB ${this_target}_headers ${dir}/*.h)
-dirs_of(${this_target}_include_dirs "${${this_target}_headers}")
 
 add_executable(
   ${this_target} EXCLUDE_FROM_ALL
-  ${${this_target}_sources}
-  ${${this_target}_headers}
+  main.cpp
+  SettingsTest.cpp
+  EventletTest.cpp
+  RawAPV.cpp
+  RawVMM.cpp
+  RawClustered.cpp
+#  MicroclusterTest.cpp
+#  MicroclusterPoolTest.cpp
 )
 
 target_include_directories(
   ${this_target}
-  PRIVATE ${GTEST_INCLUDE_DIRS}
+  PRIVATE ${dir}
 )
 
 target_link_libraries(
