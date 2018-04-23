@@ -32,7 +32,9 @@ RawClustered::RawClustered(const node::Group &parent, size_t chunksize) {
 
     auto gg = node::get_group(parent, "RawVMM");
 
-    indices_ = gg.create_dataset("indices", datatype::create<uint64_t>(), dspace, lcpl, dcpl);
+    auto dtype = datatype::create<uint64_t>();
+
+    indices_ = gg.create_dataset("indices", dtype, dspace, lcpl, dcpl);
     data_.resize(2, 0);
   }
   catch (...) {

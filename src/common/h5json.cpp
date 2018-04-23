@@ -1,7 +1,6 @@
 #include "h5json.h"
 
-std::string vector_idx_minlen(size_t idx, size_t max)
-{
+std::string vector_idx_minlen(size_t idx, size_t max) {
   size_t minlen = std::to_string(max).size();
 
   std::string name = std::to_string(idx);
@@ -11,6 +10,160 @@ std::string vector_idx_minlen(size_t idx, size_t max)
 }
 
 namespace hdf5 {
+
+void attribute_from_json(const json &j, const std::string &name,
+                         const node::Node &g) {
+  try {
+//  if (j.count("___options") && j.count("___choice"))
+//  {
+//    Enum<int16_t> e = j;
+//    g.write_enum(name, e);
+//  }
+//  else
+    if (j.is_number_float()) {
+      attribute::Attribute a = g.attributes.create<double>(name);
+      a.write(j.get<double>());
+    } else if (j.is_number_unsigned()) {
+      attribute::Attribute a = g.attributes.create<uint32_t>(name);
+      a.write(j.get<uint32_t>());
+    } else if (j.is_number_integer()) {
+      attribute::Attribute a = g.attributes.create<int64_t>(name);
+      a.write(j.get<int64_t>());
+    } else if (j.is_boolean()) {
+      attribute::Attribute a = g.attributes.create<bool>(name);
+      a.write(j.get<bool>());
+    } else if (j.is_string()) {
+      attribute::Attribute a = g.attributes.create<std::string>(name);
+      a.write(j.get<std::string>());
+    } else {
+      std::stringstream ss;
+      ss << "<h5json> unrecognized json type " << j.type_name();
+      throw std::runtime_error(ss.str());
+    }
+  } catch (...) {
+    std::stringstream ss;
+    ss << "<h5json> could not create h5 attribute from json=" << j.dump();
+    std::throw_with_nested(std::runtime_error(ss.str()));
+  }
+}
+
+void attribute_to_json(json &parent, const attribute::Attribute &a) {
+  try {
+    if (a.datatype() == datatype::create<float>()) {
+      float val;
+      a.read(val);
+      parent[a.name()] = val;
+    } else if (a.datatype() == datatype::create<double>()) {
+      double val;
+      a.read(val);
+      parent[a.name()] = val;
+    } else if (a.datatype() == datatype::create<long double>()) {
+      long double val;
+      a.read(val);
+      parent[a.name()] = val;
+    } else if (a.datatype() == datatype::create<bool>()) {
+      bool val;
+      a.read(val);
+      parent[a.name()] = val;
+    } else if (a.datatype() == datatype::create<int8_t>()) {
+      int8_t val;
+      a.read(val);
+      parent[a.name()] = val;
+    } else if (a.datatype() == datatype::create<int16_t>()) {
+      int16_t val;
+      a.read(val);
+      parent[a.name()] = val;
+    } else if (a.datatype() == datatype::create<int32_t>()) {
+      int32_t val;
+      a.read(val);
+      parent[a.name()] = val;
+    } else if (a.datatype() == datatype::create<int64_t>()) {
+      int64_t val;
+      a.read(val);
+      parent[a.name()] = val;
+//  } else if (a.datatype() == datatype::create<uint8_t>()) {
+//    uint8_t val;
+//    a.read(val);
+//    parent[a.name()] = val;
+    } else if (a.datatype() == datatype::create<uint16_t>()) {
+      uint16_t val;
+      a.read(val);
+      parent[a.name()] = val;
+    } else if (a.datatype() == datatype::create<uint32_t>()) {
+      uint32_t val;
+      a.read(val);
+      parent[a.name()] = val;
+    } else if (a.datatype() == datatype::create<uint64_t>()) {
+      uint64_t val;
+      a.read(val);
+      parent[a.name()] = val;
+    } else if (a.datatype() == datatype::create<std::string>()) {
+      std::string val;
+      a.read(val);
+      parent[a.name()] = val;
+    }
+//  else if (g.template attr_is_enum<int16_t>())
+//    return json(g.template read_enum<int16_t>());
+    else {
+      std::stringstream ss;
+      ss << "<h5json> unrecognized H5 type " << a.datatype().get_class();
+      throw std::runtime_error(ss.str());
+    }
+  } catch (...) {
+    std::stringstream ss;
+    ss << "<h5json> could not create json from h5 attribute";
+    std::throw_with_nested(std::runtime_error(ss.str()));
+  }
+}
+
+void dataset_to_json(json &j, const node::Dataset &d) {
+  auto dsp = dataspace::Simple(d.dataspace());
+  auto dims = dsp.current_dimensions();
+  auto maxdims = dsp.maximum_dimensions();
+  j["___shape"] = dims;
+  if (dims != maxdims)
+    j["___extends"] = maxdims;
+  auto cl = d.creation_list();
+  if (cl.layout() == property::DatasetLayout::CHUNKED)
+    j["___chunk"] = cl.chunk();
+
+  for (auto a : d.attributes)
+    attribute_to_json(j, a);
+}
+
+void dataset_from_json(const json &j,
+                       const std::string &name,
+                       const node::Group &g) {
+  std::vector<hsize_t> shape = j["___shape"];
+
+  std::vector<hsize_t> extends;
+  if (j.count("___extends") && j["___extends"].is_array())
+    extends = j["___extends"].get<std::vector<hsize_t>>();
+  else
+    extends = shape;
+
+  std::vector<hsize_t> chunk;
+  if (j.count("___chunk") && j["___chunk"].is_array())
+    chunk = j["___chunk"].get<std::vector<hsize_t>>();
+
+  property::LinkCreationList lcpl;
+  property::DatasetCreationList dcpl;
+  if (chunk.size()) {
+    dcpl.layout(property::DatasetLayout::CHUNKED);
+    dcpl.chunk(chunk);
+  }
+
+  auto dspace = dataspace::Simple(shape, extends);
+  auto dtype = datatype::create<double>();  // not good enough
+
+  auto dset = g.create_dataset(name, dtype, dspace, lcpl, dcpl);
+  for (json::const_iterator it = j.begin(); it != j.end(); ++it)
+  {
+    if ((it.key() == "___chunk") || (it.key() == "___shape") || (it.key() == "___extends"))
+      continue;
+    attribute_from_json(json(it.value()), std::string(it.key()), dset);
+  }
+}
 
 //void to_json(json& j, const Enum<int16_t>& e)
 //{
@@ -29,18 +182,14 @@ namespace hdf5 {
 //  e.set(j["___choice"]);
 //}
 
-void to_json(json &j, const node::Group &g)
-{
+void to_json(json &j, const node::Group &g) {
   for (auto n : g.nodes) {
-    if (n.type() == node::Type::DATASET)
-    {
+    if (n.type() == node::Type::DATASET) {
       auto d = node::Dataset(n);
       json jj;
-      to_json(jj, d);
+      dataset_to_json(jj, d);
       j[n.link().path().name()] = jj;
-    }
-    else if (n.type() == node::Type::GROUP)
-    {
+    } else if (n.type() == node::Type::GROUP) {
       auto gg = node::Group(n);
       json jj;
       to_json(jj, gg);
@@ -49,99 +198,10 @@ void to_json(json &j, const node::Group &g)
   }
 
   for (auto a : g.attributes)
-    attr_to_json(j, a);
+    attribute_to_json(j, a);
 }
 
-void attr_to_json(json &j, const attribute::Attribute &a)
-{
-  if (a.datatype() == datatype::create<float>()) {
-    float val;
-    a.read(val);
-    j[a.name()] = val;
-  } else if (a.datatype() == datatype::create<double>()) {
-    double val;
-    a.read(val);
-    j[a.name()] = val;
-  } else if (a.datatype() == datatype::create<long double>()) {
-    long double val;
-    a.read(val);
-    j[a.name()] = val;
-  } else if (a.datatype() == datatype::create<int8_t>()) {
-    int8_t val;
-    a.read(val);
-    j[a.name()] = val;
-  } else if (a.datatype() == datatype::create<int16_t>()) {
-    int16_t val;
-    a.read(val);
-    j[a.name()] = val;
-  } else if (a.datatype() == datatype::create<int32_t>()) {
-    int32_t val;
-    a.read(val);
-    j[a.name()] = val;
-  } else if (a.datatype() == datatype::create<int64_t>()) {
-    int64_t val;
-    a.read(val);
-    j[a.name()] = val;
-  } else if (a.datatype() == datatype::create<uint8_t>()) {
-    uint8_t val;
-    a.read(val);
-    j[a.name()] = val;
-  } else if (a.datatype() == datatype::create<uint16_t>()) {
-    uint16_t val;
-    a.read(val);
-    j[a.name()] = val;
-  } else if (a.datatype() == datatype::create<uint32_t>()) {
-    uint32_t val;
-    a.read(val);
-    j[a.name()] = val;
-  } else if (a.datatype() == datatype::create<uint64_t>()) {
-    uint64_t val;
-    a.read(val);
-    j[a.name()] = val;
-  } else if (a.datatype() == datatype::create<std::string>()) {
-    std::string val;
-    a.read(val);
-    j[a.name()] = val;
-  } else if (a.datatype() == datatype::create<bool>()) {
-    bool val;
-    a.read(val);
-    j[a.name()] = val;
-  }
-//  else if (g.template attr_is_enum<int16_t>())
-//    return json(g.template read_enum<int16_t>());
-//  else
-//    return "ERROR: to_json unimplemented attribute type";
-}
-
-void attribute_from_json(const json &j, const std::string &name,
-                         node::Group &g)
-{
-//  if (j.count("___options") && j.count("___choice"))
-//  {
-//    Enum<int16_t> e = j;
-//    g.write_enum(name, e);
-//  }
-//  else
-  if (j.is_number_float()) {
-    attribute::Attribute a = g.attributes.create<double>(name);
-    a.write(j.get<double>());
-  } else if (j.is_number_unsigned()) {
-    attribute::Attribute a = g.attributes.create<uint32_t>(name);
-    a.write(j.get<uint32_t>());
-  } else if (j.is_number_integer()) {
-    attribute::Attribute a = g.attributes.create<int64_t>(name);
-    a.write(j.get<int64_t>());
-  } else if (j.is_boolean()) {
-    attribute::Attribute a = g.attributes.create<bool>(name);
-    a.write(j.get<bool>());
-  } else if (j.is_string()) {
-    attribute::Attribute a = g.attributes.create<std::string>(name);
-    a.write(j.get<std::string>());
-  }
-}
-
-void from_json(const json &j, node::Group &g)
-{
+void from_json(const json &j, node::Group &g) {
   bool is_array = j.is_array();
   uint32_t i = 0;
   size_t len = 0;
@@ -161,54 +221,17 @@ void from_json(const json &j, node::Group &g)
       dataset_from_json(it.value(), name, g);
     } else if (!it.value().is_array() &&
         (it.value().is_number()
-         || it.value().is_boolean()
-         || it.value().is_string()
+            || it.value().is_boolean()
+            || it.value().is_string()
 //            || it.value().count("___options")
 //            || it.value().count("___choice")
-        ))
-    {
+    )) {
       attribute_from_json(it.value(), name, g);
     } else {
       auto gg = g.create_group(name);
       from_json(it.value(), gg);
     }
   }
-}
-
-void to_json(json &j, const node::Dataset &d)
-{
-  auto dsp = dataspace::Simple(d.dataspace());
-  auto dims = dsp.current_dimensions();
-  auto maxdims = dsp.maximum_dimensions();
-  j["___shape"] = dims;
-  if (dims != maxdims)
-    j["___extends"] = maxdims;
-  auto cl = d.creation_list();
-  if (cl.layout() == property::DatasetLayout::CHUNKED)
-    j["___chunk"] = cl.chunk();
-
-  for (auto a : d.attributes)
-    attr_to_json(j, a);
-}
-
-void dataset_from_json(const json &j,
-                       __attribute__((unused)) const std::string &name,
-                       __attribute__((unused)) node::Group &g)
-{
-  std::vector<hsize_t> shape = j["___shape"];
-
-  std::vector<hsize_t> extends;
-  if (j.count("___extends") && j["___extends"].is_array())
-    extends = j["___extends"].get<std::vector<hsize_t>>();
-
-  std::vector<hsize_t> chunk;
-  if (j.count("___chunk") && j["___chunk"].is_array())
-    chunk = j["___chunk"].get<std::vector<hsize_t>>();
-//  auto dset = g.create_dataset<int>(name, shape, chunk);
-//  for (json::const_iterator it = j.begin(); it != j.end(); ++it)
-//  {
-//    attribute_from_json(json(it.value()), std::string(it.key()), dset);
-//  }
 }
 
 }

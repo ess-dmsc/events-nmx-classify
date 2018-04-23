@@ -13,13 +13,15 @@ set(dir ${CMAKE_CURRENT_SOURCE_DIR})
 add_executable(
   ${this_target} EXCLUDE_FROM_ALL
   main.cpp
+  h5jsonTest.cpp
   SettingsTest.cpp
   EventletTest.cpp
   RawAPV.cpp
   RawVMM.cpp
   RawClustered.cpp
-#  MicroclusterTest.cpp
-#  MicroclusterPoolTest.cpp
+
+  MicroclusterTest.cpp
+  MicroclusterPoolTest.cpp
 )
 
 target_include_directories(
